@@ -22,12 +22,14 @@ interface AuthState {
   isLoading: boolean;
   isAuthenticated: boolean;
   user: User | null;
+  isAdmin: boolean;
 }
 
 export function useAuth(requireAuth: boolean = false): AuthState {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -37,7 +39,9 @@ export function useAuth(requireAuth: boolean = false): AuthState {
 
         if (session.data?.user) {
           setIsAuthenticated(true);
-          setUser(session.data.user as User);
+          const userData = session.data.user as User;
+          setUser(userData);
+          setIsAdmin(userData.role === "admin");
 
           // Si está en una página de auth y ya está logueado, redirigir
           const authPages = ["/login", "/register", "/forgot-password"];
@@ -49,6 +53,7 @@ export function useAuth(requireAuth: boolean = false): AuthState {
         } else {
           setIsAuthenticated(false);
           setUser(null);
+          setIsAdmin(false);
 
           // Si requiere auth y no está logueado, redirigir a login
           if (requireAuth) {
@@ -62,6 +67,7 @@ export function useAuth(requireAuth: boolean = false): AuthState {
         console.error("Error checking auth:", error);
         setIsAuthenticated(false);
         setUser(null);
+        setIsAdmin(false);
 
         if (requireAuth) {
           router.replace("/login");
@@ -74,12 +80,36 @@ export function useAuth(requireAuth: boolean = false): AuthState {
     checkAuth();
   }, [requireAuth, router]);
 
-  return { isLoading, isAuthenticated, user };
+  return { isLoading, isAuthenticated, user, isAdmin };
 }
 
 // Hook específico para páginas protegidas
 export function useProtectedPage(): AuthState {
   return useAuth(true);
+}
+
+// Hook específico para páginas de admin
+export function useAdminPage(): AuthState {
+  const authState = useAuth(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (
+      !authState.isLoading &&
+      authState.isAuthenticated &&
+      !authState.isAdmin
+    ) {
+      // Si no es admin, redirigir a página de usuario
+      router.replace("/user-dashboard");
+    }
+  }, [
+    authState.isLoading,
+    authState.isAuthenticated,
+    authState.isAdmin,
+    router,
+  ]);
+
+  return authState;
 }
 
 // Hook específico para páginas públicas

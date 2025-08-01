@@ -1,10 +1,8 @@
-import { createAuthClient } from "better-auth/react";
+import { createAuthClient } from "better-auth/client";
 import { adminClient } from "better-auth/client/plugins";
 
-// Llamas a createAuthClient una sola vez
 export const authClient = createAuthClient({
-  /** La URL base del servidor es opcional si el cliente y el servidor están en el mismo dominio */
-  baseURL: "http://localhost:3000",
+  baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
   plugins: [adminClient()],
 });
 

@@ -2,7 +2,18 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 // Rutas que requieren autenticación
-const protectedRoutes = ["/dashboard", "/profile", "/settings"];
+const protectedRoutes = [
+  "/dashboard",
+  "/user-dashboard",
+  "/profile",
+  "/settings",
+];
+
+// Rutas solo para admin
+const adminRoutes = ["/dashboard"];
+
+// Rutas solo para usuarios regulares
+const userRoutes = ["/user-dashboard"];
 
 // Rutas que NO deben ser accesibles si ya estás logueado
 const authRoutes = [
@@ -27,8 +38,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Verificar si hay sesión activa
-  const isAuthenticated = await checkSession(request);
+  // Verificar si hay sesión activa y obtener información del usuario
+  const sessionInfo = await checkSession(request);
+  const isAuthenticated = sessionInfo.isAuthenticated;
+  const userRole = sessionInfo.role;
+  const isAdmin = userRole === "admin";
 
   // 🔒 RUTAS PROTEGIDAS: Requieren autenticación
   if (protectedRoutes.some((route) => pathname.startsWith(route))) {
@@ -38,16 +52,39 @@ export async function middleware(request: NextRequest) {
       loginUrl.searchParams.set("callbackUrl", pathname);
       return NextResponse.redirect(loginUrl);
     }
+
+    // 👑 RUTAS DE ADMIN: Solo para administradores
+    if (adminRoutes.some((route) => pathname.startsWith(route))) {
+      if (!isAdmin) {
+        // Si no es admin, redirigir al dashboard de usuario
+        return NextResponse.redirect(new URL("/user-dashboard", request.url));
+      }
+    }
+
+    // 👤 RUTAS DE USUARIO: Solo para usuarios regulares (redirigir admin a su dashboard)
+    if (userRoutes.some((route) => pathname.startsWith(route))) {
+      if (isAdmin) {
+        // Si es admin, redirigir al dashboard de admin
+        return NextResponse.redirect(new URL("/dashboard", request.url));
+      }
+    }
+
     return NextResponse.next();
   }
 
   // 🚫 RUTAS DE AUTH: No accesibles si ya está logueado
   if (authRoutes.some((route) => pathname === route)) {
     if (isAuthenticated) {
-      // Redirigir donde el usuario quería ir originalmente o al home
-      const callbackUrl =
-        request.nextUrl.searchParams.get("callbackUrl") || "/";
-      return NextResponse.redirect(new URL(callbackUrl, request.url));
+      // Redirigir donde el usuario quería ir originalmente o a su dashboard apropiado
+      const callbackUrl = request.nextUrl.searchParams.get("callbackUrl");
+
+      if (callbackUrl) {
+        return NextResponse.redirect(new URL(callbackUrl, request.url));
+      }
+
+      // Redirigir al dashboard apropiado según el rol
+      const dashboardUrl = isAdmin ? "/dashboard" : "/user-dashboard";
+      return NextResponse.redirect(new URL(dashboardUrl, request.url));
     }
     return NextResponse.next();
   }
@@ -62,14 +99,17 @@ export async function middleware(request: NextRequest) {
 }
 
 // Función para verificar la sesión con better-auth
-async function checkSession(request: NextRequest): Promise<boolean> {
+async function checkSession(request: NextRequest): Promise<{
+  isAuthenticated: boolean;
+  role?: string;
+}> {
   try {
     const sessionToken = request.cookies.get(
       "better-auth.session_token"
     )?.value;
 
     if (!sessionToken) {
-      return false;
+      return { isAuthenticated: false };
     }
 
     // Verificar con la API de better-auth
@@ -81,13 +121,18 @@ async function checkSession(request: NextRequest): Promise<boolean> {
 
     if (response.ok) {
       const session = await response.json();
-      return !!session.user;
+      if (session.user) {
+        return {
+          isAuthenticated: true,
+          role: session.user.role || "user",
+        };
+      }
     }
 
-    return false;
+    return { isAuthenticated: false };
   } catch (error) {
     console.error("Error checking session:", error);
-    return false;
+    return { isAuthenticated: false };
   }
 }
 

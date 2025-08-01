@@ -9,6 +9,7 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+    requireEmailVerification: false, // Por ahora false para testing
   },
   socialProviders: {
     github: {
@@ -20,5 +21,9 @@ export const auth = betterAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     },
   },
-  plugins: [admin()],
+  plugins: [
+    admin({
+      defaultRole: "user", // Rol por defecto para nuevos usuarios
+    }),
+  ],
 });
