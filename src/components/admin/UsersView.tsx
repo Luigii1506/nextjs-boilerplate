@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { User, UserFormData, UserStats } from "@/types/user";
 import { authClient } from "@/lib/auth-client";
+import { type RoleName } from "@/lib/auth/permissions";
 import UserCard from "./UserCard";
 import UserModal from "./UserModal";
 
@@ -39,7 +40,7 @@ const adaptApiUser = (apiUser: ApiUser): User => ({
   name: apiUser.name,
   email: apiUser.email,
   emailVerified: apiUser.emailVerified,
-  role: apiUser.role === "admin" ? "admin" : "user",
+  role: (apiUser.role as RoleName) || "user", // ✅ Preserve all roles
   status: apiUser.banned ? "banned" : "active",
   image: apiUser.image,
   createdAt: new Date(apiUser.createdAt).toISOString(),
@@ -76,12 +77,13 @@ const UsersView: React.FC = () => {
         query: {
           limit: usersPerPage,
           offset: (currentPage - 1) * usersPerPage,
-          searchValue: searchTerm,
-          searchField: "email",
-          searchOperator: "contains",
+          ...(searchTerm && {
+            searchValue: searchTerm,
+            searchField: "email",
+            searchOperator: "contains",
+          }),
         },
       });
-
       if (response.data) {
         const adaptedUsers = response.data.users.map(adaptApiUser);
         setUsers(adaptedUsers);
@@ -98,16 +100,13 @@ const UsersView: React.FC = () => {
     loadUsers();
   }, [currentPage, searchTerm]);
 
-  // Filter users based on current filters
+  // Filter users based on current filters (local filtering for role and status only)
   const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = filterRole === "all" || user.role === filterRole;
     const matchesStatus =
       filterStatus === "all" || user.status === filterStatus;
 
-    return matchesSearch && matchesRole && matchesStatus;
+    return matchesRole && matchesStatus;
   });
 
   // Calculate stats
@@ -115,7 +114,8 @@ const UsersView: React.FC = () => {
     total: totalUsers,
     active: users.filter((u) => u.status === "active").length,
     banned: users.filter((u) => u.status === "banned").length,
-    admins: users.filter((u) => u.role === "admin").length,
+    admins: users.filter((u) => u.role === "admin" || u.role === "super_admin")
+      .length,
   };
 
   // Create user
@@ -126,7 +126,7 @@ const UsersView: React.FC = () => {
         email: userData.email,
         name: userData.name,
         password: userData.password!,
-        role: userData.role as "user" | "admin",
+        role: userData.role,
       });
       await loadUsers();
     } catch (error) {
@@ -220,7 +220,7 @@ const UsersView: React.FC = () => {
       setIsActionLoading(true);
       await authClient.admin.setRole({
         userId,
-        role: role as "user" | "admin",
+        role: role,
       });
       await loadUsers();
     } catch (error) {
@@ -339,8 +339,12 @@ const UsersView: React.FC = () => {
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">Todos los roles</option>
-              <option value="user">Usuario</option>
+              <option value="super_admin">Super Admin</option>
               <option value="admin">Administrador</option>
+              <option value="editor">Editor</option>
+              <option value="moderator">Moderador</option>
+              <option value="user">Usuario</option>
+              <option value="guest">Invitado</option>
             </select>
           </div>
 

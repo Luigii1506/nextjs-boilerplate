@@ -1,9 +1,11 @@
+import type { RoleName } from "@/lib/auth/permissions";
+
 export interface User {
   id: string;
   name: string;
   email: string;
   emailVerified: boolean;
-  role: "admin" | "user";
+  role: RoleName;
   status: "active" | "banned";
   image?: string | null;
   createdAt: string;
@@ -17,7 +19,7 @@ export interface User {
 export interface UserFormData {
   name: string;
   email: string;
-  role: "admin" | "user";
+  role: RoleName;
   password?: string;
 }
 

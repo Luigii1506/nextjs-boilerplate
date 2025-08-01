@@ -42,7 +42,7 @@ export async function middleware(request: NextRequest) {
   const sessionInfo = await checkSession(request);
   const isAuthenticated = sessionInfo.isAuthenticated;
   const userRole = sessionInfo.role;
-  const isAdmin = userRole === "admin";
+  const isAdmin = userRole === "admin" || userRole === "super_admin";
 
   // 🔒 RUTAS PROTEGIDAS: Requieren autenticación
   if (protectedRoutes.some((route) => pathname.startsWith(route))) {
