@@ -7,8 +7,74 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
+enum RoleName {
+  USER
+  ADMIN
+  SUPERADMIN
+}
+
+model Role {
+  id          Int          @id @default(autoincrement())
+  name        RoleName     @unique
+  users       User[]
+  permissions Permission[] @relation("RolePermissions")
+}
+
+model Permission {
   id    Int    @id @default(autoincrement())
-  email String @unique
-  name  String?
+  name  String @unique
+  roles Role[] @relation("RolePermissions")
+}
+
+model User {
+  id       String    @id @default(cuid())
+  email    String    @unique
+  name     String?
+  password String?
+  roleId   Int?
+  role     Role?     @relation(fields: [roleId], references: [id])
+  accounts Account[]
+  sessions Session[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model PasswordResetToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
