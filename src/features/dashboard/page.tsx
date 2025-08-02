@@ -9,10 +9,16 @@ import {
 } from "@/features/user-management/components";
 import { PermissionGate } from "@/core/auth/auth/PermissionGate";
 import { Shield, AlertTriangle } from "lucide-react";
+import FeatureFlagsAdmin from "@/features/admin/components/FeatureFlagsAdmin";
+import { FilesView } from "@/modules/file-upload/components";
+import { useFeatureFlag } from "@/shared/hooks/useFeatureFlags";
 
 export default function AdminDashboardPage() {
   const { isLoading, isAuthenticated, user, isAdmin } = useAdminPage();
   const [currentView, setCurrentView] = useState("dashboard");
+
+  // 🎛️ Feature Flags para control de acceso
+  const fileUploadEnabled = useFeatureFlag("fileUpload");
 
   // Loading state
   if (isLoading) {
@@ -68,8 +74,46 @@ export default function AdminDashboardPage() {
         }
         return <UsersView />;
 
+      case "files":
+        // Files - solo si fileUpload está habilitado
+        if (!fileUploadEnabled) {
+          return (
+            <div className="text-center py-12">
+              <Shield className="mx-auto h-8 w-8 text-slate-400" />
+              <p className="mt-2 text-slate-600">
+                El módulo de archivos está deshabilitado.
+              </p>
+              <p className="text-sm text-slate-500 mt-1">
+                Contacta al administrador para habilitarlo.
+              </p>
+            </div>
+          );
+        }
+        return <FilesView onViewChange={setCurrentView} />;
+
+      case "feature-flags":
+        // Feature flags - solo para administradores
+        if (!isAdmin) {
+          return (
+            <div className="text-center py-12">
+              <Shield className="mx-auto h-8 w-8 text-slate-400" />
+              <p className="mt-2 text-slate-600">
+                No tienes permisos para administrar feature flags.
+              </p>
+              <p className="text-sm text-slate-500 mt-1">
+                Necesitas ser administrador para acceder a esta sección.
+              </p>
+            </div>
+          );
+        }
+        return (
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+            <FeatureFlagsAdmin />
+          </div>
+        );
+
       default:
-        return <DashboardView />;
+        return <DashboardView onViewChange={setCurrentView} />;
     }
   };
 

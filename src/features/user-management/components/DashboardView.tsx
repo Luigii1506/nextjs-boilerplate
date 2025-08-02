@@ -10,9 +10,14 @@ import {
   Calendar,
   Activity,
   Clock,
+  Sliders,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import { User, UserStats } from "@/shared/types/user";
 import { authClient } from "@/core/auth/auth-client";
+import { useFeatureFlags } from "@/shared/hooks/useFeatureFlags";
+import FeatureFlagDemo from "@/components/demo/FeatureFlagDemo";
 
 interface ApiUser {
   id: string;
@@ -29,7 +34,11 @@ interface ApiUser {
   banExpires?: Date | string | null;
 }
 
-const DashboardView: React.FC = () => {
+interface DashboardViewProps {
+  onViewChange?: (view: string) => void;
+}
+
+const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
   const [stats, setStats] = useState<UserStats>({
     total: 0,
     active: 0,
@@ -38,6 +47,10 @@ const DashboardView: React.FC = () => {
   });
   const [recentUsers, setRecentUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // 🎛️ Feature Flags
+  const { getAllFlags } = useFeatureFlags();
+  const featureFlags = getAllFlags();
 
   const adaptApiUser = (apiUser: ApiUser): User => ({
     id: apiUser.id,
@@ -261,60 +274,83 @@ const DashboardView: React.FC = () => {
           </div>
         </div>
 
-        {/* Recent Users */}
+        {/* Feature Flags Status */}
         <div className="bg-white rounded-lg border border-slate-200 p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-slate-900">
-              Usuarios Recientes
+              🎛️ Feature Flags
             </h3>
-            <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-              Ver todos
+            <button
+              onClick={() => onViewChange?.("feature-flags")}
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+            >
+              Administrar
             </button>
           </div>
 
-          <div className="space-y-4">
-            {recentUsers.map((user) => (
-              <div key={user.id} className="flex items-center gap-3">
-                {user.image ? (
-                  <img
-                    src={user.image}
-                    alt={user.name}
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                    {getInitials(user.name)}
+          <div className="space-y-3">
+            {[
+              {
+                key: "fileUpload",
+                label: "📁 File Upload",
+                description: "Sistema de archivos",
+              },
+              {
+                key: "analytics",
+                label: "📊 Analytics",
+                description: "Estadísticas y métricas",
+              },
+              {
+                key: "darkMode",
+                label: "🌙 Dark Mode",
+                description: "Modo oscuro",
+              },
+              {
+                key: "betaFeatures",
+                label: "🧪 Beta Features",
+                description: "Funcionalidades experimentales",
+              },
+            ].map((flag) => {
+              const isEnabled =
+                featureFlags[flag.key as keyof typeof featureFlags];
+              return (
+                <div
+                  key={flag.key}
+                  className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    {isEnabled ? (
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                    ) : (
+                      <XCircle className="w-5 h-5 text-red-500" />
+                    )}
+                    <div>
+                      <p className="text-sm font-medium text-slate-900">
+                        {flag.label}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {flag.description}
+                      </p>
+                    </div>
                   </div>
-                )}
-
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-900 truncate">
-                    {user.name}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                        user.role === "admin"
-                          ? "bg-amber-100 text-amber-700"
-                          : "bg-slate-100 text-slate-700"
-                      }`}
-                    >
-                      {user.role === "admin" ? "Admin" : "Usuario"}
-                    </span>
-                    <span className="text-xs text-slate-500">
-                      {formatDate(user.createdAt)}
-                    </span>
-                  </div>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      isEnabled
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {isEnabled ? "ON" : "OFF"}
+                  </span>
                 </div>
-
-                <div className="flex items-center gap-1 text-slate-400">
-                  <Clock className="w-4 h-4" />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
+
+      {/* Feature Flags Demo */}
+      <FeatureFlagDemo />
 
       {/* Quick Actions */}
       <div className="bg-white rounded-lg border border-slate-200 p-6">
@@ -323,7 +359,10 @@ const DashboardView: React.FC = () => {
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="p-4 border-2 border-dashed border-slate-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors text-left">
+          <button
+            onClick={() => onViewChange?.("users")}
+            className="p-4 border-2 border-dashed border-slate-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors text-left"
+          >
             <Users className="w-6 h-6 text-blue-600 mb-2" />
             <h4 className="font-medium text-slate-900">Gestionar Usuarios</h4>
             <p className="text-sm text-slate-600 mt-1">
@@ -339,11 +378,14 @@ const DashboardView: React.FC = () => {
             </p>
           </button>
 
-          <button className="p-4 border-2 border-dashed border-slate-300 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-colors text-left">
-            <Activity className="w-6 h-6 text-purple-600 mb-2" />
-            <h4 className="font-medium text-slate-900">Ver Estadísticas</h4>
+          <button
+            onClick={() => onViewChange?.("feature-flags")}
+            className="p-4 border-2 border-dashed border-slate-300 rounded-lg hover:border-orange-400 hover:bg-orange-50 transition-colors text-left"
+          >
+            <Sliders className="w-6 h-6 text-orange-600 mb-2" />
+            <h4 className="font-medium text-slate-900">Feature Flags</h4>
             <p className="text-sm text-slate-600 mt-1">
-              Analizar métricas del sistema
+              Controlar funcionalidades
             </p>
           </button>
         </div>

@@ -12,6 +12,7 @@ import {
   Key,
   Eye,
   Upload,
+  Sliders,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/core/auth/auth-client";
@@ -23,6 +24,7 @@ import {
 import { ROLE_INFO } from "@/core/auth/config/permissions";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useFeatureFlag } from "@/shared/hooks/useFeatureFlags";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -46,6 +48,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
   const router = useRouter();
   const { currentRole, isAdmin, isSuperAdmin, canAccess } = usePermissions();
   const pathname = usePathname();
+
+  // 🎛️ Feature Flags para mostrar/ocultar links
+  const fileUploadEnabled = useFeatureFlag("fileUpload");
 
   const handleLogout = async () => {
     try {
@@ -196,17 +201,35 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
               </button>
             </UserManagementGate>
 
-            <Link
-              href="/dashboard/files"
-              className={`${navLinkClass} ${
-                pathname === "/dashboard/files"
-                  ? navLinkActiveClass
-                  : "text-slate-600 hover:text-slate-800 hover:bg-slate-50"
-              }`}
-            >
-              <Upload className="w-4 h-4" />
-              <span>📁 Demo File Upload</span>
-            </Link>
+            {/* File Upload - Solo si está habilitado */}
+            {fileUploadEnabled && (
+              <button
+                onClick={() => handleViewChange("files")}
+                className={`${navLinkClass} ${
+                  currentView === "files"
+                    ? navLinkActiveClass
+                    : "text-slate-600 hover:text-slate-800 hover:bg-slate-50"
+                }`}
+              >
+                <Upload className="w-4 h-4" />
+                <span>📁 Gestión de Archivos</span>
+              </button>
+            )}
+
+            {/* Feature Flags - Solo para admins */}
+            {isAdmin() && (
+              <button
+                onClick={() => handleViewChange("feature-flags")}
+                className={`${navLinkClass} ${
+                  currentView === "feature-flags"
+                    ? navLinkActiveClass
+                    : "text-slate-600 hover:text-slate-800 hover:bg-slate-50"
+                }`}
+              >
+                <Sliders className="w-4 h-4" />
+                <span>🎛️ Feature Flags</span>
+              </button>
+            )}
           </nav>
 
           {/* Permission Info */}
