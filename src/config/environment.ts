@@ -1,129 +1,272 @@
+// 🌍 ENVIRONMENT CONFIGURATION
+// ============================
+// Configuración centralizada de variables de entorno con validación
+
+// 🔍 DEBUGGING: Verificar contexto de ejecución
+const isServer = typeof window === "undefined";
+const isClient = typeof window !== "undefined";
+
 /**
- * 🌍 CONFIGURACIÓN DE ENTORNO
- *
- * Centralización y validación de variables de entorno.
- * Tipos seguros y valores por defecto.
+ * Obtiene una variable de entorno requerida (solo server-side)
  */
-
-// 🔍 VALIDACIÓN DE VARIABLES REQUERIDAS
-function requireEnv(key: string): string {
-  const value = process.env[key];
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${key}`);
+function getRequiredEnv(key: string): string {
+  if (isClient) {
+    throw new Error(
+      `❌ Variable ${key} intentada desde cliente. Solo server-side permitido.`
+    );
   }
-  return value;
+
+  const value = process.env[key];
+  if (!value || value.trim() === "") {
+    console.error(`❌ Variable faltante: ${key}`);
+    console.error(
+      `🔍 Todas las variables disponibles:`,
+      Object.keys(process.env).filter(
+        (k) => k.includes("AUTH") || k.includes("DATABASE")
+      )
+    );
+    throw new Error(`Variable de entorno requerida faltante: ${key}`);
+  }
+  return value.trim();
 }
 
-function getEnv(key: string, defaultValue?: string): string | undefined {
-  return process.env[key] || defaultValue;
+/**
+ * Obtiene una variable de entorno opcional con valor por defecto
+ */
+function getOptionalEnv(key: string, defaultValue: string): string {
+  if (isClient) {
+    return defaultValue;
+  }
+  return process.env[key]?.trim() || defaultValue;
 }
 
-// 🔧 CONFIGURACIÓN POR CATEGORÍAS
-export const ENV = {
-  // 🏗️ CONFIGURACIÓN BÁSICA
-  NODE_ENV: process.env.NODE_ENV || "development",
-  PORT: process.env.PORT || "3000",
+/**
+ * Convierte string a boolean
+ */
+function getBooleanEnv(key: string, defaultValue: boolean = false): boolean {
+  if (isClient) {
+    return defaultValue;
+  }
+  const value = process.env[key];
+  if (!value) return defaultValue;
+  return value.toLowerCase() === "true";
+}
 
-  // 🗄️ BASE DE DATOS
-  DATABASE_URL: requireEnv("DATABASE_URL"),
+/**
+ * Convierte string a número
+ */
+function getNumberEnv(key: string, defaultValue: number): number {
+  if (isClient) {
+    return defaultValue;
+  }
+  const value = process.env[key];
+  if (!value) return defaultValue;
+  const num = parseInt(value, 10);
+  return isNaN(num) ? defaultValue : num;
+}
 
-  // 🔐 AUTENTICACIÓN
-  BETTER_AUTH_SECRET: requireEnv("BETTER_AUTH_SECRET"),
-  BETTER_AUTH_URL: getEnv("BETTER_AUTH_URL", "http://localhost:3000"),
+// 🗄️ DATABASE CONFIGURATION
+export function getDatabaseConfig() {
+  return {
+    url: getRequiredEnv("DATABASE_URL"),
+  } as const;
+}
 
-  // 🧩 MÓDULOS - TOGGLES
-  MODULES: {
-    FILE_UPLOAD: getEnv("MODULE_FILE_UPLOAD") === "true",
-    STRIPE: getEnv("MODULE_STRIPE") === "true",
-    INVENTORY: getEnv("MODULE_INVENTORY") === "true",
-    ECOMMERCE: getEnv("MODULE_ECOMMERCE") === "true",
-    AI: getEnv("MODULE_AI") === "true",
-    ANALYTICS: getEnv("MODULE_ANALYTICS") === "true",
-  },
+// 🔐 BETTER AUTH CONFIGURATION
+export function getAuthConfig() {
+  return {
+    secret: getRequiredEnv("BETTER_AUTH_SECRET"),
+    baseURL: getOptionalEnv(
+      "NEXT_PUBLIC_BETTER_AUTH_URL",
+      "http://localhost:3000"
+    ),
+    trustedOrigins: getOptionalEnv(
+      "BETTER_AUTH_TRUSTED_ORIGINS",
+      "http://localhost:3000"
+    ),
+  } as const;
+}
 
-  // 💳 STRIPE (si está habilitado)
-  STRIPE: {
-    PUBLIC_KEY: getEnv("STRIPE_PUBLIC_KEY"),
-    SECRET_KEY: getEnv("STRIPE_SECRET_KEY"),
-    WEBHOOK_SECRET: getEnv("STRIPE_WEBHOOK_SECRET"),
-  },
+// 📁 FILE UPLOAD CONFIGURATION
+export function getUploadConfig() {
+  return {
+    provider: getOptionalEnv("UPLOAD_PROVIDER", "local") as
+      | "local"
+      | "s3"
+      | "cloudinary",
 
-  // 📁 FILE UPLOAD (si está habilitado)
-  FILE_UPLOAD: {
-    PROVIDER: getEnv("UPLOAD_PROVIDER", "local"),
-    MAX_SIZE: getEnv("UPLOAD_MAX_SIZE", "10MB"),
-    AWS_BUCKET: getEnv("AWS_S3_BUCKET"),
-    AWS_ACCESS_KEY: getEnv("AWS_ACCESS_KEY_ID"),
-    AWS_SECRET_KEY: getEnv("AWS_SECRET_ACCESS_KEY"),
-    AWS_REGION: getEnv("AWS_REGION", "us-east-1"),
-    CLOUDINARY_CLOUD_NAME: getEnv("CLOUDINARY_CLOUD_NAME"),
-    CLOUDINARY_API_KEY: getEnv("CLOUDINARY_API_KEY"),
-    CLOUDINARY_API_SECRET: getEnv("CLOUDINARY_API_SECRET"),
-  },
+    // Local storage
+    localPath: getOptionalEnv("UPLOAD_LOCAL_PATH", "uploads"),
+    localBaseURL: getOptionalEnv(
+      "UPLOAD_LOCAL_BASE_URL",
+      "http://localhost:3000/uploads"
+    ),
 
-  // 🎛️ FEATURE FLAGS
-  FEATURES: {
-    BETA: getEnv("ENABLE_BETA_FEATURES") === "true",
-    NEW_DASHBOARD: getEnv("FEATURE_NEW_DASHBOARD") === "true",
-    DARK_MODE: getEnv("FEATURE_DARK_MODE") === "true",
-    ANIMATIONS: getEnv("FEATURE_ANIMATIONS") !== "false", // Default true
-    SYSTEM_LOGS: getEnv("FEATURE_SYSTEM_LOGS") === "true",
-    DATA_EXPORT: getEnv("FEATURE_DATA_EXPORT") === "true",
-  },
+    // Limits
+    maxFileSize: getNumberEnv("UPLOAD_MAX_FILE_SIZE", 10 * 1024 * 1024), // 10MB default
+    allowedTypes: getOptionalEnv(
+      "UPLOAD_ALLOWED_TYPES",
+      "image/*,application/pdf,text/*"
+    ).split(","),
 
-  // 🧪 DESARROLLO
-  DEV: {
-    DEBUG: process.env.NODE_ENV === "development",
-    MOCK_PAYMENTS: getEnv("MOCK_PAYMENTS") === "true",
-    SKIP_EMAIL_VERIFICATION: getEnv("SKIP_EMAIL_VERIFICATION") === "true",
-  },
+    // AWS S3
+    s3: {
+      accessKeyId: getOptionalEnv("AWS_ACCESS_KEY_ID", ""),
+      secretAccessKey: getOptionalEnv("AWS_SECRET_ACCESS_KEY", ""),
+      region: getOptionalEnv("AWS_REGION", "us-east-1"),
+      bucket: getOptionalEnv("AWS_S3_BUCKET", ""),
+      endpoint: getOptionalEnv("AWS_S3_ENDPOINT", ""),
+      forcePathStyle: getBooleanEnv("AWS_S3_FORCE_PATH_STYLE", false),
+    },
+
+    // Cloudinary
+    cloudinary: {
+      cloudName: getOptionalEnv("CLOUDINARY_CLOUD_NAME", ""),
+      apiKey: getOptionalEnv("CLOUDINARY_API_KEY", ""),
+      apiSecret: getOptionalEnv("CLOUDINARY_API_SECRET", ""),
+      folder: getOptionalEnv("CLOUDINARY_FOLDER", "nextjs-boilerplate"),
+    },
+  } as const;
+}
+
+// 🔧 FEATURE FLAGS
+export function getFeatureFlags() {
+  return {
+    fileUpload: getBooleanEnv("MODULE_FILE_UPLOAD", true),
+    stripePayments: getBooleanEnv("MODULE_STRIPE_PAYMENTS", false),
+    inventory: getBooleanEnv("MODULE_INVENTORY", false),
+    ecommerce: getBooleanEnv("MODULE_ECOMMERCE", false),
+    aiChat: getBooleanEnv("MODULE_AI_CHAT", false),
+  } as const;
+}
+
+// 🚀 DEPLOYMENT CONFIGURATION
+export function getDeploymentConfig() {
+  return {
+    nodeEnv: getOptionalEnv("NODE_ENV", "development") as
+      | "development"
+      | "production"
+      | "test",
+    appURL: getOptionalEnv("NEXT_PUBLIC_APP_URL", "http://localhost:3000"),
+    isDevelopment: process.env.NODE_ENV === "development",
+    isProduction: process.env.NODE_ENV === "production",
+  } as const;
+}
+
+// 📧 EMAIL CONFIGURATION (future use)
+export const EMAIL_CONFIG = {
+  provider: getOptionalEnv("EMAIL_PROVIDER", "resend") as
+    | "resend"
+    | "sendgrid"
+    | "smtp",
+  from: getOptionalEnv("EMAIL_FROM", "noreply@localhost"),
 } as const;
 
-// 🔍 VALIDACIONES ESPECÍFICAS POR MÓDULO
-export function validateModuleEnv() {
+// 📊 ANALYTICS CONFIGURATION
+export const ANALYTICS_CONFIG = {
+  gaTrackingId: getOptionalEnv("NEXT_PUBLIC_GA_MEASUREMENT_ID", ""),
+  sentryDSN: getOptionalEnv("NEXT_PUBLIC_SENTRY_DSN", ""),
+} as const;
+
+// 🔍 DEBUGGING CONFIGURATION
+export const DEBUG_CONFIG = {
+  logLevel: getOptionalEnv("LOG_LEVEL", "info") as
+    | "debug"
+    | "info"
+    | "warn"
+    | "error",
+  debugMode: getBooleanEnv("NEXT_PUBLIC_DEBUG_MODE", false),
+} as const;
+
+// 💳 STRIPE CONFIGURATION (future use)
+export const STRIPE_CONFIG = {
+  secretKey: getOptionalEnv("STRIPE_SECRET_KEY", ""),
+  publishableKey: getOptionalEnv("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", ""),
+  webhookSecret: getOptionalEnv("STRIPE_WEBHOOK_SECRET", ""),
+} as const;
+
+// 🛍️ ECOMMERCE CONFIGURATION (future use)
+export const ECOMMERCE_CONFIG = {
+  currency: getOptionalEnv("PAYMENT_CURRENCY", "USD"),
+  taxRate: getNumberEnv("TAX_RATE", 0.1),
+  shippingRate: getNumberEnv("SHIPPING_RATE", 9.99),
+} as const;
+
+// 🎯 EXPORT CONSOLIDADO
+export function getEnv() {
+  return {
+    database: getDatabaseConfig(),
+    auth: getAuthConfig(),
+    upload: getUploadConfig(),
+    features: getFeatureFlags(),
+    deployment: getDeploymentConfig(),
+    email: EMAIL_CONFIG,
+    analytics: ANALYTICS_CONFIG,
+    debug: DEBUG_CONFIG,
+    stripe: STRIPE_CONFIG,
+    ecommerce: ECOMMERCE_CONFIG,
+  } as const;
+}
+
+// Compatibilidad: ENV como getter para casos que lo necesiten
+export const ENV = new Proxy({} as ReturnType<typeof getEnv>, {
+  get(target, prop) {
+    return getEnv()[prop as keyof ReturnType<typeof getEnv>];
+  },
+});
+
+// ✅ VALIDATION FUNCTIONS (solo manual)
+export function validateEnvironment(): void {
+  if (isClient) {
+    console.warn("⚠️ validateEnvironment solo funciona en servidor");
+    return;
+  }
+
   const errors: string[] = [];
 
-  // Validar Stripe si está habilitado
-  if (ENV.MODULES.STRIPE) {
-    if (!ENV.STRIPE.PUBLIC_KEY)
-      errors.push(
-        "STRIPE_PUBLIC_KEY is required when MODULE_STRIPE is enabled"
-      );
-    if (!ENV.STRIPE.SECRET_KEY)
-      errors.push(
-        "STRIPE_SECRET_KEY is required when MODULE_STRIPE is enabled"
-      );
+  // Validate required variables
+  try {
+    getRequiredEnv("DATABASE_URL");
+    getRequiredEnv("BETTER_AUTH_SECRET");
+  } catch (error) {
+    if (error instanceof Error) {
+      errors.push(error.message);
+    }
   }
 
-  // Validar AWS S3 si file upload está configurado para S3
-  if (ENV.MODULES.FILE_UPLOAD && ENV.FILE_UPLOAD.PROVIDER === "aws-s3") {
-    if (!ENV.FILE_UPLOAD.AWS_BUCKET)
-      errors.push("AWS_S3_BUCKET is required for S3 file upload");
-    if (!ENV.FILE_UPLOAD.AWS_ACCESS_KEY)
-      errors.push("AWS_ACCESS_KEY_ID is required for S3 file upload");
-    if (!ENV.FILE_UPLOAD.AWS_SECRET_KEY)
-      errors.push("AWS_SECRET_ACCESS_KEY is required for S3 file upload");
-  }
+  // Validate file upload provider configuration
+  try {
+    const uploadConfig = getUploadConfig();
+    if (uploadConfig.provider === "s3") {
+      if (
+        !uploadConfig.s3.accessKeyId ||
+        !uploadConfig.s3.secretAccessKey ||
+        !uploadConfig.s3.bucket
+      ) {
+        errors.push(
+          "S3 provider seleccionado pero faltan credenciales: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET"
+        );
+      }
+    }
 
-  // Validar Cloudinary si está configurado
-  if (ENV.MODULES.FILE_UPLOAD && ENV.FILE_UPLOAD.PROVIDER === "cloudinary") {
-    if (!ENV.FILE_UPLOAD.CLOUDINARY_CLOUD_NAME)
-      errors.push("CLOUDINARY_CLOUD_NAME is required for Cloudinary upload");
-    if (!ENV.FILE_UPLOAD.CLOUDINARY_API_KEY)
-      errors.push("CLOUDINARY_API_KEY is required for Cloudinary upload");
-    if (!ENV.FILE_UPLOAD.CLOUDINARY_API_SECRET)
-      errors.push("CLOUDINARY_API_SECRET is required for Cloudinary upload");
+    if (uploadConfig.provider === "cloudinary") {
+      if (
+        !uploadConfig.cloudinary.cloudName ||
+        !uploadConfig.cloudinary.apiKey ||
+        !uploadConfig.cloudinary.apiSecret
+      ) {
+        errors.push(
+          "Cloudinary provider seleccionado pero faltan credenciales: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET"
+        );
+      }
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      errors.push(`Error validating upload config: ${error.message}`);
+    }
   }
 
   if (errors.length > 0) {
-    throw new Error(`Environment validation failed:\n${errors.join("\n")}`);
+    throw new Error(`Errores de configuración:\n${errors.join("\n")}`);
   }
 }
-
-// 🎯 UTILIDADES
-export const isDevelopment = ENV.NODE_ENV === "development";
-export const isProduction = ENV.NODE_ENV === "production";
-export const isTest = ENV.NODE_ENV === "test";
-
-// 📊 TIPOS
-export type Environment = typeof ENV;

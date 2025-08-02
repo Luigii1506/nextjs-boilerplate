@@ -11,6 +11,7 @@ import {
   FileText,
   Key,
   Eye,
+  Upload,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/core/auth/auth-client";
@@ -20,6 +21,8 @@ import {
   UserManagementGate,
 } from "@/core/auth/auth/PermissionGate";
 import { ROLE_INFO } from "@/core/auth/config/permissions";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -42,6 +45,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
 }) => {
   const router = useRouter();
   const { currentRole, isAdmin, isSuperAdmin, canAccess } = usePermissions();
+  const pathname = usePathname();
 
   const handleLogout = async () => {
     try {
@@ -84,6 +88,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
       </div>
     );
   }
+
+  const navLinkClass =
+    "w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-lg transition-colors";
+  const navLinkActiveClass = "bg-slate-100 text-slate-800 font-medium";
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -161,36 +169,44 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
           </div>
 
           {/* Navigation Menu */}
-          <nav className="space-y-2">
-            {/* Dashboard */}
-            <button
-              onClick={() => handleViewChange("dashboard")}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-lg transition-colors ${
-                currentView === "dashboard"
-                  ? "bg-slate-100 text-slate-800 font-medium"
+          <nav className="mt-8 space-y-2">
+            <Link
+              href="/dashboard"
+              className={`${navLinkClass} ${
+                pathname === "/dashboard"
+                  ? navLinkActiveClass
                   : "text-slate-600 hover:text-slate-800 hover:bg-slate-50"
               }`}
             >
-              <Home className="w-5 h-5" />
+              <Home className="w-4 h-4" />
               <span>Dashboard</span>
-            </button>
+            </Link>
 
-            {/* User Management */}
             <UserManagementGate action="create">
               <button
                 onClick={() => handleViewChange("users")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-lg transition-colors ${
+                className={`${navLinkClass} ${
                   currentView === "users"
-                    ? "bg-slate-100 text-slate-800 font-medium"
+                    ? navLinkActiveClass
                     : "text-slate-600 hover:text-slate-800 hover:bg-slate-50"
                 }`}
               >
-                <Users className="w-5 h-5" />
+                <Users className="w-4 h-4" />
                 <span>Usuarios</span>
               </button>
             </UserManagementGate>
 
-            {/* 🧹 LIMPIEZA COMPLETA - Solo Dashboard y Usuarios */}
+            <Link
+              href="/dashboard/files"
+              className={`${navLinkClass} ${
+                pathname === "/dashboard/files"
+                  ? navLinkActiveClass
+                  : "text-slate-600 hover:text-slate-800 hover:bg-slate-50"
+              }`}
+            >
+              <Upload className="w-4 h-4" />
+              <span>📁 Demo File Upload</span>
+            </Link>
           </nav>
 
           {/* Permission Info */}

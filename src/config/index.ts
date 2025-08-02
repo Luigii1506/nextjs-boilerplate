@@ -30,34 +30,23 @@ export {
 // 🌍 Variables de entorno
 export {
   ENV,
-  validateModuleEnv,
-  isDevelopment,
-  isProduction,
-  isTest,
-  type Environment,
+  getEnv,
+  validateEnvironment,
+  getDatabaseConfig,
+  getAuthConfig,
+  getUploadConfig,
+  getFeatureFlags,
+  getDeploymentConfig,
+  EMAIL_CONFIG,
+  ANALYTICS_CONFIG,
+  DEBUG_CONFIG,
+  STRIPE_CONFIG,
+  ECOMMERCE_CONFIG,
 } from "./environment";
 
-import { ENV } from "./environment";
-import { getEnabledModules } from "./modules";
-import { getEnabledFeatures } from "./feature-flags";
-
-// 🔧 UTILIDADES GLOBALES DE CONFIGURACIÓN
-export function getSystemInfo() {
-  return {
-    environment: ENV.NODE_ENV,
-    enabledModules: getEnabledModules(),
-    enabledFeatures: getEnabledFeatures(),
-    timestamp: new Date().toISOString(),
-  };
-}
-
-export function validateSystemConfig() {
-  try {
-    // Note: validateModuleEnv es importada arriba
-    console.log("✅ System configuration validated successfully");
-    return true;
-  } catch (error) {
-    console.error("❌ System configuration validation failed:", error);
-    return false;
-  }
-}
+// 🚀 CONFIGURACIÓN SIMPLIFICADA
+export const CONFIG_INFO = {
+  name: "NextJS Enterprise Boilerplate",
+  version: "1.0.0",
+  description: "Enterprise-grade Next.js boilerplate with modular architecture",
+} as const;
