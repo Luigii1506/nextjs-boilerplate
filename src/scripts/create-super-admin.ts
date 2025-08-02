@@ -4,7 +4,8 @@
  * Ejecutar con: npx tsx src/scripts/create-super-admin.ts
  */
 
-import { auth } from "../lib/auth";
+import { auth } from "@/core/auth/auth";
+import { prisma } from "@/core/database/prisma";
 
 async function createSuperAdmin() {
   try {

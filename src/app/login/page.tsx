@@ -1,11 +1,11 @@
 "use client";
 
-import { usePublicPage } from "@/hooks/useAuth";
+import { useAuth } from "@/shared/hooks/useAuth";
 import { useRouter } from "next/navigation";
-import LoginView from "@/components/auth/LoginView";
+import LoginView from "@/core/auth/auth/LoginView";
 
 export default function LoginPage() {
-  const { isLoading } = usePublicPage();
+  const { isLoading } = useAuth();
   const router = useRouter();
 
   const handleSwitchToRegister = () => {

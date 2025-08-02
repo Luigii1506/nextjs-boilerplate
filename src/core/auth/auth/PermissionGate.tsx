@@ -8,9 +8,10 @@
 import React, { ReactNode, useEffect, useState } from "react";
 import {
   usePermissions,
+  useUserManagement,
   type Permission,
-  type RoleName,
-} from "@/hooks/usePermissions";
+} from "@/shared/hooks/usePermissions";
+import { type RoleName } from "@/core/auth/config/permissions";
 
 interface PermissionGateProps {
   /** Child components to render if permission is granted */

@@ -1,11 +1,11 @@
 "use client";
 
-import { usePublicPage } from "@/hooks/useAuth";
-import { authClient } from "@/lib/auth-client";
+import { useAuth } from "@/shared/hooks/useAuth";
+import { authClient } from "@/core/auth/auth-client";
 import { useRouter } from "next/navigation";
 
 export default function HomePage() {
-  const { isLoading, isAuthenticated, user, isAdmin } = usePublicPage();
+  const { isLoading, isAuthenticated, user, isAdmin } = useAuth();
   const router = useRouter();
 
   const handleLogout = async () => {

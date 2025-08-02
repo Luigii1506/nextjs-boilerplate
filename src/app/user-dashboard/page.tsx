@@ -1,7 +1,7 @@
 "use client";
 
-import { useProtectedPage } from "@/hooks/useAuth";
-import { authClient } from "@/lib/auth-client";
+import { useProtectedPage } from "@/shared/hooks/useAuth";
+import { authClient } from "@/core/auth/auth-client";
 import { useRouter } from "next/navigation";
 
 export default function UserDashboardPage() {

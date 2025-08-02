@@ -5,8 +5,8 @@
  */
 
 import { useCallback } from "react";
-import { authClient } from "@/lib/auth-client";
-import { useAuth } from "@/hooks/useAuth";
+import { authClient } from "@/core/auth/auth-client";
+import { useAuth } from "@/shared/hooks/useAuth";
 import {
   accessControl,
   PREDEFINED_ROLES,
@@ -14,7 +14,7 @@ import {
   canManageRole,
   getRoleLevel,
   getAssignableRoles,
-} from "@/lib/auth/permissions";
+} from "@/core/auth/config/permissions";
 
 export type Permission = Record<string, string[]>;
 export type RoleName = keyof typeof PREDEFINED_ROLES;

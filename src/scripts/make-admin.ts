@@ -3,7 +3,7 @@
  * Ejecuta: npx tsx src/scripts/make-admin.ts
  */
 
-import { prisma } from "../lib/prisma";
+import { prisma } from "@/core/database/prisma";
 
 async function makeAdmin() {
   try {

@@ -12,9 +12,9 @@ import {
   Download,
   MoreHorizontal,
 } from "lucide-react";
-import { User, UserFormData, UserStats } from "@/types/user";
-import { authClient } from "@/lib/auth-client";
-import { type RoleName } from "@/lib/auth/permissions";
+import { User, UserFormData, UserStats } from "@/shared/types/user";
+import { authClient } from "@/core/auth/auth-client";
+import { type RoleName } from "@/core/auth/config/permissions";
 import UserCard from "./UserCard";
 import UserModal from "./UserModal";
 

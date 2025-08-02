@@ -1,11 +1,11 @@
 "use client";
 
-import { usePublicPage } from "@/hooks/useAuth";
+import { useAuth } from "@/shared/hooks/useAuth";
 import { useRouter } from "next/navigation";
-import ForgotPasswordView from "@/components/auth/ForgotPasswordView";
+import ForgotPasswordView from "@/core/auth/auth/ForgotPasswordView";
 
 export default function ForgotPasswordPage() {
-  const { isLoading } = usePublicPage();
+  const { isLoading } = useAuth();
   const router = useRouter();
 
   const handleBackToLogin = () => {

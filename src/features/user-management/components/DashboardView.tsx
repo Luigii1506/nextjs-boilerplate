@@ -11,8 +11,8 @@ import {
   Activity,
   Clock,
 } from "lucide-react";
-import { User, UserStats } from "@/types/user";
-import { authClient } from "@/lib/auth-client";
+import { User, UserStats } from "@/shared/types/user";
+import { authClient } from "@/core/auth/auth-client";
 
 interface ApiUser {
   id: string;

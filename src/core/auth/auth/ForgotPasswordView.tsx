@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Mail, ArrowLeft, CheckCircle } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/core/auth/auth-client";
 import AuthContainer from "./AuthContainer";
 import InputField from "./InputField";
 import Button from "./Button";

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/core/auth/auth-client";
 
 interface User {
   id: string;
@@ -41,7 +41,9 @@ export function useAuth(requireAuth: boolean = false): AuthState {
           setIsAuthenticated(true);
           const userData = session.data.user as User;
           setUser(userData);
-          setIsAdmin(userData.role === "admin" || userData.role === "super_admin");
+          setIsAdmin(
+            userData.role === "admin" || userData.role === "super_admin"
+          );
 
           // Si está en una página de auth y ya está logueado, redirigir
           const authPages = ["/login", "/register", "/forgot-password"];

@@ -13,13 +13,13 @@ import {
   Eye,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { authClient } from "@/lib/auth-client";
-import { usePermissions } from "@/hooks/usePermissions";
+import { authClient } from "@/core/auth/auth-client";
+import { usePermissions } from "@/shared/hooks/usePermissions";
 import {
   PermissionGate,
   UserManagementGate,
-} from "@/components/auth/PermissionGate";
-import { ROLE_INFO } from "@/lib/auth/permissions";
+} from "@/core/auth/auth/PermissionGate";
+import { ROLE_INFO } from "@/core/auth/config/permissions";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -64,7 +64,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
   };
 
   // Get role info for display
-  const roleInfo = currentRole ? ROLE_INFO[currentRole] : ROLE_INFO.user;
+  const roleInfo = currentRole
+    ? ROLE_INFO[currentRole as keyof typeof ROLE_INFO]
+    : ROLE_INFO.user;
 
   // Only show admin layout if user is admin or super_admin
   if (!isAdmin()) {
