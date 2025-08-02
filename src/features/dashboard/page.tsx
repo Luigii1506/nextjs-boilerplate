@@ -7,7 +7,6 @@ import {
   DashboardView,
   UsersView,
 } from "@/features/user-management/components";
-import { PermissionGate } from "@/core/auth/auth/PermissionGate";
 import { Shield, AlertTriangle } from "lucide-react";
 import FeatureFlagsAdmin from "@/features/admin/components/FeatureFlagsAdmin";
 import { FilesView } from "@/modules/file-upload/components";

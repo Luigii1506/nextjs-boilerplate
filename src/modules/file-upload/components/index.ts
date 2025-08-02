@@ -4,10 +4,10 @@
 
 import type { UploadFile } from "../types";
 
-export { FileUploader } from "./FileUploader";
-export { FileManager } from "./FileManager";
-export { FileStats } from "./FileStats";
-export { ImageGallery } from "./ImageGallery";
+export { default as FileUploader } from "./FileUploader";
+export { default as FileManager } from "./FileManager";
+export { default as FileStats } from "./FileStats";
+export { default as ImageGallery } from "./ImageGallery";
 export { default as FilesView } from "./FilesView";
 
 // Re-exports de tipos de props para conveniencia

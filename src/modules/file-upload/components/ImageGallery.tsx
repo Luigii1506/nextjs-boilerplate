@@ -1,23 +1,15 @@
-// 🖼️ IMAGE GALLERY COMPONENT
-// ===========================
-// Galería de imágenes con modal de preview
-
-"use client";
-
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   X,
   Download,
   Trash2,
+  Share,
+  ZoomIn,
   ChevronLeft,
   ChevronRight,
-  ZoomIn,
-  ZoomOut,
-  RotateCw,
-  Maximize2,
-  Info,
+  Calendar,
+  HardDrive,
 } from "lucide-react";
-import { humanFileSize } from "../utils";
 import type { UploadFile } from "../types";
 
 interface ImageGalleryProps {
@@ -25,413 +17,291 @@ interface ImageGalleryProps {
   onImageSelect?: (image: UploadFile) => void;
   onImageDelete?: (image: UploadFile) => void;
   onImageDownload?: (image: UploadFile) => void;
-  className?: string;
   columns?: number;
 }
 
-export function ImageGallery({
+const ImageGallery: React.FC<ImageGalleryProps> = ({
   images,
   onImageSelect,
   onImageDelete,
   onImageDownload,
-  className = "",
-  columns = 4,
-}: ImageGalleryProps) {
+  columns = 3,
+}) => {
   const [selectedImage, setSelectedImage] = useState<UploadFile | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Filtrar solo imágenes
-  const imageFiles = images.filter((file) =>
-    file.mimeType.startsWith("image/")
-  );
-
-  const openModal = (image: UploadFile) => {
-    setSelectedImage(image);
-    setCurrentIndex(imageFiles.findIndex((img) => img.id === image.id));
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
-  const closeModal = () => {
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("es-ES", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const openLightbox = (image: UploadFile, index: number) => {
+    setSelectedImage(image);
+    setCurrentIndex(index);
+    onImageSelect?.(image);
+  };
+
+  const closeLightbox = () => {
     setSelectedImage(null);
   };
 
   const navigateImage = (direction: "prev" | "next") => {
-    if (imageFiles.length === 0) return;
+    let newIndex = currentIndex;
 
-    let newIndex;
     if (direction === "prev") {
-      newIndex = currentIndex > 0 ? currentIndex - 1 : imageFiles.length - 1;
+      newIndex = currentIndex > 0 ? currentIndex - 1 : images.length - 1;
     } else {
-      newIndex = currentIndex < imageFiles.length - 1 ? currentIndex + 1 : 0;
+      newIndex = currentIndex < images.length - 1 ? currentIndex + 1 : 0;
     }
 
     setCurrentIndex(newIndex);
-    setSelectedImage(imageFiles[newIndex]);
+    setSelectedImage(images[newIndex]);
+    onImageSelect?.(images[newIndex]);
   };
 
-  // Navegación con teclado
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!selectedImage) return;
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      closeLightbox();
+    } else if (e.key === "ArrowLeft") {
+      navigateImage("prev");
+    } else if (e.key === "ArrowRight") {
+      navigateImage("next");
+    }
+  };
 
-      switch (e.key) {
-        case "Escape":
-          closeModal();
-          break;
-        case "ArrowLeft":
-          navigateImage("prev");
-          break;
-        case "ArrowRight":
-          navigateImage("next");
-          break;
-      }
-    };
+  const getGridCols = () => {
+    switch (columns) {
+      case 2:
+        return "grid-cols-1 sm:grid-cols-2";
+      case 3:
+        return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3";
+      case 4:
+        return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
+      case 5:
+        return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5";
+      default:
+        return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3";
+    }
+  };
 
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [selectedImage, currentIndex, imageFiles.length]);
-
-  if (imageFiles.length === 0) {
+  if (images.length === 0) {
     return (
-      <div className={`image-gallery ${className}`}>
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4">🖼️</div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-            No hay imágenes
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400">
-            Las imágenes que subas aparecerán aquí
-          </p>
+      <div className="text-center py-12">
+        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <ZoomIn className="w-8 h-8 text-slate-400" />
         </div>
+        <h3 className="text-lg font-semibold text-slate-900 mb-2">
+          No hay imágenes
+        </h3>
+        <p className="text-slate-600">Sube algunas imágenes para verlas aquí</p>
       </div>
     );
   }
 
   return (
-    <div className={`image-gallery ${className}`}>
-      {/* Grid de imágenes */}
-      <div
-        className={`grid gap-4`}
-        style={{
-          gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
-        }}
-      >
-        {imageFiles.map((image) => (
-          <ImageThumbnail
+    <>
+      {/* Gallery Grid */}
+      <div className={`grid ${getGridCols()} gap-4`}>
+        {images.map((image, index) => (
+          <div
             key={image.id}
-            image={image}
-            onClick={() => {
-              onImageSelect?.(image);
-              openModal(image);
-            }}
-            onDelete={() => onImageDelete?.(image)}
-            onDownload={() => onImageDownload?.(image)}
-          />
+            className="group relative aspect-square bg-slate-100 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300"
+            onClick={() => openLightbox(image, index)}
+          >
+            <img
+              src={image.url}
+              alt={image.originalName}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              loading="lazy"
+            />
+
+            {/* Overlay */}
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onImageDownload?.(image);
+                  }}
+                  className="p-2 bg-white/90 hover:bg-white rounded-lg transition-colors"
+                >
+                  <Download size={16} className="text-slate-700" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openLightbox(image, index);
+                  }}
+                  className="p-2 bg-white/90 hover:bg-white rounded-lg transition-colors"
+                >
+                  <ZoomIn size={16} className="text-slate-700" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onImageDelete?.(image);
+                  }}
+                  className="p-2 bg-white/90 hover:bg-white rounded-lg transition-colors"
+                >
+                  <Trash2 size={16} className="text-red-600" />
+                </button>
+              </div>
+            </div>
+
+            {/* Image Info */}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <p className="text-white text-sm font-medium truncate">
+                {image.originalName}
+              </p>
+              <div className="flex items-center justify-between text-xs text-white/80 mt-1">
+                <span>{formatFileSize(image.size)}</span>
+                {image.metadata &&
+                  typeof image.metadata.width === "number" &&
+                  typeof image.metadata.height === "number" && (
+                    <span>
+                      {image.metadata.width} × {image.metadata.height}
+                    </span>
+                  )}
+              </div>
+            </div>
+          </div>
         ))}
       </div>
 
-      {/* Modal de preview */}
+      {/* Lightbox Modal */}
       {selectedImage && (
-        <ImageModal
-          image={selectedImage}
-          currentIndex={currentIndex}
-          totalImages={imageFiles.length}
-          onClose={closeModal}
-          onPrev={() => navigateImage("prev")}
-          onNext={() => navigateImage("next")}
-          onDelete={() => {
-            onImageDelete?.(selectedImage);
-            closeModal();
-          }}
-          onDownload={() => onImageDownload?.(selectedImage)}
-        />
-      )}
-    </div>
-  );
-}
-
-// Componente de thumbnail individual
-interface ImageThumbnailProps {
-  image: UploadFile;
-  onClick: () => void;
-  onDelete?: () => void;
-  onDownload?: () => void;
-}
-
-function ImageThumbnail({
-  image,
-  onClick,
-  onDelete,
-  onDownload,
-}: ImageThumbnailProps) {
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
-
-  return (
-    <div className="group relative aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-200">
-      {/* Imagen */}
-      <img
-        src={image.url}
-        alt={image.originalName}
-        className={`w-full h-full object-cover transition-all duration-300 ${
-          loaded ? "opacity-100" : "opacity-0"
-        } group-hover:scale-105`}
-        onLoad={() => setLoaded(true)}
-        onError={() => setError(true)}
-        onClick={onClick}
-      />
-
-      {/* Loading/Error states */}
-      {!loaded && !error && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-        </div>
-      )}
-
-      {error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
-          <div className="text-center">
-            <div className="text-2xl mb-2">⚠️</div>
-            <p className="text-xs text-gray-500">Error cargando</p>
-          </div>
-        </div>
-      )}
-
-      {/* Overlay con acciones */}
-      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
-        <div className="flex space-x-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDownload?.();
-            }}
-            className="p-2 bg-white bg-opacity-90 rounded-full hover:bg-opacity-100 transition-all"
-            title="Descargar"
-          >
-            <Download className="w-4 h-4 text-gray-700" />
-          </button>
-
-          {onDelete && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-              className="p-2 bg-white bg-opacity-90 rounded-full hover:bg-opacity-100 transition-all"
-              title="Eliminar"
-            >
-              <Trash2 className="w-4 h-4 text-red-600" />
-            </button>
+        <div
+          className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={closeLightbox}
+          onKeyDown={handleKeyDown}
+          tabIndex={0}
+        >
+          {/* Navigation Buttons */}
+          {images.length > 1 && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigateImage("prev");
+                }}
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
+              >
+                <ChevronLeft size={24} className="text-white" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigateImage("next");
+                }}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
+              >
+                <ChevronRight size={24} className="text-white" />
+              </button>
+            </>
           )}
-        </div>
-      </div>
 
-      {/* Info overlay */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-        <p className="text-white text-sm font-medium truncate">
-          {image.originalName}
-        </p>
-        <p className="text-white text-xs opacity-80">
-          {humanFileSize(image.size)}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// Modal de imagen
-interface ImageModalProps {
-  image: UploadFile;
-  currentIndex: number;
-  totalImages: number;
-  onClose: () => void;
-  onPrev: () => void;
-  onNext: () => void;
-  onDelete?: () => void;
-  onDownload?: () => void;
-}
-
-function ImageModal({
-  image,
-  currentIndex,
-  totalImages,
-  onClose,
-  onPrev,
-  onNext,
-  onDelete,
-  onDownload,
-}: ImageModalProps) {
-  const [zoom, setZoom] = useState(1);
-  const [rotation, setRotation] = useState(0);
-  const [showInfo, setShowInfo] = useState(false);
-
-  const resetTransforms = () => {
-    setZoom(1);
-    setRotation(0);
-  };
-
-  // Reset transforms when image changes
-  useEffect(() => {
-    resetTransforms();
-  }, [image.id]);
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center">
-      {/* Backdrop */}
-      <div className="absolute inset-0" onClick={onClose} />
-
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 p-4 bg-gradient-to-b from-black to-transparent">
-        <div className="flex items-center justify-between text-white">
-          <div>
-            <h3 className="font-medium">{image.originalName}</h3>
-            <p className="text-sm opacity-80">
-              {currentIndex + 1} de {totalImages}
-            </p>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            {/* Zoom controls */}
-            <button
-              onClick={() => setZoom(Math.max(0.25, zoom - 0.25))}
-              className="p-2 hover:bg-white hover:bg-opacity-20 rounded"
-              title="Zoom out"
-            >
-              <ZoomOut className="w-5 h-5" />
-            </button>
-
-            <span className="text-sm px-2">{Math.round(zoom * 100)}%</span>
-
-            <button
-              onClick={() => setZoom(Math.min(4, zoom + 0.25))}
-              className="p-2 hover:bg-white hover:bg-opacity-20 rounded"
-              title="Zoom in"
-            >
-              <ZoomIn className="w-5 h-5" />
-            </button>
-
-            {/* Rotate */}
-            <button
-              onClick={() => setRotation(rotation + 90)}
-              className="p-2 hover:bg-white hover:bg-opacity-20 rounded"
-              title="Rotar"
-            >
-              <RotateCw className="w-5 h-5" />
-            </button>
-
-            {/* Info */}
-            <button
-              onClick={() => setShowInfo(!showInfo)}
-              className="p-2 hover:bg-white hover:bg-opacity-20 rounded"
-              title="Información"
-            >
-              <Info className="w-5 h-5" />
-            </button>
-
-            {/* Download */}
-            {onDownload && (
-              <button
-                onClick={onDownload}
-                className="p-2 hover:bg-white hover:bg-opacity-20 rounded"
-                title="Descargar"
-              >
-                <Download className="w-5 h-5" />
-              </button>
-            )}
-
-            {/* Delete */}
-            {onDelete && (
-              <button
-                onClick={onDelete}
-                className="p-2 hover:bg-white hover:bg-opacity-20 rounded text-red-400"
-                title="Eliminar"
-              >
-                <Trash2 className="w-5 h-5" />
-              </button>
-            )}
-
-            {/* Close */}
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-white hover:bg-opacity-20 rounded"
-              title="Cerrar"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Navigation arrows */}
-      {totalImages > 1 && (
-        <>
+          {/* Close Button */}
           <button
-            onClick={onPrev}
-            className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 p-3 bg-black bg-opacity-50 hover:bg-opacity-75 rounded-full text-white transition-all"
+            onClick={closeLightbox}
+            className="absolute top-4 right-4 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
           >
-            <ChevronLeft className="w-6 h-6" />
+            <X size={24} className="text-white" />
           </button>
 
-          <button
-            onClick={onNext}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 p-3 bg-black bg-opacity-50 hover:bg-opacity-75 rounded-full text-white transition-all"
-          >
-            <ChevronRight className="w-6 h-6" />
-          </button>
-        </>
-      )}
+          {/* Image Counter */}
+          {images.length > 1 && (
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 bg-white/10 rounded-full backdrop-blur-sm z-10">
+              <span className="text-white text-sm">
+                {currentIndex + 1} de {images.length}
+              </span>
+            </div>
+          )}
 
-      {/* Image container */}
-      <div className="relative max-w-full max-h-full overflow-hidden">
-        <img
-          src={image.url}
-          alt={image.originalName}
-          className="max-w-none transition-transform duration-200 select-none"
-          style={{
-            transform: `scale(${zoom}) rotate(${rotation}deg)`,
-            maxHeight: "80vh",
-            maxWidth: "80vw",
-          }}
-          draggable={false}
-        />
-      </div>
+          {/* Main Image */}
+          <div className="max-w-7xl max-h-full flex items-center justify-center">
+            <img
+              src={selectedImage.url}
+              alt={selectedImage.originalName}
+              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
 
-      {/* Info panel */}
-      {showInfo && (
-        <div className="absolute top-16 right-4 z-20 bg-black bg-opacity-80 text-white p-4 rounded-lg max-w-sm">
-          <h4 className="font-medium mb-3">Información del archivo</h4>
-          <div className="space-y-2 text-sm">
-            <div>
-              <span className="opacity-60">Nombre:</span> {image.originalName}
+          {/* Image Info Panel */}
+          <div className="absolute bottom-4 left-4 right-4 bg-white/10 backdrop-blur-sm rounded-2xl p-6 max-w-md mx-auto">
+            <div className="flex items-start justify-between mb-4">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-white font-semibold text-lg truncate">
+                  {selectedImage.originalName}
+                </h3>
+                <div className="flex items-center gap-4 text-white/80 text-sm mt-2">
+                  <div className="flex items-center gap-1">
+                    <HardDrive size={14} />
+                    <span>{formatFileSize(selectedImage.size)}</span>
+                  </div>
+                  {selectedImage.metadata &&
+                    typeof selectedImage.metadata.width === "number" &&
+                    typeof selectedImage.metadata.height === "number" && (
+                      <span>
+                        {selectedImage.metadata.width} ×{" "}
+                        {selectedImage.metadata.height}
+                      </span>
+                    )}
+                  <div className="flex items-center gap-1">
+                    <Calendar size={14} />
+                    <span>{formatDate(selectedImage.createdAt)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 ml-4">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onImageDownload?.(selectedImage);
+                  }}
+                  className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
+                >
+                  <Download size={16} className="text-white" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(selectedImage.url);
+                  }}
+                  className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
+                >
+                  <Share size={16} className="text-white" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onImageDelete?.(selectedImage);
+                    closeLightbox();
+                  }}
+                  className="p-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-colors"
+                >
+                  <Trash2 size={16} className="text-red-300" />
+                </button>
+              </div>
             </div>
-            <div>
-              <span className="opacity-60">Tamaño:</span>{" "}
-              {humanFileSize(image.size)}
-            </div>
-            <div>
-              <span className="opacity-60">Tipo:</span> {image.mimeType}
-            </div>
-            <div>
-              <span className="opacity-60">Proveedor:</span>{" "}
-              {image.provider.toUpperCase()}
-            </div>
-            <div>
-              <span className="opacity-60">Subido:</span>{" "}
-              {new Date(image.createdAt).toLocaleDateString()}
-            </div>
-            {image.metadata && (
-              <>
-                {typeof image.metadata.width === "number" &&
-                  typeof image.metadata.height === "number" && (
-                    <div>
-                      <span className="opacity-60">Dimensiones:</span>{" "}
-                      {image.metadata.width} × {image.metadata.height}
-                    </div>
-                  )}
-              </>
-            )}
           </div>
         </div>
       )}
-    </div>
+    </>
   );
-}
+};
+
+export default ImageGallery;

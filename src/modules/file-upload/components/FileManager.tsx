@@ -1,537 +1,366 @@
-// 🗂️ FILE MANAGER COMPONENT
-// ==========================
-// Componente para gestionar archivos existentes (CRUD)
-
-"use client";
-
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
-  Search,
-  Filter,
-  Grid3X3,
-  List,
+  MoreVertical,
   Download,
   Trash2,
   Eye,
-  MoreVertical,
-  RefreshCw,
-  Upload as UploadIcon,
-  File,
+  Share,
+  Copy,
   Calendar,
   HardDrive,
+  Image,
+  File,
+  Video,
+  Music,
+  FileText,
 } from "lucide-react";
-import { useFileManager } from "../hooks";
-import { getFileIcon, FILE_CATEGORIES } from "../config";
-import { humanFileSize } from "../utils";
-import type { UploadFile, FileCategory } from "../types";
+import type { UploadFile } from "../types";
 
 interface FileManagerProps {
+  files: UploadFile[];
   onFileSelect?: (file: UploadFile) => void;
-  onFileUpload?: () => void;
+  onFileDelete?: (file: UploadFile) => void;
+  onFileDownload?: (file: UploadFile) => void;
   viewMode?: "grid" | "list";
   selectable?: boolean;
-  className?: string;
 }
 
-export function FileManager({
+const FileManager: React.FC<FileManagerProps> = ({
+  files,
   onFileSelect,
-  onFileUpload,
-  viewMode: initialViewMode = "grid",
+  onFileDelete,
+  onFileDownload,
+  viewMode = "grid",
   selectable = false,
-  className = "",
-}: FileManagerProps) {
-  const [viewMode, setViewMode] = useState<"grid" | "list">(initialViewMode);
-  const [searchQuery, setSearchQuery] = useState("");
+}) => {
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
-  const [showFilters, setShowFilters] = useState(false);
+  const [showMenu, setShowMenu] = useState<string | null>(null);
 
-  const {
-    files,
-    loading,
-    error,
-    categories,
-    selectedCategory,
-    setSelectedCategory,
-    refreshFiles,
-    deleteFile,
-    downloadFile,
-    searchFiles,
-  } = useFileManager();
+  const getFileIcon = (mimeType: string, size: number = 24) => {
+    const iconProps = { size, className: "flex-shrink-0" };
 
-  // Filtrar archivos según búsqueda
-  const filteredFiles = useMemo(() => {
-    if (!searchQuery) return files;
-
-    return files.filter(
-      (file) =>
-        file.originalName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        file.mimeType.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        file.tags.some((tag) =>
-          tag.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-    );
-  }, [files, searchQuery]);
-
-  // Manejar búsqueda
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    searchFiles(query);
+    if (mimeType.startsWith("image/"))
+      return <Image {...iconProps} className="text-blue-500" />;
+    if (mimeType.startsWith("video/"))
+      return <Video {...iconProps} className="text-purple-500" />;
+    if (mimeType.startsWith("audio/"))
+      return <Music {...iconProps} className="text-green-500" />;
+    if (mimeType.includes("pdf") || mimeType.includes("document"))
+      return <FileText {...iconProps} className="text-red-500" />;
+    return <File {...iconProps} className="text-slate-500" />;
   };
 
-  // Manejar selección de archivos
-  const toggleFileSelection = (fileId: string) => {
-    if (!selectable) return;
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
 
-    setSelectedFiles((prev) => {
-      const newSelection = new Set(prev);
-      if (newSelection.has(fileId)) {
-        newSelection.delete(fileId);
-      } else {
-        newSelection.add(fileId);
-      }
-      return newSelection;
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("es-ES", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
-  // Eliminar archivo con confirmación
-  const handleDeleteFile = async (file: UploadFile) => {
-    if (window.confirm(`¿Estás seguro de eliminar "${file.originalName}"?`)) {
-      try {
-        await deleteFile(file.id);
-      } catch (error) {
-        console.error("Error deleting file:", error);
+  const handleFileClick = (file: UploadFile) => {
+    if (selectable) {
+      const newSelected = new Set(selectedFiles);
+      if (newSelected.has(file.id)) {
+        newSelected.delete(file.id);
+      } else {
+        newSelected.add(file.id);
       }
+      setSelectedFiles(newSelected);
+    }
+    onFileSelect?.(file);
+  };
+
+  const handleMenuAction = (action: string, file: UploadFile) => {
+    setShowMenu(null);
+
+    switch (action) {
+      case "download":
+        onFileDownload?.(file);
+        break;
+      case "delete":
+        onFileDelete?.(file);
+        break;
+      case "copy":
+        navigator.clipboard.writeText(file.url);
+        break;
+      case "view":
+        window.open(file.url, "_blank");
+        break;
     }
   };
 
-  // Eliminar archivos seleccionados
-  const handleDeleteSelected = async () => {
-    if (selectedFiles.size === 0) return;
-
-    if (
-      window.confirm(
-        `¿Eliminar ${selectedFiles.size} archivo(s) seleccionado(s)?`
-      )
-    ) {
-      const deletePromises = Array.from(selectedFiles).map((fileId) => {
-        const file = files.find((f) => f.id === fileId);
-        return file ? deleteFile(file.id) : Promise.resolve();
-      });
-
-      try {
-        await Promise.all(deletePromises);
-        setSelectedFiles(new Set());
-      } catch (error) {
-        console.error("Error deleting files:", error);
-      }
-    }
-  };
-
-  if (loading && files.length === 0) {
+  if (viewMode === "list") {
     return (
-      <div className={`file-manager ${className}`}>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <RefreshCw className="w-8 h-8 text-gray-400 animate-spin mx-auto mb-2" />
-            <p className="text-gray-500">Cargando archivos...</p>
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200">
+          <div className="grid grid-cols-12 gap-4 text-sm font-medium text-slate-600">
+            <div className="col-span-5">Nombre</div>
+            <div className="col-span-2">Tamaño</div>
+            <div className="col-span-2">Tipo</div>
+            <div className="col-span-2">Fecha</div>
+            <div className="col-span-1"></div>
           </div>
         </div>
-      </div>
-    );
-  }
 
-  return (
-    <div className={`file-manager ${className}`}>
-      {/* Header con controles */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            Administrador de Archivos
-          </h2>
-
-          <div className="flex items-center space-x-2">
-            {/* Botón subir archivos */}
-            {onFileUpload && (
-              <button
-                onClick={onFileUpload}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
-              >
-                <UploadIcon className="w-4 h-4" />
-                <span>Subir archivos</span>
-              </button>
-            )}
-
-            {/* Refresh */}
-            <button
-              onClick={refreshFiles}
-              className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              disabled={loading}
+        <div className="divide-y divide-slate-200">
+          {files.map((file) => (
+            <div
+              key={file.id}
+              className={`px-6 py-4 hover:bg-slate-50 transition-colors cursor-pointer ${
+                selectedFiles.has(file.id)
+                  ? "bg-blue-50 border-l-4 border-blue-500"
+                  : ""
+              }`}
+              onClick={() => handleFileClick(file)}
             >
-              <RefreshCw
-                className={`w-5 h-5 ${loading ? "animate-spin" : ""}`}
-              />
-            </button>
+              <div className="grid grid-cols-12 gap-4 items-center">
+                <div className="col-span-5 flex items-center gap-3 min-w-0">
+                  {getFileIcon(file.mimeType, 20)}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-slate-900 truncate">
+                      {file.originalName}
+                    </p>
+                    {file.metadata &&
+                      typeof file.metadata.width === "number" &&
+                      typeof file.metadata.height === "number" && (
+                        <p className="text-xs text-slate-500">
+                          {file.metadata.width} × {file.metadata.height}
+                        </p>
+                      )}
+                  </div>
+                </div>
 
-            {/* View mode toggles */}
-            <div className="flex rounded-lg border border-gray-300 dark:border-gray-600">
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`p-2 ${
-                  viewMode === "grid"
-                    ? "bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400"
-                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                }`}
-              >
-                <Grid3X3 className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode("list")}
-                className={`p-2 border-l border-gray-300 dark:border-gray-600 ${
-                  viewMode === "list"
-                    ? "bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400"
-                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                }`}
-              >
-                <List className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
+                <div className="col-span-2">
+                  <span className="text-sm text-slate-600">
+                    {formatFileSize(file.size)}
+                  </span>
+                </div>
 
-        {/* Barra de búsqueda y filtros */}
-        <div className="flex items-center space-x-4 mb-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Buscar archivos..."
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
+                <div className="col-span-2">
+                  <span className="text-sm text-slate-600 capitalize">
+                    {file.mimeType.split("/")[0]}
+                  </span>
+                </div>
 
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`p-2 rounded-lg border transition-colors ${
-              showFilters
-                ? "border-blue-500 bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400"
-                : "border-gray-300 dark:border-gray-600 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-            }`}
-          >
-            <Filter className="w-4 h-4" />
-          </button>
-        </div>
+                <div className="col-span-2">
+                  <span className="text-sm text-slate-600">
+                    {formatDate(file.createdAt)}
+                  </span>
+                </div>
 
-        {/* Panel de filtros */}
-        {showFilters && (
-          <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg mb-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {/* Filtro por categoría */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Categoría
-                </label>
-                <select
-                  value={selectedCategory || ""}
-                  onChange={(e) => setSelectedCategory(e.target.value || null)}
-                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                >
-                  <option value="">Todas</option>
-                  {Object.entries(FILE_CATEGORIES).map(([key, category]) => (
-                    <option key={key} value={key}>
-                      {category.icon} {category.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="col-span-1 flex justify-end">
+                  <div className="relative">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(showMenu === file.id ? null : file.id);
+                      }}
+                      className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                    >
+                      <MoreVertical size={16} className="text-slate-400" />
+                    </button>
+
+                    {showMenu === file.id && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-10"
+                          onClick={() => setShowMenu(null)}
+                        />
+                        <div className="absolute right-0 top-10 bg-white border border-slate-200 rounded-xl shadow-xl py-2 w-48 z-20">
+                          <button
+                            onClick={() => handleMenuAction("view", file)}
+                            className="w-full px-4 py-2.5 text-left hover:bg-slate-50 flex items-center gap-3 text-slate-700"
+                          >
+                            <Eye size={16} />
+                            Ver archivo
+                          </button>
+                          <button
+                            onClick={() => handleMenuAction("download", file)}
+                            className="w-full px-4 py-2.5 text-left hover:bg-slate-50 flex items-center gap-3 text-slate-700"
+                          >
+                            <Download size={16} />
+                            Descargar
+                          </button>
+                          <button
+                            onClick={() => handleMenuAction("copy", file)}
+                            className="w-full px-4 py-2.5 text-left hover:bg-slate-50 flex items-center gap-3 text-slate-700"
+                          >
+                            <Copy size={16} />
+                            Copiar URL
+                          </button>
+                          <div className="border-t border-slate-100 my-2" />
+                          <button
+                            onClick={() => handleMenuAction("delete", file)}
+                            className="w-full px-4 py-2.5 text-left hover:bg-red-50 flex items-center gap-3 text-red-600"
+                          >
+                            <Trash2 size={16} />
+                            Eliminar
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Acciones masivas */}
-        {selectable && selectedFiles.size > 0 && (
-          <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg flex items-center justify-between">
-            <span className="text-sm text-blue-700 dark:text-blue-300">
-              {selectedFiles.size} archivo(s) seleccionado(s)
-            </span>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={handleDeleteSelected}
-                className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors flex items-center space-x-1"
-              >
-                <Trash2 className="w-3 h-3" />
-                <span>Eliminar</span>
-              </button>
-              <button
-                onClick={() => setSelectedFiles(new Set())}
-                className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700 transition-colors"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Error display */}
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
-          <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
-        </div>
-      )}
-
-      {/* Lista/Grid de archivos */}
-      {filteredFiles.length === 0 ? (
-        <div className="text-center py-12">
-          <File className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-            No hay archivos
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400 mb-4">
-            {searchQuery
-              ? "No se encontraron archivos con esa búsqueda"
-              : "Aún no has subido archivos"}
-          </p>
-          {onFileUpload && !searchQuery && (
-            <button
-              onClick={onFileUpload}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Subir primer archivo
-            </button>
-          )}
-        </div>
-      ) : (
-        <div
-          className={`
-          ${
-            viewMode === "grid"
-              ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4"
-              : "space-y-2"
-          }
-        `}
-        >
-          {filteredFiles.map((file) => (
-            <FileItem
-              key={file.id}
-              file={file}
-              viewMode={viewMode}
-              selected={selectedFiles.has(file.id)}
-              selectable={selectable}
-              onSelect={() => toggleFileSelection(file.id)}
-              onClick={() => onFileSelect?.(file)}
-              onDownload={() => downloadFile(file)}
-              onDelete={() => handleDeleteFile(file)}
-            />
           ))}
         </div>
-      )}
-    </div>
-  );
-}
-
-// Componente individual de archivo
-interface FileItemProps {
-  file: UploadFile;
-  viewMode: "grid" | "list";
-  selected: boolean;
-  selectable: boolean;
-  onSelect: () => void;
-  onClick?: () => void;
-  onDownload: () => void;
-  onDelete: () => void;
-}
-
-function FileItem({
-  file,
-  viewMode,
-  selected,
-  selectable,
-  onSelect,
-  onClick,
-  onDownload,
-  onDelete,
-}: FileItemProps) {
-  const [showActions, setShowActions] = useState(false);
-  const fileIcon = getFileIcon(file.mimeType);
-  const isImage = file.mimeType.startsWith("image/");
-
-  if (viewMode === "grid") {
-    return (
-      <div
-        className={`
-          relative group bg-white dark:bg-gray-800 rounded-lg border-2 transition-all duration-200 hover:shadow-md
-          ${
-            selected
-              ? "border-blue-500 bg-blue-50 dark:bg-blue-950"
-              : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-          }
-          ${onClick ? "cursor-pointer" : ""}
-        `}
-        onClick={onClick}
-      >
-        {/* Checkbox para selección */}
-        {selectable && (
-          <div className="absolute top-2 left-2 z-10">
-            <input
-              type="checkbox"
-              checked={selected}
-              onChange={onSelect}
-              onClick={(e) => e.stopPropagation()}
-              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-          </div>
-        )}
-
-        {/* Menú de acciones */}
-        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <div className="relative">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowActions(!showActions);
-              }}
-              className="p-1 bg-white dark:bg-gray-800 rounded-full shadow-md hover:bg-gray-50 dark:hover:bg-gray-700"
-            >
-              <MoreVertical className="w-4 h-4 text-gray-500" />
-            </button>
-
-            {showActions && (
-              <div className="absolute right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 min-w-[140px]">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDownload();
-                    setShowActions(false);
-                  }}
-                  className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Descargar</span>
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete();
-                    setShowActions(false);
-                  }}
-                  className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <span>Eliminar</span>
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Preview del archivo */}
-        <div className="aspect-square p-4">
-          {isImage ? (
-            <img
-              src={file.url}
-              alt={file.originalName}
-              className="w-full h-full object-cover rounded"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded">
-              <span className="text-4xl">{fileIcon}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Info del archivo */}
-        <div className="p-3 border-t border-gray-200 dark:border-gray-700">
-          <p
-            className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate"
-            title={file.originalName}
-          >
-            {file.originalName}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            {humanFileSize(file.size)}
-          </p>
-        </div>
       </div>
     );
   }
 
-  // Vista de lista
   return (
-    <div
-      className={`
-        flex items-center space-x-4 p-3 bg-white dark:bg-gray-800 rounded-lg border transition-all duration-200
-        ${
-          selected
-            ? "border-blue-500 bg-blue-50 dark:bg-blue-950"
-            : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-        }
-        ${onClick ? "cursor-pointer hover:shadow-sm" : ""}
-      `}
-      onClick={onClick}
-    >
-      {/* Checkbox */}
-      {selectable && (
-        <input
-          type="checkbox"
-          checked={selected}
-          onChange={onSelect}
-          onClick={(e) => e.stopPropagation()}
-          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-        />
-      )}
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {files.map((file) => (
+        <div
+          key={file.id}
+          className={`group bg-white rounded-2xl border border-slate-200 hover:border-slate-300 hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer ${
+            selectedFiles.has(file.id)
+              ? "ring-2 ring-blue-500 border-blue-500"
+              : ""
+          }`}
+          onClick={() => handleFileClick(file)}
+        >
+          {/* Preview */}
+          <div className="aspect-square bg-slate-50 flex items-center justify-center relative overflow-hidden">
+            {file.mimeType.startsWith("image/") ? (
+              <img
+                src={file.url}
+                alt={file.originalName}
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center">
+                {getFileIcon(file.mimeType, 32)}
+              </div>
+            )}
 
-      {/* Preview/Icon */}
-      <div className="flex-shrink-0">
-        {isImage ? (
-          <img
-            src={file.url}
-            alt={file.originalName}
-            className="w-10 h-10 object-cover rounded"
-          />
-        ) : (
-          <div className="w-10 h-10 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded">
-            <span className="text-lg">{fileIcon}</span>
+            {/* Overlay Actions */}
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleMenuAction("view", file);
+                }}
+                className="p-2 bg-white/90 hover:bg-white rounded-lg transition-colors"
+              >
+                <Eye size={16} className="text-slate-700" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleMenuAction("download", file);
+                }}
+                className="p-2 bg-white/90 hover:bg-white rounded-lg transition-colors"
+              >
+                <Download size={16} className="text-slate-700" />
+              </button>
+            </div>
+
+            {/* File Type Badge */}
+            <div className="absolute top-3 left-3">
+              <span className="px-2 py-1 bg-black/70 text-white text-xs rounded-lg backdrop-blur-sm">
+                {file.mimeType.split("/")[1].toUpperCase()}
+              </span>
+            </div>
+
+            {/* Menu Button */}
+            <div className="absolute top-3 right-3">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowMenu(showMenu === file.id ? null : file.id);
+                }}
+                className="p-2 bg-black/70 hover:bg-black/80 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+              >
+                <MoreVertical size={16} className="text-white" />
+              </button>
+
+              {showMenu === file.id && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowMenu(null)}
+                  />
+                  <div className="absolute right-0 top-12 bg-white border border-slate-200 rounded-xl shadow-xl py-2 w-48 z-20">
+                    <button
+                      onClick={() => handleMenuAction("view", file)}
+                      className="w-full px-4 py-2.5 text-left hover:bg-slate-50 flex items-center gap-3 text-slate-700"
+                    >
+                      <Eye size={16} />
+                      Ver archivo
+                    </button>
+                    <button
+                      onClick={() => handleMenuAction("download", file)}
+                      className="w-full px-4 py-2.5 text-left hover:bg-slate-50 flex items-center gap-3 text-slate-700"
+                    >
+                      <Download size={16} />
+                      Descargar
+                    </button>
+                    <button
+                      onClick={() => handleMenuAction("copy", file)}
+                      className="w-full px-4 py-2.5 text-left hover:bg-slate-50 flex items-center gap-3 text-slate-700"
+                    >
+                      <Copy size={16} />
+                      Copiar URL
+                    </button>
+                    <button
+                      onClick={() => handleMenuAction("share", file)}
+                      className="w-full px-4 py-2.5 text-left hover:bg-slate-50 flex items-center gap-3 text-slate-700"
+                    >
+                      <Share size={16} />
+                      Compartir
+                    </button>
+                    <div className="border-t border-slate-100 my-2" />
+                    <button
+                      onClick={() => handleMenuAction("delete", file)}
+                      className="w-full px-4 py-2.5 text-left hover:bg-red-50 flex items-center gap-3 text-red-600"
+                    >
+                      <Trash2 size={16} />
+                      Eliminar
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-        )}
-      </div>
 
-      {/* File info */}
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-          {file.originalName}
-        </p>
-        <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
-          <span>{humanFileSize(file.size)}</span>
-          <span>{file.provider.toUpperCase()}</span>
-          <span>{new Date(file.createdAt).toLocaleDateString()}</span>
+          {/* File Info */}
+          <div className="p-4">
+            <h3 className="font-medium text-slate-900 truncate mb-1">
+              {file.originalName}
+            </h3>
+            <div className="flex items-center justify-between text-sm text-slate-500">
+              <span>{formatFileSize(file.size)}</span>
+              <div className="flex items-center gap-1">
+                <Calendar size={12} />
+                <span>{formatDate(file.createdAt)}</span>
+              </div>
+            </div>
+            {file.metadata &&
+            typeof file.metadata.width === "number" &&
+            typeof file.metadata.height === "number" ? (
+              <div className="mt-2 text-xs text-slate-500">
+                {file.metadata.width} × {file.metadata.height} px
+              </div>
+            ) : null}
+          </div>
         </div>
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center space-x-2">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDownload();
-          }}
-          className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-          title="Descargar"
-        >
-          <Download className="w-4 h-4" />
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-          className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-          title="Eliminar"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
-      </div>
+      ))}
     </div>
   );
-}
+};
+
+export default FileManager;
