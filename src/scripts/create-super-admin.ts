@@ -22,12 +22,12 @@ async function createSuperAdmin() {
     // Método 1: Usar createUser (API de admin) con rol desde el inicio
     console.log("👤 Creando usuario con rol de super admin...");
     try {
-      const adminUser = await auth.api.createUser({
+      const user = await auth.api.createUser({
         body: {
           email: adminData.email,
           password: adminData.password,
           name: adminData.name,
-          role: "super_admin",
+          role: "admin", // Better Auth API only supports "admin" | "user"
         },
       });
 
@@ -35,7 +35,7 @@ async function createSuperAdmin() {
       console.log("📧 Email:", adminData.email);
       console.log("🔑 Contraseña:", adminData.password);
       console.log("👑 Rol: super_admin");
-      console.log("🆔 ID:", adminUser.user?.id);
+      console.log("🆔 ID:", user.user?.id);
     } catch (createError) {
       console.log(createError);
       console.log("⚠️  createUser falló, intentando método alternativo...");
@@ -70,7 +70,7 @@ async function createSuperAdmin() {
 
         console.log("✅ Rol actualizado en base de datos");
         console.log("🎉 ¡Super Admin creado exitosamente!");
-        console.log("�� Email:", adminData.email);
+        console.log("📧 Email:", adminData.email);
         console.log("🔑 Contraseña:", adminData.password);
         console.log("👑 Rol:", updatedUser.role);
 

@@ -7,10 +7,7 @@ import {
   PREDEFINED_ROLES,
   superAdminRole,
   adminRole,
-  editorRole,
-  moderatorRole,
   userRole,
-  guestRole,
 } from "@/lib/auth/permissions";
 
 export const auth = betterAuth({
@@ -26,21 +23,8 @@ export const auth = betterAuth({
 
   // 🔌 PLUGINS CONFIGURATION
   plugins: [
-    // 🛡️ Admin Plugin with Custom Permissions
+    // ��️ Admin Plugin with Basic Configuration
     admin({
-      // 🎯 Use our custom access control system
-      ac: accessControl,
-
-      // 👑 Define all available roles
-      roles: {
-        super_admin: superAdminRole,
-        admin: adminRole,
-        editor: editorRole,
-        moderator: moderatorRole,
-        user: userRole,
-        guest: guestRole,
-      },
-
       // ⚙️ Admin Plugin Options
       defaultRole: "user",
       adminRoles: ["super_admin", "admin"], // Roles considered as admin

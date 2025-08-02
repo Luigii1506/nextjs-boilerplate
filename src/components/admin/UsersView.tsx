@@ -73,6 +73,7 @@ const UsersView: React.FC = () => {
   const loadUsers = async () => {
     try {
       setLoading(true);
+
       const response = await authClient.admin.listUsers({
         query: {
           limit: usersPerPage,
@@ -84,6 +85,7 @@ const UsersView: React.FC = () => {
           }),
         },
       });
+
       if (response.data) {
         const adaptedUsers = response.data.users.map(adaptApiUser);
         setUsers(adaptedUsers);
@@ -126,7 +128,7 @@ const UsersView: React.FC = () => {
         email: userData.email,
         name: userData.name,
         password: userData.password!,
-        role: userData.role,
+        role: userData.role as "admin" | "user", // Better Auth API constraint
       });
       await loadUsers();
     } catch (error) {
@@ -148,7 +150,10 @@ const UsersView: React.FC = () => {
       if (userData.role !== editingUser.role) {
         await authClient.admin.setRole({
           userId: editingUser.id,
-          role: userData.role,
+          role:
+            userData.role === "super_admin"
+              ? "admin"
+              : (userData.role as "admin" | "user"),
         });
       }
 
@@ -220,7 +225,7 @@ const UsersView: React.FC = () => {
       setIsActionLoading(true);
       await authClient.admin.setRole({
         userId,
-        role: role,
+        role: role === "super_admin" ? "admin" : (role as "admin" | "user"),
       });
       await loadUsers();
     } catch (error) {
@@ -341,10 +346,7 @@ const UsersView: React.FC = () => {
               <option value="all">Todos los roles</option>
               <option value="super_admin">Super Admin</option>
               <option value="admin">Administrador</option>
-              <option value="editor">Editor</option>
-              <option value="moderator">Moderador</option>
               <option value="user">Usuario</option>
-              <option value="guest">Invitado</option>
             </select>
           </div>
 

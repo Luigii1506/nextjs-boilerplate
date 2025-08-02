@@ -14,13 +14,10 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-import { useFeatureFlags, usePermissions } from "@/hooks/usePermissions";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
   PermissionGate,
-  AdminGate,
   UserManagementGate,
-  AnalyticsGate,
-  SettingsGate,
 } from "@/components/auth/PermissionGate";
 import { ROLE_INFO } from "@/lib/auth/permissions";
 
@@ -44,16 +41,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
   onViewChange,
 }) => {
   const router = useRouter();
-  const { currentRole, isAdmin, isSuperAdmin } = usePermissions();
-  const {
-    showAdminPanel,
-    showUserManagement,
-    showSystemSettings,
-    showDashboardUsers,
-    showDashboardContent,
-    showDashboardAnalytics,
-    showDashboardSettings,
-  } = useFeatureFlags();
+  const { currentRole, isAdmin, isSuperAdmin, canAccess } = usePermissions();
 
   const handleLogout = async () => {
     try {
@@ -76,10 +64,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
   };
 
   // Get role info for display
-  const roleInfo = currentRole ? ROLE_INFO[currentRole] : ROLE_INFO.guest;
+  const roleInfo = currentRole ? ROLE_INFO[currentRole] : ROLE_INFO.user;
 
-  // Only show admin layout if user has admin access
-  if (!showAdminPanel) {
+  // Only show admin layout if user is admin or super_admin
+  if (!isAdmin()) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
@@ -200,110 +188,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
               </button>
             </UserManagementGate>
 
-            {/* Permissions Management */}
-            <PermissionGate permissions={{ user: ["set-role"] }}>
-              <button
-                onClick={() => handleViewChange("permissions")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-lg transition-colors ${
-                  currentView === "permissions"
-                    ? "bg-slate-100 text-slate-800 font-medium"
-                    : "text-slate-600 hover:text-slate-800 hover:bg-slate-50"
-                }`}
-              >
-                <Key className="w-5 h-5" />
-                <span>Permisos</span>
-              </button>
-            </PermissionGate>
-
-            {/* System Statistics */}
-            <PermissionGate permissions={{ analytics: ["read"] }}>
-              <button
-                onClick={() => handleViewChange("stats")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-lg transition-colors ${
-                  currentView === "stats"
-                    ? "bg-slate-100 text-slate-800 font-medium"
-                    : "text-slate-600 hover:text-slate-800 hover:bg-slate-50"
-                }`}
-              >
-                <BarChart3 className="w-5 h-5" />
-                <span>Estadísticas</span>
-              </button>
-            </PermissionGate>
-
-            {/* Content Management */}
-            <PermissionGate permissions={{ content: ["create", "update"] }}>
-              <button
-                onClick={() => handleViewChange("content")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-lg transition-colors ${
-                  currentView === "content"
-                    ? "bg-slate-100 text-slate-800 font-medium"
-                    : "text-slate-600 hover:text-slate-800 hover:bg-slate-50"
-                }`}
-              >
-                <FileText className="w-5 h-5" />
-                <span>Contenido</span>
-              </button>
-            </PermissionGate>
-
-            {/* Analytics */}
-            <AnalyticsGate action="read">
-              <button
-                onClick={() => handleViewChange("analytics")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-lg transition-colors ${
-                  currentView === "analytics"
-                    ? "bg-slate-100 text-slate-800 font-medium"
-                    : "text-slate-600 hover:text-slate-800 hover:bg-slate-50"
-                }`}
-              >
-                <BarChart3 className="w-5 h-5" />
-                <span>Análisis</span>
-              </button>
-            </AnalyticsGate>
-
-            {/* API Management */}
-            <PermissionGate permissions={{ api: ["read"] }}>
-              <button
-                onClick={() => handleViewChange("api")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-lg transition-colors ${
-                  currentView === "api"
-                    ? "bg-slate-100 text-slate-800 font-medium"
-                    : "text-slate-600 hover:text-slate-800 hover:bg-slate-50"
-                }`}
-              >
-                <Key className="w-5 h-5" />
-                <span>API</span>
-              </button>
-            </PermissionGate>
-
-            {/* Security & Audit */}
-            <PermissionGate permissions={{ security: ["read"] }}>
-              <button
-                onClick={() => handleViewChange("security")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-lg transition-colors ${
-                  currentView === "security"
-                    ? "bg-slate-100 text-slate-800 font-medium"
-                    : "text-slate-600 hover:text-slate-800 hover:bg-slate-50"
-                }`}
-              >
-                <Eye className="w-5 h-5" />
-                <span>Seguridad</span>
-              </button>
-            </PermissionGate>
-
-            {/* System Settings - Only Super Admin */}
-            <AdminGate requireSuperAdmin={true}>
-              <button
-                onClick={() => handleViewChange("settings")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-lg transition-colors ${
-                  currentView === "settings"
-                    ? "bg-slate-100 text-slate-800 font-medium"
-                    : "text-slate-600 hover:text-slate-800 hover:bg-slate-50"
-                }`}
-              >
-                <Settings className="w-5 h-5" />
-                <span>Configuración</span>
-              </button>
-            </AdminGate>
+            {/* 🧹 LIMPIEZA COMPLETA - Solo Dashboard y Usuarios */}
           </nav>
 
           {/* Permission Info */}
@@ -312,12 +197,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
               Tu Acceso
             </h4>
             <div className="space-y-1 text-xs text-slate-600">
-              {showDashboardUsers() && <div>✓ Gestión de usuarios</div>}
-              {showDashboardContent() && <div>✓ Gestión de contenido</div>}
-              {showDashboardAnalytics() && <div>✓ Análisis y reportes</div>}
-              {showDashboardSettings() && (
-                <div>✓ Configuración del sistema</div>
-              )}
+              <div>✓ Gestión de usuarios</div>
               {isSuperAdmin() && <div>✓ Acceso completo al sistema</div>}
             </div>
           </div>

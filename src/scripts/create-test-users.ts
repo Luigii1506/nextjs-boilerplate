@@ -83,30 +83,30 @@ async function createTestUsers() {
         `\n👤 Creando usuario: ${userData.name} (${userData.role})...`
       );
 
-      // Intentar crear con createUser primero
+      // Map roles for Better Auth API compatibility
+      const betterAuthRole =
+        userData.role === "super_admin"
+          ? "admin"
+          : (userData.role as "admin" | "user");
+
+      // Intentar crear usuario
       try {
-        const result = await auth.api.createUser({
+        const user = await auth.api.createUser({
           body: {
             email: userData.email,
             password: userData.password,
             name: userData.name,
-            role: userData.role as
-              | "admin"
-              | "editor"
-              | "moderator"
-              | "user"
-              | "guest"
-              | "super_admin",
+            role: betterAuthRole,
           },
         });
 
         console.log(`✅ Usuario creado exitosamente`);
-        console.log(`   🆔 ID: ${result.user?.id}`);
+        console.log(`   🆔 ID: ${user.user?.id}`);
         console.log(`   📧 Email: ${userData.email}`);
         console.log(`   👑 Rol: ${userData.role}`);
 
         successCount++;
-      } catch (createError: unknown) {
+      } catch (createError) {
         // Si el usuario ya existe, intentar actualizar su rol
         const errorMessage =
           createError instanceof Error

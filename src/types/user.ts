@@ -5,7 +5,7 @@ export interface User {
   name: string;
   email: string;
   emailVerified: boolean;
-  role: RoleName;
+  role: RoleName; // Now supports: super_admin | admin | user
   status: "active" | "banned";
   image?: string | null;
   createdAt: string;
@@ -19,7 +19,7 @@ export interface User {
 export interface UserFormData {
   name: string;
   email: string;
-  role: RoleName;
+  role: RoleName; // Now supports: super_admin | admin | user
   password?: string;
 }
 
