@@ -175,17 +175,17 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
 
           {/* Navigation Menu */}
           <nav className="mt-8 space-y-2">
-            <Link
-              href="/dashboard"
+            <button
+              onClick={() => handleViewChange("dashboard")}
               className={`${navLinkClass} ${
-                pathname === "/dashboard"
+                currentView === "dashboard"
                   ? navLinkActiveClass
                   : "text-slate-600 hover:text-slate-800 hover:bg-slate-50"
               }`}
             >
               <Home className="w-4 h-4" />
               <span>Dashboard</span>
-            </Link>
+            </button>
 
             <UserManagementGate action="create">
               <button
