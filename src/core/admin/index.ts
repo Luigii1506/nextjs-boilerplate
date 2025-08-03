@@ -2,6 +2,9 @@
 // ===================
 // Exportaciones centralizadas del módulo completo de administración
 
+// 🧩 Componentes Base
+export * from "./components";
+
 // 🏠 Dashboard Principal
 export * from "./dashboard";
 

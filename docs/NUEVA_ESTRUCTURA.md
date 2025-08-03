@@ -118,7 +118,7 @@ import { UsersView } from "@/components/admin";
 
 // ✅ AHORA (estructura enterprise)
 import { useAuth } from "@/shared/hooks/useAuth";
-import AdminLayout from "@/shared/components/layout/AdminLayout";
+import { AdminLayout } from "@/core/admin/components";
 import { UsersView } from "@/core/admin/users/components";
 import { MODULE_CONFIG, FEATURE_FLAGS } from "@/config";
 ```

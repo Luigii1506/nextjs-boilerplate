@@ -26,6 +26,9 @@ El directorio `src/core/` contiene toda la funcionalidad fundamental que estará
 ```
 src/core/
 ├── admin/                    # 🎛️ Sistema completo de administración
+│   ├── components/           # 🧩 Componentes base de admin
+│   │   ├── AdminLayout.tsx   # Layout principal de administración
+│   │   └── index.ts
 │   ├── dashboard/            # 🏠 Dashboard principal
 │   │   ├── page.tsx
 │   │   └── index.ts

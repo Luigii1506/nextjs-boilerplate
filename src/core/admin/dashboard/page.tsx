@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 import { useAdminPage } from "@/shared/hooks/useAuth";
-import AdminLayout from "@/shared/components/layout/AdminLayout";
+import { AdminLayout } from "@/core/admin/components";
 import { DashboardView, UsersView } from "@/core/admin/users/components";
 import { Shield, AlertTriangle } from "lucide-react";
 import { FeatureFlagsAdmin } from "@/core/admin/feature-flags";

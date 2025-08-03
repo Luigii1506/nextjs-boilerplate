@@ -51,6 +51,7 @@ src/core/
 ```typescript
 // ✅ SUPER CLARO - Todo admin junto
 import {
+  AdminLayout, // Layout de administración
   AdminDashboardPage, // Dashboard principal
   DashboardView, // Vista del dashboard
   UsersView, // Gestión de usuarios
@@ -86,6 +87,9 @@ import { DashboardView, UsersView, FeatureFlagsAdmin } from "@/core/admin";
 
 ```
 src/core/admin/
+├── components/
+│   ├── AdminLayout.tsx             # Layout principal de administración
+│   └── index.ts                    # Exportaciones componentes base
 ├── dashboard/
 │   ├── page.tsx                    # Página principal del dashboard
 │   └── index.ts                    # Exportaciones
