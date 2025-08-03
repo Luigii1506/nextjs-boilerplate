@@ -6,14 +6,14 @@ export interface User {
   email: string;
   emailVerified: boolean;
   role: RoleName; // Now supports: super_admin | admin | user
-  status: "active" | "banned";
   image?: string | null;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
   lastLogin?: string;
   banned?: boolean | null;
   banReason?: string | null;
   banExpires?: string | null;
+  status?: "active" | "banned";
 }
 
 export interface UserFormData {

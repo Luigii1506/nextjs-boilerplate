@@ -15,7 +15,10 @@
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset",
     "db:push": "prisma db push",
-    "make-admin": "npx tsx src/scripts/make-admin.ts"
+    "make-admin": "npx tsx scripts/make-admin.ts",
+    "create-super-admin": "npx tsx scripts/create-super-admin.ts",
+    "create-test-users": "npx tsx scripts/create-test-users.ts",
+    "update-user-role": "npx tsx scripts/update-user-role.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.859.0",

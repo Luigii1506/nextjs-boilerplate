@@ -4,19 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/core/auth/auth-client";
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  emailVerified: boolean;
-  image?: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  role?: string | null;
-  banned?: boolean | null;
-  banReason?: string | null;
-  banExpires?: Date | null;
-}
+import type { User } from "@/shared/types/user";
 
 interface AuthState {
   isLoading: boolean;

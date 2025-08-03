@@ -46,7 +46,7 @@ Tu boilerplate de Next.js ahora tiene un **sistema de permisos y roles completam
 ### **Paso 1: Crear Super Administrador**
 
 ```bash
-npx tsx src/scripts/create-super-admin.ts
+npx tsx scripts/create-super-admin.ts
 ```
 
 - **Credenciales por defecto**: `admin@admin.com` / `Admin123!`
@@ -55,7 +55,7 @@ npx tsx src/scripts/create-super-admin.ts
 ### **Paso 2: Crear Usuarios de Prueba**
 
 ```bash
-npx tsx src/scripts/create-test-users.ts
+npx tsx scripts/create-test-users.ts
 ```
 
 - **5 usuarios** con diferentes roles para probar

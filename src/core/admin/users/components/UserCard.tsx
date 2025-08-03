@@ -71,8 +71,8 @@ const UserCard: React.FC<UserCardProps> = ({
       .slice(0, 2);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("es-ES", {
+  const formatDate = (date: string | Date) => {
+    return new Date(date).toLocaleDateString("es-ES", {
       day: "2-digit",
       month: "short",
       year: "numeric",
