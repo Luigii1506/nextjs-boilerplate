@@ -2,7 +2,7 @@
 // ============================
 // Configuración centralizada para el módulo de file upload
 
-import { getUploadConfig } from "@/config/environment";
+import { getUploadConfig } from "@/core/config/environment";
 import type {
   UploadConfig,
   UploadProvider,

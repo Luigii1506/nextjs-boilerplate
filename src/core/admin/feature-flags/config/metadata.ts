@@ -2,7 +2,7 @@
 // =======================================
 // Configuración centralizada de metadata para feature flags
 
-import type { FeatureFlag } from "@/config/feature-flags";
+import type { FeatureFlag } from "@/core/config/feature-flags";
 
 export interface FeatureFlagMetadata {
   name: string;

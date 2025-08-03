@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/core/auth/auth";
-import type { FeatureFlag } from "@/config/feature-flags";
+import type { FeatureFlag } from "@/core/config/feature-flags";
 
 // 📊 GET - Obtener todas las feature flags
 export async function GET(request: NextRequest) {
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     // Obtener overrides del storage o base de datos
     // Por ahora retornamos las feature flags por defecto
-    const { FEATURE_FLAGS } = await import("@/config/feature-flags");
+    const { FEATURE_FLAGS } = await import("@/core/config/feature-flags");
 
     return NextResponse.json({
       success: true,
@@ -75,7 +75,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Validar que la flag existe
-    const { FEATURE_FLAGS } = await import("@/config/feature-flags");
+    const { FEATURE_FLAGS } = await import("@/core/config/feature-flags");
     if (!(flagName in FEATURE_FLAGS)) {
       return NextResponse.json(
         { error: `Feature flag '${flagName}' no existe` },
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validar que todas las flags existen
-    const { FEATURE_FLAGS } = await import("@/config/feature-flags");
+    const { FEATURE_FLAGS } = await import("@/core/config/feature-flags");
     const invalidFlags = Object.keys(flags).filter(
       (flagName) => !(flagName in FEATURE_FLAGS)
     );

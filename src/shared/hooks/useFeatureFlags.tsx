@@ -11,7 +11,7 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import { FEATURE_FLAGS, type FeatureFlag } from "@/config/feature-flags";
+import { FEATURE_FLAGS, type FeatureFlag } from "@/core/config/feature-flags";
 
 // 📊 Tipos para el estado dinámico
 type FeatureFlagOverrides = Partial<Record<FeatureFlag, boolean>>;

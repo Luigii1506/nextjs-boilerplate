@@ -29,7 +29,7 @@ import {
   FEATURE_GROUPS,
   type FeatureFlag,
   type FeatureGroup,
-} from "@/config/feature-flags";
+} from "@/core/config/feature-flags";
 import FeatureFlagCard from "./FeatureFlagCard";
 import type {
   FeatureFlagState,

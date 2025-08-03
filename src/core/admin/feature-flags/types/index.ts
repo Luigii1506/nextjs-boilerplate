@@ -2,7 +2,7 @@
 // ============================
 // Tipos para la interfaz de administración de feature flags
 
-import { FeatureFlag, FeatureGroup } from "@/config/feature-flags";
+import { FeatureFlag, FeatureGroup } from "@/core/config/feature-flags";
 
 export interface FeatureFlagState {
   [key: string]: boolean;

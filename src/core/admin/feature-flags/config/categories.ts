@@ -2,7 +2,7 @@
 // =========================================
 // Configuración de categorías para organizar feature flags
 
-import type { FeatureGroup } from "@/config/feature-flags";
+import type { FeatureGroup } from "@/core/config/feature-flags";
 
 export interface CategoryConfig {
   title: string;
