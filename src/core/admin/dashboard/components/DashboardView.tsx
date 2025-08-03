@@ -9,7 +9,6 @@ import {
   TrendingUp,
   Calendar,
   Activity,
-  Clock,
   Sliders,
   CheckCircle,
   XCircle,
@@ -108,23 +107,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
   useEffect(() => {
     loadDashboardData();
   }, []);
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("es-ES", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
 
   if (loading) {
     return (
