@@ -1,14 +1,16 @@
+// 🏠 CORE DASHBOARD PAGE
+// ====================
+// Dashboard principal del sistema - ubicado en core porque es fundamental
+// en todas las aplicaciones que manejan autenticación
+
 "use client";
 
 import { useState } from "react";
 import { useAdminPage } from "@/shared/hooks/useAuth";
 import AdminLayout from "@/shared/components/layout/AdminLayout";
-import {
-  DashboardView,
-  UsersView,
-} from "@/features/user-management/components";
+import { DashboardView, UsersView } from "@/core/admin/users/components";
 import { Shield, AlertTriangle } from "lucide-react";
-import FeatureFlagsAdmin from "@/features/admin/components/FeatureFlagsAdmin";
+import { FeatureFlagsAdmin } from "@/core/admin/feature-flags";
 import { FilesView } from "@/modules/file-upload/components";
 import { useFeatureFlag } from "@/shared/hooks/useFeatureFlags";
 
@@ -105,11 +107,7 @@ export default function AdminDashboardPage() {
             </div>
           );
         }
-        return (
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-            <FeatureFlagsAdmin />
-          </div>
-        );
+        return <FeatureFlagsAdmin />;
 
       default:
         return <DashboardView onViewChange={setCurrentView} />;

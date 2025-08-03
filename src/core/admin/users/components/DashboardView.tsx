@@ -17,7 +17,6 @@ import {
 import { User, UserStats } from "@/shared/types/user";
 import { authClient } from "@/core/auth/auth-client";
 import { useFeatureFlags } from "@/shared/hooks/useFeatureFlags";
-import FeatureFlagDemo from "@/components/demo/FeatureFlagDemo";
 
 interface ApiUser {
   id: string;
@@ -348,9 +347,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
           </div>
         </div>
       </div>
-
-      {/* Feature Flags Demo */}
-      <FeatureFlagDemo />
 
       {/* Quick Actions */}
       <div className="bg-white rounded-lg border border-slate-200 p-6">

@@ -5,4 +5,4 @@
  * Esto permite que /dashboard funcione mientras mantenemos la feature modular.
  */
 
-export { default } from "@/features/dashboard/page";
+export { default } from "@/core/admin/dashboard/page";
