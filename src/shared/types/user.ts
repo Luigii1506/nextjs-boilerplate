@@ -29,3 +29,14 @@ export interface UserStats {
   banned: number;
   admins: number;
 }
+
+export type SessionUser = {
+  id: string;
+  email: string;
+  name?: string | null;
+  role?: string | null;
+  permissions?: string[];
+  image?: string | null;
+};
+
+export type Session = { user: SessionUser } | null;

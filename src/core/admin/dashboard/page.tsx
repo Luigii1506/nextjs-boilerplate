@@ -117,13 +117,5 @@ export default function AdminDashboardPage() {
     }
   };
 
-  return (
-    <AdminLayout
-      user={user}
-      currentView={currentView}
-      onViewChange={setCurrentView}
-    >
-      {renderCurrentView()}
-    </AdminLayout>
-  );
+  return renderCurrentView();
 }

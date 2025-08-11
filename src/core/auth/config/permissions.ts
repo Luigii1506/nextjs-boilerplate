@@ -1,20 +1,24 @@
 /**
- * 🎯 SIMPLIFIED PERMISSION SYSTEM
- *
- * Focused only on user management - clean and minimal
+ * RBAC tipado y utilities.
+ * - Validación en compile-time: las acciones de roles deben existir para el recurso.
+ * - Helpers: hasPermission / hasAny / hasAll / ensurePermission (server).
  */
 
 import { createAccessControl } from "better-auth/plugins/access";
 import { defaultStatements } from "better-auth/plugins/admin/access";
 
-// 🔗 SIMPLIFIED PERMISSIONS - Only Better Auth defaults
-export const COMPLETE_PERMISSIONS = {
-  ...defaultStatements, // Better Auth built-in permissions (user, session)
+/* ================================
+ * 1) Declaración de permisos base
+ * ================================ */
 
-  // Override user permissions to include "read"
+// Recurso → acciones. Extiende lo built-in de Better Auth.
+export const PERMISSIONS = {
+  ...defaultStatements, // (user, session, etc.) según Better Auth
+
+  // Override / extend de ejemplo (añadimos "read" en user)
   user: [
     "create",
-    "read", // ← Adding this for user viewing
+    "read",
     "list",
     "set-role",
     "ban",
@@ -23,71 +27,93 @@ export const COMPLETE_PERMISSIONS = {
     "set-password",
     "update",
   ],
+  // Si quieres agregar otros recursos del dominio, hazlo aquí:
+  // files: ["read", "upload", "delete"],
+  // feature_flags: ["read", "write"],
 } as const;
 
-// 🏗️ CREATE ACCESS CONTROL INSTANCE
-export const accessControl = createAccessControl(COMPLETE_PERMISSIONS);
+// Uniones de tipos derivadas automáticamente
+export type Resource = keyof typeof PERMISSIONS;
+export type ActionOf<R extends Resource> = (typeof PERMISSIONS)[R][number];
 
-// 👑 SIMPLIFIED ROLES - Only what you need
+// Permiso serializado "recurso:acción" (útil para UI / logging)
+export type AnyPermission = {
+  [R in Resource]: `${R}:${ActionOf<R>}`;
+}[Resource];
 
-/**
- * 🔴 SUPER ADMIN - Full system access
- */
-export const superAdminRole = accessControl.newRole({
-  user: [
-    "create",
-    "read",
-    "list",
-    "update",
-    "delete",
-    "ban",
-    "impersonate",
-    "set-role",
-    "set-password",
-  ],
-  session: ["list", "revoke", "delete"],
-});
+/* ==================================================
+ * 2) Declaración tipada de roles → statements puros
+ *    (aquí validamos compile-time contra PERMISSIONS)
+ * ================================================== */
 
-/**
- * 🟠 ADMIN - User management
- */
-export const adminRole = accessControl.newRole({
-  user: [
-    "create",
-    "read",
-    "list",
-    "update",
-    "delete",
-    "ban",
-    "set-role",
-    "set-password",
-  ],
-  session: ["list", "revoke", "delete"],
-});
+const ROLE_STATEMENTS = {
+  super_admin: {
+    user: [
+      "create",
+      "read",
+      "list",
+      "update",
+      "delete",
+      "ban",
+      "impersonate",
+      "set-role",
+      "set-password",
+    ],
+    session: ["list", "revoke", "delete"],
+    // files: ["read", "upload", "delete"],
+    // feature_flags: ["read", "write"],
+  },
+  admin: {
+    user: [
+      "create",
+      "read",
+      "list",
+      "update",
+      "delete",
+      "ban",
+      "set-role",
+      "set-password",
+    ],
+    session: ["list", "revoke", "delete"],
+    // files: ["read", "upload"],
+    // feature_flags: ["read"],
+  },
+  user: {
+    session: ["list", "revoke", "delete"],
+    // files: ["read"],
+  },
+} satisfies {
+  // Validación: cada recurso debe existir en PERMISSIONS y
+  // cada acción debe pertenecer a las acciones permitidas del recurso.
+  [role: string]: Partial<{ [R in Resource]: readonly ActionOf<R>[] }>;
+};
 
-/**
- * 🔵 USER - Basic access
- */
-export const userRole = accessControl.newRole({
-  // Basic user permissions - can view their own profile
-  session: ["list", "revoke", "delete"],
-});
+export const ROLES = ["super_admin", "admin", "user"] as const;
+export type RoleName = (typeof ROLES)[number];
 
-// 📦 ROLES COLLECTION
+/* ===========================================
+ * 3) Instanciación de AccessControl (Better Auth)
+ * =========================================== */
+
+export const ac = createAccessControl(PERMISSIONS);
+
+// Si quieres mantener objetos "role" del plugin:
 export const PREDEFINED_ROLES = {
-  super_admin: superAdminRole,
-  admin: adminRole,
-  user: userRole,
+  super_admin: ac.newRole(ROLE_STATEMENTS.super_admin),
+  admin: ac.newRole(ROLE_STATEMENTS.admin),
+  user: ac.newRole(ROLE_STATEMENTS.user),
 } as const;
 
-// 📋 ROLE HIERARCHY
+/* =========================
+ * 4) Info visual de los roles
+ * ========================= */
+
 export const ROLE_HIERARCHY = {
   super_admin: 100,
   admin: 80,
   user: 20,
 } as const;
 
-// 🎨 ROLE DISPLAY INFO
 export const ROLE_INFO = {
   super_admin: {
     name: "Super Administrador",
@@ -109,7 +135,10 @@ export const ROLE_INFO = {
   },
 } as const;
 
-// 🔧 UTILITY FUNCTIONS
+/* =========================
+ * 5) Utilities de roles
+ * ========================= */
+
 export function getRoleLevel(role: keyof typeof ROLE_HIERARCHY): number {
   return ROLE_HIERARCHY[role] || 0;
 }
@@ -126,15 +155,70 @@ export function getAssignableRoles(
 ): Array<keyof typeof ROLE_HIERARCHY> {
   const currentLevel = getRoleLevel(currentUserRole);
   return Object.entries(ROLE_HIERARCHY)
-    .filter(([_, level]) => level < currentLevel)
-    .map(([role, _]) => role as keyof typeof ROLE_HIERARCHY);
+    .filter(([, level]) => level < currentLevel)
+    .map(([role]) => role as keyof typeof ROLE_HIERARCHY);
 }
 
-// 🎯 EXPORTS
-export {
-  accessControl as ac,
-  COMPLETE_PERMISSIONS as permissions,
-  PREDEFINED_ROLES as roles,
-};
+/* ===========================================
+ * 6) Helpers de permisos (server y client-safe)
+ * =========================================== */
 
-export type RoleName = keyof typeof ROLE_INFO;
+// Normaliza "user:read" -> ["user","read"]
+function splitPermission(perm: AnyPermission): [Resource, string] {
+  const idx = perm.indexOf(":");
+  const res = perm.slice(0, idx) as Resource;
+  const act = perm.slice(idx + 1);
+  return [res, act];
+}
+
+// hasPermission: primero mira permisos directos del usuario (si los guardas como strings "res:act"),
+// luego revisa lo que su rol permite según ROLE_STATEMENTS.
+export function hasPermission(
+  user: { role?: string | null; permissions?: string[] | readonly string[] },
+  perm: AnyPermission
+): boolean {
+  if (!user) return false;
+
+  // 1) permisos directos (ej. otorgados granularmente)
+  if (user.permissions?.includes(perm)) return true;
+
+  // 2) permisos por rol
+  const roleName = (user.role ?? "user") as RoleName;
+  const statements = ROLE_STATEMENTS[roleName];
+  if (!statements) return false;
+
+  const [resource, action] = splitPermission(perm);
+  const allowed = statements[resource as keyof typeof statements] as
+    | readonly string[]
+    | undefined;
+
+  return Boolean(allowed?.includes(action));
+}
+
+export function hasAnyPermission(
+  user: { role?: string | null; permissions?: string[] | readonly string[] },
+  perms: AnyPermission[]
+): boolean {
+  return perms.some((p) => hasPermission(user, p));
+}
+
+export function hasAllPermissions(
+  user: { role?: string | null; permissions?: string[] | readonly string[] },
+  perms: AnyPermission[]
+): boolean {
+  return perms.every((p) => hasPermission(user, p));
+}
+
+/* ===========================================
+ * 7) Guard de servidor (para layouts/pages)
+ * =========================================== */
+
+export async function ensurePermission(
+  user: { role?: string | null; permissions?: string[] | readonly string[] },
+  perm: AnyPermission
+) {
+  if (!hasPermission(user, perm)) {
+    const { redirect } = await import("next/navigation");
+    redirect("/unauthorized");
+  }
+}

@@ -2,13 +2,6 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { admin } from "better-auth/plugins";
 import { prisma } from "@/core/database/prisma";
-import {
-  accessControl,
-  PREDEFINED_ROLES,
-  superAdminRole,
-  adminRole,
-  userRole,
-} from "@/core/auth/config/permissions";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -39,19 +32,6 @@ export const auth = betterAuth({
       impersonationSessionDuration: 60 * 60, // 1 hour
     }),
   ],
-
-  // 🔐 Security Configuration
-  //trustedOrigins: ["http://localhost:3000"],
-
-  // 📝 Session Configuration
-  // session: {
-  //   expiresIn: 60 * 60 * 24 * 7, // 7 days
-  //   updateAge: 60 * 60 * 24, // 1 day
-  //   cookieCache: {
-  //     enabled: true,
-  //     maxAge: 5 * 60 * 1000, // 5 minutes
-  //   },
-  // },
 
   // 🎨 Advanced Options
   advanced: {
