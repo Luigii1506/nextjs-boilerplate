@@ -1,10 +1,10 @@
 import { type ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { requireAuth } from "@/core/auth/server";
-import AdminLayout from "@/core/admin/components/AdminLayout";
-import { isFeatureEnabled } from "@/core/feature-flags/server";
+import { isFeatureEnabled } from "@/core/admin/feature-flags/server";
 import { ROLE_INFO } from "@/core/auth/config/permissions";
 import type { SessionUser } from "@/shared/types/user";
+import AdminShell from "@/core/layouts/AdminShell";
 
 export const runtime = "nodejs";
 
@@ -26,7 +26,7 @@ export default async function AdminRootLayout({
   const fileUploadEnabled = await isFeatureEnabled("fileUpload");
 
   return (
-    <AdminLayout
+    <AdminShell
       user={user}
       isAdmin={isAdmin}
       isSuperAdmin={isSuperAdmin}
@@ -34,6 +34,6 @@ export default async function AdminRootLayout({
       fileUploadEnabled={fileUploadEnabled}
     >
       {children}
-    </AdminLayout>
+    </AdminShell>
   );
 }

@@ -28,7 +28,7 @@ const navBase =
 const navActive = "bg-slate-100 text-slate-800 font-medium";
 const navIdle = "text-slate-600 hover:text-slate-800 hover:bg-slate-50";
 
-export default function AdminLayout({
+export default function AdminShell({
   children,
   user,
   isAdmin,

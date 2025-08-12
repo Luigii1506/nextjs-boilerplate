@@ -2,4 +2,4 @@
 // ========================
 // Dashboard principal del sistema de administración
 
-export { default as AdminDashboardPage } from "./page";
+//export { default as AdminDashboardPage } from "./page";

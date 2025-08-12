@@ -30,25 +30,25 @@ import {
   type FeatureFlag,
   type FeatureGroup,
 } from "@/core/config/feature-flags";
-import FeatureFlagCard from "./FeatureFlagCard";
+import FeatureFlagCard from "../../feature-flags/components/FeatureFlagCard";
 import type {
   FeatureFlagState,
   NotificationState,
   FeatureFlagStats,
   FeatureFlagCardData,
   FeatureFlagCategory,
-} from "../types";
+} from "../../feature-flags/types";
 
 // 📦 Importar metadata desde archivos de configuración
 import {
   FEATURE_FLAG_METADATA,
   getFeatureFlagMetadata,
-} from "../config/metadata";
+} from "../../feature-flags/config/metadata";
 import {
   CATEGORY_CONFIG,
   getCategoryConfig,
   getAllCategories,
-} from "../config/categories";
+} from "../../feature-flags/config/categories";
 
 export default function FeatureFlagsAdmin() {
   const { getAllFlags, setBatch, reset } = useFeatureFlags();

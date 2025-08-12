@@ -8,7 +8,6 @@ export { default as FileUploader } from "./FileUploader";
 export { default as FileManager } from "./FileManager";
 export { default as FileStats } from "./FileStats";
 export { default as ImageGallery } from "./ImageGallery";
-export { default as FilesView } from "./FilesView";
 
 // Re-exports de tipos de props para conveniencia
 export type { FileUploaderProps, UploadFile } from "../types";

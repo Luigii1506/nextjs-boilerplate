@@ -15,12 +15,12 @@ import {
   Video,
   Music,
 } from "lucide-react";
-import type { UploadFile, UploadConfig } from "../types";
-import { useFileManager, useFileStats } from "../hooks";
-import FileUploader from "./FileUploader";
-import FileManager from "./FileManager";
-import FileStats from "./FileStats";
-import ImageGallery from "./ImageGallery";
+import type { UploadFile, UploadConfig } from "@/modules/file-upload/types";
+import { useFileManager, useFileStats } from "@/modules/file-upload/hooks";
+import FileUploader from "@/modules/file-upload/components/FileUploader";
+import FileManager from "@/modules/file-upload/components/FileManager";
+import FileStats from "@/modules/file-upload/components/FileStats";
+import ImageGallery from "@/modules/file-upload/components/ImageGallery";
 
 // Tipo para FileStats (ya que no existe en los tipos actuales)
 interface FileStatsType {

@@ -1,8 +1,8 @@
 export const runtime = "nodejs";
 
 import { notFound } from "next/navigation";
-import { isFeatureEnabled } from "@/core/feature-flags/server";
-import { FilesView } from "@/modules/file-upload/components";
+import { isFeatureEnabled } from "@/core/admin/feature-flags/server";
+import FilesView from "@/modules/file-upload/pages/admin/dashboard/files.page";
 
 export default async function FilesPage() {
   const enabled = await isFeatureEnabled("fileUpload");
