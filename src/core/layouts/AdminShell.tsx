@@ -43,9 +43,9 @@ export default function AdminShell({
     pathname === href || pathname.startsWith(href + "/");
 
   const currentLabel = (() => {
-    if (isActive("/dashboard/users")) return "Usuarios";
-    if (isActive("/dashboard/files")) return "📁 Gestión de Archivos";
-    if (isActive("/dashboard/feature-flags")) return "🎛️ Feature Flags";
+    if (isActive("/users")) return "Usuarios";
+    if (isActive("/files")) return "📁 Gestión de Archivos";
+    if (isActive("/feature-flags")) return "🎛️ Feature Flags";
     return "Dashboard";
   })();
 
@@ -143,9 +143,9 @@ export default function AdminShell({
             </Link>
 
             <Link
-              href="/dashboard/users"
+              href="/users"
               className={`${navBase} ${
-                isActive("/dashboard/users") ? navActive : navIdle
+                isActive("/users") ? navActive : navIdle
               }`}
             >
               <Users className="w-4 h-4" />
@@ -154,9 +154,9 @@ export default function AdminShell({
 
             {fileUploadEnabled && (
               <Link
-                href="/dashboard/files"
+                href="/files"
                 className={`${navBase} ${
-                  isActive("/dashboard/files") ? navActive : navIdle
+                  isActive("/files") ? navActive : navIdle
                 }`}
               >
                 <Upload className="w-4 h-4" />
@@ -166,9 +166,9 @@ export default function AdminShell({
 
             {isAdmin && (
               <Link
-                href="/dashboard/feature-flags"
+                href="/feature-flags"
                 className={`${navBase} ${
-                  isActive("/dashboard/feature-flags") ? navActive : navIdle
+                  isActive("/feature-flags") ? navActive : navIdle
                 }`}
               >
                 <Sliders className="w-4 h-4" />

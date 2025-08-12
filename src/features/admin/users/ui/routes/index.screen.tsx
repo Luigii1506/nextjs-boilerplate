@@ -15,8 +15,8 @@ import {
 import { User, UserFormData, UserStats } from "@/shared/types/user";
 import { authClient } from "@/core/auth/auth-client";
 import { type RoleName } from "@/core/auth/config/permissions";
-import UserCard from "../../users/components/UserCard";
-import UserModal from "../../users/components/UserModal";
+import UserCard from "@/features/admin/users/ui/components/UserCard";
+import UserModal from "@/features/admin/users/ui/components/UserModal";
 
 // Interface for API user response
 interface ApiUser {

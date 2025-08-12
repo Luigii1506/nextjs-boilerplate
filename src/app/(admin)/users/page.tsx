@@ -1,6 +1,6 @@
 export const runtime = "nodejs";
 
-import UsersView from "@/core/admin/pages/dashboard/user.page";
+import UsersView from "@/features/admin/users/ui/routes/index.screen";
 
 export default async function UsersPage() {
   return <UsersView />;

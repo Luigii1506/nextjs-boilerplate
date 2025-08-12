@@ -1,7 +1,7 @@
 import { type ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { requireAuth } from "@/core/auth/server";
-import { isFeatureEnabled } from "@/core/admin/feature-flags/server";
+import { isFeatureEnabled } from "@/features/admin/feature-flags/server";
 import { ROLE_INFO } from "@/core/auth/config/permissions";
 import type { SessionUser } from "@/shared/types/user";
 import AdminShell from "@/core/layouts/AdminShell";

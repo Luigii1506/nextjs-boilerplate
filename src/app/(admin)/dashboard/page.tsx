@@ -1,6 +1,6 @@
 export const runtime = "nodejs";
 
-import DashboardView from "@/core/admin/pages/dashboard/page";
+import DashboardView from "@/features/admin/dashboard/ui/routes/index.screen";
 
 export default async function Page() {
   return <DashboardView />;

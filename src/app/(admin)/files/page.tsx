@@ -1,7 +1,7 @@
 export const runtime = "nodejs";
 
 import { notFound } from "next/navigation";
-import { isFeatureEnabled } from "@/core/admin/feature-flags/server";
+import { isFeatureEnabled } from "@/features/admin/feature-flags/server";
 import FilesView from "@/modules/file-upload/pages/admin/dashboard/files.page";
 
 export default async function FilesPage() {
