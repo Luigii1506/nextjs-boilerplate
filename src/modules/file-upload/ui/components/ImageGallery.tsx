@@ -11,7 +11,7 @@ import {
   Calendar,
   HardDrive,
 } from "lucide-react";
-import type { UploadFile } from "../types";
+import type { UploadFile } from "../../types";
 
 interface ImageGalleryProps {
   images: UploadFile[];

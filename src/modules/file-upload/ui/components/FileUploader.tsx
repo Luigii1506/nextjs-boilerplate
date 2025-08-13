@@ -143,8 +143,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       const errors: string[] = [];
 
       results.forEach((result, index) => {
-        if (result.success && result.file) {
-          successfulFiles.push(result.file);
+        if (result.success && result.data) {
+          successfulFiles.push(result.data);
         } else {
           errors.push(
             `${selectedFiles[index].name}: ${

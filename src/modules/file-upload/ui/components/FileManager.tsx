@@ -15,7 +15,7 @@ import {
   Music,
   FileText,
 } from "lucide-react";
-import type { UploadFile } from "../types";
+import type { UploadFile } from "../../types";
 
 interface FileManagerProps {
   files: UploadFile[];

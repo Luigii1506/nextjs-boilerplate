@@ -84,6 +84,13 @@ export interface UploadResult {
   error?: string;
 }
 
+// Tipo para lo que retornan las server actions
+export interface UploadActionResult {
+  success: boolean;
+  data?: UploadFile;
+  error?: string;
+}
+
 export interface FileWithPreview extends File {
   preview?: string;
   id?: string;
@@ -138,7 +145,7 @@ export interface UseFileUploadReturn {
       provider?: UploadProvider;
       makePublic?: boolean;
     }
-  ) => Promise<UploadResult[]>;
+  ) => Promise<UploadActionResult[]>;
   uploading: boolean;
   progress: UploadProgress[];
   error: string | null;
