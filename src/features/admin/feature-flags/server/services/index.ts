@@ -11,6 +11,10 @@ import {
   featureFlagExistsQuery,
   getFeatureFlagHistoryQuery,
   getFeatureFlagStatsQuery,
+  createFeatureFlagQuery,
+  updateFeatureFlagQuery,
+  deleteFeatureFlagQuery,
+  createFeatureFlagHistoryQuery,
 } from "../queries";
 import {
   mapPrismaArrayToDomainArray,
@@ -35,7 +39,6 @@ import {
   validateUpdateFeatureFlag,
   validateDependencies,
 } from "../validators";
-import { prisma } from "@/core/database/prisma";
 
 // 🎯 Servicio principal de Feature Flags
 export class FeatureFlagService {
@@ -166,21 +169,16 @@ export class FeatureFlagService {
       validatedData.enabled !== undefined &&
       validatedData.enabled !== currentFlag.enabled
     ) {
-      await prisma.featureFlagHistory.create({
-        data: {
-          flagKey: key,
-          previousValue: currentFlag.enabled,
-          newValue: validatedData.enabled,
-          changedBy: changedBy,
-          reason: "Updated via admin panel",
-        },
+      await createFeatureFlagHistoryQuery({
+        flagKey: key,
+        previousValue: currentFlag.enabled,
+        newValue: validatedData.enabled,
+        changedBy: changedBy,
+        reason: "Updated via admin panel",
       });
     }
 
-    const updatedFlag = await prisma.featureFlag.update({
-      where: { key },
-      data: validatedData,
-    });
+    const updatedFlag = await updateFeatureFlagQuery(key, validatedData);
 
     return mapPrismaToFeatureFlagDomain(updatedFlag);
   }
@@ -205,12 +203,10 @@ export class FeatureFlagService {
       }
     }
 
-    const createdFlag = await prisma.featureFlag.create({
-      data: {
-        ...validatedData,
-        version: "1.0.0",
-        rolloutPercentage: 100,
-      },
+    const createdFlag = await createFeatureFlagQuery({
+      ...validatedData,
+      version: "1.0.0",
+      rolloutPercentage: 100,
     });
 
     return mapPrismaToFeatureFlagDomain(createdFlag);
@@ -223,9 +219,7 @@ export class FeatureFlagService {
       throw new Error(`Feature flag '${key}' not found`);
     }
 
-    await prisma.featureFlag.delete({
-      where: { key },
-    });
+    await deleteFeatureFlagQuery(key);
   }
 
   // 📚 Obtener historial

@@ -137,3 +137,63 @@ export const getConflictingFlagsQuery = async (conflicts: string[]) => {
     select: { key: true, name: true },
   });
 };
+
+// ===============================
+// 🔧 QUERIES DE ESCRITURA (CRUD)
+// ===============================
+
+// ➕ CREATE - Crear nueva feature flag
+export const createFeatureFlagQuery = async (data: {
+  key: string;
+  name: string;
+  description?: string;
+  category: string;
+  enabled: boolean;
+  hasPrismaModels: boolean;
+  dependencies: string[];
+  conflicts: string[];
+  version: string;
+  rolloutPercentage: number;
+}) => {
+  return await prisma.featureFlag.create({
+    data,
+  });
+};
+
+// ✏️ UPDATE - Actualizar feature flag
+export const updateFeatureFlagQuery = async (
+  key: string,
+  data: {
+    name?: string;
+    description?: string;
+    enabled?: boolean;
+    rolloutPercentage?: number;
+    dependencies?: string[];
+    conflicts?: string[];
+  }
+) => {
+  return await prisma.featureFlag.update({
+    where: { key },
+    data,
+  });
+};
+
+// 🗑️ DELETE - Eliminar feature flag
+export const deleteFeatureFlagQuery = async (key: string) => {
+  return await prisma.featureFlag.delete({
+    where: { key },
+  });
+};
+
+// 📚 CREATE - Crear entrada en historial
+export const createFeatureFlagHistoryQuery = async (data: {
+  flagKey: string;
+  previousValue: boolean;
+  newValue: boolean;
+  changedBy?: string;
+  reason?: string;
+}) => {
+  return await prisma.featureFlagHistory.create({
+    data,
+  });
+};
