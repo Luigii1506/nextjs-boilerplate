@@ -2,14 +2,12 @@
 // =============
 // Exportaciones centralizadas de todos los módulos del core del sistema
 
-// 🎛️ Administration (incluye dashboard, users, feature-flags)
-export * from "./admin";
+// 🎛️ Administration - Features moved to src/features/admin/
 
 // 🔧 Configuration (feature flags, environment, modules)
 export * from "./config";
 
-// 🧩 Components (UI base reutilizables)
-export * from "./components";
+// 🧩 Components - Auth components moved to core/auth/components
 
 // 🔐 Auth Core (solo exports públicos)
 // export * from "./auth";  // Descomenta cuando tengas exports públicos

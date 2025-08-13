@@ -8,12 +8,15 @@ import { useCallback } from "react";
 import { authClient } from "@/core/auth/auth-client";
 import { useAuth } from "@/shared/hooks/useAuth";
 import {
-  accessControl,
+  ac,
   PREDEFINED_ROLES,
   ROLE_HIERARCHY,
   canManageRole,
   getRoleLevel,
   getAssignableRoles,
+  hasPermission,
+  hasAnyPermission,
+  hasAllPermissions,
 } from "@/core/auth/config/permissions";
 
 export type Permission = Record<string, string[]>;

@@ -7,7 +7,7 @@
  * Ejecutar con: npx tsx src/scripts/create-test-users.ts
  */
 
-import { auth } from "@/core/auth/auth";
+import { auth } from "@/core/auth/server/auth";
 import { ROLE_INFO } from "@/core/auth/config/permissions";
 
 interface TestUser {

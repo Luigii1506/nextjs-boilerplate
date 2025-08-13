@@ -1,5 +1,5 @@
 import { headers, cookies } from "next/headers";
-import { auth } from "@/core/auth/auth";
+import { auth } from "./auth";
 
 export type SessionUser = {
   id: string;

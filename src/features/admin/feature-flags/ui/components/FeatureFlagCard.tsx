@@ -30,7 +30,7 @@ import {
   Settings,
   Moon,
 } from "lucide-react";
-import type { FeatureFlagCardData } from "../types";
+import type { FeatureFlagCardData } from "../../types";
 import type { FeatureFlag } from "@/core/config/feature-flags";
 
 interface FeatureFlagCardProps {

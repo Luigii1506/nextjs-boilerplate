@@ -2,8 +2,8 @@
 // =============
 // Librería común reutilizable en todo el sistema
 
-// 🎯 Constants
-export * from "./constants";
+// 🎯 Constants - moved to shared/constants
+// export * from "./constants";
 
 // 🛠️ Utilities
 export * from "./utils";

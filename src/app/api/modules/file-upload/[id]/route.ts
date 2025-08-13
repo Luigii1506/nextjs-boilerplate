@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/core/database/prisma";
-import { auth } from "@/core/auth/auth";
+import { auth } from "@/core/auth/server/auth";
 import { uploadService } from "@/modules/file-upload/services";
 import type {
   UpdateUploadRequest,

@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/core/database/prisma";
-import { auth } from "@/core/auth/auth";
+import { auth } from "@/core/auth/server/auth";
 
 // ✅ GET - Obtener estadísticas de archivos del usuario
 export async function GET(request: NextRequest) {

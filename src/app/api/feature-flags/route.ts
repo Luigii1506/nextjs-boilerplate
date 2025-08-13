@@ -3,7 +3,7 @@
 // Endpoint para administrar feature flags dinámicamente
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/core/auth/auth";
+import { auth } from "@/core/auth/server/auth";
 import type { FeatureFlag } from "@/core/config/feature-flags";
 
 // 📊 GET - Obtener todas las feature flags

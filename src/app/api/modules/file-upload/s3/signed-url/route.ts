@@ -3,7 +3,7 @@
 // API para generar URLs firmadas para acceso temporal a archivos S3
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/core/auth/auth";
+import { auth } from "@/core/auth/server/auth";
 import { prisma } from "@/core/database/prisma";
 import { getS3Config } from "@/modules/file-upload/config";
 

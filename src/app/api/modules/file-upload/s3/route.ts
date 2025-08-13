@@ -3,7 +3,7 @@
 // API para uploads directos a S3 y manejo de archivos S3
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/core/auth/auth";
+import { auth } from "@/core/auth/server/auth";
 import {
   getS3Config,
   validateFileType,

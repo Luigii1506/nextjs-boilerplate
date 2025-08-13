@@ -4,7 +4,7 @@ import { requireAuth } from "@/core/auth/server";
 import { isFeatureEnabled } from "@/features/admin/feature-flags/server";
 import { ROLE_INFO } from "@/core/auth/config/permissions";
 import type { SessionUser } from "@/shared/types/user";
-import AdminShell from "@/core/layouts/AdminShell";
+import AdminShell from "@/shared/ui/layouts/AdminShell";
 
 export const runtime = "nodejs";
 
