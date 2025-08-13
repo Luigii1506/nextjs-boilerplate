@@ -5,6 +5,7 @@ import { Users, Shield, LogOut, Home, Upload, Sliders } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { authClient } from "@/core/auth/auth-client";
+import { useFeatureFlags } from "@/shared/hooks/useFeatureFlags";
 import type { SessionUser } from "@/shared/types/user";
 
 interface RoleInfo {
@@ -20,7 +21,7 @@ interface AdminLayoutProps {
   isAdmin: boolean;
   isSuperAdmin: boolean;
   roleInfo: RoleInfo;
-  fileUploadEnabled: boolean;
+  // fileUploadEnabled: boolean; // Ya no necesario, se obtiene del hook
 }
 
 const navBase =
@@ -34,10 +35,13 @@ export default function AdminShell({
   isAdmin,
   isSuperAdmin,
   roleInfo,
-  fileUploadEnabled,
 }: AdminLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
+
+  // 🎛️ Usar hook reactivo para feature flags
+  const { isEnabled } = useFeatureFlags();
+  const fileUploadEnabled = isEnabled("fileUpload");
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");

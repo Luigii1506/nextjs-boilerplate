@@ -1,24 +1,13 @@
-// 🎛️ Feature Flags Server Barrel
-// ================================
-// Entry point para funcionalidades de servidor de feature flags
+// 🎛️ FEATURE FLAGS SERVER BARREL
+// ==============================
+// Barrel exports para el servidor de feature flags
 
-// Re-export existing server functionality
-export * from "../server";
+export * from "./services";
+export * from "./actions";
+export * from "./queries";
+export * from "./mappers";
+export * from "./validators";
 
-// Actions
-// export * from "./actions";
-
-// Services
-// export * from "./services";
-
-// Repositories
-// export * from "./repositories";
-
-// Queries
-// export * from "./queries";
-
-// Validators
-// export * from "./validators";
-
-// Mappers
-// export * from "./mappers";
+// Export específicos
+export { featureFlagService } from "./services";
+export { featureFlagService as default } from "./services";

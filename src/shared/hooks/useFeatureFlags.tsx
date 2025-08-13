@@ -13,27 +13,51 @@ import React, {
 } from "react";
 import { FEATURE_FLAGS, type FeatureFlag } from "@/core/config/feature-flags";
 
-// 📊 Tipos para el estado dinámico
-type FeatureFlagOverrides = Partial<Record<FeatureFlag, boolean>>;
+// 📊 Tipos para feature flags de BD
+interface FeatureFlagData {
+  key: string;
+  name: string;
+  description?: string;
+  enabled: boolean;
+  category: string;
+  version: string;
+  hasPrismaModels: boolean;
+  dependencies: string[];
+  conflicts: string[];
+  rolloutPercentage: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+type FeatureFlagOverrides = Partial<Record<string, boolean>>;
 
 interface FeatureFlagsContextType {
   // Verificar si una feature está habilitada
-  isEnabled: (flag: FeatureFlag) => boolean;
+  isEnabled: (flag: string) => boolean;
 
   // Alternar una feature (solo admin)
-  toggle: (flag: FeatureFlag) => void;
+  toggle: (flag: string) => Promise<void>;
 
-  // Habilitar/deshabilitar múltiples features
-  setBatch: (flags: FeatureFlagOverrides) => void;
+  // Actualizar una feature flag
+  updateFlag: (
+    flagKey: string,
+    data: { enabled?: boolean; name?: string; description?: string }
+  ) => Promise<void>;
 
   // Obtener todas las flags y su estado
-  getAllFlags: () => Record<FeatureFlag, boolean>;
+  getAllFlags: () => Record<string, boolean>;
 
-  // Resetear overrides
-  reset: () => void;
+  // Obtener datos completos de flags
+  getAllFlagsData: () => FeatureFlagData[];
+
+  // Recargar flags desde el servidor
+  refresh: () => Promise<void>;
 
   // Estado de carga
   isLoading: boolean;
+
+  // Error state
+  error: string | null;
 }
 
 // 🧠 Contexto
@@ -51,7 +75,7 @@ export function useFeatureFlags(): FeatureFlagsContextType {
 }
 
 // 🔧 Hook simplificado para una sola flag
-export function useFeatureFlag(flag: FeatureFlag): boolean {
+export function useFeatureFlag(flag: string): boolean {
   const { isEnabled } = useFeatureFlags();
   return isEnabled(flag);
 }
@@ -62,90 +86,167 @@ interface FeatureFlagsProviderProps {
 }
 
 export function FeatureFlagsProvider({ children }: FeatureFlagsProviderProps) {
-  const [overrides, setOverrides] = useState<FeatureFlagOverrides>({});
+  const [flagsData, setFlagsData] = useState<FeatureFlagData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // 💾 Cargar overrides del localStorage al inicio
-  useEffect(() => {
+  // 🌐 Cargar flags desde la API
+  const loadFlags = async () => {
     try {
-      const saved = localStorage.getItem("feature-flags-overrides");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setOverrides(parsed);
+      setIsLoading(true);
+      setError(null);
+
+      const response = await fetch("/api/feature-flags");
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-    } catch (error) {
-      console.warn("Error cargando feature flags:", error);
+
+      const data = await response.json();
+      if (data.success) {
+        setFlagsData(data.flags);
+      } else {
+        throw new Error(data.error || "Error desconocido");
+      }
+    } catch (err) {
+      console.error("Error loading feature flags:", err);
+      setError(
+        err instanceof Error ? err.message : "Error cargando feature flags"
+      );
+      // Fallback a flags por defecto si falla la API
+      const defaultFlags = Object.entries(FEATURE_FLAGS).map(
+        ([key, enabled]) => ({
+          key,
+          name: key,
+          enabled,
+          category: "core",
+          version: "1.0.0",
+          hasPrismaModels: false,
+          dependencies: [],
+          conflicts: [],
+          rolloutPercentage: 100,
+        })
+      );
+      setFlagsData(defaultFlags);
     } finally {
       setIsLoading(false);
     }
-  }, []);
-
-  // 💾 Guardar cambios en localStorage
-  const saveOverrides = (newOverrides: FeatureFlagOverrides) => {
-    try {
-      localStorage.setItem(
-        "feature-flags-overrides",
-        JSON.stringify(newOverrides)
-      );
-      setOverrides(newOverrides);
-    } catch (error) {
-      console.error("Error guardando feature flags:", error);
-    }
   };
 
+  // 🚀 Cargar al inicio
+  useEffect(() => {
+    loadFlags();
+  }, []);
+
   // 🔍 Verificar si una feature está habilitada
-  const isEnabled = (flag: FeatureFlag): boolean => {
-    // Si hay un override, usarlo
-    if (flag in overrides) {
-      return overrides[flag] as boolean;
+  const isEnabled = (flagKey: string): boolean => {
+    const flag = flagsData.find((f) => f.key === flagKey);
+    if (flag) {
+      return flag.enabled;
     }
 
-    // Sino, usar el valor por defecto
-    return FEATURE_FLAGS[flag];
+    // Fallback a configuración estática
+    return FEATURE_FLAGS[flagKey as FeatureFlag] || false;
   };
 
   // 🔄 Alternar una feature
-  const toggle = (flag: FeatureFlag) => {
-    const newOverrides = {
-      ...overrides,
-      [flag]: !isEnabled(flag),
-    };
-    saveOverrides(newOverrides);
+  const toggle = async (flagKey: string): Promise<void> => {
+    try {
+      const currentFlag = flagsData.find((f) => f.key === flagKey);
+      if (!currentFlag) return;
+
+      const response = await fetch("/api/feature-flags", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          flagKey: flagKey,
+          enabled: !currentFlag.enabled,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        // Actualizar estado local
+        setFlagsData((prev) =>
+          prev.map((flag) =>
+            flag.key === flagKey
+              ? { ...flag, enabled: data.flag.enabled }
+              : flag
+          )
+        );
+      }
+    } catch (err) {
+      console.error("Error toggling feature flag:", err);
+      setError(
+        err instanceof Error ? err.message : "Error al cambiar feature flag"
+      );
+    }
   };
 
-  // 📊 Establecer múltiples flags
-  const setBatch = (flags: FeatureFlagOverrides) => {
-    const newOverrides = {
-      ...overrides,
-      ...flags,
-    };
-    saveOverrides(newOverrides);
+  // 🔧 Actualizar feature flag
+  const updateFlag = async (
+    flagKey: string,
+    data: { enabled?: boolean; name?: string; description?: string }
+  ): Promise<void> => {
+    try {
+      const response = await fetch("/api/feature-flags", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ flagKey, ...data }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        // Actualizar estado local
+        setFlagsData((prev) =>
+          prev.map((flag) =>
+            flag.key === flagKey ? { ...flag, ...result.flag } : flag
+          )
+        );
+      }
+    } catch (err) {
+      console.error("Error updating feature flag:", err);
+      setError(
+        err instanceof Error ? err.message : "Error al actualizar feature flag"
+      );
+    }
   };
 
-  // 📋 Obtener todas las flags
-  const getAllFlags = (): Record<FeatureFlag, boolean> => {
-    const allFlags = {} as Record<FeatureFlag, boolean>;
-
-    Object.keys(FEATURE_FLAGS).forEach((flag) => {
-      allFlags[flag as FeatureFlag] = isEnabled(flag as FeatureFlag);
+  // 📋 Obtener todas las flags como boolean map
+  const getAllFlags = (): Record<string, boolean> => {
+    const result: Record<string, boolean> = {};
+    flagsData.forEach((flag) => {
+      result[flag.key] = flag.enabled;
     });
-
-    return allFlags;
+    return result;
   };
 
-  // 🔄 Resetear overrides
-  const reset = () => {
-    localStorage.removeItem("feature-flags-overrides");
-    setOverrides({});
+  // 📊 Obtener datos completos de flags
+  const getAllFlagsData = (): FeatureFlagData[] => {
+    return flagsData;
+  };
+
+  // 🔄 Recargar flags
+  const refresh = async (): Promise<void> => {
+    await loadFlags();
   };
 
   const value: FeatureFlagsContextType = {
     isEnabled,
     toggle,
-    setBatch,
+    updateFlag,
     getAllFlags,
-    reset,
+    getAllFlagsData,
+    refresh,
     isLoading,
+    error,
   };
 
   return (

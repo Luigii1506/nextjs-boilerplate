@@ -1,249 +1,47 @@
-// 🎛️ FEATURE FLAGS ADMIN COMPONENT (CORE)
-// ==========================================
+// 🎛️ FEATURE FLAGS ADMIN COMPONENT
+// =================================
 // Interfaz de administración central para controlar feature flags del sistema
-// Ubicado en core porque controla todos los módulos independientemente
 
 "use client";
 
-import React, { useState, useEffect } from "react";
-import {
-  Save,
-  RotateCcw,
-  AlertCircle,
-  CheckCircle,
-  Info,
-  RefreshCw,
-  Flag,
-  Search,
-  Filter,
-  Shield,
-  Package,
-  Palette,
-  BarChart3,
-  Zap,
-  Cpu,
-} from "lucide-react";
-import { useFeatureFlags } from "@/shared/hooks/useFeatureFlags";
-import {
-  FEATURE_FLAGS,
-  FEATURE_GROUPS,
-  type FeatureFlag,
-  type FeatureGroup,
-} from "@/core/config/feature-flags";
-import FeatureFlagCard from "@/features/admin/feature-flags/ui/components/FeatureFlagCard";
-import type {
-  FeatureFlagState,
-  NotificationState,
-  FeatureFlagStats,
-  FeatureFlagCardData,
-  FeatureFlagCategory,
-} from "@/features/admin/feature-flags/types";
+import React from "react";
+import { RefreshCw, Flag, Search, Filter, BarChart3 } from "lucide-react";
 
-// 📦 Importar metadata desde archivos de configuración
-import {
-  FEATURE_FLAG_METADATA,
-  getFeatureFlagMetadata,
-} from "@/features/admin/feature-flags/config/metadata";
-import {
-  CATEGORY_CONFIG,
-  getCategoryConfig,
-  getAllCategories,
-} from "@/features/admin/feature-flags/config/categories";
+// 🪝 Hooks personalizados
+import { useFeatureFlagAdmin } from "../../hooks";
 
+// 🎨 Componentes y utilidades
+import FeatureFlagCard from "../components/FeatureFlagCard";
+import {
+  getCategoryColors,
+  getCategoryIcon,
+  getNotificationStyles,
+  cn,
+} from "../../utils";
+import { CATEGORY_CONFIG } from "../../config/categories";
+
+// 🎯 Componente principal
 export default function FeatureFlagsAdmin() {
-  const { getAllFlags, setBatch, reset } = useFeatureFlags();
-  const [flags, setFlags] = useState<FeatureFlagState>({});
-  const [originalFlags, setOriginalFlags] = useState<FeatureFlagState>({});
-  const [hasChanges, setHasChanges] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [notification, setNotification] = useState<NotificationState | null>(
-    null
-  );
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterCategory, setFilterCategory] = useState<string>("all");
-  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const {
+    flags,
+    filteredFlags,
+    stats,
+    groupedFlags,
+    isLoading,
+    error,
+    filters,
+    notification,
+    actions: { updateFilters, handleToggle, handleRefresh, clearFilters },
+  } = useFeatureFlagAdmin();
 
-  // 📊 Cargar flags iniciales
-  useEffect(() => {
-    const currentFlags = getAllFlags();
-    setFlags(currentFlags);
-    setOriginalFlags(currentFlags);
-  }, [getAllFlags]);
-
-  // 📊 Detectar cambios
-  useEffect(() => {
-    const hasAnyChanges = Object.keys(flags).some(
-      (key) => flags[key] !== originalFlags[key]
-    );
-    setHasChanges(hasAnyChanges);
-  }, [flags, originalFlags]);
-
-  // 🔔 Mostrar notificación
-  const showNotification = (
-    type: "success" | "error" | "info",
-    message: string
-  ) => {
-    setNotification({ type, message });
-    setTimeout(() => setNotification(null), 5000);
-  };
-
-  // 🔄 Toggle individual
-  const handleToggle = (flagName: FeatureFlag) => {
-    setFlags((prev) => ({
-      ...prev,
-      [flagName]: !prev[flagName],
-    }));
-  };
-
-  // 💾 Guardar cambios
-  const handleSave = async () => {
-    setIsLoading(true);
-    try {
-      // Identificar cambios
-      const changes: { [key: string]: boolean } = {};
-      Object.keys(flags).forEach((key) => {
-        if (flags[key] !== originalFlags[key]) {
-          changes[key] = flags[key];
-        }
-      });
-
-      if (Object.keys(changes).length === 0) {
-        showNotification("info", "No hay cambios para guardar");
-        return;
-      }
-
-      // Aplicar cambios al contexto local
-      setBatch(changes);
-
-      // TODO: Enviar a la API
-      // await fetch('/api/admin/feature-flags', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ flags: changes })
-      // });
-
-      setOriginalFlags(flags);
-      setHasChanges(false);
-      showNotification(
-        "success",
-        `${Object.keys(changes).length} feature flag(s) actualizadas`
-      );
-    } catch (error) {
-      showNotification("error", "Error al guardar feature flags");
-      console.error("Error saving feature flags:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // 🔄 Resetear cambios
-  const handleReset = () => {
-    setFlags(originalFlags);
-    setHasChanges(false);
-    showNotification("info", "Cambios descartados");
-  };
-
-  // 🔄 Resetear a defaults
-  const handleResetToDefaults = async () => {
-    if (
-      !confirm(
-        "¿Estás seguro de resetear todas las feature flags a sus valores por defecto?"
-      )
-    ) {
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // Resetear contexto local
-      reset();
-
-      // TODO: Enviar a la API
-      // await fetch('/api/admin/feature-flags', { method: 'DELETE' });
-
-      const defaultFlags = getAllFlags();
-      setFlags(defaultFlags);
-      setOriginalFlags(defaultFlags);
-      setHasChanges(false);
-      showNotification(
-        "success",
-        "Feature flags reseteadas a valores por defecto"
-      );
-    } catch (error) {
-      showNotification("error", "Error al resetear feature flags");
-      console.error("Error resetting feature flags:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // 🔄 Transformar datos para la nueva UI
-  const transformToCardData = (): FeatureFlagCardData[] => {
-    return Object.keys(FEATURE_FLAGS).map((flagKey) => {
-      const flag = flagKey as FeatureFlag;
-      const metadata = FEATURE_FLAG_METADATA[flag];
-      const category =
-        (Object.entries(FEATURE_GROUPS).find(([groupKey, flagNames]) =>
-          (flagNames as readonly string[]).includes(flag)
-        )?.[0] as FeatureGroup) || "core";
-
-      return {
-        id: flag,
-        name: metadata.name,
-        description: metadata.description,
-        category,
-        enabled: flags[flag] ?? false,
-        icon: metadata.icon,
-        isPremium: metadata.isPremium,
-        dependencies: metadata.dependencies,
-        lastModified: new Date().toISOString(),
-        modifiedBy: "Admin",
-      };
-    });
-  };
-
-  // 📊 Calcular estadísticas
-  const calculateStats = (
-    flagData: FeatureFlagCardData[]
-  ): FeatureFlagStats => {
-    return {
-      totalFlags: flagData.length,
-      enabledFlags: flagData.filter((f) => f.enabled).length,
-      coreFlags: flagData.filter((f) => f.category === "core").length,
-      moduleFlags: flagData.filter((f) => f.category === "modules").length,
-      experimentalFlags: flagData.filter((f) => f.category === "experimental")
-        .length,
-      uiFlags: flagData.filter((f) => f.category === "ui").length,
-      adminFlags: flagData.filter((f) => f.category === "admin").length,
-    };
-  };
-
-  // 🔍 Filtrar flags
-  const flagData = transformToCardData();
-  const filteredFlags = flagData.filter((flag) => {
-    const matchesSearch =
-      flag.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      flag.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory =
-      filterCategory === "all" || flag.category === filterCategory;
-    const matchesStatus =
-      filterStatus === "all" ||
-      (filterStatus === "enabled" && flag.enabled) ||
-      (filterStatus === "disabled" && !flag.enabled);
-
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
-
-  // 🏷️ Agrupar por categorías
-  const categories: FeatureFlagCategory[] = Object.entries(CATEGORY_CONFIG)
+  // 🏷️ Crear categorías para renderizado
+  const categories = Object.entries(CATEGORY_CONFIG)
     .map(([categoryKey, config]) => {
-      const category = categoryKey as FeatureGroup;
-      const categoryFlags = filteredFlags.filter(
-        (flag) => flag.category === category
-      );
+      const categoryFlags = groupedFlags[categoryKey] || [];
+      if (categoryFlags.length === 0) return null;
 
       return {
-        id: category,
+        id: categoryKey,
         name: config.title,
         description: config.description,
         icon: config.icon,
@@ -251,69 +49,7 @@ export default function FeatureFlagsAdmin() {
         flags: categoryFlags,
       };
     })
-    .filter((category) => category.flags.length > 0);
-
-  const stats = calculateStats(flagData);
-
-  // 🎨 Helper para colores de categorías
-  const getCategoryIcon = (iconName: string) => {
-    const iconMap: { [key: string]: React.ComponentType<{ size?: number }> } = {
-      Shield,
-      Package,
-      Palette,
-      Zap,
-      Cpu,
-    };
-    const IconComponent = iconMap[iconName] || Shield;
-    return <IconComponent size={20} />;
-  };
-
-  const getCategoryColors = (color: string) => {
-    switch (color) {
-      case "blue":
-        return {
-          bg: "bg-blue-50",
-          text: "text-blue-700",
-          border: "border-blue-200",
-          icon: "text-blue-600",
-        };
-      case "green":
-        return {
-          bg: "bg-green-50",
-          text: "text-green-700",
-          border: "border-green-200",
-          icon: "text-green-600",
-        };
-      case "yellow":
-        return {
-          bg: "bg-yellow-50",
-          text: "text-yellow-700",
-          border: "border-yellow-200",
-          icon: "text-yellow-600",
-        };
-      case "purple":
-        return {
-          bg: "bg-purple-50",
-          text: "text-purple-700",
-          border: "border-purple-200",
-          icon: "text-purple-600",
-        };
-      case "red":
-        return {
-          bg: "bg-red-50",
-          text: "text-red-700",
-          border: "border-red-200",
-          icon: "text-red-600",
-        };
-      default:
-        return {
-          bg: "bg-slate-50",
-          text: "text-slate-700",
-          border: "border-slate-200",
-          icon: "text-slate-600",
-        };
-    }
-  };
+    .filter(Boolean);
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto p-6">
@@ -328,69 +64,62 @@ export default function FeatureFlagsAdmin() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {hasChanges && (
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={handleReset}
-                disabled={isLoading}
-                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
-              >
-                <RotateCcw size={16} />
-                Descartar
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={isLoading}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
-              >
-                {isLoading ? (
-                  <RefreshCw size={16} className="animate-spin" />
-                ) : (
-                  <Save size={16} />
-                )}
-                Guardar Cambios
-              </button>
-            </div>
-          )}
           <button
-            onClick={handleResetToDefaults}
+            onClick={handleRefresh}
             disabled={isLoading}
-            className="px-4 py-2 text-red-700 bg-red-100 hover:bg-red-200 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+            className={cn(
+              "px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg",
+              "transition-colors disabled:opacity-50 flex items-center gap-2"
+            )}
           >
-            <RotateCcw size={16} />
-            Reset Completo
+            {isLoading ? (
+              <RefreshCw size={16} className="animate-spin" />
+            ) : (
+              <RefreshCw size={16} />
+            )}
+            Actualizar
           </button>
         </div>
       </div>
 
+      {/* Error del hook */}
+      {error && (
+        <div className="p-4 rounded-lg flex items-center space-x-3 bg-red-50 border border-red-200">
+          {getCategoryIcon("AlertCircle", 20)}
+          <span className="text-sm font-medium text-red-800">
+            Error: {error}
+          </span>
+          <button
+            onClick={handleRefresh}
+            className="ml-auto px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded text-sm"
+          >
+            Reintentar
+          </button>
+        </div>
+      )}
+
       {/* Notificación */}
       {notification && (
         <div
-          className={`p-4 rounded-lg flex items-center space-x-3 ${
-            notification.type === "success"
-              ? "bg-green-50 border border-green-200"
-              : notification.type === "error"
-              ? "bg-red-50 border border-red-200"
-              : "bg-blue-50 border border-blue-200"
-          }`}
+          className={cn(
+            "p-4 rounded-lg flex items-center space-x-3",
+            getNotificationStyles(notification.type).container
+          )}
         >
-          {notification.type === "success" && (
-            <CheckCircle className="w-5 h-5 text-green-600" />
-          )}
-          {notification.type === "error" && (
-            <AlertCircle className="w-5 h-5 text-red-600" />
-          )}
-          {notification.type === "info" && (
-            <Info className="w-5 h-5 text-blue-600" />
+          {React.createElement(
+            getNotificationStyles(notification.type).IconComponent,
+            {
+              className: cn(
+                "w-5 h-5",
+                getNotificationStyles(notification.type).icon
+              ),
+            }
           )}
           <span
-            className={`text-sm font-medium ${
-              notification.type === "success"
-                ? "text-green-800"
-                : notification.type === "error"
-                ? "text-red-800"
-                : "text-blue-800"
-            }`}
+            className={cn(
+              "text-sm font-medium",
+              getNotificationStyles(notification.type).text
+            )}
           >
             {notification.message}
           </span>
@@ -399,75 +128,36 @@ export default function FeatureFlagsAdmin() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 hover:shadow-md transition-shadow duration-300">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">
-              <Flag className="w-5 h-5 text-slate-600" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-slate-900">
-                {stats.totalFlags}
-              </div>
-              <div className="text-sm text-slate-500">Total</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 hover:shadow-md transition-shadow duration-300">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
-              <CheckCircle className="w-5 h-5 text-emerald-600" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-emerald-600">
-                {stats.enabledFlags}
-              </div>
-              <div className="text-sm text-slate-500">Activas</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 hover:shadow-md transition-shadow duration-300">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-              <Shield className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-blue-600">
-                {stats.coreFlags}
-              </div>
-              <div className="text-sm text-slate-500">Core</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 hover:shadow-md transition-shadow duration-300">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-              <Package className="w-5 h-5 text-green-600" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-green-600">
-                {stats.moduleFlags}
-              </div>
-              <div className="text-sm text-slate-500">Módulos</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 hover:shadow-md transition-shadow duration-300">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
-              <Palette className="w-5 h-5 text-purple-600" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-purple-600">
-                {stats.uiFlags}
-              </div>
-              <div className="text-sm text-slate-500">Interfaz</div>
-            </div>
-          </div>
-        </div>
+        <StatsCard
+          icon="Flag"
+          label="Total"
+          value={stats.totalFlags}
+          color="slate"
+        />
+        <StatsCard
+          icon="CheckCircle"
+          label="Activas"
+          value={stats.enabledFlags}
+          color="emerald"
+        />
+        <StatsCard
+          icon="Shield"
+          label="Core"
+          value={stats.coreFlags}
+          color="blue"
+        />
+        <StatsCard
+          icon="Package"
+          label="Módulos"
+          value={stats.moduleFlags}
+          color="green"
+        />
+        <StatsCard
+          icon="Palette"
+          label="Interfaz"
+          value={stats.uiFlags}
+          color="purple"
+        />
       </div>
 
       {/* Search and Filters */}
@@ -481,9 +171,13 @@ export default function FeatureFlagsAdmin() {
             <input
               type="text"
               placeholder="Buscar feature flags..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900"
+              value={filters.search}
+              onChange={(e) => updateFilters({ search: e.target.value })}
+              className={cn(
+                "w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl",
+                "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+                "transition-all duration-200 text-gray-900"
+              )}
             />
           </div>
 
@@ -494,9 +188,13 @@ export default function FeatureFlagsAdmin() {
                 size={18}
               />
               <select
-                value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
-                className="pl-10 pr-8 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none cursor-pointer text-gray-900"
+                value={filters.category}
+                onChange={(e) => updateFilters({ category: e.target.value })}
+                className={cn(
+                  "pl-10 pr-8 py-3.5 bg-slate-50 border border-slate-200 rounded-xl",
+                  "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+                  "transition-all duration-200 appearance-none cursor-pointer text-gray-900"
+                )}
               >
                 <option value="all">Todas las categorías</option>
                 <option value="core">Core</option>
@@ -508,9 +206,13 @@ export default function FeatureFlagsAdmin() {
             </div>
 
             <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none cursor-pointer text-gray-900"
+              value={filters.status}
+              onChange={(e) => updateFilters({ status: e.target.value })}
+              className={cn(
+                "px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl",
+                "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+                "transition-all duration-200 appearance-none cursor-pointer text-gray-900"
+              )}
             >
               <option value="all">Todos los estados</option>
               <option value="enabled">Activas</option>
@@ -523,6 +225,8 @@ export default function FeatureFlagsAdmin() {
       {/* Categories */}
       <div className="space-y-8">
         {categories.map((category) => {
+          if (!category) return null;
+
           const colors = getCategoryColors(category.color);
 
           return (
@@ -530,7 +234,12 @@ export default function FeatureFlagsAdmin() {
               {/* Category Header */}
               <div className="flex items-center gap-4">
                 <div
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center ${colors.bg} ${colors.border} border`}
+                  className={cn(
+                    "w-12 h-12 rounded-xl flex items-center justify-center",
+                    colors.bg,
+                    colors.border,
+                    "border"
+                  )}
                 >
                   <div className={colors.icon}>
                     {getCategoryIcon(category.icon)}
@@ -546,7 +255,13 @@ export default function FeatureFlagsAdmin() {
                 </div>
                 <div className="ml-auto">
                   <span
-                    className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${colors.bg} ${colors.text} ${colors.border} border`}
+                    className={cn(
+                      "inline-flex px-3 py-1 rounded-full text-sm font-medium",
+                      colors.bg,
+                      colors.text,
+                      colors.border,
+                      "border"
+                    )}
                   >
                     {category.flags.length} flag
                     {category.flags.length !== 1 ? "s" : ""}
@@ -561,10 +276,10 @@ export default function FeatureFlagsAdmin() {
                     key={flag.id}
                     flag={flag}
                     onToggle={handleToggle}
-                    dependencies={flagData.filter((f) =>
+                    dependencies={flags.filter((f) =>
                       flag.dependencies?.includes(f.id)
                     )}
-                    hasChanges={flags[flag.id] !== originalFlags[flag.id]}
+                    hasChanges={false} // Ya no manejamos cambios locales
                     isLoading={isLoading}
                   />
                 ))}
@@ -575,7 +290,7 @@ export default function FeatureFlagsAdmin() {
       </div>
 
       {/* Empty State */}
-      {filteredFlags.length === 0 && (
+      {filteredFlags.length === 0 && !isLoading && (
         <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
           <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Flag className="w-8 h-8 text-slate-400" />
@@ -587,11 +302,7 @@ export default function FeatureFlagsAdmin() {
             Intenta ajustar los filtros de búsqueda.
           </p>
           <button
-            onClick={() => {
-              setSearchTerm("");
-              setFilterCategory("all");
-              setFilterStatus("all");
-            }}
+            onClick={clearFilters}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
           >
             Limpiar filtros
@@ -627,3 +338,34 @@ export default function FeatureFlagsAdmin() {
     </div>
   );
 }
+
+// 📊 Componente de estadística
+interface StatsCardProps {
+  icon: string;
+  label: string;
+  value: number;
+  color: string;
+}
+
+const StatsCard: React.FC<StatsCardProps> = ({ icon, label, value, color }) => {
+  const colors = getCategoryColors(color);
+
+  return (
+    <div className="bg-white p-6 rounded-2xl border border-slate-200 hover:shadow-md transition-shadow duration-300">
+      <div className="flex items-center gap-3">
+        <div
+          className={cn(
+            "w-10 h-10 rounded-xl flex items-center justify-center",
+            colors.bg
+          )}
+        >
+          <div className={colors.icon}>{getCategoryIcon(icon, 20)}</div>
+        </div>
+        <div>
+          <div className={cn("text-2xl font-bold", colors.text)}>{value}</div>
+          <div className="text-sm text-slate-500">{label}</div>
+        </div>
+      </div>
+    </div>
+  );
+};

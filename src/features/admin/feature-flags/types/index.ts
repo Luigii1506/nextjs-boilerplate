@@ -44,3 +44,18 @@ export interface FeatureFlagCategory {
   color: string;
   flags: FeatureFlagCardData[];
 }
+
+export interface FeatureFlagDomain {
+  key: string;
+  name: string;
+  description?: string;
+  enabled: boolean;
+  category: string;
+  version: string;
+  hasPrismaModels: boolean;
+  dependencies: string[];
+  conflicts: string[];
+  rolloutPercentage: number;
+  createdAt: Date;
+  updatedAt: Date;
+}

@@ -1,0 +1,97 @@
+// 🎛️ FEATURE FLAGS MODULE
+// ======================
+// Modelos para gestión dinámica de feature flags
+// CORE: Siempre presente - controla activación de otros módulos
+
+model FeatureFlag {
+  id          String   @id @default(cuid())
+  
+  // 🎯 Feature Info
+  key         String   @unique  // "fileUpload", "billing", "analytics"
+  name        String            // "File Upload System"
+  description String?           // Human readable description
+  category    String   @default("module") // "core", "module", "experimental"
+  
+  // 🎛️ State
+  enabled     Boolean  @default(false)
+  envOverride String?           // Environment-specific override
+  
+  // 📋 Dependencies
+  dependencies String[]         // Required features ["userManagement"]
+  conflicts    String[]         // Incompatible features
+  
+  // 🏗️ Schema Impact
+  hasPrismaModels Boolean @default(false) // Does this feature add DB models?
+  prismaFile      String?                 // Path to prisma models file
+  
+  // 📝 Metadata
+  version     String   @default("1.0.0")
+  author      String?
+  docs        String?           // Documentation URL
+  tags        String[]          // ["admin", "files", "storage"]
+  
+  // ⏰ Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // 🧪 A/B Testing (optional)
+  rolloutPercentage Int @default(100) // 0-100
+  targetUsers      String[]           // Specific user IDs
+  targetRoles      String[]           // Specific roles
+  
+  @@map("feature_flags")
+  @@index([key])
+  @@index([category])
+  @@index([enabled])
+}
+
+model FeatureFlagHistory {
+  id          String   @id @default(cuid())
+  
+  // 🔗 Relations
+  flagKey     String
+  
+  // 📝 Change Info
+  previousValue Boolean
+  newValue      Boolean
+  changedBy     String?  // User ID who made the change
+  reason        String?  // Reason for change
+  
+  // ⏰ Timestamps
+  createdAt   DateTime @default(now())
+  
+  @@map("feature_flag_history")
+  @@index([flagKey])
+  @@index([createdAt])
+}
+
+model ModuleConfig {
+  id           String   @id @default(cuid())
+  
+  // 🧩 Module Info
+  moduleKey    String   @unique  // "file-upload", "payment-gateway"
+  name         String              // "File Upload System"
+  description  String?
+  version      String   @default("1.0.0")
+  
+  // 📋 Dependencies
+  dependencies String[]            // Required modules
+  
+  // 🏗️ Database Schema
+  prismaModels String[]            // ["Upload", "FileCategory"]
+  apiRoutes    String[]            // ["/api/modules/file-upload"]
+  
+  // 🎛️ Feature Flags
+  requiredFlags String[]           // Feature flags this module needs
+  
+  // 📁 File Paths
+  componentPath String?            // Path to main component
+  configPath    String?            // Path to module config
+  
+  // ⏰ Timestamps
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@map("module_configs")
+  @@index([moduleKey])
+}

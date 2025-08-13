@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/core/auth/server/auth";
-import type { FeatureFlag } from "@/core/config/feature-flags";
+import { featureFlagService } from "@/features/admin/feature-flags/server/services";
 
 // 📊 GET - Obtener todas las feature flags
 export async function GET(request: NextRequest) {
@@ -25,14 +25,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Obtener overrides del storage o base de datos
-    // Por ahora retornamos las feature flags por defecto
-    const { FEATURE_FLAGS } = await import("@/core/config/feature-flags");
+    // Inicializar flags por defecto si no existen
+    await featureFlagService.initializeDefaultFlags();
+
+    // Obtener todas las feature flags de la base de datos
+    const flags = await featureFlagService.getAllFeatureFlags();
 
     return NextResponse.json({
       success: true,
-      flags: FEATURE_FLAGS,
-      overrides: {}, // TODO: Obtener desde BD
+      flags: flags,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
@@ -64,37 +65,28 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { flagName, enabled } = body;
+    const { flagKey, enabled, name, description, rolloutPercentage } = body;
 
     // Validar entrada
-    if (!flagName || typeof enabled !== "boolean") {
+    if (!flagKey) {
       return NextResponse.json(
-        { error: "flagName y enabled son requeridos" },
+        { error: "flagKey es requerido" },
         { status: 400 }
       );
     }
 
-    // Validar que la flag existe
-    const { FEATURE_FLAGS } = await import("@/core/config/feature-flags");
-    if (!(flagName in FEATURE_FLAGS)) {
-      return NextResponse.json(
-        { error: `Feature flag '${flagName}' no existe` },
-        { status: 400 }
-      );
-    }
-
-    // TODO: Guardar en base de datos
-    // Por ahora solo retornamos confirmación
-    console.log(
-      `Feature flag '${flagName}' ${
-        enabled ? "habilitada" : "deshabilitada"
-      } por ${session.user.email}`
+    // Actualizar en base de datos
+    const updatedFlag = await featureFlagService.updateFlag(
+      flagKey,
+      { enabled, name, description, rolloutPercentage },
+      session.user.id
     );
+
+    // El schema se regenera automáticamente en el servicio si es necesario
 
     return NextResponse.json({
       success: true,
-      flagName,
-      enabled,
+      flag: updatedFlag,
       updatedBy: session.user.email,
       timestamp: new Date().toISOString(),
     });

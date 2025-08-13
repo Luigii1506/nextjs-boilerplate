@@ -1,7 +1,6 @@
 import { type ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { requireAuth } from "@/core/auth/server";
-import { isFeatureEnabled } from "@/features/admin/feature-flags/server";
 import { ROLE_INFO } from "@/core/auth/config/permissions";
 import type { SessionUser } from "@/shared/types/user";
 import AdminShell from "@/shared/ui/layouts/AdminShell";
@@ -22,8 +21,7 @@ export default async function AdminRootLayout({
   const isSuperAdmin = role === "super_admin";
   if (!isAdmin) redirect("/unauthorized");
 
-  // Snapshot de feature flags (server)
-  const fileUploadEnabled = await isFeatureEnabled("fileUpload");
+  // 🎛️ Feature flags ahora se manejan reactivamente en el cliente
 
   return (
     <AdminShell
@@ -31,7 +29,6 @@ export default async function AdminRootLayout({
       isAdmin={isAdmin}
       isSuperAdmin={isSuperAdmin}
       roleInfo={ROLE_INFO[role]}
-      fileUploadEnabled={fileUploadEnabled}
     >
       {children}
     </AdminShell>

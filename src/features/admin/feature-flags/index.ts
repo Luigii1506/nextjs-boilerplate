@@ -1,22 +1,60 @@
-// 🎛️ Feature Flags Feature Barrel
-// ================================
-// Entry point para la feature de feature flags
+// 🎛️ FEATURE FLAGS FEATURE BARREL
+// ===============================
+// Entry point para la feature de feature flags (nueva arquitectura)
 
-// Re-export UI components
+// 🎨 UI components
 export { default as FeatureFlagsView } from "./ui/routes/index.screen";
-export * from "./ui/components";
+export { FeatureFlagCard } from "./ui/components";
 
-// Re-export configuration
-export * from "./config";
+// 📊 Configuration
+export { getFeatureFlagMetadata } from "./config";
 
-// Re-export hooks
-// export * from "./hooks";
+// 🪝 Hooks personalizados
+export {
+  useFeatureFlagAdmin,
+  useFeatureFlagStats,
+  useNotifications,
+} from "./hooks";
 
-// Re-export existing server functionality
-export * from "./server";
+// 🏗️ Server (nueva arquitectura)
+export { featureFlagService } from "./server";
 
-// Re-export types
-export * from "./types";
+// 🎯 Types
+export type {
+  FeatureFlagState,
+  NotificationState,
+  FeatureFlagStats,
+  FeatureFlagCardData,
+  FeatureFlagCategory,
+} from "./types";
 
-// Re-export utils
-// export * from "./utils";
+// 🔧 Utils
+export {
+  filterFeatureFlags,
+  groupByCategory,
+  getCategoryColors,
+  getCategoryIcon,
+  getNotificationStyles,
+} from "./utils";
+
+// 🔍 Schemas & Validation
+export {
+  CreateFeatureFlagSchema,
+  UpdateFeatureFlagSchema,
+  ToggleFeatureFlagSchema,
+  FeatureFlagFiltersSchema,
+  parseCreateFeatureFlag,
+  parseUpdateFeatureFlag,
+  parseToggleFeatureFlag,
+  parseFeatureFlagFilters,
+} from "./schemas";
+
+export type {
+  CreateFeatureFlagInput,
+  UpdateFeatureFlagInput,
+  ToggleFeatureFlagInput,
+  FeatureFlagFilters,
+} from "./schemas";
+
+// ✅ Todas las funcionalidades están disponibles a través de la nueva arquitectura
+// Para funciones del servidor usar: ./server/services/index.ts
