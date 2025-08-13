@@ -13,8 +13,8 @@ import {
   Trash2,
   Plus,
 } from "lucide-react";
-import type { UploadFile, UploadConfig } from "../types";
-import { useFileUpload } from "../hooks/useFileUpload";
+import type { UploadFile, UploadConfig } from "../../types";
+import { useFileUpload } from "../../hooks/useFileUpload";
 
 interface FileUploaderProps {
   config: UploadConfig;

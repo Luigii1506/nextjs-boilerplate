@@ -22,6 +22,9 @@ model Upload {
   userId        String
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
+  categoryId    String?
+  category      FileCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  
   // 📝 Metadata
   metadata      Json?    // Additional file metadata
   isPublic      Boolean  @default(false)
@@ -48,6 +51,9 @@ model FileCategory {
   icon        String?  // Icon identifier
   maxSize     Int?     // Max file size in bytes
   allowedTypes String[] // Allowed MIME types
+  
+  // 👤 Relations
+  uploads     Upload[]
   
   // ⏰ Timestamps
   createdAt   DateTime @default(now())

@@ -13,12 +13,20 @@ export interface UploadFile {
   key?: string;
   bucket?: string;
   userId: string;
+  categoryId?: string;
   metadata?: Record<string, unknown>;
   isPublic: boolean;
   tags: string[];
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;
+  // Relaciones
+  category?: FileCategory;
+  user?: {
+    id: string;
+    email: string;
+    name?: string;
+  };
 }
 
 export interface FileCategory {
@@ -28,6 +36,7 @@ export interface FileCategory {
   icon?: string;
   maxSize?: number;
   allowedTypes: string[];
+  uploadsCount?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -66,7 +75,12 @@ export interface UploadProgress {
 
 export interface UploadResult {
   success: boolean;
-  file?: UploadFile;
+  filename?: string;
+  url?: string;
+  key?: string;
+  bucket?: string;
+  provider?: UploadProvider;
+  metadata?: Record<string, unknown>;
   error?: string;
 }
 
@@ -194,3 +208,56 @@ export interface UploadFilesResponse {
   limit: number;
   totalPages: number;
 }
+
+// ========================
+// 🎨 UI TYPES
+// ========================
+
+export interface UploadCardData {
+  id: string;
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  provider: UploadProvider;
+  url: string;
+  isPublic: boolean;
+  tags: string[];
+  createdAt: string;
+  category?: FileCategory;
+  user?: {
+    id: string;
+    email: string;
+    name?: string;
+  };
+  // Campos calculados para UI
+  fileType: string;
+  sizeFormatted: string;
+  isImage: boolean;
+  extension: string;
+}
+
+export interface FileStatsData {
+  totalFiles: number;
+  totalSize: number;
+  totalSizeFormatted: string;
+  recentFiles: number;
+  byProvider: Array<{
+    provider: UploadProvider;
+    count: number;
+    size: number;
+    sizeFormatted: string;
+  }>;
+  byMimeType: Array<{
+    mimeType: string;
+    count: number;
+    fileType: string;
+  }>;
+  averageFileSize: number;
+}
+
+// ========================
+// 🔄 DOMAIN TYPES
+// ========================
+
+export type { FileCategory as FileCategoryDomain } from "./index";

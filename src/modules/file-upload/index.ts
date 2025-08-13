@@ -1,16 +1,22 @@
 // 📁 FILE UPLOAD MODULE
 // =====================
-// Módulo completo de gestión de archivos
-// Incluye: Services, Hooks, Types, Config, Utils
+// Módulo completo de gestión de archivos siguiendo arquitectura feature-first
 
-// 🛠️ Services
-export * from "./services";
+// 📋 Schemas & Types
+export * from "./schemas";
+export * from "./types";
+
+// 🎯 Server Layer
+export * from "./server";
+
+// 🛠️ Providers
+export * from "./providers";
 
 // 🪝 Hooks
 export * from "./hooks";
 
-// 📝 Types
-export * from "./types";
+// 🎨 UI Components
+export * from "./ui";
 
 // ⚙️ Configuration
 export * from "./config";
@@ -18,8 +24,8 @@ export * from "./config";
 // 🔧 Utils
 export * from "./utils";
 
-// 🎯 Default exports para facilidad de uso
-export { uploadService as default } from "./services";
+// 🎯 Main services for convenience
+export { fileUploadService, fileCategoryService } from "./server/services";
 
 // 📋 Información del módulo
 export const MODULE_INFO = {

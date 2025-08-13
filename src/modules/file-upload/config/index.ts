@@ -131,7 +131,7 @@ export function getFileCategory(
 }
 
 // 📏 FORMATEO DE TAMAÑOS
-export function formatFileSize(bytes: number): string {
+export function formatFileSizeConfig(bytes: number): string {
   if (bytes === 0) return "0 Bytes";
 
   const k = 1024;

@@ -1,22 +1,33 @@
-// 📁 LOCAL UPLOAD SERVICE
-// ======================
-// Servicio para manejar uploads en el sistema de archivos local
+// 📁 LOCAL UPLOAD PROVIDER
+// =========================
+// Proveedor para manejar uploads en el sistema de archivos local
 
-import { writeFile, mkdir } from "fs/promises";
+import { writeFile, mkdir, unlink, access, stat } from "fs/promises";
 import { join } from "path";
 import { generateUploadPath } from "../config";
-import type { UploadResult, UploadFile } from "../types";
+import type { UploadResult } from "../types";
 
 const UPLOAD_DIR = join(process.cwd(), "public", "uploads");
 
-export class LocalUploadService {
+export interface UploadProvider {
+  upload(file: File, options?: Record<string, unknown>): Promise<UploadResult>;
+  delete(key: string): Promise<boolean>;
+  exists(key: string): Promise<boolean>;
+  getSignedUrl?(
+    filename: string,
+    mimeType: string,
+    isPublic?: boolean
+  ): Promise<string>;
+}
+
+export class LocalUploadProvider implements UploadProvider {
   /**
    * Sube un archivo al sistema de archivos local
    */
-  async uploadFile(
+  async upload(
     file: File,
-    userId: string,
     options?: {
+      userId?: string;
       customPath?: string;
       makePublic?: boolean;
     }
@@ -24,7 +35,8 @@ export class LocalUploadService {
     try {
       // Generar path único
       const uploadPath =
-        options?.customPath || generateUploadPath(userId, file.name);
+        options?.customPath ||
+        generateUploadPath(options?.userId || "anonymous", file.name);
       const fullPath = join(UPLOAD_DIR, uploadPath);
       const dirPath = join(fullPath, "..");
 
@@ -40,35 +52,23 @@ export class LocalUploadService {
       // Crear URL pública
       const publicUrl = `/uploads/${uploadPath}`;
 
-      // Crear registro de archivo
-      const uploadFile: UploadFile = {
-        id: "", // Se asignará en la base de datos
+      return {
+        success: true,
         filename: uploadPath.split("/").pop() || file.name,
-        originalName: file.name,
-        mimeType: file.type,
-        size: file.size,
-        provider: "local",
         url: publicUrl,
-        userId,
+        key: uploadPath,
+        provider: "local",
         metadata: {
           path: uploadPath,
           fullPath,
+          size: file.size,
         },
-        isPublic: options?.makePublic ?? true,
-        tags: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      return {
-        success: true,
-        file: uploadFile,
       };
     } catch (error) {
       console.error("Error uploading file locally:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Error desconocido",
+        error: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
@@ -76,10 +76,9 @@ export class LocalUploadService {
   /**
    * Elimina un archivo del sistema local
    */
-  async deleteFile(path: string): Promise<boolean> {
+  async delete(key: string): Promise<boolean> {
     try {
-      const { unlink } = await import("fs/promises");
-      const fullPath = join(UPLOAD_DIR, path);
+      const fullPath = join(UPLOAD_DIR, key);
       await unlink(fullPath);
       return true;
     } catch (error) {
@@ -91,10 +90,9 @@ export class LocalUploadService {
   /**
    * Verifica si un archivo existe
    */
-  async fileExists(path: string): Promise<boolean> {
+  async exists(key: string): Promise<boolean> {
     try {
-      const { access } = await import("fs/promises");
-      const fullPath = join(UPLOAD_DIR, path);
+      const fullPath = join(UPLOAD_DIR, key);
       await access(fullPath);
       return true;
     } catch {
@@ -105,10 +103,9 @@ export class LocalUploadService {
   /**
    * Obtiene información de un archivo
    */
-  async getFileInfo(path: string) {
+  async getFileInfo(key: string) {
     try {
-      const { stat } = await import("fs/promises");
-      const fullPath = join(UPLOAD_DIR, path);
+      const fullPath = join(UPLOAD_DIR, key);
       const stats = await stat(fullPath);
 
       return {
@@ -122,5 +119,13 @@ export class LocalUploadService {
       console.error("Error getting file info:", error);
       return null;
     }
+  }
+
+  /**
+   * Para el proveedor local, solo devuelve la URL pública
+   */
+  async getSignedUrl(filename: string): Promise<string> {
+    // Para local, no necesitamos URLs firmadas
+    return `/uploads/${filename}`;
   }
 }

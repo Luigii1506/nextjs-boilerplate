@@ -1,18 +1,20 @@
-// ☁️ S3 UPLOAD SERVICE
-// ===================
-// Servicio para manejar uploads a Amazon S3
+// ☁️ S3 UPLOAD PROVIDER
+// =====================
+// Proveedor para manejar uploads a Amazon S3
 
 import {
   S3Client,
   PutObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { generateUploadPath, getS3Config } from "../config";
-import type { UploadResult, UploadFile, S3Config } from "../types";
+import type { UploadResult, S3Config } from "../types";
+import type { UploadProvider } from "./local-upload";
 
-export class S3UploadService {
+export class S3UploadProvider implements UploadProvider {
   private config: S3Config;
   private s3Client?: S3Client;
   private isServer: boolean;
@@ -42,26 +44,29 @@ export class S3UploadService {
   /**
    * Sube un archivo a S3
    */
-  async uploadFile(
+  async upload(
     file: File,
-    userId: string,
     options?: {
+      userId?: string;
       customKey?: string;
       makePublic?: boolean;
       onProgress?: (progress: number) => void;
     }
-  ): Promise<UploadFile> {
+  ): Promise<UploadResult> {
     if (!this.isConfigured()) {
-      throw new Error("S3 no está configurado correctamente");
+      return {
+        success: false,
+        error: "S3 is not configured correctly",
+      };
     }
 
     // Si estamos en el servidor, usar AWS SDK directamente
     if (this.isServer) {
-      return this.uploadToS3Direct(file, userId, options);
+      return this.uploadToS3Direct(file, options);
     }
 
     // Si estamos en el cliente, usar fetch a la API route
-    return this.uploadToS3ViaAPI(file, userId, options);
+    return this.uploadToS3ViaAPI(file, options);
   }
 
   /**
@@ -69,14 +74,16 @@ export class S3UploadService {
    */
   private async uploadToS3Direct(
     file: File,
-    userId: string,
     options?: {
+      userId?: string;
       customKey?: string;
       makePublic?: boolean;
       onProgress?: (progress: number) => void;
     }
-  ): Promise<UploadFile> {
-    const key = options?.customKey || generateUploadPath(userId, file.name);
+  ): Promise<UploadResult> {
+    const key =
+      options?.customKey ||
+      generateUploadPath(options?.userId || "anonymous", file.name);
 
     try {
       // Convertir File a Buffer
@@ -88,10 +95,9 @@ export class S3UploadService {
         Key: key,
         Body: buffer,
         ContentType: file.type,
-        // ACL removido - se maneja por políticas del bucket
         Metadata: {
           originalName: file.name,
-          uploadedBy: userId,
+          uploadedBy: options?.userId || "anonymous",
           uploadedAt: new Date().toISOString(),
         },
       });
@@ -102,28 +108,23 @@ export class S3UploadService {
       const url = `https://${this.config.bucket}.s3.${this.config.region}.amazonaws.com/${key}`;
 
       return {
-        id: `s3_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        success: true,
         filename: key.split("/").pop() || file.name,
-        originalName: file.name,
-        mimeType: file.type,
-        size: file.size,
-        provider: "s3",
         url,
         key,
         bucket: this.config.bucket,
-        userId,
+        provider: "s3",
         metadata: {
           uploadedAt: new Date().toISOString(),
+          region: this.config.region,
         },
-        isPublic: options?.makePublic || false,
-        tags: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        deletedAt: undefined,
       };
     } catch (error) {
       console.error("Error uploading to S3:", error);
-      throw new Error(`Error subiendo a S3: ${error}`);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
     }
   }
 
@@ -132,16 +133,16 @@ export class S3UploadService {
    */
   private async uploadToS3ViaAPI(
     file: File,
-    userId: string,
     options?: {
+      userId?: string;
       customKey?: string;
       makePublic?: boolean;
       onProgress?: (progress: number) => void;
     }
-  ): Promise<UploadFile> {
+  ): Promise<UploadResult> {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("userId", userId);
+    if (options?.userId) formData.append("userId", options.userId);
     if (options?.customKey) formData.append("customKey", options.customKey);
     if (options?.makePublic) formData.append("makePublic", "true");
 
@@ -160,47 +161,51 @@ export class S3UploadService {
 
           xhr.addEventListener("load", () => {
             if (xhr.status === 200) {
-              resolve(JSON.parse(xhr.responseText));
+              const result = JSON.parse(xhr.responseText);
+              resolve(result);
             } else {
               reject(new Error(`Error: ${xhr.status} - ${xhr.statusText}`));
             }
           });
 
           xhr.addEventListener("error", () => {
-            reject(new Error("Error en la conexión"));
+            reject(new Error("Network error"));
           });
 
-          xhr.open("POST", "/api/uploads/s3");
+          xhr.open("POST", "/api/modules/file-upload/s3");
           xhr.send(formData);
         });
       }
 
       // Upload simple con fetch
-      const response = await fetch("/api/uploads/s3", {
+      const response = await fetch("/api/modules/file-upload/s3", {
         method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error(`Error en upload: ${response.statusText}`);
+        throw new Error(`Upload error: ${response.statusText}`);
       }
 
       const result = await response.json();
       return result;
     } catch (error) {
       console.error("Error uploading to S3:", error);
-      throw new Error(`Error subiendo a S3: ${error}`);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
     }
   }
 
   /**
    * Elimina un archivo de S3
    */
-  async deleteFile(key: string): Promise<boolean> {
+  async delete(key: string): Promise<boolean> {
     if (!this.isServer) {
       // En el cliente, la eliminación se maneja a través de la API route
       try {
-        const response = await fetch("/api/uploads/s3", {
+        const response = await fetch("/api/modules/file-upload/s3", {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
@@ -229,20 +234,46 @@ export class S3UploadService {
   }
 
   /**
+   * Verifica si un archivo existe en S3
+   */
+  async exists(key: string): Promise<boolean> {
+    if (!this.isServer || !this.s3Client) {
+      return false;
+    }
+
+    try {
+      const command = new HeadObjectCommand({
+        Bucket: this.config.bucket,
+        Key: key,
+      });
+      await this.s3Client.send(command);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Genera una URL firmada para acceso temporal
    */
-  async getSignedUrl(key: string, expiresIn = 3600): Promise<string | null> {
+  async getSignedUrl(
+    filename: string,
+    mimeType: string,
+    isPublic = false,
+    expiresIn = 3600
+  ): Promise<string> {
     if (!this.isServer) {
       // En el cliente, la generación de URL firmada se maneja a través de la API route
       try {
-        const response = await fetch("/api/uploads/s3/signed-url", {
+        const response = await fetch("/api/modules/file-upload/s3/signed-url", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            key,
-            bucket: this.config.bucket,
+            filename,
+            mimeType,
+            isPublic,
             expiresIn,
           }),
         });
@@ -255,11 +286,12 @@ export class S3UploadService {
         return result.url;
       } catch (error) {
         console.error("Error getting signed URL:", error);
-        return null;
+        throw error;
       }
     } else {
       // En el servidor, usar AWS SDK directamente
       try {
+        const key = generateUploadPath("temp", filename);
         const command = new GetObjectCommand({
           Bucket: this.config.bucket,
           Key: key,
@@ -268,8 +300,37 @@ export class S3UploadService {
         return url;
       } catch (error) {
         console.error("Error getting signed URL:", error);
-        return null;
+        throw error;
       }
+    }
+  }
+
+  /**
+   * Genera URL firmada para upload directo
+   */
+  async getSignedUploadUrl(
+    filename: string,
+    mimeType: string,
+    isPublic = false,
+    expiresIn = 3600
+  ): Promise<{ url: string; key: string }> {
+    if (!this.isServer || !this.s3Client) {
+      throw new Error("Signed upload URLs can only be generated on the server");
+    }
+
+    try {
+      const key = generateUploadPath("uploads", filename);
+      const command = new PutObjectCommand({
+        Bucket: this.config.bucket,
+        Key: key,
+        ContentType: mimeType,
+      });
+
+      const url = await getSignedUrl(this.s3Client, command, { expiresIn });
+      return { url, key };
+    } catch (error) {
+      console.error("Error getting signed upload URL:", error);
+      throw error;
     }
   }
 
