@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/shared/hooks/useAuth";
 import { useRouter } from "next/navigation";
-import RegisterView from "@/core/auth/auth/RegisterView";
+import RegisterView from "@/core/auth/components/RegisterView";
 
 export default function RegisterPage() {
   const { isLoading } = useAuth();

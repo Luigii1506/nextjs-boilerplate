@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/shared/hooks/useAuth";
 import { useRouter } from "next/navigation";
-import ForgotPasswordView from "@/core/auth/auth/ForgotPasswordView";
+import ForgotPasswordView from "@/core/auth/components/ForgotPasswordView";
 
 export default function ForgotPasswordPage() {
   const { isLoading } = useAuth();

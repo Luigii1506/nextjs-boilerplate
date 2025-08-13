@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/shared/hooks/useAuth";
 import { useRouter } from "next/navigation";
-import LoginView from "@/core/auth/auth/LoginView";
+import LoginView from "@/core/auth/components/LoginView";
 
 export default function LoginPage() {
   const { isLoading } = useAuth();

@@ -1,0 +1,175 @@
+---
+description: "Estructura de folders (Seed Next.js 15 — feature-first en Admin)"
+globs:
+  - "**/*"
+alwaysApply: false
+---
+
+# Estructura de folders (Seed Next.js 15 — feature-first en Admin)
+
+> Solo estructura de **folders** (y algunos archivos clave) para guiar el seed.  
+> **Reglas:**
+>
+> - Rutas reales solo en `src/app/**`.
+> - Las pantallas viven como `*.screen.tsx` dentro de `features/**/ui/routes/**` (espejo del path).
+> - Cada subfeature de admin se aloja en `features/admin/<subfeature>/...` (feature-first).
+
+.
+├── src/
+│ ├── app/ # Rutas reales (Next.js App Router)
+│ │ ├── (public)/
+│ │ │ ├── login/
+│ │ │ │ └── page.tsx
+│ │ │ └── register/
+│ │ │ └── page.tsx
+│ │ ├── (admin)/
+│ │ │ ├── layout.tsx # usa shared/ui/layouts/AdminShell
+│ │ │ ├── dashboard/
+│ │ │ │ └── page.tsx # reexporta features/admin/dashboard/ui/routes/index.screen
+│ │ │ ├── users/
+│ │ │ │ ├── page.tsx # ↔ features/admin/users/ui/routes/index.screen
+│ │ │ │ ├── new/
+│ │ │ │ │ └── page.tsx # ↔ features/admin/users/ui/routes/new.screen
+│ │ │ │ └── [id]/
+│ │ │ │ ├── page.tsx # ↔ features/admin/users/ui/routes/[id]/index.screen
+│ │ │ │ └── edit/
+│ │ │ │ └── page.tsx # ↔ features/admin/users/ui/routes/[id]/edit.screen
+│ │ │ └── feature-flags/
+│ │ │ ├── page.tsx # ↔ features/admin/feature-flags/ui/routes/index.screen
+│ │ │ └── [key]/
+│ │ │ └── page.tsx # ↔ features/admin/feature-flags/ui/routes/[key]/index.screen
+│ │ └── api/ # Endpoints por feature
+│ │ ├── users/route.ts
+│ │ └── feature-flags/route.ts
+│ │
+│ ├── features/ # Features autocontenidas (feature-first)
+│ │ └── admin/
+│ │ ├── dashboard/
+│ │ │ ├── ui/
+│ │ │ │ ├── routes/
+│ │ │ │ │ └── index.screen.tsx
+│ │ │ │ ├── components/
+│ │ │ │ │ ├── KpiGrid.tsx
+│ │ │ │ │ ├── KpiCard.tsx
+│ │ │ │ │ ├── TrendChart.tsx
+│ │ │ │ │ └── RecentActivity.tsx
+│ │ │ │ └── index.ts # barrel de ui
+│ │ │ ├── server/
+│ │ │ │ ├── actions/
+│ │ │ │ ├── services/
+│ │ │ │ ├── repositories/
+│ │ │ │ ├── queries/
+│ │ │ │ ├── validators/
+│ │ │ │ └── index.ts
+│ │ │ ├── schemas/
+│ │ │ ├── types/
+│ │ │ ├── utils/
+│ │ │ └── index.ts # barrel de la feature
+│ │ │
+│ │ ├── users/
+│ │ │ ├── ui/
+│ │ │ │ ├── routes/
+│ │ │ │ │ ├── index.screen.tsx
+│ │ │ │ │ ├── new.screen.tsx
+│ │ │ │ │ └── [id]/
+│ │ │ │ │ ├── index.screen.tsx
+│ │ │ │ │ └── edit.screen.tsx
+│ │ │ │ ├── components/ # compartidos entre rutas de users
+│ │ │ │ │ ├── UsersTable.tsx
+│ │ │ │ │ ├── UserRow.tsx
+│ │ │ │ │ ├── UserForm.tsx
+│ │ │ │ │ ├── UserRolesSelector.tsx
+│ │ │ │ │ ├── UsersFiltersBar.tsx
+│ │ │ │ │ └── Pagination.tsx
+│ │ │ │ └── index.ts
+│ │ │ ├── hooks/ # dominio (no UI): data, permisos, etc.
+│ │ │ │ ├── useUsersQuery.ts
+│ │ │ │ ├── useUserMutations.ts
+│ │ │ │ └── useUserPermissions.ts
+│ │ │ ├── server/
+│ │ │ │ ├── actions/
+│ │ │ │ ├── services/
+│ │ │ │ ├── repositories/
+│ │ │ │ ├── queries/
+│ │ │ │ ├── validators/
+│ │ │ │ └── index.ts
+│ │ │ ├── schemas/
+│ │ │ ├── types/
+│ │ │ ├── utils/
+│ │ │ └── index.ts
+│ │ │
+│ │ └── feature-flags/
+│ │ ├── ui/
+│ │ │ ├── routes/
+│ │ │ │ ├── index.screen.tsx
+│ │ │ │ └── [key]/
+│ │ │ │ └── index.screen.tsx
+│ │ │ ├── components/
+│ │ │ │ ├── FlagsTable.tsx
+│ │ │ │ ├── FlagRow.tsx
+│ │ │ │ ├── FlagForm.tsx
+│ │ │ │ ├── TargetingEditor.tsx
+│ │ │ │ ├── EnvironmentTabs.tsx
+│ │ │ │ └── VariationsEditor.tsx
+│ │ │ └── index.ts
+│ │ ├── hooks/
+│ │ │ ├── useFeatureFlags.ts
+│ │ │ ├── useFlagForm.ts
+│ │ │ └── useEnvironments.ts
+│ │ ├── server/
+│ │ │ ├── actions/
+│ │ │ ├── services/
+│ │ │ ├── repositories/
+│ │ │ ├── queries/
+│ │ │ ├── validators/
+│ │ │ ├── mappers/
+│ │ │ └── index.ts
+│ │ ├── config/ # NO secretos (defaults, entornos, rollouts)
+│ │ │ ├── environments.ts
+│ │ │ ├── defaults.ts
+│ │ │ ├── rollouts.ts
+│ │ │ └── index.ts
+│ │ ├── schemas/
+│ │ ├── types/
+│ │ ├── utils/
+│ │ └── index.ts
+│ │
+│ ├── shared/ # Reutilizable en toda la app
+│ │ ├── ui/
+│ │ │ ├── components/ # Button, Card, Input, Spinner, etc.
+│ │ │ └── layouts/
+│ │ │ └── AdminShell.tsx
+│ │ ├── hooks/
+│ │ │ ├── useDebounce.ts
+│ │ │ └── useMediaQuery.ts
+│ │ ├── types/
+│ │ ├── utils/
+│ │ ├── constants/
+│ │ └── index.ts
+│ │
+│ ├── core/ # Plataforma (infra, auth, db, config)
+│ │ ├── auth/
+│ │ │ ├── server/ # adapters, auth.ts, session helpers
+│ │ │ ├── config/ # providers, RBAC estático
+│ │ │ └── index.ts
+│ │ ├── database/
+│ │ │ ├── prisma/
+│ │ │ │ ├── schema.prisma
+│ │ │ │ └── models/ # (opcional) split por dominio
+│ │ │ ├── migrations/
+│ │ │ └── prisma.ts
+│ │ ├── config/
+│ │ │ ├── environment.ts # lectura de env (secretos)
+│ │ │ ├── feature-flags.ts # wiring global si aplica
+│ │ │ └── index.ts
+│ │ └── index.ts
+│ │
+│ └── styles/ # (opcional) estilos globales
+│ └── globals.css
+│
+├── public/ # assets estáticos
+├── e2e/ # pruebas end-to-end
+├── tests/ # unit/integration (alternativa a **tests** locales)
+├── scripts/ # scripts de build/ci/seed
+├── docs/ # documentación adicional
+└── README.md
