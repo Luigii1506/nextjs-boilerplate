@@ -8,20 +8,19 @@ import {
   Share,
   Copy,
   Calendar,
-  HardDrive,
   Image,
   File,
   Video,
   Music,
   FileText,
 } from "lucide-react";
-import type { UploadFile } from "../../types";
+import type { UploadCardData } from "../../types";
 
 interface FileManagerProps {
-  files: UploadFile[];
-  onFileSelect?: (file: UploadFile) => void;
-  onFileDelete?: (file: UploadFile) => void;
-  onFileDownload?: (file: UploadFile) => void;
+  files: UploadCardData[];
+  onFileSelect?: (file: UploadCardData) => void;
+  onFileDelete?: (file: UploadCardData) => void;
+  onFileDownload?: (file: UploadCardData) => void;
   viewMode?: "grid" | "list";
   selectable?: boolean;
 }
@@ -69,7 +68,7 @@ const FileManager: React.FC<FileManagerProps> = ({
     });
   };
 
-  const handleFileClick = (file: UploadFile) => {
+  const handleFileClick = (file: UploadCardData) => {
     if (selectable) {
       const newSelected = new Set(selectedFiles);
       if (newSelected.has(file.id)) {
@@ -82,7 +81,7 @@ const FileManager: React.FC<FileManagerProps> = ({
     onFileSelect?.(file);
   };
 
-  const handleMenuAction = (action: string, file: UploadFile) => {
+  const handleMenuAction = (action: string, file: UploadCardData) => {
     setShowMenu(null);
 
     switch (action) {

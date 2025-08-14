@@ -20,12 +20,16 @@ interface FileUploaderProps {
   config: UploadConfig;
   onUploadComplete: (files: UploadFile[]) => void;
   onUploadError: (error: string) => void;
+  selectedCategory?: string | null;
+  detectCategory?: (mimeType: string) => string | null;
 }
 
 const FileUploader: React.FC<FileUploaderProps> = ({
   config,
   onUploadComplete,
   onUploadError,
+  selectedCategory,
+  detectCategory,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]); // Archivos seleccionados
@@ -136,6 +140,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       const results = await uploadFiles(selectedFiles, {
         provider: config.provider,
         makePublic: false,
+        categoryId: selectedCategory,
+        detectCategory: detectCategory,
       });
 
       // Procesar resultados
@@ -143,8 +149,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       const errors: string[] = [];
 
       results.forEach((result, index) => {
-        if (result.success && result.data) {
-          successfulFiles.push(result.data);
+        if (result.success && result.file) {
+          successfulFiles.push(result.file);
         } else {
           errors.push(
             `${selectedFiles[index].name}: ${

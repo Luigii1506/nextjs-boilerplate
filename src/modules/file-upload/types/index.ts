@@ -87,8 +87,10 @@ export interface UploadResult {
 // Tipo para lo que retornan las server actions
 export interface UploadActionResult {
   success: boolean;
-  data?: UploadFile;
+  data?: UploadFile; // Para server actions
+  file?: UploadFile; // Para hooks
   error?: string;
+  fileId?: string; // Para identificar el archivo en progress
 }
 
 export interface FileWithPreview extends File {
@@ -144,8 +146,19 @@ export interface UseFileUploadReturn {
     options?: {
       provider?: UploadProvider;
       makePublic?: boolean;
+      categoryId?: string | null;
+      detectCategory?: (mimeType: string) => string | null;
     }
   ) => Promise<UploadActionResult[]>;
+  uploadFile: (
+    file: File,
+    options?: {
+      provider?: UploadProvider;
+      makePublic?: boolean;
+      categoryId?: string | null;
+      detectCategory?: (mimeType: string) => string | null;
+    }
+  ) => Promise<{ success: boolean; file?: UploadFile; error?: string }>;
   uploading: boolean;
   progress: UploadProgress[];
   error: string | null;
@@ -154,15 +167,17 @@ export interface UseFileUploadReturn {
 }
 
 export interface UseFileManagerReturn {
-  files: UploadFile[];
+  files: UploadCardData[]; // ✅ Cambiado de UploadFile[] a UploadCardData[]
   loading: boolean;
   error: string | null;
   categories: FileCategory[];
   selectedCategory: string | null;
+  selectedProvider: string | null;
   setSelectedCategory: (categoryId: string | null) => void;
+  setSelectedProvider: (provider: string | null) => void;
   refreshFiles: () => Promise<void>;
   deleteFile: (fileId: string) => Promise<void>;
-  downloadFile: (file: UploadFile) => void;
+  downloadFile: (file: UploadCardData) => void; // ✅ Cambiado de UploadFile a UploadCardData
   searchFiles: (query: string) => void;
 }
 
@@ -231,6 +246,7 @@ export interface UploadCardData {
   isPublic: boolean;
   tags: string[];
   createdAt: string;
+  metadata?: Record<string, unknown>; // ✅ Agregado para dimensiones de imagen, etc.
   category?: FileCategory;
   user?: {
     id: string;

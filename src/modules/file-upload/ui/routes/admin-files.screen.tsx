@@ -15,7 +15,7 @@ import {
   Video,
   Music,
 } from "lucide-react";
-import type { UploadFile, UploadConfig } from "../../types";
+import type { UploadFile, UploadConfig, UploadCardData } from "../../types";
 import { useFileManager, useFileStats } from "../../hooks";
 import FileUploader from "../components/FileUploader";
 import FileManager from "../components/FileManager";
@@ -42,12 +42,24 @@ interface FilesViewProps {
 
 const FilesView: React.FC<FilesViewProps> = ({ onViewChange }) => {
   // Usar hooks reales del módulo
-  const { files, refreshFiles } = useFileManager();
+  const {
+    files,
+    refreshFiles,
+    selectedProvider,
+    setSelectedProvider,
+    categories,
+    selectedCategory,
+    setSelectedCategory,
+  } = useFileManager();
   const { stats } = useFileStats();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [uploadProvider, setUploadProvider] = useState<"local" | "s3">("local");
+  const [selectedUploadCategory, setSelectedUploadCategory] = useState<
+    string | null
+  >(null);
   const [activeTab, setActiveTab] = useState<
     "upload" | "manager" | "stats" | "gallery"
   >("manager");
@@ -56,9 +68,9 @@ const FilesView: React.FC<FilesViewProps> = ({ onViewChange }) => {
     message: string;
   } | null>(null);
 
-  // Upload configuration
+  // Upload configuration - usar el provider seleccionado
   const uploadConfig: UploadConfig = {
-    provider: "s3",
+    provider: uploadProvider,
     maxFileSize: 10 * 1024 * 1024, // 10MB
     allowedTypes: [
       "image/*",
@@ -86,7 +98,7 @@ const FilesView: React.FC<FilesViewProps> = ({ onViewChange }) => {
     recentUploads: files.length,
   };
 
-  // Filter files
+  // Filter files - incluir filtro por provider
   const filteredFiles = files.filter((file) => {
     const matchesSearch = file.originalName
       .toLowerCase()
@@ -100,11 +112,29 @@ const FilesView: React.FC<FilesViewProps> = ({ onViewChange }) => {
       (filterType === "videos" && file.mimeType.startsWith("video/")) ||
       (filterType === "audio" && file.mimeType.startsWith("audio/"));
 
-    return matchesSearch && matchesType;
+    const matchesProvider =
+      !selectedProvider ||
+      selectedProvider === "all" ||
+      file.provider === selectedProvider;
+
+    return matchesSearch && matchesType && matchesProvider;
   });
 
   // Get only images for gallery
   const imageFiles = files.filter((file) => file.mimeType.startsWith("image/"));
+
+  // Función para detectar categoría automáticamente por MIME type
+  const detectCategoryByMimeType = (mimeType: string): string | null => {
+    const category = categories.find((cat) =>
+      cat.allowedTypes.some((allowedType) => {
+        if (allowedType.endsWith("/*")) {
+          return mimeType.startsWith(allowedType.slice(0, -1));
+        }
+        return mimeType === allowedType;
+      })
+    );
+    return category?.id || null;
+  };
 
   const showNotification = (
     type: "success" | "error" | "info",
@@ -115,18 +145,36 @@ const FilesView: React.FC<FilesViewProps> = ({ onViewChange }) => {
   };
 
   const handleUploadComplete = (uploadedFiles: UploadFile[]) => {
-    refreshFiles(); // Refrescar archivos usando el hook real
+    // Refrescar archivos inmediatamente y con delay para server actions
+    refreshFiles();
+    setTimeout(() => refreshFiles(), 500);
+
     showNotification(
       "success",
       `${uploadedFiles.length} archivo(s) subido(s) exitosamente`
     );
+    // Mostrar categorías detectadas en la notificación
+    if (uploadedFiles.length > 0) {
+      const categoriesDetected = uploadedFiles
+        .map((file) => file.category?.name)
+        .filter(Boolean)
+        .join(", ");
+      if (categoriesDetected) {
+        setTimeout(() => {
+          showNotification(
+            "info",
+            `Categorías asignadas: ${categoriesDetected}`
+          );
+        }, 1000);
+      }
+    }
   };
 
   const handleUploadError = (error: string) => {
     showNotification("error", `Error: ${error}`);
   };
 
-  const handleFileDelete = (file: UploadFile) => {
+  const handleFileDelete = (file: UploadCardData) => {
     if (
       window.confirm(
         `¿Estás seguro de que quieres eliminar "${file.originalName}"?`
@@ -138,7 +186,7 @@ const FilesView: React.FC<FilesViewProps> = ({ onViewChange }) => {
     }
   };
 
-  const handleFileDownload = (file: UploadFile) => {
+  const handleFileDownload = (file: UploadCardData) => {
     // In a real app, this would handle S3 signed URLs for private files
     window.open(file.url, "_blank");
     showNotification("info", `Descargando "${file.originalName}"`);
@@ -252,6 +300,64 @@ const FilesView: React.FC<FilesViewProps> = ({ onViewChange }) => {
         </div>
       </div>
 
+      {/* Storage Provider Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white rounded-2xl border border-slate-200 p-6">
+          <h3 className="text-lg font-semibold text-slate-900 mb-4">
+            💿 Almacenamiento Local
+          </h3>
+          <div className="space-y-3">
+            {(() => {
+              const localFiles = files.filter((f) => f.provider === "local");
+              const localSize = localFiles.reduce(
+                (sum, file) => sum + file.size,
+                0
+              );
+              return (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Archivos:</span>
+                    <span className="font-semibold">{localFiles.length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Tamaño:</span>
+                    <span className="font-semibold">
+                      {(localSize / (1024 * 1024)).toFixed(2)} MB
+                    </span>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-200 p-6">
+          <h3 className="text-lg font-semibold text-slate-900 mb-4">
+            ☁️ Amazon S3
+          </h3>
+          <div className="space-y-3">
+            {(() => {
+              const s3Files = files.filter((f) => f.provider === "s3");
+              const s3Size = s3Files.reduce((sum, file) => sum + file.size, 0);
+              return (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Archivos:</span>
+                    <span className="font-semibold">{s3Files.length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Tamaño:</span>
+                    <span className="font-semibold">
+                      {(s3Size / (1024 * 1024)).toFixed(2)} MB
+                    </span>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      </div>
+
       {/* Tabs */}
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
         <div className="border-b border-slate-200">
@@ -294,10 +400,80 @@ const FilesView: React.FC<FilesViewProps> = ({ onViewChange }) => {
                   10MB por archivo.
                 </p>
               </div>
+
+              {/* Selector de Provider */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  🗄️ Destino de Almacenamiento
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      value="local"
+                      checked={uploadProvider === "local"}
+                      onChange={(e) =>
+                        setUploadProvider(e.target.value as "local" | "s3")
+                      }
+                      className="w-4 h-4 text-blue-600 bg-white border-slate-300 focus:ring-blue-500 focus:ring-2"
+                    />
+                    <span className="ml-2 text-sm text-slate-700">
+                      💿 Local (Servidor)
+                    </span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      value="s3"
+                      checked={uploadProvider === "s3"}
+                      onChange={(e) =>
+                        setUploadProvider(e.target.value as "local" | "s3")
+                      }
+                      className="w-4 h-4 text-blue-600 bg-white border-slate-300 focus:ring-blue-500 focus:ring-2"
+                    />
+                    <span className="ml-2 text-sm text-slate-700">
+                      ☁️ Amazon S3 (Nube)
+                    </span>
+                  </label>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  {uploadProvider === "local"
+                    ? "Los archivos se guardarán en el servidor local"
+                    : "Los archivos se subirán a Amazon S3 en la nube"}
+                </p>
+              </div>
+
+              {/* Selector de Categoría */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  📁 Categoría del Archivo
+                </label>
+                <select
+                  value={selectedUploadCategory || ""}
+                  onChange={(e) =>
+                    setSelectedUploadCategory(e.target.value || null)
+                  }
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">🤖 Auto-detectar por tipo de archivo</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.icon} {category.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-slate-500 mt-1">
+                  Si no seleccionas una categoría, se detectará automáticamente
+                  según el tipo de archivo
+                </p>
+              </div>
+
               <FileUploader
                 config={uploadConfig}
                 onUploadComplete={handleUploadComplete}
                 onUploadError={handleUploadError}
+                selectedCategory={selectedUploadCategory}
+                detectCategory={detectCategoryByMimeType}
               />
             </div>
           )}
@@ -331,6 +507,37 @@ const FilesView: React.FC<FilesViewProps> = ({ onViewChange }) => {
                     <option value="documents">Documentos</option>
                     <option value="videos">Videos</option>
                     <option value="audio">Audio</option>
+                  </select>
+
+                  <select
+                    value={selectedProvider || "all"}
+                    onChange={(e) =>
+                      setSelectedProvider(
+                        e.target.value === "all" ? null : e.target.value
+                      )
+                    }
+                    className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">🗄️ Todos los almacenes</option>
+                    <option value="local">💿 Local</option>
+                    <option value="s3">☁️ Amazon S3</option>
+                  </select>
+
+                  <select
+                    value={selectedCategory || "all"}
+                    onChange={(e) =>
+                      setSelectedCategory(
+                        e.target.value === "all" ? null : e.target.value
+                      )
+                    }
+                    className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">📁 Todas las categorías</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.icon} {category.name}
+                      </option>
+                    ))}
                   </select>
 
                   <div className="flex bg-slate-100 rounded-xl p-1">

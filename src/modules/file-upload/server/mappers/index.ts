@@ -67,6 +67,7 @@ export const mapUploadToCardData = (upload: UploadFile): UploadCardData => {
     isPublic: upload.isPublic,
     tags: upload.tags,
     createdAt: upload.createdAt,
+    metadata: upload.metadata, // ✅ Agregado para dimensiones de imagen, etc.
     category: upload.category,
     user: upload.user,
     // Campos calculados para UI

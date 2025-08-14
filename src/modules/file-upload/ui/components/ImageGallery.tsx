@@ -11,13 +11,13 @@ import {
   Calendar,
   HardDrive,
 } from "lucide-react";
-import type { UploadFile } from "../../types";
+import type { UploadCardData } from "../../types";
 
 interface ImageGalleryProps {
-  images: UploadFile[];
-  onImageSelect?: (image: UploadFile) => void;
-  onImageDelete?: (image: UploadFile) => void;
-  onImageDownload?: (image: UploadFile) => void;
+  images: UploadCardData[];
+  onImageSelect?: (image: UploadCardData) => void;
+  onImageDelete?: (image: UploadCardData) => void;
+  onImageDownload?: (image: UploadCardData) => void;
   columns?: number;
 }
 
@@ -28,7 +28,9 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
   onImageDownload,
   columns = 3,
 }) => {
-  const [selectedImage, setSelectedImage] = useState<UploadFile | null>(null);
+  const [selectedImage, setSelectedImage] = useState<UploadCardData | null>(
+    null
+  );
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const formatFileSize = (bytes: number) => {
@@ -47,7 +49,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
     });
   };
 
-  const openLightbox = (image: UploadFile, index: number) => {
+  const openLightbox = (image: UploadCardData, index: number) => {
     setSelectedImage(image);
     setCurrentIndex(index);
     onImageSelect?.(image);

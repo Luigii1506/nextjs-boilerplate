@@ -6,6 +6,7 @@
 
 import { useState, useCallback } from "react";
 import { useAuth } from "@/shared/hooks/useAuth";
+import { uploadFileAction } from "../server/actions";
 import type {
   UseFileUploadReturn,
   UploadFile,
@@ -33,7 +34,12 @@ export function useFileUpload(
   const uploadFiles = useCallback(
     async (
       files: File[],
-      options?: { provider?: UploadProvider; makePublic?: boolean }
+      options?: {
+        provider?: UploadProvider;
+        makePublic?: boolean;
+        categoryId?: string | null;
+        detectCategory?: (mimeType: string) => string | null;
+      }
     ): Promise<
       Array<{
         success: boolean;
@@ -94,17 +100,26 @@ export function useFileUpload(
             );
             formData.append("makePublic", String(options?.makePublic || false));
 
-            // Note: tags removed as it's not part of UploadConfig interface
+            // Detectar o usar categoría proporcionada
+            let categoryId = options?.categoryId;
+            if (!categoryId && options?.detectCategory) {
+              categoryId = options.detectCategory(file.type);
+            }
+            if (categoryId) {
+              formData.append("categoryId", categoryId);
+            }
 
-            // Realizar upload con progress tracking
-            const response = await fetch("/api/uploads", {
-              method: "POST",
-              body: formData,
-            });
+            // ✅ Usar server action en lugar de fetch directo
+            const result = await uploadFileAction(
+              formData,
+              user.id,
+              (options?.provider || config?.provider || "local") as
+                | "local"
+                | "s3",
+              categoryId || undefined
+            );
 
-            if (response.ok) {
-              const result = await response.json();
-
+            if (result.success && result.data) {
               // Actualizar progress a "completed"
               setProgress((prev) =>
                 prev.map((p) =>
@@ -116,13 +131,12 @@ export function useFileUpload(
 
               results.push({
                 success: true,
-                file: result.file,
+                file: result.data,
                 fileId,
               });
             } else {
-              const errorData = await response.json();
               const errorMessage =
-                errorData.error || `Error subiendo ${file.name}`;
+                result.error || `Error subiendo ${file.name}`;
 
               // Actualizar progress a "error"
               setProgress((prev) =>
@@ -140,6 +154,7 @@ export function useFileUpload(
               });
             }
           } catch (fileError) {
+            console.error("File upload error:", fileError);
             const errorMessage = `Error de red subiendo ${file.name}`;
 
             // Actualizar progress a "error"
@@ -183,7 +198,12 @@ export function useFileUpload(
   const uploadFile = useCallback(
     async (
       file: File,
-      options?: { provider?: UploadProvider; makePublic?: boolean }
+      options?: {
+        provider?: UploadProvider;
+        makePublic?: boolean;
+        categoryId?: string | null;
+        detectCategory?: (mimeType: string) => string | null;
+      }
     ): Promise<{ success: boolean; file?: UploadFile; error?: string }> => {
       const results = await uploadFiles([file], options);
       const result = results[0];
@@ -201,6 +221,7 @@ export function useFileUpload(
     progress,
     error,
     uploadFiles,
+    uploadFile, // 🔧 Agregamos uploadFile al return
     clearError,
     resetProgress,
   };
@@ -218,7 +239,7 @@ export function useSingleFileUpload(config?: Partial<UploadConfig>) {
       const results = await multiUpload.uploadFiles([file], options);
       return results[0];
     },
-    [multiUpload.uploadFiles]
+    [multiUpload]
   );
 
   return {

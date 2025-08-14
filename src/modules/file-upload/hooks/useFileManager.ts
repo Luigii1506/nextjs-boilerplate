@@ -6,15 +6,26 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useAuth } from "@/shared/hooks/useAuth";
-import type { UploadFile, FileCategory, UseFileManagerReturn } from "../types";
+import {
+  getFilesAction,
+  getCategoriesAction,
+  deleteFileAction,
+  getFileStatsAction,
+} from "../server/actions";
+import type {
+  UploadCardData,
+  FileCategory,
+  UseFileManagerReturn,
+} from "../types";
 
 export function useFileManager(): UseFileManagerReturn {
   const { user } = useAuth();
-  const [files, setFiles] = useState<UploadFile[]>([]);
+  const [files, setFiles] = useState<UploadCardData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<FileCategory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
 
   // Cargar archivos del usuario
   const loadFiles = useCallback(
@@ -32,26 +43,15 @@ export function useFileManager(): UseFileManagerReturn {
       setError(null);
 
       try {
-        const params = new URLSearchParams();
+        // ✅ Usar server action en lugar de fetch directo
+        const result = await getFilesAction(filters);
 
-        if (filters?.search) params.append("search", filters.search);
-        if (filters?.provider) params.append("provider", filters.provider);
-        if (filters?.mimeType) params.append("mimeType", filters.mimeType);
-        if (filters?.categoryId)
-          params.append("categoryId", filters.categoryId);
-        if (filters?.page) params.append("page", filters.page.toString());
-        if (filters?.limit) params.append("limit", filters.limit.toString());
-
-        const response = await fetch(`/api/uploads?${params.toString()}`);
-
-        if (response.ok) {
-          const data = await response.json();
-          setFiles(data.files || []);
+        if (result.success && result.data) {
+          setFiles(result.data);
         } else {
-          const errorData = await response.json();
-          setError(errorData.error || "Error cargando archivos");
+          setError(result.error || "Error cargando archivos");
         }
-      } catch (err) {
+      } catch {
         setError("Error de conexión al cargar archivos");
       } finally {
         setLoading(false);
@@ -65,11 +65,11 @@ export function useFileManager(): UseFileManagerReturn {
     if (!user) return;
 
     try {
-      const response = await fetch("/api/uploads/categories");
+      // ✅ Usar server action en lugar de fetch directo
+      const result = await getCategoriesAction();
 
-      if (response.ok) {
-        const data = await response.json();
-        setCategories(data.categories || []);
+      if (result.success && result.data) {
+        setCategories(result.data);
       }
     } catch (err) {
       console.warn("Error loading categories:", err);
@@ -82,18 +82,16 @@ export function useFileManager(): UseFileManagerReturn {
       if (!user) return;
 
       try {
-        const response = await fetch(`/api/uploads/${fileId}`, {
-          method: "DELETE",
-        });
+        // ✅ Usar server action en lugar de fetch directo
+        const result = await deleteFileAction({ id: fileId });
 
-        if (response.ok) {
+        if (result.success) {
           // Remover archivo de la lista local
           setFiles((prev) => prev.filter((file) => file.id !== fileId));
         } else {
-          const errorData = await response.json();
-          setError(errorData.error || "Error eliminando archivo");
+          setError(result.error || "Error eliminando archivo");
         }
-      } catch (err) {
+      } catch {
         setError("Error de conexión al eliminar archivo");
       }
     },
@@ -101,17 +99,18 @@ export function useFileManager(): UseFileManagerReturn {
   );
 
   // Descargar archivo
-  const downloadFile = useCallback(async (file: UploadFile) => {
+  const downloadFile = useCallback(async (file: UploadCardData) => {
     try {
       if (file.isPublic) {
         // Archivo público - usar URL directa
         window.open(file.url, "_blank");
       } else if (file.provider === "s3") {
         // Archivo privado en S3 - generar URL firmada
-        const response = await fetch("/api/uploads/s3/signed-url", {
+        const response = await fetch("/api/modules/file-upload/s3/signed-url", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ fileId: file.id, expiresIn: 300 }),
+          credentials: "include", // 🔑 Incluir cookies de sesión
         });
 
         if (response.ok) {
@@ -124,15 +123,31 @@ export function useFileManager(): UseFileManagerReturn {
         // Archivo local - usar URL directa
         window.open(file.url, "_blank");
       }
-    } catch (err) {
+    } catch {
       setError("Error al descargar archivo");
     }
   }, []);
 
-  // Buscar archivos
+  // Buscar archivos con filtros actuales
   const searchFiles = useCallback(
     (query: string) => {
-      loadFiles({ search: query, categoryId: selectedCategory || undefined });
+      loadFiles({
+        search: query,
+        categoryId: selectedCategory || undefined,
+        provider: selectedProvider || undefined,
+      });
+    },
+    [loadFiles, selectedCategory, selectedProvider]
+  );
+
+  // Filtrar por provider
+  const filterByProvider = useCallback(
+    (provider: string | null) => {
+      setSelectedProvider(provider);
+      loadFiles({
+        provider: provider || undefined,
+        categoryId: selectedCategory || undefined,
+      });
     },
     [loadFiles, selectedCategory]
   );
@@ -141,15 +156,21 @@ export function useFileManager(): UseFileManagerReturn {
   const handleCategoryChange = useCallback(
     (categoryId: string | null) => {
       setSelectedCategory(categoryId);
-      loadFiles({ categoryId: categoryId || undefined });
+      loadFiles({
+        categoryId: categoryId || undefined,
+        provider: selectedProvider || undefined,
+      });
     },
-    [loadFiles]
+    [loadFiles, selectedProvider]
   );
 
   // Refrescar archivos
   const refreshFiles = useCallback(async (): Promise<void> => {
-    await loadFiles({ categoryId: selectedCategory || undefined });
-  }, [loadFiles, selectedCategory]);
+    await loadFiles({
+      categoryId: selectedCategory || undefined,
+      provider: selectedProvider || undefined,
+    });
+  }, [loadFiles, selectedCategory, selectedProvider]);
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -165,7 +186,9 @@ export function useFileManager(): UseFileManagerReturn {
     error,
     categories,
     selectedCategory,
+    selectedProvider,
     setSelectedCategory: handleCategoryChange,
+    setSelectedProvider: filterByProvider,
     refreshFiles,
     deleteFile,
     downloadFile,
@@ -193,16 +216,38 @@ export function useFileStats() {
     setError(null);
 
     try {
-      const response = await fetch("/api/uploads/stats");
+      // ✅ Usar server action en lugar de fetch directo
+      const result = await getFileStatsAction();
 
-      if (response.ok) {
-        const data = await response.json();
-        setStats(data.stats);
+      if (result.success && result.data) {
+        // Transformar arrays a Records para compatibilidad
+        const byProvider: Record<string, number> = {};
+        const byType: Record<string, number> = {};
+
+        // Convertir byProvider array a Record
+        if (result.data.byProvider) {
+          result.data.byProvider.forEach((item) => {
+            byProvider[item.provider] = item.count;
+          });
+        }
+
+        // Convertir byMimeType array a Record
+        if (result.data.byMimeType) {
+          result.data.byMimeType.forEach((item) => {
+            byType[item.mimeType] = item.count;
+          });
+        }
+
+        setStats({
+          totalFiles: result.data.totalFiles,
+          totalSize: result.data.totalSize,
+          byProvider,
+          byType,
+        });
       } else {
-        const errorData = await response.json();
-        setError(errorData.error || "Error cargando estadísticas");
+        setError(result.error || "Error cargando estadísticas");
       }
-    } catch (err) {
+    } catch {
       setError("Error de conexión al cargar estadísticas");
     } finally {
       setLoading(false);

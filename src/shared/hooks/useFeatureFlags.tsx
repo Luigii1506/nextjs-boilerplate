@@ -61,6 +61,9 @@ interface FeatureFlagsContextType {
 }
 
 // 🧠 Contexto
+// 📝 NOTA: Este provider funciona en modo híbrido:
+// - En rutas autenticadas (admin): usa flags dinámicas de la API
+// - En rutas públicas: usa flags estáticas como fallback (sin errores)
 const FeatureFlagsContext = createContext<FeatureFlagsContextType | null>(null);
 
 // 🎯 Hook principal
@@ -98,7 +101,34 @@ export function FeatureFlagsProvider({ children }: FeatureFlagsProviderProps) {
 
       const response = await fetch("/api/feature-flags");
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        // Si es 401 (no autorizado), fallar silenciosamente en rutas públicas
+        if (response.status === 401) {
+          // No mostrar error en consola para 401, es normal en rutas públicas
+          setError(null);
+        } else {
+          // Para otros errores (403, 500, etc.), sí mostrar el error
+          const errorMsg = `HTTP ${response.status}: ${response.statusText}`;
+          console.error("Error loading feature flags:", errorMsg);
+          setError(errorMsg);
+        }
+
+        // En cualquier caso, usar flags por defecto
+        const defaultFlags = Object.entries(FEATURE_FLAGS).map(
+          ([key, enabled]) => ({
+            key,
+            name: key,
+            enabled,
+            category: "core",
+            version: "1.0.0",
+            hasPrismaModels: false,
+            dependencies: [],
+            conflicts: [],
+            rolloutPercentage: 100,
+          })
+        );
+        setFlagsData(defaultFlags);
+        setIsLoading(false);
+        return;
       }
 
       const data = await response.json();
@@ -108,10 +138,14 @@ export function FeatureFlagsProvider({ children }: FeatureFlagsProviderProps) {
         throw new Error(data.error || "Error desconocido");
       }
     } catch (err) {
-      console.error("Error loading feature flags:", err);
-      setError(
-        err instanceof Error ? err.message : "Error cargando feature flags"
-      );
+      // Solo logear errores que no sean de autenticación
+      if (err instanceof Error && !err.message.includes("401")) {
+        console.error("Error loading feature flags:", err);
+        setError(err.message);
+      } else {
+        setError(null);
+      }
+
       // Fallback a flags por defecto si falla la API
       const defaultFlags = Object.entries(FEATURE_FLAGS).map(
         ([key, enabled]) => ({

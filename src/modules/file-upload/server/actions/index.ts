@@ -6,7 +6,6 @@
 
 import { revalidatePath } from "next/cache";
 import {
-  parseUploadFileInput,
   parseUpdateUploadInput,
   parseDeleteUploadInput,
   parseCreateCategoryInput,
@@ -15,14 +14,6 @@ import {
   parseGetSignedUrlInput,
 } from "../../schemas";
 import { fileUploadService, fileCategoryService } from "../services";
-import type {
-  UploadFileInput,
-  UpdateUploadInput,
-  CreateCategoryInput,
-  FileFilters,
-  GetStatsInput,
-  GetSignedUrlInput,
-} from "../../schemas";
 
 // ========================
 // 📤 UPLOAD ACTIONS
