@@ -30,6 +30,7 @@ import {
   Settings,
   Moon,
 } from "lucide-react";
+import { useCacheInvalidation } from "@/core/config/client-cache-invalidation";
 import type { FeatureFlagCardData } from "../../types";
 import type { FeatureFlag } from "@/core/config/feature-flags";
 
@@ -49,6 +50,8 @@ const FeatureFlagCard: React.FC<FeatureFlagCardProps> = ({
   isLoading = false,
 }) => {
   const [showDetails, setShowDetails] = useState(false);
+  const [isInvalidating, setIsInvalidating] = useState(false);
+  const { invalidateCache } = useCacheInvalidation();
 
   const getIconComponent = (iconName: string) => {
     const iconMap: { [key: string]: React.ComponentType<{ size?: number }> } = {
@@ -132,12 +135,32 @@ const FeatureFlagCard: React.FC<FeatureFlagCardProps> = ({
   const colors = getCategoryColor(flag.category);
   const hasBlockingDependencies = dependencies.some((dep) => !dep.enabled);
 
-  const handleToggle = () => {
-    if (isLoading) return;
+  const handleToggle = async () => {
+    if (isLoading || isInvalidating) return;
     if (hasBlockingDependencies && !flag.enabled) {
       return; // Don't allow enabling if dependencies are not met
     }
-    onToggle(flag.id);
+
+    try {
+      setIsInvalidating(true);
+
+      // 1. Call the original toggle function
+      onToggle(flag.id);
+
+      // 2. Wait a moment for the server to process
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      // 3. Invalidate cache (DynamicNavigation will update automatically)
+      await invalidateCache();
+
+      console.log(
+        `[FeatureFlagCard] Cache invalidated for flag: ${flag.id} - UI should update automatically`
+      );
+    } catch (error) {
+      console.error("[FeatureFlagCard] Error during toggle:", error);
+    } finally {
+      setIsInvalidating(false);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -203,7 +226,13 @@ const FeatureFlagCard: React.FC<FeatureFlagCardProps> = ({
 
           {/* Toggle Switch */}
           <div className="flex items-center gap-3 ml-4">
-            {hasBlockingDependencies && !flag.enabled && (
+            {isInvalidating && (
+              <div className="flex items-center gap-1 text-blue-600">
+                <div className="w-3 h-3 border border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-xs font-medium">Actualizando...</span>
+              </div>
+            )}
+            {hasBlockingDependencies && !flag.enabled && !isInvalidating && (
               <div className="flex items-center gap-1 text-amber-600">
                 <AlertTriangle size={16} />
                 <span className="text-xs font-medium">Dependencias</span>
@@ -213,9 +242,11 @@ const FeatureFlagCard: React.FC<FeatureFlagCardProps> = ({
               <input
                 type="checkbox"
                 checked={flag.enabled}
-                onChange={handleToggle}
+                onChange={() => handleToggle()}
                 disabled={
-                  isLoading || (hasBlockingDependencies && !flag.enabled)
+                  isLoading ||
+                  isInvalidating ||
+                  (hasBlockingDependencies && !flag.enabled)
                 }
                 className="sr-only peer"
               />
@@ -227,7 +258,9 @@ const FeatureFlagCard: React.FC<FeatureFlagCardProps> = ({
                     ? "bg-slate-200 cursor-not-allowed"
                     : "bg-slate-200 hover:bg-slate-300"
                 } peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500/20 ${
-                  isLoading ? "opacity-50 cursor-not-allowed" : ""
+                  isLoading || isInvalidating
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
                 }`}
               >
                 <div

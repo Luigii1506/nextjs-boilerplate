@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import {
+  getServerFeatureFlags,
+  type FeatureFlagContext,
+} from "@/core/config/server-feature-flags";
 
 // Rutas que requieren autenticación
 const protectedRoutes = [
@@ -7,6 +11,15 @@ const protectedRoutes = [
   "/user-dashboard",
   "/profile",
   "/settings",
+];
+
+// 🎛️ Rutas que necesitan evaluación de feature flags (Enterprise pattern)
+const FEATURE_FLAG_ROUTES = [
+  "/dashboard",
+  "/files",
+  "/users",
+  "/feature-flags",
+  "/user-dashboard",
 ];
 
 // Rutas solo para admin
@@ -42,7 +55,34 @@ export async function middleware(request: NextRequest) {
   const sessionInfo = await checkSession(request);
   const isAuthenticated = sessionInfo.isAuthenticated;
   const userRole = sessionInfo.role;
+  const userId = sessionInfo.userId;
+  const userEmail = sessionInfo.email;
   const isAdmin = userRole === "admin" || userRole === "super_admin";
+
+  // 🎯 ENTERPRISE FEATURE FLAGS EVALUATION (Edge Performance)
+  let featureFlags: Record<string, boolean> = {};
+  const needsFeatureFlags = FEATURE_FLAG_ROUTES.some(
+    (route) => pathname.startsWith(route) || pathname === route
+  );
+
+  if (needsFeatureFlags) {
+    try {
+      // 🚀 Build context for feature flag evaluation
+      const flagContext: FeatureFlagContext = {
+        userId,
+        userRole,
+        userEmail,
+        country: request.geo?.country || "unknown",
+        userAgent: request.headers.get("user-agent") || "unknown",
+      };
+
+      // ⚡ Evaluate feature flags at Edge (ultra-fast)
+      featureFlags = await getServerFeatureFlags(flagContext);
+    } catch (error) {
+      console.error("[Middleware] Feature flags evaluation failed:", error);
+      // Continue with empty flags - Server Components will use fallback
+    }
+  }
 
   // 🔒 RUTAS PROTEGIDAS: Requieren autenticación
   if (protectedRoutes.some((route) => pathname.startsWith(route))) {
@@ -69,7 +109,27 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    return NextResponse.next();
+    // 🎯 Create response with feature flags (Enterprise pattern)
+    const response = NextResponse.next();
+
+    // 📍 Pass current pathname for Server Component navigation
+    response.headers.set("x-pathname", pathname);
+
+    if (needsFeatureFlags && Object.keys(featureFlags).length > 0) {
+      // 📤 Pass feature flags to Server Components via headers
+      response.headers.set("x-feature-flags", JSON.stringify(featureFlags));
+
+      // 🍪 Also set as cookie for client-side access if needed
+      response.cookies.set("feature-flags", JSON.stringify(featureFlags), {
+        httpOnly: false, // Allow client access for dev tools
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 5 * 60, // 5 minutes
+        path: "/",
+      });
+    }
+
+    return response;
   }
 
   // 🚫 RUTAS DE AUTH: No accesibles si ya está logueado
@@ -86,22 +146,68 @@ export async function middleware(request: NextRequest) {
       const dashboardUrl = isAdmin ? "/dashboard" : "/user-dashboard";
       return NextResponse.redirect(new URL(dashboardUrl, request.url));
     }
-    return NextResponse.next();
+
+    // 🎯 Create response with feature flags for auth routes too
+    return createResponseWithFeatureFlags(
+      featureFlags,
+      needsFeatureFlags,
+      pathname
+    );
   }
 
   // 🌐 RUTAS PÚBLICAS: Siempre accesibles
   if (publicRoutes.some((route) => pathname === route)) {
-    return NextResponse.next();
+    return createResponseWithFeatureFlags(
+      featureFlags,
+      needsFeatureFlags,
+      pathname
+    );
   }
 
-  // Por defecto, permitir acceso
-  return NextResponse.next();
+  // Por defecto, permitir acceso con feature flags
+  return createResponseWithFeatureFlags(
+    featureFlags,
+    needsFeatureFlags,
+    pathname
+  );
 }
 
-// Función para verificar la sesión con better-auth
+// 🎯 Helper function to create responses with feature flags (Enterprise pattern)
+function createResponseWithFeatureFlags(
+  featureFlags: Record<string, boolean>,
+  needsFeatureFlags: boolean,
+  pathname?: string
+): NextResponse {
+  const response = NextResponse.next();
+
+  // 📍 Pass current pathname for Server Component navigation
+  if (pathname) {
+    response.headers.set("x-pathname", pathname);
+  }
+
+  if (needsFeatureFlags && Object.keys(featureFlags).length > 0) {
+    // 📤 Pass feature flags to Server Components via headers
+    response.headers.set("x-feature-flags", JSON.stringify(featureFlags));
+
+    // 🍪 Also set as cookie for client-side access if needed
+    response.cookies.set("feature-flags", JSON.stringify(featureFlags), {
+      httpOnly: false, // Allow client access for dev tools
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 5 * 60, // 5 minutes
+      path: "/",
+    });
+  }
+
+  return response;
+}
+
+// Función para verificar la sesión con better-auth (Enterprise enhanced)
 async function checkSession(request: NextRequest): Promise<{
   isAuthenticated: boolean;
   role?: string;
+  userId?: string;
+  email?: string;
 }> {
   try {
     const sessionToken = request.cookies.get(
@@ -125,6 +231,8 @@ async function checkSession(request: NextRequest): Promise<{
         return {
           isAuthenticated: true,
           role: session.user.role || "user",
+          userId: session.user.id,
+          email: session.user.email,
         };
       }
     }

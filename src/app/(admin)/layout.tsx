@@ -1,9 +1,10 @@
 import { type ReactNode } from "react";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { requireAuth } from "@/core/auth/server";
 import { ROLE_INFO } from "@/core/auth/config/permissions";
 import type { SessionUser } from "@/shared/types/user";
-import AdminShell from "@/shared/ui/layouts/AdminShell";
+import { AdminShellServer } from "@/shared/ui/layouts";
 
 export const runtime = "nodejs";
 
@@ -21,16 +22,19 @@ export default async function AdminRootLayout({
   const isSuperAdmin = role === "super_admin";
   if (!isAdmin) redirect("/unauthorized");
 
-  // 🎛️ Feature flags ahora se manejan reactivamente en el cliente
+  // 🎯 Get current path for Server Component navigation
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") || "/dashboard";
 
   return (
-    <AdminShell
+    <AdminShellServer
       user={user}
       isAdmin={isAdmin}
       isSuperAdmin={isSuperAdmin}
       roleInfo={ROLE_INFO[role]}
+      currentPath={pathname}
     >
       {children}
-    </AdminShell>
+    </AdminShellServer>
   );
 }

@@ -82,6 +82,18 @@ export async function PUT(request: NextRequest) {
       session.user.id
     );
 
+    // 🔄 INVALIDATE CACHE - Para actualizaciones inmediatas
+    try {
+      const { invalidateFeatureFlagsCache } = await import(
+        "@/core/config/server-feature-flags"
+      );
+      await invalidateFeatureFlagsCache();
+      console.log(`[FeatureFlags] Cache invalidated for flag: ${flagKey}`);
+    } catch (cacheError) {
+      console.warn("[FeatureFlags] Cache invalidation failed:", cacheError);
+      // No fallar la request si solo falla la invalidación
+    }
+
     // El schema se regenera automáticamente en el servicio si es necesario
 
     return NextResponse.json({
@@ -89,6 +101,7 @@ export async function PUT(request: NextRequest) {
       flag: updatedFlag,
       updatedBy: session.user.email,
       timestamp: new Date().toISOString(),
+      cacheInvalidated: true,
     });
   } catch (error) {
     console.error("Error updating feature flag:", error);
@@ -146,11 +159,24 @@ export async function POST(request: NextRequest) {
     // Por ahora solo retornamos confirmación
     console.log(`Feature flags actualizadas por ${session.user.email}:`, flags);
 
+    // 🔄 INVALIDATE CACHE - Para actualizaciones inmediatas
+    try {
+      const { invalidateFeatureFlagsCache } = await import(
+        "@/core/config/server-feature-flags"
+      );
+      await invalidateFeatureFlagsCache();
+      console.log(`[FeatureFlags] Cache invalidated for bulk update`);
+    } catch (cacheError) {
+      console.warn("[FeatureFlags] Cache invalidation failed:", cacheError);
+      // No fallar la request si solo falla la invalidación
+    }
+
     return NextResponse.json({
       success: true,
       updatedFlags: flags,
       updatedBy: session.user.email,
       timestamp: new Date().toISOString(),
+      cacheInvalidated: true,
     });
   } catch (error) {
     console.error("Error updating feature flags:", error);
@@ -183,11 +209,24 @@ export async function DELETE(request: NextRequest) {
     // TODO: Limpiar overrides de la base de datos
     console.log(`Feature flags reseteadas por ${session.user.email}`);
 
+    // 🔄 INVALIDATE CACHE - Para actualizaciones inmediatas
+    try {
+      const { invalidateFeatureFlagsCache } = await import(
+        "@/core/config/server-feature-flags"
+      );
+      await invalidateFeatureFlagsCache();
+      console.log(`[FeatureFlags] Cache invalidated for reset`);
+    } catch (cacheError) {
+      console.warn("[FeatureFlags] Cache invalidation failed:", cacheError);
+      // No fallar la request si solo falla la invalidación
+    }
+
     return NextResponse.json({
       success: true,
       message: "Feature flags reseteadas a valores por defecto",
       resetBy: session.user.email,
       timestamp: new Date().toISOString(),
+      cacheInvalidated: true,
     });
   } catch (error) {
     console.error("Error resetting feature flags:", error);

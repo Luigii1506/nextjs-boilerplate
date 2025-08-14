@@ -31,7 +31,11 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
-    "test:all": "npm run test && npm run test:e2e"
+    "test:all": "npm run test && npm run test:e2e",
+    "demo:enterprise-flags": "npx tsx scripts/demo-enterprise-flags.ts",
+    "test:enterprise-migration": "npx tsx scripts/test-enterprise-migration.ts",
+    "test:cache-invalidation": "npx tsx scripts/test-cache-invalidation.ts",
+    "test:realtime-navigation": "npx tsx scripts/test-realtime-navigation.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.859.0",
