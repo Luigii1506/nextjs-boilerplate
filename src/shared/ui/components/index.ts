@@ -7,3 +7,6 @@
 // export { Card } from "./Card";
 // export { Input } from "./Input";
 // export { Spinner } from "./Spinner";
+
+// 🧭 Navigation Components
+export * from "./HydrationSafeNavItem";

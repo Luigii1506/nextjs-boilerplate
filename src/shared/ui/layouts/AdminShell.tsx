@@ -5,7 +5,7 @@ import { Users, Shield, LogOut, Home, Upload, Sliders } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { authClient } from "@/core/auth/auth-client";
-import { useFeatureFlags } from "@/shared/hooks/useFeatureFlags";
+import { HydrationSafeNavItem } from "@/shared/ui/components";
 import type { SessionUser } from "@/shared/types/user";
 
 interface RoleInfo {
@@ -21,7 +21,6 @@ interface AdminLayoutProps {
   isAdmin: boolean;
   isSuperAdmin: boolean;
   roleInfo: RoleInfo;
-  // fileUploadEnabled: boolean; // Ya no necesario, se obtiene del hook
 }
 
 const navBase =
@@ -38,10 +37,6 @@ export default function AdminShell({
 }: AdminLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
-
-  // 🎛️ Usar hook reactivo para feature flags
-  const { isEnabled } = useFeatureFlags();
-  const fileUploadEnabled = isEnabled("fileUpload");
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");
@@ -156,17 +151,16 @@ export default function AdminShell({
               <span>Usuarios</span>
             </Link>
 
-            {fileUploadEnabled && (
-              <Link
-                href="/files"
-                className={`${navBase} ${
-                  isActive("/files") ? navActive : navIdle
-                }`}
-              >
-                <Upload className="w-4 h-4" />
-                <span>📁 Gestión de Archivos</span>
-              </Link>
-            )}
+            <HydrationSafeNavItem
+              href="/files"
+              icon={Upload}
+              label="📁 Gestión de Archivos"
+              requiredFeatureFlag="fileUpload"
+              isActive={isActive}
+              navBase={navBase}
+              navActive={navActive}
+              navIdle={navIdle}
+            />
 
             {isAdmin && (
               <Link
