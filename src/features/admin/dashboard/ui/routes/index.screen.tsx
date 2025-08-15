@@ -43,7 +43,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
     banned: 0,
     admins: 0,
   });
-  const [recentUsers, setRecentUsers] = useState<User[]>([]);
+  const [, setRecentUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
   // 🎛️ Feature Flags (Pure Server Actions)

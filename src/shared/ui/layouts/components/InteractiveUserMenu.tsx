@@ -11,6 +11,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import type { SessionUser } from "@/shared/types/user";
 
 interface RoleInfo {
@@ -45,10 +46,12 @@ export function InteractiveUserMenu({
       </div>
 
       {user.image ? (
-        <img
+        <Image
           src={user.image}
-          alt={user.name ?? ""}
-          className="w-10 h-10 rounded-full border-2 border-slate-200"
+          alt={user.name ?? "Usuario"}
+          width={40}
+          height={40}
+          className="rounded-full border-2 border-slate-200"
         />
       ) : (
         <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center">

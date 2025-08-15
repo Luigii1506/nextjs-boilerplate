@@ -5,10 +5,10 @@
 // 🪝 Hooks Compartidos
 export { useAuth, useAdminPage, useProtectedPage } from "./hooks/useAuth";
 export {
-  useFeatureFlags,
-  useFeatureFlag,
-  FeatureFlagsProvider,
-} from "./hooks/useFeatureFlags";
+  useFeatureFlagsServer,
+  useIsEnabled,
+  FeatureFlagsServerProvider,
+} from "./hooks/useFeatureFlagsServerActions";
 export { usePermissions } from "./hooks/usePermissions";
 
 // 📝 Tipos Compartidos

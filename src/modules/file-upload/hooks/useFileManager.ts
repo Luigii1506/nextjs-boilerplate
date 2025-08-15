@@ -153,7 +153,7 @@ export function useFileManager(): UseFileManagerReturn {
         categoryId: selectedCategory || undefined,
       });
     },
-    [loadFiles, selectedCategory, selectedProvider]
+    [loadFiles, selectedCategory]
   );
 
   // ⚡ Cambiar categoría seleccionada (React Compiler will memoize)
@@ -165,7 +165,7 @@ export function useFileManager(): UseFileManagerReturn {
         provider: selectedProvider || undefined,
       });
     },
-    [loadFiles, selectedCategory, selectedProvider]
+    [loadFiles, selectedProvider]
   );
 
   // ⚡ Refrescar archivos (React Compiler will memoize)
@@ -174,7 +174,7 @@ export function useFileManager(): UseFileManagerReturn {
       categoryId: selectedCategory || undefined,
       provider: selectedProvider || undefined,
     });
-  }, [loadFiles]);
+  }, [loadFiles, selectedCategory, selectedProvider]);
 
   // ⚡ Cargar datos iniciales (optimized for React Compiler)
   useEffect(() => {

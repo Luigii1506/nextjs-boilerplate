@@ -23,20 +23,12 @@ const MockFeatureFlagsProvider = ({
 // 🧩 Provider completo para testing
 interface TestProvidersProps {
   children: React.ReactNode;
-  initialFeatureFlags?: Record<string, boolean>;
-  mockUser?: {
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-  } | null;
+  // These props are available for future use:
+  // initialFeatureFlags?: Record<string, boolean>;
+  // mockUser?: { id: string; name: string; email: string; role: string; } | null;
 }
 
-const TestProviders: React.FC<TestProvidersProps> = ({
-  children,
-  initialFeatureFlags = {},
-  mockUser = null,
-}) => {
+const TestProviders: React.FC<TestProvidersProps> = ({ children }) => {
   return (
     <MockAuthProvider>
       <MockFeatureFlagsProvider>{children}</MockFeatureFlagsProvider>
@@ -61,8 +53,9 @@ export const renderWithProviders = (
   options: CustomRenderOptions = {}
 ) => {
   const {
-    initialFeatureFlags = {},
-    mockUser = null,
+    // Future test options:
+    // initialFeatureFlags = {},
+    // mockUser = null,
     withoutProviders = false,
     ...renderOptions
   } = options;
@@ -76,12 +69,7 @@ export const renderWithProviders = (
   }
 
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
-    <TestProviders
-      initialFeatureFlags={initialFeatureFlags}
-      mockUser={mockUser}
-    >
-      {children}
-    </TestProviders>
+    <TestProviders>{children}</TestProviders>
   );
 
   return {

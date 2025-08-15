@@ -1,17 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  Plus,
-  Search,
-  Filter,
-  Users,
-  UserCheck,
-  UserX,
-  Shield,
-  Download,
-  MoreHorizontal,
-} from "lucide-react";
+import { Plus, Search, Users, UserCheck, UserX, Shield } from "lucide-react";
 import { User, UserFormData, UserStats } from "@/shared/types/user";
 import { authClient } from "@/core/auth/auth-client";
 import { type RoleName } from "@/core/auth/config/permissions";
@@ -65,7 +55,7 @@ const UsersView: React.FC = () => {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
-  const [isActionLoading, setIsActionLoading] = useState(false);
+  const [, setIsActionLoading] = useState(false);
 
   const usersPerPage = 12; // Better for card layout
 

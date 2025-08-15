@@ -2,9 +2,9 @@
 
 import React, { useState } from "react";
 import { User } from "@/shared/types/user";
+import Image from "next/image";
 import {
   MoreVertical,
-  Shield,
   User as UserIcon,
   Crown,
   Ban,
@@ -90,10 +90,12 @@ const UserCard: React.FC<UserCardProps> = ({
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
           {user.image ? (
-            <img
+            <Image
               src={user.image}
-              alt={user.name}
-              className="w-12 h-12 rounded-full object-cover"
+              alt={user.name || "Usuario"}
+              width={48}
+              height={48}
+              className="rounded-full object-cover"
             />
           ) : (
             <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold">

@@ -3,7 +3,6 @@
 // Configuración centralizada de variables de entorno con validación
 
 // 🔍 DEBUGGING: Verificar contexto de ejecución
-const isServer = typeof window === "undefined";
 const isClient = typeof window !== "undefined";
 
 /**

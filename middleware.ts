@@ -4,6 +4,7 @@ import {
   getServerFeatureFlags,
   type FeatureFlagContext,
 } from "@/core/config/server-feature-flags";
+import { extractGeoData } from "@/core/types/request";
 
 // Rutas que requieren autenticación
 const protectedRoutes = [
@@ -67,13 +68,14 @@ export async function middleware(request: NextRequest) {
 
   if (needsFeatureFlags) {
     try {
-      // 🚀 Build context for feature flag evaluation
+      // 🚀 Build context for feature flag evaluation (ENTERPRISE-GRADE)
+      const geoData = extractGeoData(request);
       const flagContext: FeatureFlagContext = {
         userId,
         userRole,
         userEmail,
-        country: (request as any).geo?.country || "unknown",
-        userAgent: request.headers.get("user-agent") || "unknown",
+        country: geoData.country,
+        userAgent: geoData.userAgent,
       };
 
       // ⚡ Evaluate feature flags at Edge (ultra-fast)

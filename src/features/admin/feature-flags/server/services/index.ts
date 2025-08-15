@@ -10,7 +10,6 @@ import {
   getConflictingFlagsQuery,
   featureFlagExistsQuery,
   getFeatureFlagHistoryQuery,
-  getFeatureFlagStatsQuery,
   createFeatureFlagQuery,
   updateFeatureFlagQuery,
   deleteFeatureFlagQuery,
@@ -245,7 +244,7 @@ export class FeatureFlagService {
 
   // 🚀 Inicializar flags por defecto
   async initializeDefaultFlags(): Promise<void> {
-    console.log("🎛️  Initializing default feature flags...");
+    // Initializing default feature flags...
 
     const defaultFlags: CreateFeatureFlagInput[] = [
       {
@@ -298,7 +297,7 @@ export class FeatureFlagService {
       }
     }
 
-    console.log("✅ Default feature flags initialized");
+    // Default feature flags initialized
   }
 
   // 🏗️ Obtener flags que requieren regeneración de schema

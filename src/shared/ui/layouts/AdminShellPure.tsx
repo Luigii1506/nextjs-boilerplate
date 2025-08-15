@@ -14,6 +14,7 @@ import DynamicNavigationPure from "./components/DynamicNavigationPure";
 import { InteractiveUserMenu } from "./components/InteractiveUserMenu";
 import { LogoutButton } from "./components/LogoutButton";
 import type { SessionUser } from "@/shared/types/user";
+import Image from "next/image";
 
 // 🎯 Role info mapping
 const ROLE_INFO = {
@@ -104,12 +105,14 @@ export default function AdminShellPure({
             {/* User Info */}
             <div className="p-4 mb-6 bg-slate-50 rounded-lg">
               <div className="flex items-center gap-3">
-                <img
+                <Image
                   src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
                     user.name || "User"
                   )}&background=3b82f6&color=ffffff&size=40`}
                   alt={user.name || "User"}
-                  className="w-10 h-10 rounded-full"
+                  width={40}
+                  height={40}
+                  className="rounded-full"
                 />
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-slate-900 truncate">

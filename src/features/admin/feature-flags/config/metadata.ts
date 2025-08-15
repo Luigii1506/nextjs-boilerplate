@@ -145,7 +145,7 @@ export function getFeatureFlagMetadata(flag: FeatureFlag): FeatureFlagMetadata {
 }
 
 // 📊 Helper function para obtener flags por categoría
-export function getFeatureFlagsByCategory(category: string): FeatureFlag[] {
+export function getFeatureFlagsByCategory(): FeatureFlag[] {
   // Implementar lógica según la categoría si es necesario
   return Object.keys(FEATURE_FLAG_METADATA) as FeatureFlag[];
 }

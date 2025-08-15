@@ -177,18 +177,27 @@ export class S3UploadProvider implements UploadProvider {
         });
       }
 
-      // Upload simple con fetch
-      const response = await fetch("/api/modules/file-upload/s3", {
-        method: "POST",
-        body: formData,
-      });
+      // 🎯 ENTERPRISE-GRADE: Direct Server Action call
+      const { uploadFileAction } = await import("../server/actions");
 
-      if (!response.ok) {
-        throw new Error(`Upload error: ${response.statusText}`);
+      // Preparar datos para Server Action
+      const file = formData.get("file") as File;
+      if (!file) throw new Error("No file provided");
+
+      const uploadResult = await uploadFileAction(formData, "system", "s3");
+
+      if (!uploadResult.success || !uploadResult.data) {
+        throw new Error(
+          `Upload failed: ${uploadResult.error || "Unknown error"}`
+        );
       }
 
-      const result = await response.json();
-      return result;
+      // Convert UploadFile to UploadResult format
+      return {
+        success: true,
+        url: uploadResult.data.url,
+        key: uploadResult.data.key || uploadResult.data.url,
+      };
     } catch (error) {
       console.error("Error uploading to S3:", error);
       return {
@@ -203,16 +212,15 @@ export class S3UploadProvider implements UploadProvider {
    */
   async delete(key: string): Promise<boolean> {
     if (!this.isServer) {
-      // En el cliente, la eliminación se maneja a través de la API route
+      // 🎯 ENTERPRISE-GRADE: Direct Server Action call
       try {
-        const response = await fetch("/api/modules/file-upload/s3", {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ key, bucket: this.config.bucket }),
-        });
-        return response.ok;
+        const { deleteFileServerAction } = await import("../server/actions");
+        const formData = new FormData();
+        formData.append("key", key);
+        formData.append("bucket", this.config.bucket);
+
+        const result = await deleteFileServerAction(formData);
+        return result.success;
       } catch (error) {
         console.error("Error deleting from S3:", error);
         return false;
@@ -263,27 +271,29 @@ export class S3UploadProvider implements UploadProvider {
     expiresIn = 3600
   ): Promise<string> {
     if (!this.isServer) {
-      // En el cliente, la generación de URL firmada se maneja a través de la API route
+      // 🎯 ENTERPRISE-GRADE: Direct Server Action call
       try {
-        const response = await fetch("/api/modules/file-upload/s3/signed-url", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            filename,
-            mimeType,
-            isPublic,
-            expiresIn,
-          }),
-        });
+        const { generateSignedUrlServerAction } = await import(
+          "../server/actions"
+        );
+        const formData = new FormData();
+        formData.append("filename", filename);
+        formData.append("mimeType", mimeType);
+        formData.append("isPublic", isPublic.toString());
+        formData.append("expiresIn", expiresIn.toString());
 
-        if (!response.ok) {
-          throw new Error("Failed to get signed URL");
+        const result = await generateSignedUrlServerAction(formData);
+
+        if (!result.success) {
+          throw new Error(`Signed URL error: ${result.error}`);
         }
 
-        const result = await response.json();
-        return result.url;
+        if (!result.success) {
+          throw new Error(`Failed to get signed URL: ${result.error}`);
+        }
+
+        // generateSignedUrlServerAction returns the URL directly in data
+        return (result.data as string) || "";
       } catch (error) {
         console.error("Error getting signed URL:", error);
         throw error;
@@ -311,7 +321,7 @@ export class S3UploadProvider implements UploadProvider {
   async getSignedUploadUrl(
     filename: string,
     mimeType: string,
-    isPublic = false,
+    /* isPublic - not used in current implementation */
     expiresIn = 3600
   ): Promise<{ url: string; key: string }> {
     if (!this.isServer || !this.s3Client) {

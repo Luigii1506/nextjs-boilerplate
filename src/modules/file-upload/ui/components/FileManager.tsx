@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+// NextImage import available for future optimization
 import {
   MoreVertical,
   Download,
@@ -8,13 +9,14 @@ import {
   Share,
   Copy,
   Calendar,
-  Image,
+  Image as LucideImage,
   File,
   Video,
   Music,
   FileText,
 } from "lucide-react";
 import type { UploadCardData } from "../../types";
+import Image from "next/image";
 
 interface FileManagerProps {
   files: UploadCardData[];
@@ -40,7 +42,7 @@ const FileManager: React.FC<FileManagerProps> = ({
     const iconProps = { size, className: "flex-shrink-0" };
 
     if (mimeType.startsWith("image/"))
-      return <Image {...iconProps} className="text-blue-500" />;
+      return <LucideImage {...iconProps} className="text-blue-500" />;
     if (mimeType.startsWith("video/"))
       return <Video {...iconProps} className="text-purple-500" />;
     if (mimeType.startsWith("audio/"))
@@ -235,11 +237,12 @@ const FileManager: React.FC<FileManagerProps> = ({
           {/* Preview */}
           <div className="aspect-square bg-slate-50 flex items-center justify-center relative overflow-hidden">
             {file.mimeType.startsWith("image/") ? (
-              <img
+              <Image
                 src={file.url}
-                alt={file.originalName}
+                alt={file.originalName || "Vista previa del archivo"}
                 className="w-full h-full object-cover"
                 loading="lazy"
+                style={{ aspectRatio: "1 / 1" }}
               />
             ) : (
               <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center">

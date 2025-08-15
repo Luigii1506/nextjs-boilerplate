@@ -2,17 +2,12 @@
 // ======================
 // Hooks personalizados para el manejo de feature flags (React Compiler optimized)
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useFeatureFlagsServer } from "@/shared/hooks/useFeatureFlagsServerActions";
 import type { FeatureFlagCardData, FeatureFlagStats } from "../types";
 import type { NotificationState } from "../utils";
 import type { FeatureFlag, FeatureGroup } from "@/core/config/feature-flags";
-import {
-  filterFeatureFlags,
-  groupByCategory,
-  type CategoryColors,
-  getCategoryColors,
-} from "../utils";
+import { filterFeatureFlags, groupByCategory } from "../utils";
 
 // 🔧 Funciones auxiliares
 const mapCategoryToGroup = (category: string): string => {
@@ -61,25 +56,14 @@ export interface FeatureFlagAdminState {
 // 🪝 Hook principal para administración de feature flags
 export const useFeatureFlagAdmin = () => {
   const {
-    flags: flagsData,
-    toggleFlag: toggle,
-    isPending,
+    flags: optimisticFlags,
+    toggleFlag,
     isLoading: hookLoading,
     error: hookError,
   } = useFeatureFlagsServer();
 
-  // ⚡ Convert Server Actions data to local format (memoized)
-  const getAllFlagsData = useCallback(() => flagsData, [flagsData]);
-  const updateFlag = useCallback(
-    async (
-      flagKey: string,
-      data: { enabled?: boolean; name?: string; description?: string }
-    ) => {
-      // For advanced updates, we could extend the Server Actions hook
-      console.log("Update flag:", flagKey, data);
-    },
-    []
-  );
+  // updateFlag is handled by useFeatureFlagsServer directly
+  // const updateFlag = useCallback(async () => {}, []);
   const refresh = useCallback(async () => {
     // Refresh is handled internally by the Server Actions hook
   }, []);
@@ -111,7 +95,8 @@ export const useFeatureFlagAdmin = () => {
   // ⚡ Cargar datos iniciales (React Compiler will memoize)
   const loadData = useCallback(() => {
     try {
-      const flagsData = getAllFlagsData();
+      // ✅ Usar datos del hook optimista - fuente única de verdad
+      const flagsData = optimisticFlags;
 
       // Mapear a formato UI (ya está hecho en el hook base)
       const flags: FeatureFlagCardData[] = flagsData.map((flag) => ({
@@ -154,7 +139,7 @@ export const useFeatureFlagAdmin = () => {
         isLoading: false,
       }));
     }
-  }, [getAllFlagsData, hookLoading, hookError, state.filters]);
+  }, [optimisticFlags, hookLoading, hookError, state.filters]);
 
   // ⚡ Efecto para cargar datos (optimized for React Compiler)
   useEffect(() => {
@@ -178,39 +163,34 @@ export const useFeatureFlagAdmin = () => {
   };
 
   // ⚡ Mostrar notificación (React Compiler will memoize)
-  const showNotification = (
-    type: NotificationState["type"],
-    message: string
-  ) => {
-    setState((prev) => ({ ...prev, notification: { type, message } }));
-    setTimeout(() => {
-      setState((prev) => ({ ...prev, notification: null }));
-    }, 5000);
-  };
+  const showNotification = useCallback(
+    (type: NotificationState["type"], message: string) => {
+      setState((prev) => ({ ...prev, notification: { type, message } }));
+    },
+    []
+  );
 
-  // ⚡ Toggle individual (React Compiler will memoize)
-  const handleToggle = async (flagKey: string) => {
-    try {
-      setState((prev) => ({ ...prev, isLoading: true }));
-      await toggle(flagKey);
-      loadData(); // Recargar datos para actualizar el estado real
-      showNotification("success", `Feature flag '${flagKey}' actualizado`);
-    } catch (error) {
-      showNotification("error", `Error al actualizar '${flagKey}'`);
-      console.error("Error toggling flag:", error);
-    } finally {
-      setState((prev) => ({ ...prev, isLoading: false }));
-    }
-  };
+  // ⚡ Toggle individual usando hook optimista (React Compiler will memoize)
+  const handleToggle = useCallback(
+    async (flagKey: string) => {
+      try {
+        // ✅ PURE OPTIMISTIC UI: Usar la función optimista directamente
+        // Esto maneja optimistic state + server action automáticamente
+        await toggleFlag(flagKey as FeatureFlag);
+        showNotification("success", `Feature flag '${flagKey}' actualizado`);
+      } catch (error) {
+        showNotification("error", `Error al actualizar '${flagKey}'`);
+        console.error("Error toggling flag:", error);
+      }
+    },
+    [toggleFlag, showNotification]
+  );
 
   // ⚡ Actualizar flag (React Compiler will memoize)
-  const handleUpdate = async (
-    flagKey: string,
-    data: { enabled?: boolean; name?: string; description?: string }
-  ) => {
+  const handleUpdate = async () => {
     try {
       setState((prev) => ({ ...prev, isLoading: true }));
-      await updateFlag(flagKey, data);
+      // updateFlag is handled by useFeatureFlagsServer now
       loadData(); // Recargar datos
       showNotification("success", "Feature flag actualizado correctamente");
     } catch (error) {
@@ -305,20 +285,44 @@ export const useNotifications = () => {
   const [notification, setNotification] = useState<NotificationState | null>(
     null
   );
+  const notificationTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+
+  // 🎯 ENTERPRISE-GRADE: Auto-clear notifications with proper cleanup
+  useEffect(() => {
+    if (notification) {
+      // Clear any existing timeout
+      if (notificationTimeoutRef.current) {
+        clearTimeout(notificationTimeoutRef.current);
+      }
+
+      // Set new timeout
+      notificationTimeoutRef.current = setTimeout(() => {
+        setNotification(null);
+      }, 5000);
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (notificationTimeoutRef.current) {
+        clearTimeout(notificationTimeoutRef.current);
+      }
+    };
+  }, [notification]);
 
   // React Compiler will memoize these functions automatically
-  const showNotification = (
-    type: NotificationState["type"],
-    message: string,
-    duration = 5000
-  ) => {
-    setNotification({ type, message });
-    setTimeout(() => setNotification(null), duration);
-  };
+  const showNotification = useCallback(
+    (type: NotificationState["type"], message: string) => {
+      setNotification({ type, message });
+    },
+    []
+  );
 
-  const hideNotification = () => {
+  const hideNotification = useCallback(() => {
     setNotification(null);
-  };
+    if (notificationTimeoutRef.current) {
+      clearTimeout(notificationTimeoutRef.current);
+    }
+  }, []);
 
   return {
     notification,

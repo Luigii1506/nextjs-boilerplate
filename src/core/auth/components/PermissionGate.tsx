@@ -6,11 +6,7 @@
  */
 
 import React, { ReactNode, useEffect, useState } from "react";
-import {
-  usePermissions,
-  useUserManagement,
-  type Permission,
-} from "@/shared/hooks/usePermissions";
+import { usePermissions, type Permission } from "@/shared/hooks/usePermissions";
 import { type RoleName } from "@/core/auth/config/permissions";
 
 interface PermissionGateProps {
@@ -107,7 +103,7 @@ export const PermissionGate: React.FC<PermissionGateProps> = ({
             currentRole === requiredRole ||
             (requiredRole === "admin" && isSuperAdmin()) ||
             (requiredRole === "user" && isAdmin());
-          console.log("2222", allowed, requiredRole);
+          // Permission check debug (removed console.log)
         }
         // Check by minimum level
         else if (minLevel !== undefined) {

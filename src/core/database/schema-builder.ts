@@ -145,14 +145,13 @@ export async function buildDynamicSchema(
 export async function writeGeneratedSchema(schema: string): Promise<void> {
   const outputPath = path.join(__dirname, "prisma", "generated-schema.prisma");
   fs.writeFileSync(outputPath, schema, "utf-8");
-  console.log(`✅ Generated schema written to: ${outputPath}`);
+  // Generated schema written to file
 }
 
 // 🔄 Proceso completo de generación
 export async function regenerateSchema(enabledFlags: string[]): Promise<void> {
   try {
-    console.log("🏗️  Building dynamic Prisma schema...");
-    console.log("🎛️  Enabled flags:", enabledFlags);
+    // Building dynamic Prisma schema...
 
     // 1. Obtener módulos activos
     const activeModules = await getActiveModules(enabledFlags);
@@ -167,7 +166,7 @@ export async function regenerateSchema(enabledFlags: string[]): Promise<void> {
     // 3. Escribir schema generado
     await writeGeneratedSchema(schema);
 
-    console.log("✅ Dynamic schema generation completed!");
+    // Dynamic schema generation completed
   } catch (error) {
     console.error("❌ Error generating schema:", error);
     throw error;

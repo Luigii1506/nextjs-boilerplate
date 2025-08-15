@@ -416,18 +416,19 @@ export async function generateSignedUrlServerAction(
 
     const key = formData.get("key") as string;
     const fileId = formData.get("fileId") as string;
-    // const expiresIn = parseInt(formData.get("expiresIn") as string || "3600"); // TODO: Use in actual implementation
+    const expiresIn = parseInt((formData.get("expiresIn") as string) || "3600");
 
     if (!key && !fileId) {
       throw new Error("Key de archivo o ID de archivo requerido");
     }
 
-    // For now, use existing action
+    // 🎯 ENTERPRISE-GRADE: Use configured expiration time
     const result = await getSignedUrlAction({
       filename: key || fileId,
       mimeType:
         (formData.get("mimeType") as string) || "application/octet-stream",
       isPublic: formData.get("isPublic") === "true",
+      expiresIn,
     });
 
     return {

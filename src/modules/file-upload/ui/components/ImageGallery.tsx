@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import Image from "next/image";
 import {
   X,
   Download,
@@ -122,10 +123,11 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
             className="group relative aspect-square bg-slate-100 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300"
             onClick={() => openLightbox(image, index)}
           >
-            <img
+            <Image
               src={image.url}
-              alt={image.originalName}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              alt={image.originalName || "Imagen de galería"}
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
               loading="lazy"
             />
 
@@ -233,9 +235,11 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
 
           {/* Main Image */}
           <div className="max-w-7xl max-h-full flex items-center justify-center">
-            <img
+            <Image
               src={selectedImage.url}
-              alt={selectedImage.originalName}
+              alt={selectedImage.originalName || "Imagen seleccionada"}
+              width={1000}
+              height={800}
               className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             />

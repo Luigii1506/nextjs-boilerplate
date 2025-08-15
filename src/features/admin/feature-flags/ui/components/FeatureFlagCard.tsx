@@ -4,7 +4,7 @@
 
 "use client";
 
-import React, { useState, useOptimistic, useTransition } from "react";
+import React, { useState, useTransition } from "react";
 import {
   Shield,
   Lock,
@@ -49,15 +49,7 @@ const FeatureFlagCard: React.FC<FeatureFlagCardProps> = ({
 }) => {
   const [showDetails, setShowDetails] = useState(false);
 
-  // ✅ Ya no necesitamos useActionState - usamos la función del hook
-
-  // ⚡ React 19 useOptimistic for instant UI updates
-  const [optimisticEnabled, setOptimisticEnabled] = useOptimistic(
-    flag.enabled,
-    (currentState, optimisticValue: boolean) => optimisticValue
-  );
-
-  // 🔄 React 19 useTransition for optimistic updates
+  // 🔄 React 19 useTransition for loading state
   const [isTransitioning, startTransition] = useTransition();
 
   const getIconComponent = (iconName: string) => {
@@ -213,45 +205,34 @@ const FeatureFlagCard: React.FC<FeatureFlagCardProps> = ({
                 <span className="text-xs font-medium">Actualizando...</span>
               </div>
             )}
-            {hasBlockingDependencies &&
-              !optimisticEnabled &&
-              !isTransitioning && (
-                <div className="flex items-center gap-1 text-amber-600">
-                  <AlertTriangle size={16} />
-                  <span className="text-xs font-medium">Dependencias</span>
-                </div>
-              )}
+            {hasBlockingDependencies && !flag.enabled && !isTransitioning && (
+              <div className="flex items-center gap-1 text-amber-600">
+                <AlertTriangle size={16} />
+                <span className="text-xs font-medium">Dependencias</span>
+              </div>
+            )}
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
-                checked={optimisticEnabled}
+                checked={flag.enabled}
                 onChange={(e) => {
                   // Prevent if disabled or loading
                   if (
                     isLoading ||
                     isTransitioning ||
-                    (hasBlockingDependencies && !optimisticEnabled)
+                    (hasBlockingDependencies && !flag.enabled)
                   ) {
                     e.preventDefault();
                     return;
                   }
 
-                  // ⚡ Optimistic update within transition (React 19)
+                  // ✅ SINGLE SOURCE OF TRUTH: Solo usar hook optimista padre
                   startTransition(async () => {
-                    const newValue = !optimisticEnabled;
-                    setOptimisticEnabled(newValue);
-
                     try {
-                      // ✅ Usar función del hook en lugar de Server Action directo
                       if (onToggle) {
                         await onToggle(flag.id);
                       }
-                      console.log(
-                        `[FeatureFlagCard] Flag toggled via hook: ${flag.id} - Optimistic: ${newValue}`
-                      );
                     } catch (error) {
-                      // 🔄 Revertir estado optimista en caso de error
-                      setOptimisticEnabled(flag.enabled);
                       console.error(
                         `[FeatureFlagCard] Error toggling flag:`,
                         error
@@ -262,15 +243,15 @@ const FeatureFlagCard: React.FC<FeatureFlagCardProps> = ({
                 disabled={
                   isLoading ||
                   isTransitioning ||
-                  (hasBlockingDependencies && !optimisticEnabled)
+                  (hasBlockingDependencies && !flag.enabled)
                 }
                 className="sr-only peer"
               />
               <div
                 className={`w-12 h-6 rounded-full transition-all duration-300 ${
-                  optimisticEnabled
+                  flag.enabled
                     ? colors.toggle
-                    : hasBlockingDependencies && !optimisticEnabled
+                    : hasBlockingDependencies && !flag.enabled
                     ? "bg-slate-200 cursor-not-allowed"
                     : "bg-slate-200 hover:bg-slate-300"
                 } peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500/20 ${
@@ -281,7 +262,7 @@ const FeatureFlagCard: React.FC<FeatureFlagCardProps> = ({
               >
                 <div
                   className={`absolute top-0.5 left-0.5 bg-white rounded-full h-5 w-5 transition-transform duration-300 shadow-sm ${
-                    optimisticEnabled ? "translate-x-6" : "translate-x-0"
+                    flag.enabled ? "translate-x-6" : "translate-x-0"
                   }`}
                 />
               </div>
@@ -311,7 +292,7 @@ const FeatureFlagCard: React.FC<FeatureFlagCardProps> = ({
         </div>
 
         {/* Dependencies Warning */}
-        {hasBlockingDependencies && !optimisticEnabled && (
+        {hasBlockingDependencies && !flag.enabled && (
           <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl">
             <div className="flex items-start gap-2">
               <AlertTriangle

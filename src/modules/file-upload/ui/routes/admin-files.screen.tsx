@@ -5,10 +5,8 @@ import {
   Grid,
   List,
   Search,
-  Filter,
-  Download,
-  Trash2,
   Plus,
+  Download,
   MoreHorizontal,
   Image,
   File,
@@ -17,6 +15,10 @@ import {
 } from "lucide-react";
 import type { UploadFile, UploadConfig, UploadCardData } from "../../types";
 import { useFileManager, useFileStats } from "../../hooks";
+import {
+  useFileNotifications,
+  useFileRefresh,
+} from "../../hooks/useFileNotifications";
 import FileUploader from "../components/FileUploader";
 import FileManager from "../components/FileManager";
 import FileStats from "../components/FileStats";
@@ -36,11 +38,10 @@ interface FileStatsType {
   audioCount: number;
 }
 
-interface FilesViewProps {
-  onViewChange?: (view: string) => void;
-}
+// FilesView component props (none currently needed)
+type FilesViewProps = Record<string, never>;
 
-const FilesView: React.FC<FilesViewProps> = ({ onViewChange }) => {
+const FilesView: React.FC<FilesViewProps> = () => {
   // Usar hooks reales del módulo
   const {
     files,
@@ -51,7 +52,7 @@ const FilesView: React.FC<FilesViewProps> = ({ onViewChange }) => {
     selectedCategory,
     setSelectedCategory,
   } = useFileManager();
-  const { stats } = useFileStats();
+  const {} = useFileStats();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
@@ -63,10 +64,7 @@ const FilesView: React.FC<FilesViewProps> = ({ onViewChange }) => {
   const [activeTab, setActiveTab] = useState<
     "upload" | "manager" | "stats" | "gallery"
   >("manager");
-  const [notification, setNotification] = useState<{
-    type: "success" | "error" | "info";
-    message: string;
-  } | null>(null);
+  // Notification state handled by enterprise hook
 
   // Upload configuration - usar el provider seleccionado
   const uploadConfig: UploadConfig = {
@@ -136,18 +134,14 @@ const FilesView: React.FC<FilesViewProps> = ({ onViewChange }) => {
     return category?.id || null;
   };
 
-  const showNotification = (
-    type: "success" | "error" | "info",
-    message: string
-  ) => {
-    setNotification({ type, message });
-    setTimeout(() => setNotification(null), 5000);
-  };
+  const { notification: fileNotification, showNotification } =
+    useFileNotifications();
+
+  const optimizedRefreshFiles = useFileRefresh(refreshFiles);
 
   const handleUploadComplete = (uploadedFiles: UploadFile[]) => {
-    // Refrescar archivos inmediatamente y con delay para server actions
-    refreshFiles();
-    setTimeout(() => refreshFiles(), 500);
+    // 🎯 ENTERPRISE-GRADE: Optimized refresh with debouncing
+    optimizedRefreshFiles();
 
     showNotification(
       "success",
@@ -160,12 +154,8 @@ const FilesView: React.FC<FilesViewProps> = ({ onViewChange }) => {
         .filter(Boolean)
         .join(", ");
       if (categoriesDetected) {
-        setTimeout(() => {
-          showNotification(
-            "info",
-            `Categorías asignadas: ${categoriesDetected}`
-          );
-        }, 1000);
+        // 🎯 ENTERPRISE-GRADE: Show category info immediately
+        showNotification("info", `Categorías asignadas: ${categoriesDetected}`);
       }
     }
   };
@@ -227,17 +217,17 @@ const FilesView: React.FC<FilesViewProps> = ({ onViewChange }) => {
       </div>
 
       {/* Notification */}
-      {notification && (
+      {fileNotification && (
         <div
           className={`p-4 rounded-xl border ${
-            notification.type === "success"
+            fileNotification.type === "success"
               ? "bg-green-50 border-green-200 text-green-800"
-              : notification.type === "error"
+              : fileNotification.type === "error"
               ? "bg-red-50 border-red-200 text-red-800"
               : "bg-blue-50 border-blue-200 text-blue-800"
           }`}
         >
-          {notification.message}
+          {fileNotification.message}
         </div>
       )}
 

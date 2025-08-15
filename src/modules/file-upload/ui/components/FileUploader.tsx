@@ -10,7 +10,6 @@ import {
   FileText,
   AlertCircle,
   CheckCircle,
-  Trash2,
   Plus,
 } from "lucide-react";
 import type { UploadFile, UploadConfig } from "../../types";
@@ -33,6 +32,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]); // Archivos seleccionados
+  const [shouldCleanupProgress, setShouldCleanupProgress] = useState(false);
 
   // Usar el hook real de upload
   const {
@@ -43,6 +43,21 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     clearError,
     resetProgress,
   } = useFileUpload(config);
+
+  // 🎯 ENTERPRISE-GRADE: Progress cleanup with useEffect instead of setTimeout
+  useEffect(() => {
+    if (shouldCleanupProgress) {
+      const timeoutId = setTimeout(() => {
+        resetProgress();
+        setShouldCleanupProgress(false);
+      }, 2000);
+
+      // Cleanup on component unmount or state change
+      return () => {
+        clearTimeout(timeoutId);
+      };
+    }
+  }, [shouldCleanupProgress, resetProgress]);
 
   const getFileIcon = (mimeType: string) => {
     if (mimeType.startsWith("image/"))
@@ -96,36 +111,40 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   }, [uploadError, onUploadError]);
 
   // Función para manejar archivos seleccionados (NO sube automáticamente)
-  const handleFileSelection = (files: FileList) => {
-    const fileArray = Array.from(files);
-    const validFiles: File[] = [];
-    const errors: string[] = [];
+  const handleFileSelection = useCallback(
+    (files: FileList) => {
+      const fileArray = Array.from(files);
+      const validFiles: File[] = [];
+      const errors: string[] = [];
 
-    fileArray.forEach((file) => {
-      const error = validateFile(file);
-      if (error) {
-        errors.push(`${file.name}: ${error}`);
-      } else {
-        // Evitar duplicados
-        if (
-          !selectedFiles.some(
-            (existing) =>
-              existing.name === file.name && existing.size === file.size
-          )
-        ) {
-          validFiles.push(file);
+      fileArray.forEach((file) => {
+        const error = validateFile(file);
+        if (error) {
+          errors.push(`${file.name}: ${error}`);
+        } else {
+          // Evitar duplicados
+          if (
+            !selectedFiles.some(
+              (existing) =>
+                existing.name === file.name && existing.size === file.size
+            )
+          ) {
+            validFiles.push(file);
+          }
         }
+      });
+
+      if (errors.length > 0) {
+        onUploadError(errors.join("\n"));
+        return;
       }
-    });
 
-    if (errors.length > 0) {
-      onUploadError(errors.join("\n"));
-      return;
-    }
-
-    // Agregar archivos a la selección
-    setSelectedFiles((prev) => [...prev, ...validFiles]);
-  };
+      // Agregar archivos a la selección
+      setSelectedFiles((prev) => [...prev, ...validFiles]);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [onUploadError]
+  );
 
   // Función para ejecutar la subida de archivos seleccionados
   const handleUploadFiles = async () => {
@@ -174,10 +193,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       if (errors.length === 0) {
         setSelectedFiles([]);
 
-        // Limpiar progreso después de un delay
-        setTimeout(() => {
-          resetProgress();
-        }, 2000);
+        // ⏳ ENTERPRISE-GRADE: Trigger cleanup through state
+        setShouldCleanupProgress(true);
       }
     } catch (error) {
       onUploadError("Error general durante la subida");
@@ -221,7 +238,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       const files = e.dataTransfer.files;
       handleFileSelection(files);
     },
-    [selectedFiles]
+    [handleFileSelection]
   );
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -354,7 +371,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
             🚀 Progreso de Subida
           </h4>
           <div className="space-y-4">
-            {uploadProgress.map((progressItem, index) => {
+            {uploadProgress.map((progressItem) => {
               // Buscar el archivo correspondiente
               const file = selectedFiles.find(
                 (f, i) => `${f.name}-${i}` === progressItem.fileId

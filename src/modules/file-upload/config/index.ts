@@ -3,12 +3,7 @@
 // Configuración centralizada para el módulo de file upload
 
 import { getUploadConfig } from "@/core/config/environment";
-import type {
-  UploadConfig,
-  UploadProvider,
-  S3Config,
-  CloudinaryConfig,
-} from "../types";
+import type { UploadConfig, S3Config, CloudinaryConfig } from "../types";
 
 // 📦 CONFIGURACIÓN POR DEFECTO USANDO VARIABLES DE ENTORNO
 export function getDefaultUploadConfig(): UploadConfig {

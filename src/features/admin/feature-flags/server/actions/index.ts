@@ -9,7 +9,7 @@ import { invalidateFeatureFlagsCache } from "@/core/config/server-feature-flags"
 import { auth } from "@/core/auth/server/auth";
 import { headers } from "next/headers";
 import { revalidateTag } from "next/cache";
-import { redirect } from "next/navigation";
+
 import { regenerateSchema } from "@/core/database/schema-builder";
 import type {
   CreateFeatureFlagInput,
@@ -38,7 +38,7 @@ export async function toggleFeatureFlagAction(
       try {
         const enabledFlags = await featureFlagService.getSchemaFlags();
         await regenerateSchema(enabledFlags);
-        console.log("🏗️  Schema regenerated due to flag change");
+        // Schema regenerated due to flag change
       } catch (error) {
         console.error("❌ Error regenerating schema:", error);
         // No fallar la acción por esto
@@ -78,7 +78,7 @@ export async function updateFeatureFlagAction(
       try {
         const enabledFlags = await featureFlagService.getSchemaFlags();
         await regenerateSchema(enabledFlags);
-        console.log("🏗️  Schema regenerated due to flag update");
+        // Schema regenerated due to flag update
       } catch (error) {
         console.error("❌ Error regenerating schema:", error);
       }
@@ -155,7 +155,7 @@ export async function resetAllFeatureFlagsAction(
     try {
       const enabledFlags = await featureFlagService.getSchemaFlags();
       await regenerateSchema(enabledFlags);
-      console.log("🏗️  Schema regenerated after mass reset");
+      // Schema regenerated after mass reset
     } catch (error) {
       console.error("❌ Error regenerating schema:", error);
     }
@@ -201,7 +201,7 @@ export async function batchUpdateFeatureFlagsAction(
       try {
         const enabledFlags = await featureFlagService.getSchemaFlags();
         await regenerateSchema(enabledFlags);
-        console.log("🏗️  Schema regenerated after batch update");
+        // Schema regenerated after batch update
       } catch (error) {
         console.error("❌ Error regenerating schema:", error);
       }

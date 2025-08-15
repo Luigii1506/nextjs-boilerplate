@@ -186,7 +186,9 @@ export class FileUploadService {
 
   // Actualizar archivo
   async updateFile(id: string, input: UpdateUploadInput) {
-    const { id: _id, ...updateData } = input;
+    // Destructure to exclude id from update data
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id: _unused, ...updateData } = input;
 
     // Convertir metadata al tipo correcto si existe
     const prismaUpdateData = {
@@ -315,7 +317,9 @@ export class FileCategoryService {
       throw new Error(validation.error);
     }
 
-    const { id: _id, ...updateData } = input;
+    // Destructure to exclude id from update data
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id: _unused, ...updateData } = input;
     const updated = await updateCategoryQuery(id, updateData);
     return mapPrismaToCategoryDomain(updated);
   }

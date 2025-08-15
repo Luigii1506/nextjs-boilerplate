@@ -1,6 +1,7 @@
 "use client";
 
 import { useProtectedPage } from "@/shared/hooks/useAuth";
+import Image from "next/image";
 import { authClient } from "@/core/auth/auth-client";
 import { useRouter } from "next/navigation";
 
@@ -58,10 +59,12 @@ export default function UserDashboardPage() {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 {user.image && (
-                  <img
+                  <Image
                     src={user.image}
-                    alt={user.name}
-                    className="w-8 h-8 rounded-full"
+                    alt={user.name || "Usuario"}
+                    width={32}
+                    height={32}
+                    className="rounded-full"
                   />
                 )}
                 <span className="text-sm font-medium text-gray-700">

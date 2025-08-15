@@ -46,27 +46,27 @@ export const auth = betterAuth({
     user: {
       create: {
         before: async (user) => {
-          console.log(`🎉 Creating new user: ${user.email}`);
+          // Creating new user
           return { data: user };
         },
-        after: async (user) => {
-          console.log(`✅ User created successfully: ${user.email}`);
+        after: async () => {
+          // User created successfully
         },
       },
       update: {
         before: async (user) => {
-          console.log(`📝 Updating user: ${user.email}`);
+          // Updating user
           return { data: user };
         },
-        after: async (user) => {
-          console.log(`✅ User updated: ${user.email}`);
+        after: async () => {
+          // User updated
         },
       },
     },
     session: {
       create: {
-        after: async (session) => {
-          console.log(`🔐 New session created for user: ${session.userId}`);
+        after: async () => {
+          // New session created
         },
       },
     },
