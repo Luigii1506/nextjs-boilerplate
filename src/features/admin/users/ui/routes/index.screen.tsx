@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Plus,
   Search,
@@ -70,7 +70,7 @@ const UsersView: React.FC = () => {
   const usersPerPage = 12; // Better for card layout
 
   // Load users from API
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -96,11 +96,11 @@ const UsersView: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, searchTerm]);
 
   useEffect(() => {
     loadUsers();
-  }, [currentPage, searchTerm]);
+  }, [loadUsers]);
 
   // Filter users based on current filters (local filtering for role and status only)
   const filteredUsers = users.filter((user) => {

@@ -72,7 +72,7 @@ export async function middleware(request: NextRequest) {
         userId,
         userRole,
         userEmail,
-        country: request.geo?.country || "unknown",
+        country: (request as any).geo?.country || "unknown",
         userAgent: request.headers.get("user-agent") || "unknown",
       };
 

@@ -19,7 +19,10 @@ import React from "react";
 import Link from "next/link";
 import { LucideIcon } from "lucide-react";
 import { useHydrationWithDependencies } from "@/shared/hooks/useHydration";
-import { useFeatureFlags } from "@/shared/hooks/useFeatureFlags";
+import {
+  useIsEnabled,
+  useFeatureFlagsServer,
+} from "@/shared/hooks/useFeatureFlagsServerActions";
 
 interface HydrationSafeNavItemProps {
   /** Ruta de navegación */
@@ -68,7 +71,8 @@ export function HydrationSafeNavItem({
   navActive,
   navIdle,
 }: HydrationSafeNavItemProps) {
-  const { isEnabled, isLoading } = useFeatureFlags();
+  const { isLoading } = useFeatureFlagsServer();
+  const isEnabled = useIsEnabled();
 
   // Detectar cuando la hidratación está completa Y los feature flags se han cargado
   const { isReady } = useHydrationWithDependencies([!isLoading]);
@@ -80,7 +84,9 @@ export function HydrationSafeNavItem({
   }
 
   // Una vez que todo está listo, verificamos si el feature flag está activo
-  const featureEnabled = isEnabled(requiredFeatureFlag);
+  const featureEnabled = isEnabled(
+    requiredFeatureFlag as "fileUpload" | "userManagement" | "analytics"
+  );
 
   // Si la feature no está habilitada, no renderizamos nada
   if (!featureEnabled) {
@@ -106,13 +112,22 @@ export function HydrationSafeNavItem({
  * Proporciona toda la lógica necesaria de manera reutilizable
  */
 export function useNavItemFeatureFlag(requiredFeatureFlag: string) {
-  const { isEnabled, isLoading } = useFeatureFlags();
+  const { isLoading } = useFeatureFlagsServer();
+  const isEnabled = useIsEnabled();
   const { isReady } = useHydrationWithDependencies([!isLoading]);
 
   return {
     isReady,
-    isFeatureEnabled: isReady ? isEnabled(requiredFeatureFlag) : false,
-    shouldRender: isReady && isEnabled(requiredFeatureFlag),
+    isFeatureEnabled: isReady
+      ? isEnabled(
+          requiredFeatureFlag as "fileUpload" | "userManagement" | "analytics"
+        )
+      : false,
+    shouldRender:
+      isReady &&
+      isEnabled(
+        requiredFeatureFlag as "fileUpload" | "userManagement" | "analytics"
+      ),
     shouldShowSkeleton: !isReady,
   };
 }

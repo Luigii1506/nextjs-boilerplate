@@ -324,3 +324,364 @@ export async function deleteCategoryAction(id: string) {
     };
   }
 }
+
+// ========================
+// 🚀 SERVER ACTION FORM WRAPPERS (React 19 + Next.js 15)
+// ========================
+// FormData compatible wrappers for client components using useActionState
+
+import { auth } from "@/core/auth/server/auth";
+import { headers } from "next/headers";
+import { revalidateTag } from "next/cache";
+
+// 🎯 Action result interface for form actions
+export interface ActionResult<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
+
+// 📤 GET Files Server Action (for forms)
+export async function getFilesServerAction(): Promise<ActionResult<unknown>> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (!session?.user) {
+      throw new Error("No autorizado");
+    }
+
+    const result = await getFilesAction({ userId: session.user.id });
+
+    return {
+      success: result.success,
+      data: result.data,
+      error: result.error,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error getting files",
+    };
+  }
+}
+
+// 📊 Get File Stats Server Action (for forms)
+export async function getFileStatsServerAction(
+  formData: FormData
+): Promise<ActionResult<unknown>> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (!session?.user) {
+      throw new Error("No autorizado");
+    }
+
+    const userId = (formData.get("userId") as string) || session.user.id;
+
+    // Verify permissions
+    if (
+      userId !== session.user.id &&
+      session.user.role !== "admin" &&
+      session.user.role !== "super_admin"
+    ) {
+      throw new Error("No autorizado para ver estas estadísticas");
+    }
+
+    const result = await getFileStatsAction({ userId });
+
+    return {
+      success: result.success,
+      data: result.data,
+      error: result.error,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error getting stats",
+    };
+  }
+}
+
+// 🔑 Generate Signed URL Server Action (for forms)
+export async function generateSignedUrlServerAction(
+  formData: FormData
+): Promise<ActionResult<unknown>> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (!session?.user) {
+      throw new Error("No autorizado");
+    }
+
+    const key = formData.get("key") as string;
+    const fileId = formData.get("fileId") as string;
+    // const expiresIn = parseInt(formData.get("expiresIn") as string || "3600"); // TODO: Use in actual implementation
+
+    if (!key && !fileId) {
+      throw new Error("Key de archivo o ID de archivo requerido");
+    }
+
+    // For now, use existing action
+    const result = await getSignedUrlAction({
+      filename: key || fileId,
+      mimeType:
+        (formData.get("mimeType") as string) || "application/octet-stream",
+      isPublic: formData.get("isPublic") === "true",
+    });
+
+    return {
+      success: result.success,
+      data: result.data,
+      error: result.error,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error generating signed URL",
+    };
+  }
+}
+
+// 📁 Get Categories Server Action (for forms)
+export async function getCategoriesServerAction(): Promise<
+  ActionResult<unknown>
+> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (!session?.user) {
+      throw new Error("No autorizado");
+    }
+
+    const result = await getCategoriesAction();
+
+    return {
+      success: result.success,
+      data: result.data,
+      error: result.error,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error getting categories",
+    };
+  }
+}
+
+// 📁 Create Category Server Action (for forms)
+export async function createCategoryServerAction(
+  formData: FormData
+): Promise<ActionResult<unknown>> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (
+      !session?.user ||
+      (session.user.role !== "admin" && session.user.role !== "super_admin")
+    ) {
+      throw new Error("Permisos insuficientes");
+    }
+
+    const name = formData.get("name") as string;
+    const description = formData.get("description") as string;
+    const icon = formData.get("icon") as string;
+    const maxSize = formData.get("maxSize") as string;
+    const allowedTypesString = formData.get("allowedTypes") as string;
+
+    if (!name || !allowedTypesString) {
+      throw new Error("Nombre y tipos de archivo son requeridos");
+    }
+
+    const allowedTypes = JSON.parse(allowedTypesString);
+
+    const result = await createCategoryAction({
+      name,
+      description,
+      icon,
+      maxSize: maxSize ? parseInt(maxSize) : undefined,
+      allowedTypes,
+    });
+
+    revalidateTag("file-categories");
+
+    return {
+      success: result.success,
+      data: result.data,
+      error: result.error,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error creating category",
+    };
+  }
+}
+
+// 📁 Update Category Server Action (for forms)
+export async function updateCategoryServerAction(
+  formData: FormData
+): Promise<ActionResult<unknown>> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (
+      !session?.user ||
+      (session.user.role !== "admin" && session.user.role !== "super_admin")
+    ) {
+      throw new Error("Permisos insuficientes");
+    }
+
+    const id = formData.get("id") as string;
+    const name = formData.get("name") as string;
+    const description = formData.get("description") as string;
+    const icon = formData.get("icon") as string;
+    const maxSize = formData.get("maxSize") as string;
+    const allowedTypesString = formData.get("allowedTypes") as string;
+
+    if (!id) {
+      throw new Error("ID de categoría requerido");
+    }
+
+    const updateData: Record<string, unknown> = {};
+    if (name) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (icon !== undefined) updateData.icon = icon;
+    if (maxSize) updateData.maxSize = parseInt(maxSize);
+    if (allowedTypesString)
+      updateData.allowedTypes = JSON.parse(allowedTypesString);
+
+    const result = await updateCategoryAction(id, updateData);
+
+    revalidateTag("file-categories");
+
+    return {
+      success: result.success,
+      data: result.data,
+      error: result.error,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error updating category",
+    };
+  }
+}
+
+// 📁 Delete Category Server Action (for forms)
+export async function deleteCategoryServerAction(
+  formData: FormData
+): Promise<ActionResult<unknown>> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (
+      !session?.user ||
+      (session.user.role !== "admin" && session.user.role !== "super_admin")
+    ) {
+      throw new Error("Permisos insuficientes");
+    }
+
+    const id = formData.get("id") as string;
+
+    if (!id) {
+      throw new Error("ID de categoría requerido");
+    }
+
+    const result = await deleteCategoryAction(id);
+
+    revalidateTag("file-categories");
+
+    return {
+      success: result.success,
+      message: result.message,
+      error: result.error,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error deleting category",
+    };
+  }
+}
+
+// 📤 Update File Server Action (for forms)
+export async function updateFileServerAction(
+  formData: FormData
+): Promise<ActionResult<unknown>> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (!session?.user) {
+      throw new Error("No autorizado");
+    }
+
+    const id = formData.get("id") as string;
+
+    if (!id) {
+      throw new Error("ID de archivo requerido");
+    }
+
+    // Build update object from form data
+    const updateData: Record<string, unknown> = { id };
+
+    const name = formData.get("name") as string;
+    const description = formData.get("description") as string;
+    const isPublic = formData.get("isPublic");
+
+    if (name) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (isPublic !== null) updateData.isPublic = isPublic === "true";
+
+    const result = await updateFileAction(updateData);
+
+    revalidateTag("user-files");
+
+    return {
+      success: result.success,
+      data: result.data,
+      error: result.error,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error updating file",
+    };
+  }
+}
+
+// 🗑️ Delete File Server Action (for forms)
+export async function deleteFileServerAction(
+  formData: FormData
+): Promise<ActionResult<unknown>> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (!session?.user) {
+      throw new Error("No autorizado");
+    }
+
+    const id = formData.get("id") as string;
+
+    if (!id) {
+      throw new Error("ID de archivo requerido");
+    }
+
+    const result = await deleteFileAction({ id });
+
+    revalidateTag("user-files");
+
+    return {
+      success: result.success,
+      message: result.message,
+      error: result.error,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error deleting file",
+    };
+  }
+}

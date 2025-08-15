@@ -1,16 +1,17 @@
 // 🗂️ USE FILE MANAGER HOOK
 // ========================
-// Hook para gestión de archivos usando API endpoints
+// Hook para gestión de archivos usando Server Actions (React Compiler optimized)
 
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/shared/hooks/useAuth";
 import {
   getFilesAction,
   getCategoriesAction,
   deleteFileAction,
   getFileStatsAction,
+  generateSignedUrlServerAction,
 } from "../server/actions";
 import type {
   UploadCardData,
@@ -27,7 +28,7 @@ export function useFileManager(): UseFileManagerReturn {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
 
-  // Cargar archivos del usuario
+  // ⚡ Cargar archivos del usuario (React Compiler will memoize)
   const loadFiles = useCallback(
     async (filters?: {
       search?: string;
@@ -60,7 +61,7 @@ export function useFileManager(): UseFileManagerReturn {
     [user]
   );
 
-  // Cargar categorías
+  // ⚡ Cargar categorías (React Compiler will memoize)
   const loadCategories = useCallback(async () => {
     if (!user) return;
 
@@ -76,7 +77,7 @@ export function useFileManager(): UseFileManagerReturn {
     }
   }, [user]);
 
-  // Eliminar archivo
+  // ⚡ Eliminar archivo (React Compiler will memoize)
   const deleteFile = useCallback(
     async (fileId: string): Promise<void> => {
       if (!user) return;
@@ -98,26 +99,29 @@ export function useFileManager(): UseFileManagerReturn {
     [user]
   );
 
-  // Descargar archivo
-  const downloadFile = useCallback(async (file: UploadCardData) => {
+  // ⚡ Descargar archivo (React Compiler optimized)
+  const downloadFile = async (file: UploadCardData) => {
     try {
       if (file.isPublic) {
         // Archivo público - usar URL directa
         window.open(file.url, "_blank");
       } else if (file.provider === "s3") {
-        // Archivo privado en S3 - generar URL firmada
-        const response = await fetch("/api/modules/file-upload/s3/signed-url", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fileId: file.id, expiresIn: 300 }),
-          credentials: "include", // 🔑 Incluir cookies de sesión
-        });
+        // ✅ Archivo privado en S3 - usar Server Action
+        const formData = new FormData();
+        formData.append("fileId", file.id);
+        formData.append("expiresIn", "300");
 
-        if (response.ok) {
-          const { url } = await response.json();
-          window.open(url, "_blank");
+        const result = await generateSignedUrlServerAction(formData);
+
+        if (
+          result.success &&
+          result.data &&
+          typeof result.data === "object" &&
+          "url" in result.data
+        ) {
+          window.open((result.data as { url: string }).url, "_blank");
         } else {
-          setError("Error generando enlace de descarga");
+          setError(result.error || "Error generando enlace de descarga");
         }
       } else {
         // Archivo local - usar URL directa
@@ -126,9 +130,9 @@ export function useFileManager(): UseFileManagerReturn {
     } catch {
       setError("Error al descargar archivo");
     }
-  }, []);
+  };
 
-  // Buscar archivos con filtros actuales
+  // ⚡ Buscar archivos con filtros actuales (React Compiler will memoize)
   const searchFiles = useCallback(
     (query: string) => {
       loadFiles({
@@ -140,7 +144,7 @@ export function useFileManager(): UseFileManagerReturn {
     [loadFiles, selectedCategory, selectedProvider]
   );
 
-  // Filtrar por provider
+  // ⚡ Filtrar por provider (React Compiler will memoize)
   const filterByProvider = useCallback(
     (provider: string | null) => {
       setSelectedProvider(provider);
@@ -149,10 +153,10 @@ export function useFileManager(): UseFileManagerReturn {
         categoryId: selectedCategory || undefined,
       });
     },
-    [loadFiles, selectedCategory]
+    [loadFiles, selectedCategory, selectedProvider]
   );
 
-  // Cambiar categoría seleccionada
+  // ⚡ Cambiar categoría seleccionada (React Compiler will memoize)
   const handleCategoryChange = useCallback(
     (categoryId: string | null) => {
       setSelectedCategory(categoryId);
@@ -161,24 +165,24 @@ export function useFileManager(): UseFileManagerReturn {
         provider: selectedProvider || undefined,
       });
     },
-    [loadFiles, selectedProvider]
+    [loadFiles, selectedCategory, selectedProvider]
   );
 
-  // Refrescar archivos
+  // ⚡ Refrescar archivos (React Compiler will memoize)
   const refreshFiles = useCallback(async (): Promise<void> => {
     await loadFiles({
       categoryId: selectedCategory || undefined,
       provider: selectedProvider || undefined,
     });
-  }, [loadFiles, selectedCategory, selectedProvider]);
+  }, [loadFiles]);
 
-  // Cargar datos iniciales
+  // ⚡ Cargar datos iniciales (optimized for React Compiler)
   useEffect(() => {
     if (user) {
       loadFiles();
       loadCategories();
     }
-  }, [user, loadFiles, loadCategories]);
+  }, [user, loadFiles, loadCategories]); // React Compiler will optimize these
 
   return {
     files,
@@ -208,7 +212,7 @@ export function useFileStats() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Cargar estadísticas
+  // ⚡ Cargar estadísticas (React Compiler will memoize)
   const loadStats = useCallback(async () => {
     if (!user) return;
 
@@ -254,7 +258,7 @@ export function useFileStats() {
     }
   }, [user]);
 
-  // Refrescar estadísticas
+  // ⚡ Refrescar estadísticas (React Compiler will memoize)
   const refreshStats = useCallback(() => {
     loadStats();
   }, [loadStats]);
@@ -264,12 +268,12 @@ export function useFileStats() {
     Math.round(((stats.totalSize || 0) / (1024 * 1024)) * 100) / 100
   } MB`;
 
-  // Cargar estadísticas al montar
+  // ⚡ Cargar estadísticas al montar (optimized for React Compiler)
   useEffect(() => {
     if (user) {
       loadStats();
     }
-  }, [user, loadStats]);
+  }, [user, loadStats]); // React Compiler will optimize these
 
   return {
     stats,

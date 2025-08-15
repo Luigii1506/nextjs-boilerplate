@@ -13,6 +13,7 @@ export { LogoutButton } from "./LogoutButton";
 export { InteractiveUserMenu } from "./InteractiveUserMenu";
 export { ActiveRouteIndicator } from "./ActiveRouteIndicator";
 export { default as DynamicNavigation } from "./DynamicNavigation";
+export { default as DynamicNavigationPure } from "./DynamicNavigationPure";
 
 // 📝 Types (if needed)
 export type {} from "./InteractiveUserMenu";

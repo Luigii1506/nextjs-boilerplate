@@ -275,12 +275,12 @@ export default function FeatureFlagsAdmin() {
                   <FeatureFlagCard
                     key={flag.id}
                     flag={flag}
-                    onToggle={handleToggle}
                     dependencies={flags.filter((f) =>
                       flag.dependencies?.includes(f.id)
                     )}
                     hasChanges={false} // Ya no manejamos cambios locales
                     isLoading={isLoading}
+                    onToggle={handleToggle} // ✅ Pasar función del hook
                   />
                 ))}
               </div>

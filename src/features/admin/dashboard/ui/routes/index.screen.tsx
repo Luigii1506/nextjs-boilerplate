@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Users,
   UserCheck,
@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { User, UserStats } from "@/shared/types/user";
 import { authClient } from "@/core/auth/auth-client";
-import { useFeatureFlags } from "@/shared/hooks/useFeatureFlags";
+import { useIsEnabled } from "@/shared/hooks/useFeatureFlagsServerActions";
 
 interface ApiUser {
   id: string;
@@ -46,9 +46,14 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
   const [recentUsers, setRecentUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 🎛️ Feature Flags
-  const { getAllFlags } = useFeatureFlags();
-  const featureFlags = getAllFlags();
+  // 🎛️ Feature Flags (Pure Server Actions)
+  const isEnabled = useIsEnabled();
+  // Convert to old format for compatibility (could be improved)
+  const featureFlags = {
+    fileUpload: isEnabled("fileUpload"),
+    userManagement: isEnabled("userManagement"),
+    advancedAnalytics: isEnabled("analytics"), // Use actual feature flag name
+  };
 
   const adaptApiUser = (apiUser: ApiUser): User => ({
     id: apiUser.id,
@@ -70,7 +75,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
       : undefined,
   });
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -102,11 +107,11 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadDashboardData();
-  }, []);
+  }, [loadDashboardData]);
 
   if (loading) {
     return (
