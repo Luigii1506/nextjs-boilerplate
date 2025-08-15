@@ -14,7 +14,7 @@ import {
   Music,
 } from "lucide-react";
 import type { UploadFile, UploadConfig, UploadCardData } from "../../types";
-import { useFileManager, useFileStats } from "../../hooks";
+import { useFileUpload } from "../../hooks";
 import {
   useFileNotifications,
   useFileRefresh,
@@ -42,17 +42,25 @@ interface FileStatsType {
 type FilesViewProps = Record<string, never>;
 
 const FilesView: React.FC<FilesViewProps> = () => {
-  // Usar hooks reales del módulo
-  const {
-    files,
-    refreshFiles,
-    selectedProvider,
-    setSelectedProvider,
-    categories,
-    selectedCategory,
-    setSelectedCategory,
-  } = useFileManager();
-  const {} = useFileStats();
+  // Usar hook consolidado optimista
+  const { files, stats, refreshFiles, refreshStats } = useFileUpload();
+
+  // Estados locales para filtros (ya no en el hook)
+  const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  // Categorías simuladas (temporalmente - luego integrar con backend)
+  const categories = [
+    { id: "images", name: "Imágenes", icon: "🖼️", allowedTypes: ["image/*"] },
+    {
+      id: "documents",
+      name: "Documentos",
+      icon: "📄",
+      allowedTypes: ["application/pdf"],
+    },
+    { id: "videos", name: "Videos", icon: "🎥", allowedTypes: ["video/*"] },
+    { id: "audio", name: "Audio", icon: "🎵", allowedTypes: ["audio/*"] },
+  ];
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
@@ -80,17 +88,19 @@ const FilesView: React.FC<FilesViewProps> = () => {
     multiple: true,
   };
 
-  // Stats calculation - combinamos stats reales con calculados
+  // Stats calculation - usar stats del hook optimista cuando estén disponibles
   const calculatedStats: FileStatsType = {
-    totalFiles: files.length,
-    totalSize: files.reduce((sum, file) => sum + file.size, 0),
+    totalFiles: stats?.totalFiles || files.length,
+    totalSize:
+      stats?.totalSize || files.reduce((sum, file) => sum + file.size, 0),
     imageCount: files.filter((f) => f.mimeType.startsWith("image/")).length,
     documentCount: files.filter(
       (f) => f.mimeType.includes("pdf") || f.mimeType.includes("document")
     ).length,
     videoCount: files.filter((f) => f.mimeType.startsWith("video/")).length,
     audioCount: files.filter((f) => f.mimeType.startsWith("audio/")).length,
-    storageUsed: files.reduce((sum, file) => sum + file.size, 0),
+    storageUsed:
+      stats?.totalSize || files.reduce((sum, file) => sum + file.size, 0),
     storageLimit: 100 * 1024 * 1024 * 1024, // 100GB
     filesByType: {},
     recentUploads: files.length,
@@ -137,7 +147,10 @@ const FilesView: React.FC<FilesViewProps> = () => {
   const { notification: fileNotification, showNotification } =
     useFileNotifications();
 
-  const optimizedRefreshFiles = useFileRefresh(refreshFiles);
+  const optimizedRefreshFiles = useFileRefresh(async () => {
+    await refreshFiles();
+    await refreshStats();
+  });
 
   const handleUploadComplete = (uploadedFiles: UploadFile[]) => {
     // 🎯 ENTERPRISE-GRADE: Optimized refresh with debouncing
@@ -172,7 +185,7 @@ const FilesView: React.FC<FilesViewProps> = () => {
     ) {
       // En una app real, aquí se llamaría a la API de eliminación
       showNotification("success", `Archivo "${file.originalName}" eliminado`);
-      refreshFiles(); // Refrescar después de eliminar
+      optimizedRefreshFiles(); // Refrescar después de eliminar
     }
   };
 

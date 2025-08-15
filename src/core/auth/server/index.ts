@@ -1,6 +1,9 @@
 import { headers, cookies } from "next/headers";
 import { auth } from "./auth";
 
+// Re-export auth for direct access
+export { auth };
+
 export type SessionUser = {
   id: string;
   email: string;

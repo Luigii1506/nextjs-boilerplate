@@ -1,70 +1,42 @@
 "use server";
 
 // 👥 USERS SERVER ACTIONS
-// =======================
-// Next.js 15 Server Actions para administración de usuarios
+// ========================
+// Next.js 15 Server Actions - Delgadas y coordinadoras (React 19 + Hexagonal Architecture)
 
-import { auth } from "@/core/auth/server/auth";
-import { headers } from "next/headers";
 import { revalidateTag } from "next/cache";
+import { createUserService } from "../services/user.service";
+import * as schemas from "../../schemas";
+import * as validators from "../validators/user.validators";
+import type { ActionResult, UserListResponse, User } from "../../types";
 
-// 🎯 Resultado de acciones
-export interface ActionResult<T = unknown> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-}
-
-// 📊 GET ALL USERS (replaces GET /api/users)
+// 📊 GET ALL USERS (Enterprise Server Action)
 export async function getAllUsersAction(
   limit: number = 10,
   offset: number = 0,
   searchValue?: string,
   searchField: "email" | "name" = "email"
-): Promise<ActionResult<unknown>> {
+): Promise<ActionResult<UserListResponse>> {
   try {
-    // 🛡️ Auth check
-    const session = await auth.api.getSession({
-      headers: await headers(),
+    // 🔍 Validate input
+    const searchParams = schemas.userSearchSchema.parse({
+      limit,
+      offset,
+      searchValue,
+      searchField,
     });
 
-    if (!session?.user) {
-      throw new Error("No autorizado");
-    }
+    // 🛡️ Session validation
+    const session = await validators.getValidatedSession();
+    validators.validateUserListAccess(session.user.role);
 
-    // Solo admins pueden ver usuarios
-    if (session.user.role !== "admin" && session.user.role !== "super_admin") {
-      throw new Error("Permisos insuficientes");
-    }
-
-    // Get users from auth API
-    const users = await auth.api.listUsers({
-      query: {
-        limit,
-        offset,
-        ...(searchValue && {
-          searchValue,
-          searchField,
-          searchOperator: "contains" as const,
-        }),
-      },
-    });
-
-    // Get total count
-    const totalResult = await auth.api.listUsers({
-      query: { limit: 1000, offset: 0 }, // Large limit to get total count
-    });
+    // 🏢 Business logic via service
+    const userService = await createUserService();
+    const result = await userService.getAllUsers(searchParams);
 
     return {
       success: true,
-      data: {
-        users: users.users,
-        pagination: {
-          total: totalResult.users.length,
-          hasMore: users.users.length === limit,
-        },
-      },
+      data: result,
       message: "Users retrieved successfully",
     };
   } catch (error) {
@@ -76,176 +48,20 @@ export async function getAllUsersAction(
   }
 }
 
-// 🔧 UPDATE USER ROLE (replaces PUT/PATCH /api/users)
-export async function updateUserRoleAction(
-  formData: FormData
-): Promise<ActionResult<unknown>> {
-  try {
-    // 🛡️ Auth check
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      throw new Error("No autorizado");
-    }
-
-    if (session.user.role !== "admin" && session.user.role !== "super_admin") {
-      throw new Error("Permisos insuficientes");
-    }
-
-    // Extract form data
-    const userId = formData.get("userId") as string;
-    const newRole = formData.get("role") as string;
-
-    if (!userId || !newRole) {
-      throw new Error("User ID and role are required");
-    }
-
-    // Validate role
-    const validRoles = ["user", "admin", "super_admin"];
-    if (!validRoles.includes(newRole)) {
-      throw new Error("Invalid role specified");
-    }
-
-    // Super admin protection - only super_admin can create/modify super_admin
-    if (newRole === "super_admin" && session.user.role !== "super_admin") {
-      throw new Error("Only super admins can assign super admin role");
-    }
-
-    // Cannot demote yourself
-    if (userId === session.user.id) {
-      throw new Error("Cannot modify your own role");
-    }
-
-    // Update user role (using your existing script logic)
-    const { prisma } = await import("@/core/database/prisma");
-
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: { role: newRole },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-
-    // 🔄 Invalidate cache
-    revalidateTag("users");
-
-    return {
-      success: true,
-      data: updatedUser,
-      message: `User role updated to ${newRole} successfully`,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Error interno del servidor",
-    };
-  }
-}
-
-// 🗑️ DELETE USER (replaces DELETE /api/users)
-export async function deleteUserAction(
-  formData: FormData
-): Promise<ActionResult<void>> {
-  try {
-    // 🛡️ Auth check
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      throw new Error("No autorizado");
-    }
-
-    if (session.user.role !== "super_admin") {
-      throw new Error("Only super admins can delete users");
-    }
-
-    const userId = formData.get("userId") as string;
-
-    if (!userId) {
-      throw new Error("User ID is required");
-    }
-
-    // Cannot delete yourself
-    if (userId === session.user.id) {
-      throw new Error("Cannot delete your own account");
-    }
-
-    // Delete user
-    const { prisma } = await import("@/core/database/prisma");
-
-    await prisma.user.delete({
-      where: { id: userId },
-    });
-
-    // 🔄 Invalidate cache
-    revalidateTag("users");
-
-    return {
-      success: true,
-      message: "User deleted successfully",
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Error interno del servidor",
-    };
-  }
-}
-
-// 📋 GET USER DETAILS (replaces GET /api/users/[id])
+// 👤 GET USER DETAILS (Enterprise Server Action)
 export async function getUserDetailsAction(
   userId: string
-): Promise<ActionResult<unknown>> {
+): Promise<ActionResult<User>> {
   try {
-    // 🛡️ Auth check
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    // 🔍 Validate input
+    const userDetails = schemas.userDetailsSchema.parse({ userId });
 
-    if (!session?.user) {
-      throw new Error("No autorizado");
-    }
+    // 🛡️ Session validation
+    await validators.getValidatedSession();
 
-    // Users can see their own details, admins can see all
-    if (
-      session.user.id !== userId &&
-      session.user.role !== "admin" &&
-      session.user.role !== "super_admin"
-    ) {
-      throw new Error("Permisos insuficientes");
-    }
-
-    // Get user details
-    const { prisma } = await import("@/core/database/prisma");
-
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        emailVerified: true,
-        createdAt: true,
-        updatedAt: true,
-        // Add any other fields you want to expose
-      },
-    });
-
-    if (!user) {
-      throw new Error("User not found");
-    }
+    // 🏢 Business logic via service
+    const userService = await createUserService();
+    const user = await userService.getUserDetails(userDetails.userId);
 
     return {
       success: true,
@@ -261,66 +77,225 @@ export async function getUserDetailsAction(
   }
 }
 
-// 🔄 BULK OPERATIONS
-export async function bulkUpdateUsersAction(
+// 👤 CREATE USER (Enterprise Server Action)
+export async function createUserAction(
   formData: FormData
-): Promise<ActionResult<{ updatedCount: number }>> {
+): Promise<ActionResult<User>> {
   try {
-    // 🛡️ Auth check
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    // 🔍 Validate and parse input
+    const userData = schemas.parseCreateUserFormData(formData);
 
-    if (!session?.user) {
-      throw new Error("No autorizado");
-    }
+    // 🛡️ Session validation
+    await validators.getValidatedSession();
 
-    if (session.user.role !== "admin" && session.user.role !== "super_admin") {
-      throw new Error("Permisos insuficientes");
-    }
+    // 🏢 Business logic via service
+    const userService = await createUserService();
+    const newUser = await userService.createUser(userData);
 
-    const userIds = formData.getAll("userIds") as string[];
-    const newRole = formData.get("newRole") as string;
-
-    if (!userIds.length || !newRole) {
-      throw new Error("User IDs and new role are required");
-    }
-
-    // Validate role
-    const validRoles = ["user", "admin", "super_admin"];
-    if (!validRoles.includes(newRole)) {
-      throw new Error("Invalid role specified");
-    }
-
-    // Super admin protection
-    if (newRole === "super_admin" && session.user.role !== "super_admin") {
-      throw new Error("Only super admins can assign super admin role");
-    }
-
-    // Cannot modify yourself
-    if (userIds.includes(session.user.id)) {
-      throw new Error("Cannot modify your own role");
-    }
-
-    // Bulk update
-    const { prisma } = await import("@/core/database/prisma");
-
-    const result = await prisma.user.updateMany({
-      where: {
-        id: { in: userIds },
-      },
-      data: {
-        role: newRole,
-      },
-    });
-
-    // 🔄 Invalidate cache
+    // 🔄 Cache invalidation
     revalidateTag("users");
 
     return {
       success: true,
-      data: { updatedCount: result.count },
-      message: `${result.count} users updated successfully`,
+      data: newUser,
+      message: "Usuario creado exitosamente",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error interno del servidor",
+    };
+  }
+}
+
+// ✏️ UPDATE USER (Enterprise Server Action)
+export async function updateUserAction(
+  formData: FormData
+): Promise<ActionResult<User>> {
+  try {
+    // 🔍 Validate and parse input
+    const updateData = schemas.parseUpdateUserFormData(formData);
+
+    // 🛡️ Session validation
+    await validators.getValidatedSession();
+
+    // 🏢 Business logic via service
+    const userService = await createUserService();
+    const updatedUser = await userService.updateUser(updateData);
+
+    // 🔄 Cache invalidation
+    revalidateTag("users");
+
+    return {
+      success: true,
+      data: updatedUser,
+      message: "Usuario actualizado exitosamente",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error interno del servidor",
+    };
+  }
+}
+
+// 🎭 UPDATE USER ROLE (Enterprise Server Action)
+export async function updateUserRoleAction(
+  formData: FormData
+): Promise<ActionResult<User>> {
+  try {
+    // 🔍 Validate and parse input
+    const roleData = schemas.parseUpdateRoleFormData(formData);
+
+    // 🛡️ Session validation
+    await validators.getValidatedSession();
+
+    // 🏢 Business logic via service
+    const userService = await createUserService();
+    const updatedUser = await userService.updateUserRole(
+      roleData.userId,
+      roleData.role
+    );
+
+    // 🔄 Cache invalidation
+    revalidateTag("users");
+
+    return {
+      success: true,
+      data: updatedUser,
+      message: `User role updated to ${roleData.role} successfully`,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error interno del servidor",
+    };
+  }
+}
+
+// 🗑️ DELETE USER (Enterprise Server Action)
+export async function deleteUserAction(
+  formData: FormData
+): Promise<ActionResult<void>> {
+  try {
+    // 🔍 Validate and parse input
+    const deleteData = schemas.parseDeleteUserFormData(formData);
+
+    // 🛡️ Session validation
+    await validators.getValidatedSession();
+
+    // 🏢 Business logic via service
+    const userService = await createUserService();
+    await userService.deleteUser(deleteData.userId);
+
+    // 🔄 Cache invalidation
+    revalidateTag("users");
+
+    return {
+      success: true,
+      message: "User deleted successfully",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error interno del servidor",
+    };
+  }
+}
+
+// 🚫 BAN USER (Enterprise Server Action)
+export async function banUserAction(
+  formData: FormData
+): Promise<ActionResult<User>> {
+  try {
+    // 🔍 Validate and parse input
+    const banData = schemas.parseBanUserFormData(formData);
+
+    // 🛡️ Session validation
+    await validators.getValidatedSession();
+
+    // 🏢 Business logic via service
+    const userService = await createUserService();
+    const bannedUser = await userService.banUser(banData.id, banData.reason);
+
+    // 🔄 Cache invalidation
+    revalidateTag("users");
+
+    return {
+      success: true,
+      data: bannedUser,
+      message: "Usuario baneado exitosamente",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error interno del servidor",
+    };
+  }
+}
+
+// ✅ UNBAN USER (Enterprise Server Action)
+export async function unbanUserAction(
+  formData: FormData
+): Promise<ActionResult<User>> {
+  try {
+    // 🔍 Validate and parse input
+    const unbanData = schemas.parseUnbanUserFormData(formData);
+
+    // 🛡️ Session validation
+    await validators.getValidatedSession();
+
+    // 🏢 Business logic via service
+    const userService = await createUserService();
+    const unbannedUser = await userService.unbanUser(unbanData.id);
+
+    // 🔄 Cache invalidation
+    revalidateTag("users");
+
+    return {
+      success: true,
+      data: unbannedUser,
+      message: "Usuario desbaneado exitosamente",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error interno del servidor",
+    };
+  }
+}
+
+// 🔄 BULK UPDATE USERS (Enterprise Server Action)
+export async function bulkUpdateUsersAction(
+  formData: FormData
+): Promise<ActionResult<{ updatedCount: number }>> {
+  try {
+    // 🔍 Validate and parse input
+    const bulkData = schemas.parseBulkUpdateFormData(formData);
+
+    // 🛡️ Session validation
+    await validators.getValidatedSession();
+
+    // 🏢 Business logic via service
+    const userService = await createUserService();
+    const result = await userService.bulkUpdateUsers(
+      bulkData.userIds,
+      bulkData.newRole
+    );
+
+    // 🔄 Cache invalidation
+    revalidateTag("users");
+
+    return {
+      success: true,
+      data: result,
+      message: `${result.updatedCount} users updated successfully`,
     };
   } catch (error) {
     return {

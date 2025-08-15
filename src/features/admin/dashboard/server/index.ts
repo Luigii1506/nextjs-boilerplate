@@ -1,18 +1,19 @@
-// 📊 Dashboard Server Barrel
-// =========================
-// Entry point para funcionalidades de servidor de dashboard
+// 🏠 DASHBOARD SERVER - ENTERPRISE EXPORTS
+// ==========================================
+// Server-side logic para Admin Dashboard
 
-// Actions
-// export * from "./actions";
+// 🚀 Server Actions (React 19)
+export {
+  getDashboardStatsServerAction,
+  getRecentUsersServerAction,
+  refreshDashboardServerAction,
+  // Legacy compatibility
+  getDashboardStats,
+  getRecentUsers,
+  refreshDashboard,
+} from "./actions";
 
-// Services
+// TODO: Add when implemented
 // export * from "./services";
-
-// Repositories
-// export * from "./repositories";
-
-// Queries
-// export * from "./queries";
-
-// Validators
 // export * from "./validators";
+// export * from "./mappers";

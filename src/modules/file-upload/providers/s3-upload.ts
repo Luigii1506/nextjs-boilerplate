@@ -178,13 +178,16 @@ export class S3UploadProvider implements UploadProvider {
       }
 
       // 🎯 ENTERPRISE-GRADE: Direct Server Action call
-      const { uploadFileAction } = await import("../server/actions");
+      const { uploadFileServerAction } = await import("../server/actions");
 
       // Preparar datos para Server Action
       const file = formData.get("file") as File;
       if (!file) throw new Error("No file provided");
 
-      const uploadResult = await uploadFileAction(formData, "system", "s3");
+      // Asegurar que el provider esté configurado como S3
+      formData.set("provider", "s3");
+
+      const uploadResult = await uploadFileServerAction(formData);
 
       if (!uploadResult.success || !uploadResult.data) {
         throw new Error(
@@ -193,10 +196,11 @@ export class S3UploadProvider implements UploadProvider {
       }
 
       // Convert UploadFile to UploadResult format
+      const data = uploadResult.data as Record<string, unknown>; // Type assertion for flexibility
       return {
         success: true,
-        url: uploadResult.data.url,
-        key: uploadResult.data.key || uploadResult.data.url,
+        url: (data.url as string) || (data.publicUrl as string) || "",
+        key: (data.key as string) || (data.filename as string) || "",
       };
     } catch (error) {
       console.error("Error uploading to S3:", error);

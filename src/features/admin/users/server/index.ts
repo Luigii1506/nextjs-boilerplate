@@ -1,18 +1,18 @@
-// 👥 Users Server Barrel
+// 🏢 USERS SERVER MODULE
 // ======================
-// Entry point para funcionalidades de servidor de usuarios
+// Barrel exports for server-side functionality
 
-// Actions
-// export * from "./actions";
+// 🎯 Server Actions
+export * from "./actions";
 
-// Services
-// export * from "./services";
+// 🏢 Services
+export * from "./services/user.service";
 
-// Repositories
-// export * from "./repositories";
+// 🗃️ Queries
+export * from "./queries/user.queries";
 
-// Queries
-// export * from "./queries";
+// 🛡️ Validators
+export * from "./validators/user.validators";
 
-// Validators
-// export * from "./validators";
+// 🔄 Mappers
+export * from "./mappers";

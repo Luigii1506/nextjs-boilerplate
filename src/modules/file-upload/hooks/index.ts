@@ -1,14 +1,20 @@
-// 🪝 FILE UPLOAD HOOKS
-// ===================
-// Export de todos los hooks del módulo
+// 🪝 FILE UPLOAD HOOKS - ENTERPRISE GRADE
+// ========================================
+// React 19 + Next.js 15 Optimized Hooks
 
+// 🚀 PRIMARY ENTERPRISE HOOK
 export { useFileUpload, useSingleFileUpload } from "./useFileUpload";
-export { useFileManager, useFileStats } from "./useFileManager";
+
+// 🛠️ Additional Hooks
+export { useFileNotifications } from "./useFileNotifications";
 
 // Re-exports de tipos para conveniencia
 export type {
   UseFileUploadReturn,
-  UseFileManagerReturn,
   UploadProgress,
   UploadResult,
 } from "../types";
+
+// 🎯 RECOMMENDED USAGE:
+// import { useFileUpload } from "@/modules/file-upload/hooks";
+// This provides: Optimistic UI + React 19 features + Enterprise performance

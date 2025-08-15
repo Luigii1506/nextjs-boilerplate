@@ -159,8 +159,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       const results = await uploadFiles(selectedFiles, {
         provider: config.provider,
         makePublic: false,
-        categoryId: selectedCategory,
-        detectCategory: detectCategory,
+        categoryId: selectedCategory || undefined,
       });
 
       // Procesar resultados
@@ -169,7 +168,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
       results.forEach((result, index) => {
         if (result.success && result.file) {
-          successfulFiles.push(result.file);
+          successfulFiles.push(result.file as unknown as UploadFile);
         } else {
           errors.push(
             `${selectedFiles[index].name}: ${

@@ -1,107 +1,159 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import { Plus, Search, Users, UserCheck, UserX, Shield } from "lucide-react";
+import React, {
+  useActionState,
+  useOptimistic,
+  useTransition,
+  useEffect,
+} from "react";
+import {
+  Plus,
+  Search,
+  Users,
+  UserCheck,
+  UserX,
+  Shield,
+  RefreshCw,
+} from "lucide-react";
 import { User, UserFormData, UserStats } from "@/shared/types/user";
-import { authClient } from "@/core/auth/auth-client";
-import { type RoleName } from "@/core/auth/config/permissions";
+import {
+  getAllUsersAction,
+  createUserAction,
+  updateUserAction,
+  deleteUserAction,
+  banUserAction,
+  unbanUserAction,
+} from "../../server/actions";
 import UserCard from "@/features/admin/users/ui/components/UserCard";
 import UserModal from "@/features/admin/users/ui/components/UserModal";
 
-// Interface for API user response
-interface ApiUser {
-  id: string;
-  name: string;
-  email: string;
-  emailVerified: boolean;
-  role?: string | null;
-  image?: string | null;
-  createdAt: Date | string;
-  updatedAt: Date | string;
-  lastLogin?: Date | string | null;
-  banned?: boolean | null;
-  banReason?: string | null;
-  banExpires?: Date | string | null;
+// 🎯 Optimistic State for React 19
+interface OptimisticUsersState {
+  users: User[];
+  totalUsers: number;
+  isRefreshing: boolean;
 }
 
-// Adapter function to convert API user to our User type
-const adaptApiUser = (apiUser: ApiUser): User => ({
-  id: apiUser.id,
-  name: apiUser.name,
-  email: apiUser.email,
-  emailVerified: apiUser.emailVerified,
-  role: (apiUser.role as RoleName) || "user", // ✅ Preserve all roles
-  status: apiUser.banned ? "banned" : "active",
-  image: apiUser.image,
-  createdAt: new Date(apiUser.createdAt).toISOString(),
-  updatedAt: new Date(apiUser.updatedAt).toISOString(),
-  lastLogin: apiUser.lastLogin
-    ? new Date(apiUser.lastLogin).toISOString()
-    : undefined,
-  banned: apiUser.banned,
-  banReason: apiUser.banReason,
-  banExpires: apiUser.banExpires
-    ? new Date(apiUser.banExpires).toISOString()
-    : undefined,
-});
-
 const UsersView: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterRole, setFilterRole] = useState<string>("all");
-  const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalUsers, setTotalUsers] = useState(0);
-  const [, setIsActionLoading] = useState(false);
+  // 🎛️ Filter & UI State
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const [filterRole, setFilterRole] = React.useState<string>("all");
+  const [filterStatus, setFilterStatus] = React.useState<string>("all");
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [editingUser, setEditingUser] = React.useState<User | null>(null);
+  const [currentPage, setCurrentPage] = React.useState(1);
 
-  const usersPerPage = 12; // Better for card layout
+  const usersPerPage = 12;
 
-  // Load users from API
-  const loadUsers = useCallback(async () => {
-    try {
-      setLoading(true);
+  // 🚀 REACT 19: useActionState for loading users
+  const [usersState, usersAction, isUsersLoading] = useActionState(async () => {
+    const result = await getAllUsersAction(
+      usersPerPage,
+      (currentPage - 1) * usersPerPage,
+      searchTerm || undefined,
+      "email"
+    );
+    return result;
+  }, null);
 
-      const response = await authClient.admin.listUsers({
-        query: {
-          limit: usersPerPage,
-          offset: (currentPage - 1) * usersPerPage,
-          ...(searchTerm && {
-            searchValue: searchTerm,
-            searchField: "email",
-            searchOperator: "contains",
-          }),
-        },
-      });
+  // 🚀 REACT 19: useActionState for creating users
+  const [, createAction] = useActionState(
+    async (_: unknown, formData: FormData) => {
+      const result = await createUserAction(formData);
+      // ✨ No need to reload - Optimistic UI handles this
+      return result;
+    },
+    null
+  );
 
-      if (response.data) {
-        const adaptedUsers = response.data.users.map(adaptApiUser);
-        setUsers(adaptedUsers);
-        setTotalUsers(response.data.total);
-      }
-    } catch (error) {
-      console.error("Error loading users:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentPage, searchTerm]);
+  // 🚀 REACT 19: useActionState for updating users
+  const [, updateAction] = useActionState(
+    async (_: unknown, formData: FormData) => {
+      const result = await updateUserAction(formData);
+      // ✨ No need to reload - Optimistic UI handles this
+      return result;
+    },
+    null
+  );
 
+  // 🚀 REACT 19: useActionState for deleting users
+  const [, deleteAction] = useActionState(
+    async (_: unknown, formData: FormData) => {
+      const result = await deleteUserAction(formData);
+      // ✨ No need to reload - Optimistic UI handles this
+      return result;
+    },
+    null
+  );
+
+  // ⚡ REACT 19: useTransition for non-blocking operations
+  const [isRefreshing, startRefresh] = useTransition();
+
+  // 🎯 REACT 19: useOptimistic for instant UI feedback
+  const [optimisticState, setOptimisticState] = useOptimistic(
+    {
+      users: usersState?.success
+        ? (usersState.data as { users: User[]; pagination: { total: number } })
+            .users || []
+        : [],
+      totalUsers: usersState?.success
+        ? (usersState.data as { users: User[]; pagination: { total: number } })
+            .pagination?.total || 0
+        : 0,
+      isRefreshing: false,
+    } as OptimisticUsersState,
+    (
+      state: OptimisticUsersState,
+      optimisticValue: Partial<OptimisticUsersState>
+    ) => ({
+      ...state,
+      ...optimisticValue,
+    })
+  );
+
+  // 🚀 Auto-load users on component mount (only once)
   useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
+    if (!usersState) {
+      startRefresh(() => {
+        usersAction();
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array - runs only once on mount to prevent infinite loops
+
+  // 🔄 Sync optimistic state with server state when data arrives
+  useEffect(() => {
+    if (usersState?.success && usersState.data) {
+      const serverData = usersState.data as {
+        users: User[];
+        pagination: { total: number; hasMore: boolean };
+      };
+
+      // 🚀 REACT 19: Wrap optimistic state updates in startTransition
+      startRefresh(() => {
+        setOptimisticState({
+          users: serverData.users || [],
+          totalUsers: serverData.pagination?.total || 0,
+          isRefreshing: false,
+        });
+      });
+    }
+  }, [usersState, setOptimisticState, startRefresh]);
+
+  // 📊 Computed values from optimistic state
+  const users = optimisticState.users;
+  const totalUsers = optimisticState.totalUsers;
+  const loading = isUsersLoading && users.length === 0; // Only show spinner on initial load
 
   // Filter users based on current filters (local filtering for role and status only)
   const filteredUsers = users.filter((user) => {
     const matchesRole = filterRole === "all" || user.role === filterRole;
     const matchesStatus =
       filterStatus === "all" || user.status === filterStatus;
-
     return matchesRole && matchesStatus;
   });
 
-  // Calculate stats
+  // Calculate stats from optimistic state
   const stats: UserStats = {
     total: totalUsers,
     active: users.filter((u) => u.status === "active").length,
@@ -110,57 +162,98 @@ const UsersView: React.FC = () => {
       .length,
   };
 
-  // Create user
+  // 🔄 Refresh handler with optimistic UI
+  const handleRefresh = () => {
+    setOptimisticState({ ...optimisticState, isRefreshing: true });
+    startRefresh(async () => {
+      try {
+        await usersAction();
+      } finally {
+        setOptimisticState({ ...optimisticState, isRefreshing: false });
+      }
+    });
+  };
+
+  // 🚀 REACT 19: Create user with Server Action + Optimistic UI
   const handleCreateUser = async (userData: UserFormData) => {
     try {
-      setIsActionLoading(true);
-      await authClient.admin.createUser({
-        email: userData.email,
+      // Optimistic: add user immediately to UI
+      const newUser: User = {
+        id: `temp-${Date.now()}`,
         name: userData.name,
-        password: userData.password!,
-        role: userData.role as "admin" | "user", // Better Auth API constraint
+        email: userData.email,
+        role: userData.role,
+        status: "active",
+        emailVerified: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        banned: false,
+      };
+
+      setOptimisticState({
+        users: [...optimisticState.users, newUser],
+        totalUsers: optimisticState.totalUsers + 1,
+        isRefreshing: false,
       });
-      await loadUsers();
+
+      // Prepare FormData for Server Action
+      const formData = new FormData();
+      formData.append("email", userData.email);
+      formData.append("name", userData.name);
+      formData.append("password", userData.password || "");
+      formData.append("role", userData.role);
+
+      // Execute Server Action
+      await createAction(formData);
+
+      // Close modal on success
+      setIsModalOpen(false);
     } catch (error) {
       console.error("Error creating user:", error);
       throw error;
-    } finally {
-      setIsActionLoading(false);
     }
   };
 
-  // Edit user
+  // 🚀 REACT 19: Edit user with Server Action + Optimistic UI
   const handleEditUser = async (userData: UserFormData) => {
     if (!editingUser) return;
 
     try {
-      setIsActionLoading(true);
+      // Optimistic: update user immediately in UI
+      setOptimisticState({
+        ...optimisticState,
+        users: optimisticState.users.map((user) =>
+          user.id === editingUser.id
+            ? {
+                ...user,
+                name: userData.name,
+                email: userData.email,
+                role: userData.role,
+              }
+            : user
+        ),
+      });
 
-      // Update role if changed
-      if (userData.role !== editingUser.role) {
-        await authClient.admin.setRole({
-          userId: editingUser.id,
-          role:
-            userData.role === "super_admin"
-              ? "admin"
-              : (userData.role as "admin" | "user"),
-        });
-      }
+      // Prepare FormData for Server Action
+      const formData = new FormData();
+      formData.append("id", editingUser.id);
+      formData.append("email", userData.email);
+      formData.append("name", userData.name);
+      formData.append("role", userData.role);
 
-      // Note: better-auth doesn't have direct user update API
-      // In a real implementation, you might need additional API calls
+      // Execute Server Action
+      await updateAction(formData);
 
-      await loadUsers();
+      // Close modal on success
       setEditingUser(null);
+      setIsModalOpen(false);
     } catch (error) {
       console.error("Error editing user:", error);
       throw error;
-    } finally {
-      setIsActionLoading(false);
     }
   };
 
-  // Delete user
+  // 🚀 REACT 19: Delete user with Server Action + Optimistic UI
   const handleDeleteUser = async (userId: string) => {
     if (
       !confirm(
@@ -171,57 +264,92 @@ const UsersView: React.FC = () => {
     }
 
     try {
-      setIsActionLoading(true);
-      await authClient.admin.removeUser({ userId });
-      await loadUsers();
+      // Optimistic: remove user immediately from UI
+      setOptimisticState({
+        ...optimisticState,
+        users: optimisticState.users.filter((user) => user.id !== userId),
+        totalUsers: optimisticState.totalUsers - 1,
+      });
+
+      // Prepare FormData for Server Action
+      const formData = new FormData();
+      formData.append("id", userId);
+
+      // Execute Server Action
+      await deleteAction(formData);
     } catch (error) {
       console.error("Error deleting user:", error);
-    } finally {
-      setIsActionLoading(false);
     }
   };
 
-  // Toggle ban status
+  // 🚀 REACT 19: Toggle ban status with Server Action + Optimistic UI
   const handleToggleBan = async (userId: string) => {
     const user = users.find((u) => u.id === userId);
     if (!user) return;
 
     try {
-      setIsActionLoading(true);
+      const isBanned = user.status === "banned";
+      let banReason = "";
 
-      if (user.status === "banned") {
-        await authClient.admin.unbanUser({ userId });
-      } else {
-        const reason = prompt("Razón del baneo:");
-        if (!reason) return;
-
-        await authClient.admin.banUser({
-          userId,
-          banReason: reason,
-        });
+      if (!isBanned) {
+        banReason = prompt("Razón del baneo:") || "";
+        if (!banReason) return;
       }
 
-      await loadUsers();
+      // Optimistic: toggle ban status immediately in UI
+      setOptimisticState({
+        ...optimisticState,
+        users: optimisticState.users.map((u) =>
+          u.id === userId
+            ? {
+                ...u,
+                status: isBanned ? "active" : "banned",
+                banned: !isBanned,
+                banReason: isBanned ? null : banReason,
+                banExpires: null, // Could be set if needed
+              }
+            : u
+        ),
+      });
+
+      // Prepare FormData for Server Action
+      const formData = new FormData();
+      formData.append("id", userId);
+      if (!isBanned && banReason) {
+        formData.append("reason", banReason);
+      }
+
+      // Execute appropriate Server Action
+      if (isBanned) {
+        await unbanUserAction(formData);
+      } else {
+        await banUserAction(formData);
+      }
     } catch (error) {
       console.error("Error toggling ban:", error);
-    } finally {
-      setIsActionLoading(false);
     }
   };
 
-  // Change user role
+  // 🚀 REACT 19: Change user role with Server Action + Optimistic UI
   const handleChangeRole = async (userId: string, role: User["role"]) => {
     try {
-      setIsActionLoading(true);
-      await authClient.admin.setRole({
-        userId,
-        role: role === "super_admin" ? "admin" : (role as "admin" | "user"),
+      // Optimistic: update role immediately in UI
+      setOptimisticState({
+        ...optimisticState,
+        users: optimisticState.users.map((u) =>
+          u.id === userId ? { ...u, role } : u
+        ),
       });
-      await loadUsers();
+
+      // Prepare FormData for Server Action
+      const formData = new FormData();
+      formData.append("id", userId);
+      formData.append("role", role);
+
+      // Execute Server Action
+      await updateAction(formData);
     } catch (error) {
       console.error("Error changing role:", error);
-    } finally {
-      setIsActionLoading(false);
     }
   };
 
@@ -233,23 +361,48 @@ const UsersView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">
-            Gestión de Usuarios
+            👥 Gestión de Usuarios
           </h1>
           <p className="text-slate-600 mt-1">
             Administra todos los usuarios del sistema
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            setEditingUser(null);
-            setIsModalOpen(true);
-          }}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Nuevo Usuario
-        </button>
+        <div className="flex items-center gap-3">
+          {/* 🚀 REACT 19: Refresh button with optimistic UI */}
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing || optimisticState.isRefreshing}
+            className={`flex items-center gap-2 px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+              isRefreshing || optimisticState.isRefreshing
+                ? "animate-pulse"
+                : ""
+            }`}
+          >
+            <RefreshCw
+              size={16}
+              className={
+                isRefreshing || optimisticState.isRefreshing
+                  ? "animate-spin"
+                  : ""
+              }
+            />
+            {isRefreshing || optimisticState.isRefreshing
+              ? "Actualizando..."
+              : "Actualizar"}
+          </button>
+
+          <button
+            onClick={() => {
+              setEditingUser(null);
+              setIsModalOpen(true);
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Nuevo Usuario
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}

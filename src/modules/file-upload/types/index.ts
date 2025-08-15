@@ -70,6 +70,7 @@ export interface UploadProgress {
   fileId: string;
   progress: number; // 0-100
   status: "pending" | "uploading" | "completed" | "error";
+  filename?: string; // For optimistic UI
   error?: string;
 }
 
@@ -139,46 +140,66 @@ export interface FileUploaderProps {
   children?: React.ReactNode;
 }
 
-// Hook return types
+// Hook return types - Enterprise Grade
 export interface UseFileUploadReturn {
+  // Optimistic State
+  files: UploadCardData[];
+  stats: FileStatsData | null;
+  uploadProgress: UploadProgress[];
+
+  // Loading States
+  isLoading: boolean;
+  uploading: boolean; // Legacy alias
+  isUploading: boolean;
+  isDeleting: boolean;
+  isUpdating: boolean;
+
+  // Error States
+  hasError: boolean;
+  error: string | null;
+
+  // Actions
   uploadFiles: (
     files: File[],
     options?: {
-      provider?: UploadProvider;
+      provider?: "local" | "s3" | "cloudinary";
+      categoryId?: string;
       makePublic?: boolean;
-      categoryId?: string | null;
-      detectCategory?: (mimeType: string) => string | null;
     }
-  ) => Promise<UploadActionResult[]>;
+  ) => Promise<
+    Array<{ success: boolean; file?: UploadCardData; error?: string }>
+  >;
+
   uploadFile: (
     file: File,
     options?: {
-      provider?: UploadProvider;
+      provider?: "local" | "s3" | "cloudinary";
+      categoryId?: string;
       makePublic?: boolean;
-      categoryId?: string | null;
-      detectCategory?: (mimeType: string) => string | null;
     }
-  ) => Promise<{ success: boolean; file?: UploadFile; error?: string }>;
-  uploading: boolean;
-  progress: UploadProgress[];
-  error: string | null;
-  clearError: () => void;
-  resetProgress: () => void;
-}
+  ) => Promise<{ success: boolean; file?: UploadCardData; error?: string }>;
 
-export interface UseFileManagerReturn {
-  files: UploadCardData[]; // ✅ Cambiado de UploadFile[] a UploadCardData[]
-  loading: boolean;
-  error: string | null;
-  categories: FileCategory[];
-  selectedCategory: string | null;
-  selectedProvider: string | null;
-  setSelectedCategory: (categoryId: string | null) => void;
-  setSelectedProvider: (provider: string | null) => void;
-  refreshFiles: () => Promise<void>;
   deleteFile: (fileId: string) => Promise<void>;
-  downloadFile: (file: UploadCardData) => void; // ✅ Cambiado de UploadFile a UploadCardData
-  searchFiles: (query: string) => void;
+
+  updateFile: (
+    fileId: string,
+    updates: { filename?: string; isPublic?: boolean; tags?: string[] }
+  ) => Promise<void>;
+
+  refreshFiles: () => Promise<void>;
+  refreshStats: () => Promise<void>;
+
+  // Legacy Compatibility
+  progress: UploadProgress[]; // Alias for uploadProgress
+  clearError: () => void; // No-op
+  resetProgress: () => void; // No-op
+
+  // Raw States (advanced usage)
+  uploadState: unknown;
+  filesState: unknown;
+  deleteState: unknown;
+  updateState: unknown;
+  statsState: unknown;
 }
 
 export interface UseS3UploadReturn {

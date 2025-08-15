@@ -31,6 +31,14 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/webp", "image/avif"],
     minimumCacheTTL: 31536000,
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "ui-avatars.com",
+        port: "",
+        pathname: "/api/**",
+      },
+    ],
   },
 
   // 📱 SECURITY HEADERS

@@ -1,6 +1,5 @@
 "use client";
-import React, { useState } from "react";
-// NextImage import available for future optimization
+import React, { useState, useTransition } from "react";
 import {
   MoreVertical,
   Download,
@@ -14,29 +13,47 @@ import {
   Video,
   Music,
   FileText,
+  Loader2,
 } from "lucide-react";
 import type { UploadCardData } from "../../types";
+import { useFileUpload } from "../../hooks/useFileUpload";
 import Image from "next/image";
 
 interface FileManagerProps {
-  files: UploadCardData[];
+  // Optional props for full control - if not provided, uses internal hook
+  files?: UploadCardData[];
   onFileSelect?: (file: UploadCardData) => void;
   onFileDelete?: (file: UploadCardData) => void;
   onFileDownload?: (file: UploadCardData) => void;
   viewMode?: "grid" | "list";
   selectable?: boolean;
+  categoryFilter?: string;
 }
 
 const FileManager: React.FC<FileManagerProps> = ({
-  files,
+  files: externalFiles,
   onFileSelect,
   onFileDelete,
   onFileDownload,
   viewMode = "grid",
   selectable = false,
+  categoryFilter,
 }) => {
+  // 🚀 Use Enterprise Hook for internal state management
+  const {
+    files: hookFiles,
+    uploadProgress,
+    uploadFiles,
+    deleteFile,
+  } = useFileUpload();
+
+  // Use external files if provided, otherwise internal hook files
+  const displayFiles = externalFiles || hookFiles;
+
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [showMenu, setShowMenu] = useState<string | null>(null);
+  const [dragActive, setDragActive] = useState(false);
+  const [, startTransition] = useTransition();
 
   const getFileIcon = (mimeType: string, size: number = 24) => {
     const iconProps = { size, className: "flex-shrink-0" };
@@ -70,6 +87,56 @@ const FileManager: React.FC<FileManagerProps> = ({
     });
   };
 
+  // 🎯 Optimized Actions (React 19 + Transitions)
+  const handleFileDelete = (fileId: string) => {
+    startTransition(async () => {
+      try {
+        if (onFileDelete) {
+          const file = displayFiles.find((f) => f.id === fileId);
+          if (file) onFileDelete(file);
+        } else {
+          await deleteFile(fileId);
+        }
+      } catch (error) {
+        console.error("Delete error:", error);
+      }
+    });
+  };
+
+  // 🎯 Drag & Drop Handlers (Enterprise-grade)
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    if (droppedFiles.length > 0 && !externalFiles) {
+      startTransition(async () => {
+        await uploadFiles(droppedFiles, {
+          provider: "local",
+          categoryId: categoryFilter || undefined,
+        });
+      });
+    }
+  };
+
   const handleFileClick = (file: UploadCardData) => {
     if (selectable) {
       const newSelected = new Set(selectedFiles);
@@ -91,7 +158,7 @@ const FileManager: React.FC<FileManagerProps> = ({
         onFileDownload?.(file);
         break;
       case "delete":
-        onFileDelete?.(file);
+        handleFileDelete(file.id);
         break;
       case "copy":
         navigator.clipboard.writeText(file.url);
@@ -116,7 +183,7 @@ const FileManager: React.FC<FileManagerProps> = ({
         </div>
 
         <div className="divide-y divide-slate-200">
-          {files.map((file) => (
+          {displayFiles.map((file) => (
             <div
               key={file.id}
               className={`px-6 py-4 hover:bg-slate-50 transition-colors cursor-pointer ${
@@ -223,8 +290,43 @@ const FileManager: React.FC<FileManagerProps> = ({
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {files.map((file) => (
+    <div
+      className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 ${
+        dragActive
+          ? "border-2 border-dashed border-blue-500 bg-blue-50/50 rounded-lg p-4"
+          : ""
+      }`}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      {/* Upload Progress Indicators */}
+      {uploadProgress.map((progress) => (
+        <div
+          key={progress.fileId}
+          className="bg-white rounded-2xl border border-slate-200 p-4"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="animate-spin">
+              <Loader2 size={20} className="text-blue-500" />
+            </div>
+            <span className="text-sm font-medium">{progress.filename}</span>
+          </div>
+          <div className="w-full bg-slate-200 rounded-full h-2">
+            <div
+              className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${progress.progress}%` }}
+            />
+          </div>
+          {progress.status === "error" && (
+            <p className="text-red-500 text-xs mt-1">{progress.error}</p>
+          )}
+        </div>
+      ))}
+
+      {/* Files Grid */}
+      {displayFiles.map((file) => (
         <div
           key={file.id}
           className={`group bg-white rounded-2xl border border-slate-200 hover:border-slate-300 hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer ${

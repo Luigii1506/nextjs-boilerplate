@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useActionState, useOptimistic, useTransition } from "react";
 import {
   Users,
   UserCheck,
@@ -12,106 +12,104 @@ import {
   Sliders,
   CheckCircle,
   XCircle,
+  RefreshCw,
 } from "lucide-react";
 import { User, UserStats } from "@/shared/types/user";
-import { authClient } from "@/core/auth/auth-client";
+import {
+  getDashboardStatsServerAction,
+  getRecentUsersServerAction,
+  refreshDashboardServerAction,
+} from "../../server/actions";
 import { useIsEnabled } from "@/shared/hooks/useFeatureFlagsServerActions";
-
-interface ApiUser {
-  id: string;
-  name: string;
-  email: string;
-  emailVerified: boolean;
-  role?: string | null;
-  image?: string | null;
-  createdAt: Date | string;
-  updatedAt: Date | string;
-  lastLogin?: Date | string | null;
-  banned?: boolean | null;
-  banReason?: string | null;
-  banExpires?: Date | string | null;
-}
 
 interface DashboardViewProps {
   onViewChange?: (view: string) => void;
 }
 
+// 🎯 Optimistic State para React 19
+interface OptimisticDashboardState {
+  stats: UserStats | null;
+  recentUsers: User[];
+  isRefreshing: boolean;
+}
+
 const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
-  const [stats, setStats] = useState<UserStats>({
+  // 🚀 REACT 19: useActionState for dashboard stats
+  const [statsState, statsAction, isStatsLoading] = useActionState(async () => {
+    const result = await getDashboardStatsServerAction();
+    return result;
+  }, null);
+
+  // 🚀 REACT 19: useActionState for recent users
+  const [usersState, usersAction, isUsersLoading] = useActionState(async () => {
+    const result = await getRecentUsersServerAction(5);
+    return result;
+  }, null);
+
+  // ⚡ REACT 19: useTransition for refresh
+  const [isRefreshing, startRefresh] = useTransition();
+
+  // 🎯 REACT 19: useOptimistic for instant UI feedback
+  const [optimisticState, setOptimisticState] = useOptimistic(
+    {
+      stats: statsState?.success ? (statsState.data as UserStats) : null,
+      recentUsers: usersState?.success ? (usersState.data as User[]) : [],
+      isRefreshing: false,
+    } as OptimisticDashboardState,
+    (
+      state: OptimisticDashboardState,
+      optimisticValue: Partial<OptimisticDashboardState>
+    ) => ({
+      ...state,
+      ...optimisticValue,
+    })
+  );
+
+  // 🎛️ Feature Flags (Pure Server Actions)
+  const isEnabled = useIsEnabled();
+  const featureFlags = {
+    fileUpload: isEnabled("fileUpload"),
+    userManagement: isEnabled("userManagement"),
+    advancedAnalytics: isEnabled("analytics"),
+  };
+
+  // 🔄 Refresh handler with optimistic UI
+  const handleRefresh = async () => {
+    // Optimistic: show refreshing state immediately
+    setOptimisticState({ isRefreshing: true });
+
+    startRefresh(async () => {
+      try {
+        await refreshDashboardServerAction();
+        // Reload data after refresh
+        statsAction();
+        usersAction();
+      } finally {
+        setOptimisticState({ isRefreshing: false });
+      }
+    });
+  };
+
+  // 📊 Computed values from optimistic state
+  const stats = optimisticState.stats || {
     total: 0,
     active: 0,
     banned: 0,
     admins: 0,
-  });
-  const [, setRecentUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  // 🎛️ Feature Flags (Pure Server Actions)
-  const isEnabled = useIsEnabled();
-  // Convert to old format for compatibility (could be improved)
-  const featureFlags = {
-    fileUpload: isEnabled("fileUpload"),
-    userManagement: isEnabled("userManagement"),
-    advancedAnalytics: isEnabled("analytics"), // Use actual feature flag name
   };
 
-  const adaptApiUser = (apiUser: ApiUser): User => ({
-    id: apiUser.id,
-    name: apiUser.name,
-    email: apiUser.email,
-    emailVerified: apiUser.emailVerified,
-    role: apiUser.role === "admin" ? "admin" : "user",
-    status: apiUser.banned ? "banned" : "active",
-    image: apiUser.image,
-    createdAt: new Date(apiUser.createdAt).toISOString(),
-    updatedAt: new Date(apiUser.updatedAt).toISOString(),
-    lastLogin: apiUser.lastLogin
-      ? new Date(apiUser.lastLogin).toISOString()
-      : undefined,
-    banned: apiUser.banned,
-    banReason: apiUser.banReason,
-    banExpires: apiUser.banExpires
-      ? new Date(apiUser.banExpires).toISOString()
-      : undefined,
-  });
+  const isLoading = isStatsLoading || isUsersLoading;
+  const loading = isLoading && !optimisticState.stats; // Only show spinner on initial load
 
-  const loadDashboardData = useCallback(async () => {
-    try {
-      setLoading(true);
-
-      // Load recent users
-      const response = await authClient.admin.listUsers({
-        query: {
-          limit: 5,
-          offset: 0,
-          searchValue: "",
-          searchField: "email",
-          searchOperator: "contains",
-        },
+  // 🚀 Auto-load data on component mount (React 19 way)
+  React.useEffect(() => {
+    if (!statsState || !usersState) {
+      startRefresh(() => {
+        if (!statsState) statsAction();
+        if (!usersState) usersAction();
       });
-
-      if (response.data) {
-        const users = response.data.users.map(adaptApiUser);
-        setRecentUsers(users);
-
-        // Calculate stats
-        setStats({
-          total: response.data.total,
-          active: users.filter((u) => u.status === "active").length,
-          banned: users.filter((u) => u.status === "banned").length,
-          admins: users.filter((u) => u.role === "admin").length,
-        });
-      }
-    } catch (error) {
-      console.error("Error loading dashboard data:", error);
-    } finally {
-      setLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    loadDashboardData();
-  }, [loadDashboardData]);
+  }, [statsAction, usersAction, statsState, usersState, startRefresh]);
 
   if (loading) {
     return (
@@ -124,9 +122,30 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-        <p className="text-slate-600 mt-1">Resumen general del sistema</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">🏠 Dashboard</h1>
+          <p className="text-slate-600 mt-1">Resumen general del sistema</p>
+        </div>
+
+        {/* 🚀 REACT 19: Refresh button with optimistic UI */}
+        <button
+          onClick={handleRefresh}
+          disabled={isRefreshing || optimisticState.isRefreshing}
+          className={`flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+            isRefreshing || optimisticState.isRefreshing ? "animate-pulse" : ""
+          }`}
+        >
+          <RefreshCw
+            size={18}
+            className={
+              isRefreshing || optimisticState.isRefreshing ? "animate-spin" : ""
+            }
+          />
+          {isRefreshing || optimisticState.isRefreshing
+            ? "Actualizando..."
+            : "Actualizar"}
+        </button>
       </div>
 
       {/* Stats Grid */}

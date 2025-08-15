@@ -1,16 +1,21 @@
-// 👥 Users Feature Barrel
+// 👥 USERS FEATURE MODULE
 // =======================
-// Entry point para la feature de usuarios
+// Main barrel export for users admin feature (Hexagonal Architecture + React 19)
 
-// Re-export UI components
-export { default as UsersView } from "./ui/routes/index.screen";
-export * from "./ui/components";
-
-// Re-export hooks
-// export * from "./hooks";
-
-// Re-export types
+// 🎯 Types & Interfaces
 export * from "./types";
 
-// Re-export server utilities
-// export * from "./server";
+// 📋 Validation Schemas
+export * from "./schemas";
+
+// 🏢 Server-side (Services, Actions, Queries, Validators)
+export * from "./server";
+
+// 🎨 UI Components
+export * from "./ui";
+
+// 🛠️ Utilities (when available)
+// export * from "./utils";
+
+// 🔧 Hooks (when available)
+// export * from "./hooks";
