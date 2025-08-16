@@ -20,6 +20,7 @@ import {
   getAllUsersAction,
   createUserAction,
   updateUserAction,
+  updateUserRoleAction,
   deleteUserAction,
   banUserAction,
   unbanUserAction,
@@ -55,36 +56,6 @@ const UsersView: React.FC = () => {
     );
     return result;
   }, null);
-
-  // 🚀 REACT 19: useActionState for creating users
-  const [, createAction] = useActionState(
-    async (_: unknown, formData: FormData) => {
-      const result = await createUserAction(formData);
-      // ✨ No need to reload - Optimistic UI handles this
-      return result;
-    },
-    null
-  );
-
-  // 🚀 REACT 19: useActionState for updating users
-  const [, updateAction] = useActionState(
-    async (_: unknown, formData: FormData) => {
-      const result = await updateUserAction(formData);
-      // ✨ No need to reload - Optimistic UI handles this
-      return result;
-    },
-    null
-  );
-
-  // 🚀 REACT 19: useActionState for deleting users
-  const [, deleteAction] = useActionState(
-    async (_: unknown, formData: FormData) => {
-      const result = await deleteUserAction(formData);
-      // ✨ No need to reload - Optimistic UI handles this
-      return result;
-    },
-    null
-  );
 
   // ⚡ REACT 19: useTransition for non-blocking operations
   const [isRefreshing, startRefresh] = useTransition();
@@ -164,50 +135,41 @@ const UsersView: React.FC = () => {
 
   // 🔄 Refresh handler with optimistic UI
   const handleRefresh = () => {
-    setOptimisticState({ ...optimisticState, isRefreshing: true });
-    startRefresh(async () => {
-      try {
-        await usersAction();
-      } finally {
-        setOptimisticState({ ...optimisticState, isRefreshing: false });
-      }
+    startRefresh(() => {
+      setOptimisticState({ ...optimisticState, isRefreshing: true });
+      usersAction();
     });
   };
 
   // 🚀 REACT 19: Create user with Server Action + Optimistic UI
   const handleCreateUser = async (userData: UserFormData) => {
     try {
-      // Optimistic: add user immediately to UI
-      const newUser: User = {
-        id: `temp-${Date.now()}`,
-        name: userData.name,
-        email: userData.email,
-        role: userData.role,
-        status: "active",
-        emailVerified: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        banned: false,
-      };
-
-      setOptimisticState({
-        users: [...optimisticState.users, newUser],
-        totalUsers: optimisticState.totalUsers + 1,
-        isRefreshing: false,
-      });
-
-      // Prepare FormData for Server Action
+      // Prepare FormData for Server Action OUTSIDE of transition
       const formData = new FormData();
       formData.append("email", userData.email);
       formData.append("name", userData.name);
       formData.append("password", userData.password || "");
       formData.append("role", userData.role);
 
-      // Execute Server Action
-      await createAction(formData);
+      console.log("userData:", userData);
+      console.log("formData entries:", Array.from(formData.entries()));
 
-      // Close modal on success
-      setIsModalOpen(false);
+      // Execute Server Action first
+      const result = await createUserAction(formData);
+
+      if (result.success) {
+        // Close modal on success
+        setIsModalOpen(false);
+
+        // Refresh server data to get the real user with proper ID
+        startRefresh(() => {
+          usersAction();
+        });
+      } else {
+        // Show error message
+        console.error("Error creating user:", result.error);
+        throw new Error(result.error || "Error creating user");
+      }
     } catch (error) {
       console.error("Error creating user:", error);
       throw error;
@@ -219,34 +181,30 @@ const UsersView: React.FC = () => {
     if (!editingUser) return;
 
     try {
-      // Optimistic: update user immediately in UI
-      setOptimisticState({
-        ...optimisticState,
-        users: optimisticState.users.map((user) =>
-          user.id === editingUser.id
-            ? {
-                ...user,
-                name: userData.name,
-                email: userData.email,
-                role: userData.role,
-              }
-            : user
-        ),
-      });
-
-      // Prepare FormData for Server Action
+      // Prepare FormData for Server Action OUTSIDE of transition
       const formData = new FormData();
       formData.append("id", editingUser.id);
       formData.append("email", userData.email);
       formData.append("name", userData.name);
       formData.append("role", userData.role);
 
-      // Execute Server Action
-      await updateAction(formData);
+      // Execute Server Action first
+      const result = await updateUserAction(formData);
 
-      // Close modal on success
-      setEditingUser(null);
-      setIsModalOpen(false);
+      if (result.success) {
+        // Close modal on success
+        setEditingUser(null);
+        setIsModalOpen(false);
+
+        // Refresh server data to get updated user data
+        startRefresh(() => {
+          usersAction();
+        });
+      } else {
+        // Show error message
+        console.error("Error editing user:", result.error);
+        throw new Error(result.error || "Error editing user");
+      }
     } catch (error) {
       console.error("Error editing user:", error);
       throw error;
@@ -264,19 +222,23 @@ const UsersView: React.FC = () => {
     }
 
     try {
-      // Optimistic: remove user immediately from UI
-      setOptimisticState({
-        ...optimisticState,
-        users: optimisticState.users.filter((user) => user.id !== userId),
-        totalUsers: optimisticState.totalUsers - 1,
-      });
-
-      // Prepare FormData for Server Action
+      // Prepare FormData for Server Action OUTSIDE of transition
       const formData = new FormData();
       formData.append("id", userId);
 
-      // Execute Server Action
-      await deleteAction(formData);
+      // Execute Server Action first
+      const result = await deleteUserAction(formData);
+
+      if (result.success) {
+        // Refresh server data to reflect deletion
+        startRefresh(() => {
+          usersAction();
+        });
+      } else {
+        // Show error message
+        console.error("Error deleting user:", result.error);
+        throw new Error(result.error || "Error deleting user");
+      }
     } catch (error) {
       console.error("Error deleting user:", error);
     }
@@ -296,34 +258,27 @@ const UsersView: React.FC = () => {
         if (!banReason) return;
       }
 
-      // Optimistic: toggle ban status immediately in UI
-      setOptimisticState({
-        ...optimisticState,
-        users: optimisticState.users.map((u) =>
-          u.id === userId
-            ? {
-                ...u,
-                status: isBanned ? "active" : "banned",
-                banned: !isBanned,
-                banReason: isBanned ? null : banReason,
-                banExpires: null, // Could be set if needed
-              }
-            : u
-        ),
-      });
-
-      // Prepare FormData for Server Action
+      // Prepare FormData for Server Action OUTSIDE of transition
       const formData = new FormData();
       formData.append("id", userId);
       if (!isBanned && banReason) {
         formData.append("reason", banReason);
       }
 
-      // Execute appropriate Server Action
-      if (isBanned) {
-        await unbanUserAction(formData);
+      // Execute appropriate Server Action first
+      const result = isBanned
+        ? await unbanUserAction(formData)
+        : await banUserAction(formData);
+
+      if (result.success) {
+        // Refresh server data to reflect ban status change
+        startRefresh(() => {
+          usersAction();
+        });
       } else {
-        await banUserAction(formData);
+        // Show error message
+        console.error("Error toggling ban:", result.error);
+        throw new Error(result.error || "Error toggling ban status");
       }
     } catch (error) {
       console.error("Error toggling ban:", error);
@@ -333,21 +288,24 @@ const UsersView: React.FC = () => {
   // 🚀 REACT 19: Change user role with Server Action + Optimistic UI
   const handleChangeRole = async (userId: string, role: User["role"]) => {
     try {
-      // Optimistic: update role immediately in UI
-      setOptimisticState({
-        ...optimisticState,
-        users: optimisticState.users.map((u) =>
-          u.id === userId ? { ...u, role } : u
-        ),
-      });
-
-      // Prepare FormData for Server Action
+      // Prepare FormData for Server Action OUTSIDE of transition
       const formData = new FormData();
-      formData.append("id", userId);
+      formData.append("userId", userId); // updateUserRoleAction expects "userId" not "id"
       formData.append("role", role);
 
-      // Execute Server Action
-      await updateAction(formData);
+      // Execute Server Action first - using updateUserRoleAction for proper super_admin support
+      const result = await updateUserRoleAction(formData);
+
+      if (result.success) {
+        // Refresh server data to reflect role change
+        startRefresh(() => {
+          usersAction();
+        });
+      } else {
+        // Show error message
+        console.error("Error changing role:", result.error);
+        throw new Error(result.error || "Error changing user role");
+      }
     } catch (error) {
       console.error("Error changing role:", error);
     }

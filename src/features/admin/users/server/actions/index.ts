@@ -82,7 +82,6 @@ export async function createUserAction(
   formData: FormData
 ): Promise<ActionResult<User>> {
   try {
-    // 🔍 Validate and parse input
     const userData = schemas.parseCreateUserFormData(formData);
 
     // 🛡️ Session validation
@@ -90,6 +89,7 @@ export async function createUserAction(
 
     // 🏢 Business logic via service
     const userService = await createUserService();
+
     const newUser = await userService.createUser(userData);
 
     // 🔄 Cache invalidation
@@ -101,6 +101,7 @@ export async function createUserAction(
       message: "Usuario creado exitosamente",
     };
   } catch (error) {
+    console.error("❌ Error in createUserAction:", error);
     return {
       success: false,
       error:

@@ -8,11 +8,9 @@ import { useActionState, useOptimistic, useCallback, useMemo } from "react";
 import { useAuth } from "@/shared/hooks/useAuth";
 import {
   uploadFileServerAction,
-  uploadMultipleFilesServerAction,
   getFilesServerAction,
   updateFileServerAction,
   deleteFileServerAction,
-  deleteMultipleFilesServerAction,
   getFileStatsServerAction,
   type FileActionResult,
 } from "../server/actions";

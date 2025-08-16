@@ -155,6 +155,6 @@ export const parseBulkUpdateFormData = (formData: FormData) => {
 
 export const parseDeleteUserFormData = (formData: FormData) => {
   return deleteUserSchema.parse({
-    userId: formData.get("userId")?.toString(),
+    userId: formData.get("id")?.toString(),
   });
 };

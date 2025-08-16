@@ -69,8 +69,11 @@ const UserModal: React.FC<UserModalProps> = ({
     if (!user) {
       if (!formData.password) {
         newErrors.password = "La contraseña es requerida";
-      } else if (formData.password.length < 6) {
-        newErrors.password = "La contraseña debe tener al menos 6 caracteres";
+      } else if (formData.password.length < 8) {
+        newErrors.password = "La contraseña debe tener al menos 8 caracteres";
+      } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
+        newErrors.password =
+          "La contraseña debe contener al menos una mayúscula, una minúscula y un número";
       }
     }
 
@@ -215,11 +218,17 @@ const UserModal: React.FC<UserModalProps> = ({
                       ? "border-red-300 bg-red-50"
                       : "border-slate-300"
                   }`}
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="Mínimo 8 caracteres, incluir mayúscula, minúscula y número"
                   disabled={isLoading}
                 />
                 {errors.password && (
                   <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                )}
+                {!errors.password && (
+                  <p className="mt-1 text-sm text-slate-500">
+                    💡 Debe contener al menos 8 caracteres con mayúscula,
+                    minúscula y número
+                  </p>
                 )}
               </div>
             )}

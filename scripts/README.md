@@ -36,6 +36,14 @@ npm run make-admin
 npx tsx scripts/make-admin.ts
 ```
 
+#### `make-super-admin.ts`
+
+Convierte un usuario existente en super administrador (permisos para eliminar usuarios).
+
+```bash
+npx tsx scripts/make-super-admin.ts
+```
+
 #### `update-user-role.ts`
 
 Actualiza el rol de un usuario específico.
@@ -64,6 +72,31 @@ npx tsx scripts/update-user-role.ts
 - **Requiere base de datos activa**
 - **Verificar variables de entorno**
 - **Scripts interactivos** (piden confirmación)
+
+## 🔐 Jerarquía de Roles
+
+### Super Admin (`super_admin`)
+
+- ✅ Crear usuarios
+- ✅ Editar usuarios
+- ✅ **Eliminar usuarios**
+- ✅ Banear/desbanear usuarios
+- ✅ Cambiar roles de usuarios
+- ✅ Operaciones masivas
+
+### Admin (`admin`)
+
+- ✅ Crear usuarios (excepto super_admin)
+- ✅ Editar usuarios
+- ❌ **NO puede eliminar usuarios**
+- ✅ Banear/desbanear usuarios (excepto super_admin)
+- ✅ Cambiar roles (excepto super_admin)
+
+### User (`user`)
+
+- ❌ Sin permisos administrativos
+
+**Nota importante**: Solo los `super_admin` pueden eliminar usuarios del sistema.
 
 ## 📝 Agregar Nuevos Scripts
 

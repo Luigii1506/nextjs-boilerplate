@@ -86,12 +86,21 @@ export class UserService {
   }): Promise<User> {
     const { email, name, password, role } = userData;
 
+    console.log("🚀 Creating user with data:", {
+      email,
+      name,
+      role,
+      currentUserRole: this.options.currentUserRole,
+    });
+
     // Validate business rules
     await userValidators.validateCreateUser(
       this.options.currentUserRole,
       role,
       email
     );
+
+    console.log("✅ Validation passed");
 
     // Create user using Better Auth
     const result = await auth.api.signUpEmail({
@@ -103,19 +112,45 @@ export class UserService {
       throw new Error("Error creando usuario");
     }
 
-    // Set role if different from default
+    console.log("✅ User created in Better Auth:", {
+      userId: result.user.id,
+      email: result.user.email,
+    });
+
+    // Set role if different from default - Use Prisma for ALL roles
     if (role !== "user") {
-      await auth.api.setRole({
-        body: {
+      console.log(`🎭 Setting role to: ${role}`);
+
+      try {
+        // Use Prisma directly for ALL role assignments (more reliable)
+        console.log(
+          "🔧 Using Prisma for role assignment (bypassing Better Auth limitations)"
+        );
+        await userQueries.updateUserRole(result.user.id, role);
+        console.log(`✅ Role '${role}' set via Prisma`);
+      } catch (roleError) {
+        console.error("❌ Error setting role:", {
+          error: roleError instanceof Error ? roleError.message : roleError,
+          targetRole: role,
           userId: result.user.id,
-          role: role as "admin" | "user",
-        },
-        headers: await headers(),
-      });
+        });
+        // Don't throw here - let's see if we can still return the user
+      }
     }
 
-    // Return formatted user using mapper
-    return userMappers.betterAuthUserToUser(result.user, role);
+    // Verify final role by getting user from database
+    const finalUser = await userQueries.getUserById(result.user.id);
+    console.log("🔍 Final user data:", {
+      userId: finalUser?.id,
+      finalRole: finalUser?.role,
+      requestedRole: role,
+    });
+
+    // Return formatted user using mapper with the actual role from database
+    return userMappers.betterAuthUserToUser(
+      result.user,
+      (finalUser?.role as "user" | "admin" | "super_admin") || role
+    );
   }
 
   // ✏️ Update user with business logic
@@ -125,24 +160,45 @@ export class UserService {
     name?: string;
     role?: "user" | "admin" | "super_admin";
   }): Promise<User> {
-    const { userId, role } = params;
+    const { userId, email, name, role } = params;
 
-    // Validate business rules
+    // 🛡️ Validate permissions for user access
+    await userValidators.validateUserAccess(
+      this.options.currentUserId,
+      this.options.currentUserRole,
+      userId
+    );
+
+    // 🎭 Handle role changes separately (only if role is actually changing)
     if (role) {
-      await userValidators.validateRoleChange(
-        this.options.currentUserId,
-        this.options.currentUserRole,
-        userId,
-        role
-      );
+      // Get current user to compare roles
+      const currentUser = await userQueries.getUserById(userId);
+      if (!currentUser) {
+        throw new Error("User not found");
+      }
+
+      // Only validate and update if role is actually changing
+      if (currentUser.role !== role) {
+        await userValidators.validateRoleChange(
+          this.options.currentUserId,
+          this.options.currentUserRole,
+          userId,
+          role
+        );
+
+        // Update role via Better Auth
+        await auth.api.setRole({
+          body: { userId, role: role as "admin" | "user" },
+          headers: await headers(),
+        });
+      }
     }
 
-    // Update role if provided
-    if (role) {
-      await auth.api.setRole({
-        body: { userId, role: role as "admin" | "user" },
-        headers: await headers(),
-      });
+    // 📝 Update basic user data (email, name) if provided
+    // This allows users to update their own basic info
+    if (email || name) {
+      // Use direct database update for basic fields
+      await userQueries.updateUserBasicData(userId, { email, name });
     }
 
     // Get updated user
@@ -193,17 +249,8 @@ export class UserService {
       userId
     );
 
-    // Ban user using Better Auth
-    await auth.api.banUser({
-      body: { userId, banReason: reason },
-      headers: await headers(),
-    });
-
-    // Get updated user
-    const bannedUser = await userQueries.getUserById(userId);
-    if (!bannedUser) {
-      throw new Error("User not found after ban");
-    }
+    // Ban user directly in database (bypass Better Auth API)
+    const bannedUser = await userQueries.banUser(userId, reason);
 
     return userMappers.banUserResultToUser(bannedUser);
   }
@@ -217,17 +264,8 @@ export class UserService {
       userId
     );
 
-    // Unban user using Better Auth
-    await auth.api.unbanUser({
-      body: { userId },
-      headers: await headers(),
-    });
-
-    // Get updated user
-    const unbannedUser = await userQueries.getUserById(userId);
-    if (!unbannedUser) {
-      throw new Error("User not found after unban");
-    }
+    // Unban user directly in database (bypass Better Auth API)
+    const unbannedUser = await userQueries.unbanUser(userId);
 
     return userMappers.unbanUserResultToUser(unbannedUser);
   }
@@ -253,16 +291,11 @@ export class UserService {
 
 // 🏭 Factory function to create UserService with session
 export const createUserService = async (): Promise<UserService> => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session?.user) {
-    throw new Error("No autorizado");
-  }
+  // Use the same session validation logic as validators
+  const session = await userValidators.getValidatedSession();
 
   return new UserService({
     currentUserId: session.user.id,
-    currentUserRole: session.user.role as "user" | "admin" | "super_admin",
+    currentUserRole: session.user.role,
   });
 };

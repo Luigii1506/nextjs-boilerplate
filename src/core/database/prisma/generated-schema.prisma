@@ -24,7 +24,7 @@ datasource db {
 // ⚡ AUTOMATICALLY GENERATED SCHEMA
 // ================================
 // This schema is built dynamically based on active feature flags
-// Generated at: 2025-08-15T18:29:21.499Z
+// Generated at: 2025-08-16T16:48:08.322Z
 // Active modules: auth, feature-flags, file-upload
 
 // 📁 AUTHENTICATION

@@ -125,6 +125,40 @@ export const updateUserRole = async (userId: string, role: string) => {
   });
 };
 
+// 📝 Update user basic data (email, name)
+export const updateUserBasicData = async (
+  userId: string,
+  data: { email?: string; name?: string }
+) => {
+  const updateData: { email?: string; name?: string } = {};
+
+  if (data.email !== undefined) {
+    updateData.email = data.email;
+  }
+
+  if (data.name !== undefined) {
+    updateData.name = data.name;
+  }
+
+  return prisma.user.update({
+    where: { id: userId },
+    data: updateData,
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      emailVerified: true,
+      image: true,
+      role: true,
+      createdAt: true,
+      updatedAt: true,
+      banned: true,
+      banReason: true,
+      banExpires: true,
+    },
+  });
+};
+
 // 🗑️ Delete user by ID
 export const deleteUserById = async (userId: string) => {
   return prisma.user.delete({
@@ -270,4 +304,58 @@ export const emailExists = async (email: string, excludeUserId?: string) => {
   });
 
   return !!user;
+};
+
+// 🚫 Ban user directly in database
+export const banUser = async (
+  userId: string,
+  banReason: string,
+  banExpires?: Date
+) => {
+  return prisma.user.update({
+    where: { id: userId },
+    data: {
+      banned: true,
+      banReason,
+      banExpires,
+    },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      image: true,
+      role: true,
+      banned: true,
+      banReason: true,
+      banExpires: true,
+      createdAt: true,
+      updatedAt: true,
+      emailVerified: true,
+    },
+  });
+};
+
+// ✅ Unban user directly in database
+export const unbanUser = async (userId: string) => {
+  return prisma.user.update({
+    where: { id: userId },
+    data: {
+      banned: false,
+      banReason: null,
+      banExpires: null,
+    },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      image: true,
+      role: true,
+      banned: true,
+      banReason: true,
+      banExpires: true,
+      createdAt: true,
+      updatedAt: true,
+      emailVerified: true,
+    },
+  });
 };
