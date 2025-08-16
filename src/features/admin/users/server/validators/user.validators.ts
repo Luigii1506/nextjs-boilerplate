@@ -331,19 +331,6 @@ export const validateUserName = (name: string) => {
   }
 };
 
-// 📊 Rate limiting validation (future enhancement)
-export const validateRateLimit = async (_userId: string, _action: string) => {
-  // This could be implemented with Redis or similar
-  // For now, it's a placeholder for future enhancement
-  // throw new ValidationError("Rate limit exceeded. Try again later.");
-};
-
-// 🌐 IP-based restrictions validation (future enhancement)
-export const validateIPRestrictions = (_ip: string, _userRole: string) => {
-  // This could implement IP whitelisting for certain roles
-  // For now, it's a placeholder for future enhancement
-};
-
 // 🔒 HELPER: Validate and get authenticated session
 export const getValidatedSession = async () => {
   const session = await getServerSession();

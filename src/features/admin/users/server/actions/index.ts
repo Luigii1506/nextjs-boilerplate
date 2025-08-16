@@ -101,7 +101,6 @@ export async function createUserAction(
       message: "Usuario creado exitosamente",
     };
   } catch (error) {
-    console.error("❌ Error in createUserAction:", error);
     return {
       success: false,
       error:

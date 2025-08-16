@@ -86,21 +86,12 @@ export class UserService {
   }): Promise<User> {
     const { email, name, password, role } = userData;
 
-    console.log("🚀 Creating user with data:", {
-      email,
-      name,
-      role,
-      currentUserRole: this.options.currentUserRole,
-    });
-
     // Validate business rules
     await userValidators.validateCreateUser(
       this.options.currentUserRole,
       role,
       email
     );
-
-    console.log("✅ Validation passed");
 
     // Create user using Better Auth
     const result = await auth.api.signUpEmail({
@@ -112,39 +103,22 @@ export class UserService {
       throw new Error("Error creando usuario");
     }
 
-    console.log("✅ User created in Better Auth:", {
-      userId: result.user.id,
-      email: result.user.email,
-    });
-
     // Set role if different from default - Use Prisma for ALL roles
     if (role !== "user") {
-      console.log(`🎭 Setting role to: ${role}`);
-
       try {
         // Use Prisma directly for ALL role assignments (more reliable)
-        console.log(
-          "🔧 Using Prisma for role assignment (bypassing Better Auth limitations)"
-        );
         await userQueries.updateUserRole(result.user.id, role);
-        console.log(`✅ Role '${role}' set via Prisma`);
       } catch (roleError) {
-        console.error("❌ Error setting role:", {
-          error: roleError instanceof Error ? roleError.message : roleError,
-          targetRole: role,
-          userId: result.user.id,
-        });
-        // Don't throw here - let's see if we can still return the user
+        throw new Error(
+          `Error setting role: ${
+            roleError instanceof Error ? roleError.message : "Unknown error"
+          }`
+        );
       }
     }
 
     // Verify final role by getting user from database
     const finalUser = await userQueries.getUserById(result.user.id);
-    console.log("🔍 Final user data:", {
-      userId: finalUser?.id,
-      finalRole: finalUser?.role,
-      requestedRole: role,
-    });
 
     // Return formatted user using mapper with the actual role from database
     return userMappers.betterAuthUserToUser(

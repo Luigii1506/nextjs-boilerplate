@@ -151,9 +151,6 @@ const UsersView: React.FC = () => {
       formData.append("password", userData.password || "");
       formData.append("role", userData.role);
 
-      console.log("userData:", userData);
-      console.log("formData entries:", Array.from(formData.entries()));
-
       // Execute Server Action first
       const result = await createUserAction(formData);
 
