@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { User } from "@/shared/types/user";
+import { User } from "../../types";
 import Image from "next/image";
 import {
   MoreVertical,
@@ -234,7 +234,7 @@ const UserCard: React.FC<UserCardProps> = ({
         {user.lastLogin && (
           <div className="flex items-center gap-1">
             <Clock className="w-3.5 h-3.5" />
-            Último: {formatDate(user.lastLogin)}
+            Último: {new Date(user.lastLogin).toLocaleDateString()}
           </div>
         )}
       </div>

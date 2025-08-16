@@ -9,10 +9,11 @@ export interface User {
   name: string;
   emailVerified: boolean;
   role: "user" | "admin" | "super_admin";
-  status: "active" | "banned";
+  status?: "active" | "banned";
   image: string | null;
   createdAt: string;
   updatedAt: string;
+  lastLogin?: string;
   banned: boolean;
   banReason: string | null;
   banExpires: string | null;
@@ -100,6 +101,14 @@ export interface UserDashboardStats {
   activeUsers: number;
   bannedUsers: number;
   adminUsers: number;
+}
+
+// 📊 User Stats for UI
+export interface UserStats {
+  total: number;
+  active: number;
+  banned: number;
+  admins: number;
 }
 
 // 🛡️ Permission Context

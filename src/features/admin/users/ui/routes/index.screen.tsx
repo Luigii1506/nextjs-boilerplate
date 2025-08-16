@@ -15,7 +15,12 @@ import {
   Shield,
   RefreshCw,
 } from "lucide-react";
-import { User, UserFormData, UserStats } from "@/shared/types/user";
+import {
+  User,
+  CreateUserForm,
+  UserOptimisticState,
+  UserStats,
+} from "../../types";
 import {
   getAllUsersAction,
   createUserAction,
@@ -28,12 +33,8 @@ import {
 import UserCard from "@/features/admin/users/ui/components/UserCard";
 import UserModal from "@/features/admin/users/ui/components/UserModal";
 
-// 🎯 Optimistic State for React 19
-interface OptimisticUsersState {
-  users: User[];
-  totalUsers: number;
-  isRefreshing: boolean;
-}
+// Use the type from our module
+type OptimisticUsersState = UserOptimisticState;
 
 const UsersView: React.FC = () => {
   // 🎛️ Filter & UI State
@@ -142,7 +143,7 @@ const UsersView: React.FC = () => {
   };
 
   // 🚀 REACT 19: Create user with Server Action + Optimistic UI
-  const handleCreateUser = async (userData: UserFormData) => {
+  const handleCreateUser = async (userData: CreateUserForm) => {
     try {
       // Prepare FormData for Server Action OUTSIDE of transition
       const formData = new FormData();
@@ -174,7 +175,7 @@ const UsersView: React.FC = () => {
   };
 
   // 🚀 REACT 19: Edit user with Server Action + Optimistic UI
-  const handleEditUser = async (userData: UserFormData) => {
+  const handleEditUser = async (userData: CreateUserForm) => {
     if (!editingUser) return;
 
     try {

@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { User, UserFormData } from "@/shared/types/user";
+import { User, CreateUserForm } from "../../types";
 import { X, User as UserIcon, Mail, Lock, Shield, Save } from "lucide-react";
 
 interface UserModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (userData: UserFormData) => void;
+  onSave: (userData: CreateUserForm) => void;
   user?: User | null;
   title?: string;
 }
@@ -19,14 +19,14 @@ const UserModal: React.FC<UserModalProps> = ({
   user,
   title,
 }) => {
-  const [formData, setFormData] = useState<UserFormData>({
+  const [formData, setFormData] = useState<CreateUserForm>({
     name: "",
     email: "",
     role: "user",
     password: "",
   });
 
-  const [errors, setErrors] = useState<Partial<UserFormData>>({});
+  const [errors, setErrors] = useState<Partial<CreateUserForm>>({});
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -49,7 +49,7 @@ const UserModal: React.FC<UserModalProps> = ({
   }, [user, isOpen]);
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<UserFormData> = {};
+    const newErrors: Partial<CreateUserForm> = {};
 
     // Name validation
     if (!formData.name.trim()) {
@@ -100,7 +100,7 @@ const UserModal: React.FC<UserModalProps> = ({
     }
   };
 
-  const handleInputChange = (field: keyof UserFormData, value: string) => {
+  const handleInputChange = (field: keyof CreateUserForm, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error for this field when user starts typing
     if (errors[field]) {
