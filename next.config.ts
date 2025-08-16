@@ -38,6 +38,10 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/api/**",
       },
+      {
+        protocol: "https",
+        hostname: "clistenesbucket.s3.us-east-1.amazonaws.com",
+      },
     ],
   },
 

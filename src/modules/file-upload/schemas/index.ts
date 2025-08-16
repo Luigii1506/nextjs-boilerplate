@@ -62,13 +62,42 @@ export const UpdateCategorySchema = z.object({
 // ========================
 
 export const FileFiltersSchema = z.object({
-  userId: z.string().uuid().optional(),
-  provider: z.enum(["local", "s3", "cloudinary"]).optional(),
-  mimeType: z.string().optional(),
-  isPublic: z.boolean().optional(),
-  tags: z.array(z.string()).optional(),
-  categoryId: z.string().uuid().optional(),
-  search: z.string().optional(),
+  userId: z
+    .string()
+    .uuid()
+    .optional()
+    .or(z.null())
+    .transform((val) => val || undefined),
+  provider: z
+    .enum(["local", "s3", "cloudinary"])
+    .optional()
+    .or(z.null())
+    .transform((val) => val || undefined),
+  mimeType: z
+    .string()
+    .optional()
+    .or(z.null())
+    .transform((val) => val || undefined),
+  isPublic: z
+    .boolean()
+    .optional()
+    .or(z.null())
+    .transform((val) => val || undefined),
+  tags: z
+    .array(z.string())
+    .optional()
+    .or(z.null())
+    .transform((val) => val || undefined),
+  categoryId: z
+    .string()
+    .optional()
+    .or(z.null())
+    .transform((val) => val || undefined), // Removed .uuid() requirement
+  search: z
+    .string()
+    .optional()
+    .or(z.null())
+    .transform((val) => val || undefined),
   limit: z.number().min(1).max(100).default(50),
   offset: z.number().min(0).default(0),
   sortBy: z.enum(["createdAt", "filename", "size"]).default("createdAt"),
@@ -80,7 +109,12 @@ export const FileFiltersSchema = z.object({
 // ========================
 
 export const GetStatsSchema = z.object({
-  userId: z.string().uuid().optional(),
+  userId: z
+    .string()
+    .uuid()
+    .optional()
+    .or(z.null())
+    .transform((val) => val || undefined),
   period: z.enum(["day", "week", "month", "year"]).default("month"),
 });
 

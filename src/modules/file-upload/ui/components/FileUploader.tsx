@@ -12,8 +12,13 @@ import {
   CheckCircle,
   Plus,
 } from "lucide-react";
-import type { UploadFile, UploadConfig } from "../../types";
-import { useFileUpload } from "../../hooks/useFileUpload";
+import type {
+  UploadFile,
+  UploadConfig,
+  UploadProgress,
+  UploadCardData,
+} from "../../types";
+// import { useFileUpload } from "../../hooks/useFileUpload"; // ← REMOVED: Using enterprise state lifting
 
 interface FileUploaderProps {
   config: UploadConfig;
@@ -21,6 +26,23 @@ interface FileUploaderProps {
   onUploadError: (error: string) => void;
   selectedCategory?: string | null;
   detectCategory?: (mimeType: string) => string | null;
+
+  // 🏆 ENTERPRISE STATE LIFTING: Receive functions from parent hook
+  isUploading: boolean;
+  uploadProgress: UploadProgress[];
+  uploadError: string | null;
+  uploadFiles: (
+    files: File[],
+    options?: {
+      provider?: "local" | "s3" | "cloudinary";
+      categoryId?: string;
+      makePublic?: boolean;
+    }
+  ) => Promise<
+    Array<{ success: boolean; file?: UploadCardData; error?: string }>
+  >;
+  clearError: () => void;
+  resetProgress: () => void;
 }
 
 const FileUploader: React.FC<FileUploaderProps> = ({
@@ -29,20 +51,20 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   onUploadError,
   selectedCategory,
   detectCategory,
+  // 🏆 ENTERPRISE STATE LIFTING: Received from parent
+  isUploading,
+  uploadProgress,
+  uploadError,
+  uploadFiles,
+  clearError,
+  resetProgress,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]); // Archivos seleccionados
   const [shouldCleanupProgress, setShouldCleanupProgress] = useState(false);
 
-  // Usar el hook real de upload
-  const {
-    uploading: isUploading,
-    progress: uploadProgress,
-    error: uploadError,
-    uploadFiles,
-    clearError,
-    resetProgress,
-  } = useFileUpload(config);
+  // 🏆 ENTERPRISE STATE LIFTING: All functions received from parent hook
+  // No hook duplication - parent manages all state!
 
   // 🎯 ENTERPRISE-GRADE: Progress cleanup with useEffect instead of setTimeout
   useEffect(() => {

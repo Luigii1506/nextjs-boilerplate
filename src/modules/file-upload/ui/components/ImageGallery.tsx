@@ -127,6 +127,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
               src={image.url}
               alt={image.originalName || "Imagen de galería"}
               fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
               className="object-cover transition-transform duration-300 group-hover:scale-105"
               loading="lazy"
             />
@@ -238,10 +239,11 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
             <Image
               src={selectedImage.url}
               alt={selectedImage.originalName || "Imagen seleccionada"}
-              width={1000}
-              height={800}
+              width={(selectedImage.metadata?.width as number) || 1000}
+              height={(selectedImage.metadata?.height as number) || 800}
               className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
               onClick={(e) => e.stopPropagation()}
+              priority
             />
           </div>
 

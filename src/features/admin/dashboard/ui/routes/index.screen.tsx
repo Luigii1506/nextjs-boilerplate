@@ -21,6 +21,7 @@ import {
   refreshDashboardServerAction,
 } from "../../server/actions";
 import { useIsEnabled } from "@/shared/hooks/useFeatureFlagsServerActions";
+import { useHydration } from "@/shared/hooks/useHydration";
 
 interface DashboardViewProps {
   onViewChange?: (view: string) => void;
@@ -66,6 +67,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
   );
 
   // 🎛️ Feature Flags (Pure Server Actions)
+  const isHydrated = useHydration();
   const isEnabled = useIsEnabled();
   const featureFlags = {
     fileUpload: isEnabled("fileUpload"),
@@ -75,8 +77,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
 
   // 🔄 Refresh handler with optimistic UI
   const handleRefresh = async () => {
-    // Optimistic: show refreshing state immediately
-    setOptimisticState({ isRefreshing: true });
+    // Optimistic: show refreshing state immediately - WRAPPED IN TRANSITION
+    startRefresh(() => {
+      setOptimisticState({ isRefreshing: true });
+    });
 
     startRefresh(async () => {
       try {
@@ -85,7 +89,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
         statsAction();
         usersAction();
       } finally {
-        setOptimisticState({ isRefreshing: false });
+        // WRAPPED IN TRANSITION
+        startRefresh(() => {
+          setOptimisticState({ isRefreshing: false });
+        });
       }
     });
   };
@@ -294,62 +301,81 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
           </div>
 
           <div className="space-y-3">
-            {[
-              {
-                key: "fileUpload",
-                label: "📁 File Upload",
-                description: "Sistema de archivos",
-              },
-              {
-                key: "analytics",
-                label: "📊 Analytics",
-                description: "Estadísticas y métricas",
-              },
-              {
-                key: "darkMode",
-                label: "🌙 Dark Mode",
-                description: "Modo oscuro",
-              },
-              {
-                key: "betaFeatures",
-                label: "🧪 Beta Features",
-                description: "Funcionalidades experimentales",
-              },
-            ].map((flag) => {
-              const isEnabled =
-                featureFlags[flag.key as keyof typeof featureFlags];
-              return (
-                <div
-                  key={flag.key}
-                  className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    {isEnabled ? (
-                      <CheckCircle className="w-5 h-5 text-green-600" />
-                    ) : (
-                      <XCircle className="w-5 h-5 text-red-500" />
-                    )}
-                    <div>
-                      <p className="text-sm font-medium text-slate-900">
-                        {flag.label}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {flag.description}
-                      </p>
-                    </div>
-                  </div>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      isEnabled
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
-                    }`}
+            {/* 🔄 Hydration Safe Feature Flags */}
+            {!isHydrated
+              ? // Show skeleton while hydrating to avoid hydration mismatch
+                Array.from({ length: 4 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-3 bg-slate-50 rounded-lg animate-pulse"
                   >
-                    {isEnabled ? "ON" : "OFF"}
-                  </span>
-                </div>
-              );
-            })}
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 bg-slate-300 rounded-full"></div>
+                      <div>
+                        <div className="w-24 h-4 bg-slate-300 rounded mb-1"></div>
+                        <div className="w-32 h-3 bg-slate-200 rounded"></div>
+                      </div>
+                    </div>
+                    <div className="w-8 h-5 bg-slate-300 rounded-full"></div>
+                  </div>
+                ))
+              : // Render actual feature flags after hydration
+                [
+                  {
+                    key: "fileUpload",
+                    label: "📁 File Upload",
+                    description: "Sistema de archivos",
+                  },
+                  {
+                    key: "analytics",
+                    label: "📊 Analytics",
+                    description: "Estadísticas y métricas",
+                  },
+                  {
+                    key: "darkMode",
+                    label: "🌙 Dark Mode",
+                    description: "Modo oscuro",
+                  },
+                  {
+                    key: "betaFeatures",
+                    label: "🧪 Beta Features",
+                    description: "Funcionalidades experimentales",
+                  },
+                ].map((flag) => {
+                  const isEnabled =
+                    featureFlags[flag.key as keyof typeof featureFlags];
+                  return (
+                    <div
+                      key={flag.key}
+                      className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        {isEnabled ? (
+                          <CheckCircle className="w-5 h-5 text-green-600" />
+                        ) : (
+                          <XCircle className="w-5 h-5 text-red-500" />
+                        )}
+                        <div>
+                          <p className="text-sm font-medium text-slate-900">
+                            {flag.label}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {flag.description}
+                          </p>
+                        </div>
+                      </div>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          isEnabled
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {isEnabled ? "ON" : "OFF"}
+                      </span>
+                    </div>
+                  );
+                })}
           </div>
         </div>
       </div>

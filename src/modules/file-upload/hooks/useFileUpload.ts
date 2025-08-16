@@ -4,7 +4,15 @@
 
 "use client";
 
-import { useActionState, useOptimistic, useCallback, useMemo } from "react";
+import {
+  useActionState,
+  useOptimistic,
+  useCallback,
+  useMemo,
+  useEffect,
+  useTransition,
+  useRef,
+} from "react";
 import { useAuth } from "@/shared/hooks/useAuth";
 import {
   uploadFileServerAction,
@@ -32,7 +40,7 @@ interface OptimisticState {
 // 🎯 Optimistic Actions
 type OptimisticAction =
   | { type: "START_UPLOAD"; files: File[]; tempIds: string[] }
-  | { type: "COMPLETE_UPLOAD"; tempId: string; result: UploadCardData }
+  | { type: "CLEAR_COMPLETED_UPLOADS"; completedTempIds: string[] }
   | { type: "FAIL_UPLOAD"; tempId: string; error: string }
   | { type: "UPDATE_PROGRESS"; tempId: string; progress: number }
   | { type: "DELETE_FILE"; fileId: string }
@@ -74,16 +82,15 @@ function optimisticReducer(
         ),
       };
 
-    case "COMPLETE_UPLOAD": {
-      // Add to files and remove from progress
+    // REMOVED: COMPLETE_UPLOAD case - using server refresh pattern like users module
+
+    case "CLEAR_COMPLETED_UPLOADS":
       return {
         ...state,
-        files: [action.result, ...state.files],
         uploadProgress: state.uploadProgress.filter(
-          (p) => p.fileId !== action.tempId
+          (p) => !action.completedTempIds.includes(p.fileId)
         ),
       };
-    }
 
     case "FAIL_UPLOAD":
       return {
@@ -110,6 +117,7 @@ function optimisticReducer(
       };
 
     case "SET_FILES":
+      // ✅ Simple replacement - using server refresh pattern like users module
       return { ...state, files: action.files };
 
     case "SET_STATS":
@@ -122,7 +130,28 @@ function optimisticReducer(
 
 // 🚀 Enterprise File Upload Hook
 export const useFileUpload = (config?: UploadConfig): UseFileUploadReturn => {
+  // 🔍 CRITICAL: Track hook instances
+  const hookId = useMemo(
+    () => `hook-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    []
+  );
+  // 🏆 ENTERPRISE STATE LIFTING: Single hook instance
+  console.log("🏆 Enterprise useFileUpload initialized:", {
+    hookId,
+    hasConfig: !!config,
+    source: "ENTERPRISE_STATE_LIFTING",
+  });
+
   const { user } = useAuth();
+  const [isPending, startTransition] = useTransition();
+
+  // ⚡ REACT 19: useTransition for non-blocking operations (like users)
+  const [isRefreshing, startRefresh] = useTransition();
+
+  // 🎯 Track initialization to prevent false reversion detection
+  const hasInitializedTracking = useRef(false);
+
+  // 🎯 Immediate refresh after each upload success (like users module)
 
   // 🎯 Optimistic State
   const [optimisticState, addOptimistic] = useOptimistic(
@@ -146,7 +175,22 @@ export const useFileUpload = (config?: UploadConfig): UseFileUploadReturn => {
       prevState: FileActionResult | null,
       formData?: FormData
     ): Promise<FileActionResult> => {
-      return await getFilesServerAction(formData);
+      const callStack = new Error().stack;
+      console.log("🔍 filesAction executing...", {
+        timestamp: Date.now(),
+        stack: callStack?.split("\n")[2]?.trim(),
+        fullStack: callStack?.split("\n").slice(0, 5).join(" | "),
+        caller: "FULL_TRACE",
+      });
+      const result = await getFilesServerAction(formData);
+      console.log("🔍 filesAction result:", {
+        success: result.success,
+        dataLength: result.success
+          ? (result.data as UploadCardData[])?.length
+          : 0,
+        error: result.error,
+      });
+      return result;
     },
     null
   );
@@ -176,7 +220,14 @@ export const useFileUpload = (config?: UploadConfig): UseFileUploadReturn => {
       prevState: FileActionResult | null,
       formData?: FormData
     ): Promise<FileActionResult> => {
-      return await getFileStatsServerAction(formData);
+      console.log("📊 statsAction executing...");
+      const result = await getFileStatsServerAction(formData);
+      console.log("📊 statsAction result:", {
+        success: result.success,
+        data: result.success ? result.data : null,
+        error: result.error,
+      });
+      return result;
     },
     null
   );
@@ -197,7 +248,9 @@ export const useFileUpload = (config?: UploadConfig): UseFileUploadReturn => {
       const tempIds = files.map(() => `temp-${Date.now()}-${Math.random()}`);
 
       // ✨ Optimistic UI: Start upload immediately
-      addOptimistic({ type: "START_UPLOAD", files, tempIds });
+      startTransition(() => {
+        addOptimistic({ type: "START_UPLOAD", files, tempIds });
+      });
 
       try {
         const results = await Promise.all(
@@ -206,7 +259,13 @@ export const useFileUpload = (config?: UploadConfig): UseFileUploadReturn => {
 
             try {
               // Update progress optimistically
-              addOptimistic({ type: "UPDATE_PROGRESS", tempId, progress: 50 });
+              startTransition(() => {
+                addOptimistic({
+                  type: "UPDATE_PROGRESS",
+                  tempId,
+                  progress: 50,
+                });
+              });
 
               const formData = new FormData();
               formData.append("file", file);
@@ -223,27 +282,53 @@ export const useFileUpload = (config?: UploadConfig): UseFileUploadReturn => {
               const result = await uploadFileServerAction(formData);
 
               if (result.success && result.data) {
-                // ✨ Optimistic UI: Complete upload
-                addOptimistic({
-                  type: "COMPLETE_UPLOAD",
-                  tempId,
-                  result: result.data as UploadCardData,
+                // ✅ SUCCESS: Server action completed - refresh IMMEDIATELY like users
+                console.log(
+                  "✅ Upload success, triggering immediate refresh like users module"
+                );
+
+                // IMMEDIATE refresh after each successful upload (EXACTLY like users)
+                console.log(
+                  "🔄 Upload successful, refreshing data like users module"
+                );
+
+                // DIRECT refresh like users module (NO nested setTimeout)
+                startRefresh(() => {
+                  console.log("🔄 Executing filesAction after upload success", {
+                    trigger: "post-upload-refresh",
+                    timestamp: Date.now(),
+                    fileUploaded: file.name,
+                  });
+                  filesAction(); // ← Direct action call like users
+
+                  console.log("🔄 Executing statsAction after upload success", {
+                    trigger: "post-upload-refresh",
+                    timestamp: Date.now(),
+                    fileUploaded: file.name,
+                  });
+                  statsAction(); // ← Direct action call like users
                 });
+
                 return { success: true, file: result.data as UploadCardData };
               } else {
                 // ✨ Optimistic UI: Mark as failed
-                addOptimistic({
-                  type: "FAIL_UPLOAD",
-                  tempId,
-                  error: result.error || "Upload failed",
+                startTransition(() => {
+                  addOptimistic({
+                    type: "FAIL_UPLOAD",
+                    tempId,
+                    error: result.error || "Upload failed",
+                  });
                 });
                 return { success: false, error: result.error };
               }
             } catch (error) {
-              addOptimistic({
-                type: "FAIL_UPLOAD",
-                tempId,
-                error: error instanceof Error ? error.message : "Upload error",
+              startTransition(() => {
+                addOptimistic({
+                  type: "FAIL_UPLOAD",
+                  tempId,
+                  error:
+                    error instanceof Error ? error.message : "Upload error",
+                });
               });
               return {
                 success: false,
@@ -253,21 +338,47 @@ export const useFileUpload = (config?: UploadConfig): UseFileUploadReturn => {
           })
         );
 
+        // ✅ Clean up completed uploads (refresh already happened immediately)
+        const successfulUploads = results.filter((result) => result.success);
+
+        if (successfulUploads.length > 0) {
+          console.log(
+            `✅ Cleaning up ${successfulUploads.length} completed uploads`
+          );
+
+          // Clear completed upload progress
+          startTransition(() => {
+            addOptimistic({
+              type: "CLEAR_COMPLETED_UPLOADS",
+              completedTempIds: tempIds.slice(0, successfulUploads.length),
+            });
+          });
+        }
+
         return results;
       } catch (error) {
         // Mark all as failed
-        tempIds.forEach((tempId) => {
-          addOptimistic({
-            type: "FAIL_UPLOAD",
-            tempId,
-            error:
-              error instanceof Error ? error.message : "Batch upload error",
+        startTransition(() => {
+          tempIds.forEach((tempId) => {
+            addOptimistic({
+              type: "FAIL_UPLOAD",
+              tempId,
+              error:
+                error instanceof Error ? error.message : "Batch upload error",
+            });
           });
         });
         throw error;
       }
     },
-    [user, addOptimistic]
+    [
+      user,
+      addOptimistic,
+      startTransition,
+      startRefresh,
+      filesAction,
+      statsAction,
+    ]
   );
 
   // 🎯 Upload Single File Helper
@@ -292,7 +403,9 @@ export const useFileUpload = (config?: UploadConfig): UseFileUploadReturn => {
       if (!user) throw new Error("Usuario no autenticado");
 
       // ✨ Optimistic UI: Remove immediately
-      addOptimistic({ type: "DELETE_FILE", fileId });
+      startTransition(() => {
+        addOptimistic({ type: "DELETE_FILE", fileId });
+      });
 
       try {
         const formData = new FormData();
@@ -301,17 +414,16 @@ export const useFileUpload = (config?: UploadConfig): UseFileUploadReturn => {
         const result = await deleteFileServerAction(formData);
 
         if (!result?.success) {
-          // Revert optimistic deletion - refetch files
-          await refreshFiles();
+          // Server handles revert through state consistency
           throw new Error(result?.error || "Delete failed");
         }
       } catch (error) {
-        // Revert optimistic deletion
-        await refreshFiles();
+        // Optimistic UI will be reverted naturally on next refresh
+        console.error("Delete error:", error);
         throw error;
       }
     },
-    [user, addOptimistic]
+    [user, addOptimistic, startTransition]
   );
 
   // 🎯 Update File with Optimistic UI (React Compiler memoized)
@@ -323,7 +435,9 @@ export const useFileUpload = (config?: UploadConfig): UseFileUploadReturn => {
       if (!user) throw new Error("Usuario no autenticado");
 
       // ✨ Optimistic UI: Update immediately
-      addOptimistic({ type: "UPDATE_FILE", fileId, updates });
+      startTransition(() => {
+        addOptimistic({ type: "UPDATE_FILE", fileId, updates });
+      });
 
       try {
         const formData = new FormData();
@@ -336,17 +450,16 @@ export const useFileUpload = (config?: UploadConfig): UseFileUploadReturn => {
         const result = await updateFileServerAction(formData);
 
         if (!result?.success) {
-          // Revert optimistic update
-          await refreshFiles();
+          // Server handles revert through state consistency
           throw new Error(result?.error || "Update failed");
         }
       } catch (error) {
-        // Revert optimistic update
-        await refreshFiles();
+        // Optimistic UI will be reverted naturally on next refresh
+        console.error("Update error:", error);
         throw error;
       }
     },
-    [user, addOptimistic]
+    [user, addOptimistic, startTransition]
   );
 
   // 🔄 Refresh Files (React Compiler memoized)
@@ -358,15 +471,18 @@ export const useFileUpload = (config?: UploadConfig): UseFileUploadReturn => {
       const result = await getFilesServerAction(formData);
 
       if (result?.success && result.data) {
-        addOptimistic({
-          type: "SET_FILES",
-          files: result.data as UploadCardData[],
+        // Wrap optimistic update in startTransition
+        startTransition(() => {
+          addOptimistic({
+            type: "SET_FILES",
+            files: result.data as UploadCardData[],
+          });
         });
       }
     } catch (error) {
       console.error("Error refreshing files:", error);
     }
-  }, [user, addOptimistic]);
+  }, [user, addOptimistic, startTransition]);
 
   // 📊 Refresh Stats (React Compiler memoized)
   const refreshStats = useCallback(async () => {
@@ -376,15 +492,49 @@ export const useFileUpload = (config?: UploadConfig): UseFileUploadReturn => {
       const result = await getFileStatsServerAction();
 
       if (result?.success && result.data) {
-        addOptimistic({
-          type: "SET_STATS",
-          stats: result.data as FileStatsData,
+        // Wrap optimistic update in startTransition
+        startTransition(() => {
+          addOptimistic({
+            type: "SET_STATS",
+            stats: result.data as FileStatsData,
+          });
         });
       }
     } catch (error) {
       console.error("Error refreshing stats:", error);
     }
-  }, [user, statsAction, addOptimistic]);
+  }, [user, statsAction, addOptimistic, startTransition]);
+
+  // 🚀 Auto-load files and stats on mount - USE REF to prevent re-executions
+  const hasInitialized = useRef(false);
+
+  useEffect(() => {
+    // Simplified logging
+    console.log("🔄 useEffect check:", {
+      filesState: !!filesState,
+      statsState: !!statsState,
+      user: !!user,
+      hasInitialized: hasInitialized.current,
+    });
+
+    // Only run ONCE on mount when user is available
+    if (!hasInitialized.current && user) {
+      hasInitialized.current = true;
+
+      console.log("🚀 FIRST TIME ONLY: triggering initial load", {
+        trigger: "useEffect-initial-ONCE",
+        timestamp: Date.now(),
+      });
+
+      startRefresh(() => {
+        filesAction(); // ← Direct action call like users
+        statsAction(); // ← Direct action call like users
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]); // ← ONLY depend on user, prevent infinite loops with filesState/statsState
+
+  // 🎯 Immediate refresh happens inside uploadFiles after each success (like users)
 
   // 🎯 Computed States (React Compiler memoized)
   const isLoading = useMemo(
@@ -393,8 +543,16 @@ export const useFileUpload = (config?: UploadConfig): UseFileUploadReturn => {
       filesPending ||
       deletePending ||
       updatePending ||
+      statsPending ||
+      isPending,
+    [
+      uploadPending,
+      filesPending,
+      deletePending,
+      updatePending,
       statsPending,
-    [uploadPending, filesPending, deletePending, updatePending, statsPending]
+      isPending,
+    ]
   );
 
   const hasError = useMemo(
@@ -418,12 +576,76 @@ export const useFileUpload = (config?: UploadConfig): UseFileUploadReturn => {
     [uploadState, filesState, deleteState, updateState, statsState]
   );
 
-  // 🚀 Return unified interface
+  // 🚀 Return unified interface (EXACTLY like users module)
+
+  // 🏆 Enterprise: Monitor state changes efficiently
+  const globalDebug = globalThis as Record<string, unknown>;
+  if (
+    filesState?.success &&
+    (filesState.data as UploadCardData[])?.length !==
+      (globalDebug.lastLoggedLength as number)
+  ) {
+    globalDebug.lastLoggedLength = (
+      filesState.data as UploadCardData[]
+    )?.length;
+    console.log("🏆 Hook state updated:", {
+      hookId: hookId.slice(-8), // Show only last 8 chars for brevity
+      filesCount: (filesState.data as UploadCardData[])?.length,
+      pending: filesPending,
+    });
+  }
+
+  // 🔍 Debug: Only log when data changes significantly
+  const currentLength = filesState?.success
+    ? (filesState.data as UploadCardData[])?.length
+    : 0;
+  const lastLength = (globalThis as Record<string, unknown>)
+    .lastFilesLength as number;
+
+  if (currentLength !== lastLength) {
+    (globalThis as Record<string, unknown>).lastFilesLength = currentLength;
+
+    // Mark as initialized after first valid data
+    if (!hasInitializedTracking.current && currentLength > 0) {
+      hasInitializedTracking.current = true;
+      console.log("🚀 Hook initialized with data:", {
+        hookId: hookId.slice(-8),
+        initialCount: currentLength,
+      });
+    }
+
+    // Only check for reversion AFTER initialization to avoid false positives
+    const isReversion =
+      hasInitializedTracking.current &&
+      lastLength &&
+      currentLength < lastLength;
+
+    if (hasInitializedTracking.current || currentLength > 0) {
+      console.log(isReversion ? "❌ FILES REVERTED:" : "🎯 FILES UPDATED:", {
+        hookId,
+        filesDataLength: currentLength,
+        previousLength: lastLength,
+        isReversion,
+        initialized: hasInitializedTracking.current,
+        timestamp: Date.now(),
+      });
+    }
+
+    if (isReversion) {
+      console.error(
+        "🚨 DATA REVERSION DETECTED - Previous:",
+        lastLength,
+        "Current:",
+        currentLength
+      );
+    }
+  }
+
   return {
-    // Optimistic State
-    files: optimisticState.files,
-    stats: optimisticState.stats,
-    uploadProgress: optimisticState.uploadProgress,
+    // Direct state from useActionState (like users)
+    files: filesState?.success ? (filesState.data as UploadCardData[]) : [],
+    stats: statsState?.success ? (statsState.data as FileStatsData) : null,
+    uploadProgress: optimisticState.uploadProgress, // Only UI feedback uses optimistic
 
     // Loading States
     isLoading,

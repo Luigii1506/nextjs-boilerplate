@@ -13,6 +13,7 @@ import React, {
   createContext,
   useContext,
   ReactNode,
+  useTransition,
 } from "react";
 import {
   getAllFeatureFlagsAction,
@@ -42,6 +43,9 @@ export function FeatureFlagsServerProvider({
   const [flags, setFlags] = useState<FeatureFlagDomain[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // ⚡ useTransition for optimistic updates (React 19)
+  const [isPendingTransition, startTransition] = useTransition();
 
   // ⚡ useActionState para toggle (React 19)
   const [actionState, formAction, isPending] = useActionState(
@@ -118,10 +122,12 @@ export function FeatureFlagsServerProvider({
       const currentFlag = flags.find((f) => f.key === flagKey);
       if (!currentFlag) return;
 
-      // ⚡ Actualización optimista instantánea
-      setOptimisticFlags({
-        flagKey,
-        enabled: !currentFlag.enabled,
+      // ⚡ Actualización optimista instantánea - WRAPPED IN TRANSITION
+      startTransition(() => {
+        setOptimisticFlags({
+          flagKey,
+          enabled: !currentFlag.enabled,
+        });
       });
 
       // 🚀 Server Action en background
@@ -129,7 +135,7 @@ export function FeatureFlagsServerProvider({
       formData.append("flagKey", flagKey);
       formAction(formData);
     },
-    [flags, formAction, setOptimisticFlags]
+    [flags, formAction, setOptimisticFlags, startTransition]
   );
 
   // 🔄 Cargar flags al montar
@@ -148,7 +154,7 @@ export function FeatureFlagsServerProvider({
     flags: optimisticFlags,
     isEnabled,
     toggleFlag,
-    isPending,
+    isPending: isPending || isPendingTransition,
     isLoading,
     error,
   };

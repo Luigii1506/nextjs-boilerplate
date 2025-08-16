@@ -4,7 +4,7 @@
 
 "use server";
 
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { headers } from "next/headers";
 import { auth } from "@/core/auth/server/auth";
 import {
@@ -86,6 +86,12 @@ export async function uploadFileServerAction(
     revalidateTag("file-stats");
     revalidatePath("/files");
     revalidatePath("/admin/files");
+
+    console.log("✅ Cache invalidated after upload:", {
+      file: file.name,
+      tags: ["user-files", "file-stats"],
+      userId: session.user.id,
+    });
 
     return {
       success: true,
@@ -184,17 +190,59 @@ export async function getFilesServerAction(
     }
 
     // 📋 Parse filters from FormData if provided
+    // Validate userId format before including it
+    const isValidUUID = (id: string) =>
+      id &&
+      id.match(
+        /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/
+      );
+
     const filters = formData
       ? {
-          userId: session.user.id,
-          categoryId: formData.get("categoryId") as string,
-          provider: formData.get("provider") as "local" | "s3",
-          search: formData.get("search") as string,
+          ...(isValidUUID(session.user.id) && { userId: session.user.id }),
+          categoryId: formData.get("categoryId") || undefined,
+          provider: formData.get("provider") || undefined,
+          search: formData.get("search") || undefined,
+          mimeType: formData.get("mimeType") || undefined,
+          isPublic: formData.get("isPublic")
+            ? formData.get("isPublic") === "true"
+            : undefined,
+          limit: formData.get("limit")
+            ? parseInt(formData.get("limit") as string, 10)
+            : undefined,
+          offset: formData.get("offset")
+            ? parseInt(formData.get("offset") as string, 10)
+            : undefined,
+          sortBy: formData.get("sortBy") || undefined,
+          sortOrder: formData.get("sortOrder") || undefined,
         }
-      : { userId: session.user.id };
+      : isValidUUID(session.user.id)
+      ? { userId: session.user.id }
+      : {};
 
     const parsedFilters = parseFileFilters(filters);
+
+    // 🔄 Cache with tags for automatic invalidation (RESTORED)
+    const requestId = `req-${Date.now()}-${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
+    console.log("🔍 getFilesServerAction START:", {
+      requestId,
+      userId: session.user.id,
+      timestamp: Date.now(),
+      cacheEnabled: true,
+    });
+
+    // 🔄 DIRECT DB call like users module (NO CACHE)
+    console.log("🔍 Fetching DIRECT from DB like users module");
     const files = await fileUploadService.getFilesForUI(parsedFilters);
+    console.log("🔍 Direct DB files:", files?.length || 0, "files");
+
+    console.log("🔍 getFilesServerAction END:", {
+      requestId,
+      resultCount: files?.length || 0,
+      timestamp: Date.now(),
+    });
 
     return {
       success: true,
@@ -399,8 +447,11 @@ export async function getFileStatsServerAction(
     }
 
     // 📋 Parse optional user ID (for admins)
-    const targetUserId = formData?.get("userId") as string;
-    const userId = targetUserId || session.user.id;
+    const targetUserIdFromForm = formData?.get("userId");
+    const userId =
+      targetUserIdFromForm && targetUserIdFromForm !== ""
+        ? (targetUserIdFromForm as string)
+        : session.user.id;
 
     // 🛡️ Permission check for viewing other users' stats
     if (
@@ -415,7 +466,27 @@ export async function getFileStatsServerAction(
       };
     }
 
-    const statsInput = parseGetStatsInput({ userId });
+    // Only pass userId if it's a valid UUID format, otherwise pass undefined
+    const statsInputData: { userId?: string; period?: string } = {};
+
+    // Use the same UUID validation function
+    const isValidUUID = (id: string) =>
+      id &&
+      id.match(
+        /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/
+      );
+
+    if (isValidUUID(userId)) {
+      statsInputData.userId = userId;
+    }
+
+    // Add period if provided
+    const period = formData?.get("period");
+    if (period && ["day", "week", "month", "year"].includes(period as string)) {
+      statsInputData.period = period as string;
+    }
+
+    const statsInput = parseGetStatsInput(statsInputData);
     const stats = await fileUploadService.getStats(statsInput);
 
     return {

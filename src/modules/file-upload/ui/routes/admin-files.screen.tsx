@@ -14,11 +14,8 @@ import {
   Music,
 } from "lucide-react";
 import type { UploadFile, UploadConfig, UploadCardData } from "../../types";
-import { useFileUpload } from "../../hooks";
-import {
-  useFileNotifications,
-  useFileRefresh,
-} from "../../hooks/useFileNotifications";
+import { useFileUpload } from "../../hooks"; // ← RESTORED: For enterprise state lifting
+import { useFileNotifications } from "../../hooks/useFileNotifications";
 import FileUploader from "../components/FileUploader";
 import FileManager from "../components/FileManager";
 import FileStats from "../components/FileStats";
@@ -42,14 +39,29 @@ interface FileStatsType {
 type FilesViewProps = Record<string, never>;
 
 const FilesView: React.FC<FilesViewProps> = () => {
-  // Usar hook consolidado optimista
-  const { files, stats, refreshFiles, refreshStats } = useFileUpload();
+  // DEBUG: Log every render to track data changes
+  const globalDebug = globalThis as Record<string, unknown>;
+  globalDebug.renderCount = ((globalDebug.renderCount as number) || 0) + 1;
+  console.log("🏆 FilesView render (Enterprise State Lifting):", {
+    renderCount: globalDebug.renderCount,
+    filesCount: 0, // Will be updated after hook initialization
+  });
 
-  // Estados locales para filtros (ya no en el hook)
+  // 🎯 FIRST: Define all local states
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [uploadProvider, setUploadProvider] = useState<"local" | "s3">("local");
+  const [selectedUploadCategory, setSelectedUploadCategory] = useState<
+    string | null
+  >(null);
+  const [activeTab, setActiveTab] = useState<
+    "upload" | "manager" | "stats" | "gallery"
+  >("manager");
 
-  // Categorías simuladas (temporalmente - luego integrar con backend)
+  // 🎯 SECOND: Define categories and config
   const categories = [
     { id: "images", name: "Imágenes", icon: "🖼️", allowedTypes: ["image/*"] },
     {
@@ -61,18 +73,6 @@ const FilesView: React.FC<FilesViewProps> = () => {
     { id: "videos", name: "Videos", icon: "🎥", allowedTypes: ["video/*"] },
     { id: "audio", name: "Audio", icon: "🎵", allowedTypes: ["audio/*"] },
   ];
-
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState<string>("all");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [uploadProvider, setUploadProvider] = useState<"local" | "s3">("local");
-  const [selectedUploadCategory, setSelectedUploadCategory] = useState<
-    string | null
-  >(null);
-  const [activeTab, setActiveTab] = useState<
-    "upload" | "manager" | "stats" | "gallery"
-  >("manager");
-  // Notification state handled by enterprise hook
 
   // Upload configuration - usar el provider seleccionado
   const uploadConfig: UploadConfig = {
@@ -88,48 +88,73 @@ const FilesView: React.FC<FilesViewProps> = () => {
     multiple: true,
   };
 
-  // Stats calculation - usar stats del hook optimista cuando estén disponibles
+  // 🏆 THIRD: ENTERPRISE STATE LIFTING - Single source of truth for ALL components
+  const fileUploadHook = useFileUpload(uploadConfig); // ← ONE hook to rule them all
+  const { files, stats } = fileUploadHook;
+
+  // 🏆 Enterprise: Track files data changes
+  const filesLength = files?.length || 0;
+  if (filesLength !== ((globalDebug.lastRenderFilesLength as number) || 0)) {
+    globalDebug.lastRenderFilesLength = filesLength;
+    console.log("📁 Files data updated:", {
+      filesCount: filesLength,
+      source: "ENTERPRISE_STATE_LIFTING",
+    });
+  }
+  // Notification state handled by enterprise hook
+
+  // Stats calculation - temporary fallback (TODO: implement proper data flow)
   const calculatedStats: FileStatsType = {
-    totalFiles: stats?.totalFiles || files.length,
-    totalSize:
-      stats?.totalSize || files.reduce((sum, file) => sum + file.size, 0),
-    imageCount: files.filter((f) => f.mimeType.startsWith("image/")).length,
+    totalFiles: files.length,
+    totalSize: files.reduce((sum, file) => sum + (file.size || 0), 0),
+    imageCount: files.filter((f) => f.mimeType?.startsWith("image/") || false)
+      .length,
     documentCount: files.filter(
-      (f) => f.mimeType.includes("pdf") || f.mimeType.includes("document")
+      (f) =>
+        f.mimeType?.includes("pdf") || f.mimeType?.includes("document") || false
     ).length,
-    videoCount: files.filter((f) => f.mimeType.startsWith("video/")).length,
-    audioCount: files.filter((f) => f.mimeType.startsWith("audio/")).length,
-    storageUsed:
-      stats?.totalSize || files.reduce((sum, file) => sum + file.size, 0),
+    videoCount: files.filter((f) => f.mimeType?.startsWith("video/") || false)
+      .length,
+    audioCount: files.filter((f) => f.mimeType?.startsWith("audio/") || false)
+      .length,
+    storageUsed: files.reduce((sum, file) => sum + (file.size || 0), 0),
     storageLimit: 100 * 1024 * 1024 * 1024, // 100GB
     filesByType: {},
     recentUploads: files.length,
   };
 
-  // Filter files - incluir filtro por provider
+  // Filter files - incluir filtro por provider (TODO: implement proper filtering when data flow is fixed)
   const filteredFiles = files.filter((file) => {
-    const matchesSearch = file.originalName
+    const matchesSearch = (file.originalName || "")
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
     const matchesType =
       filterType === "all" ||
-      (filterType === "images" && file.mimeType.startsWith("image/")) ||
+      (filterType === "images" &&
+        (file.mimeType?.startsWith("image/") || false)) ||
       (filterType === "documents" &&
-        (file.mimeType.includes("pdf") ||
-          file.mimeType.includes("document"))) ||
-      (filterType === "videos" && file.mimeType.startsWith("video/")) ||
-      (filterType === "audio" && file.mimeType.startsWith("audio/"));
+        (file.mimeType?.includes("pdf") ||
+          false ||
+          file.mimeType?.includes("document") ||
+          false)) ||
+      (filterType === "videos" &&
+        (file.mimeType?.startsWith("video/") || false)) ||
+      (filterType === "audio" &&
+        (file.mimeType?.startsWith("audio/") || false));
 
     const matchesProvider =
       !selectedProvider ||
       selectedProvider === "all" ||
-      file.provider === selectedProvider;
+      (file as UploadCardData & { provider?: string }).provider ===
+        selectedProvider;
 
     return matchesSearch && matchesType && matchesProvider;
   });
 
   // Get only images for gallery
-  const imageFiles = files.filter((file) => file.mimeType.startsWith("image/"));
+  const imageFiles = files.filter(
+    (file) => file.mimeType?.startsWith("image/") || false
+  );
 
   // Función para detectar categoría automáticamente por MIME type
   const detectCategoryByMimeType = (mimeType: string): string | null => {
@@ -147,14 +172,9 @@ const FilesView: React.FC<FilesViewProps> = () => {
   const { notification: fileNotification, showNotification } =
     useFileNotifications();
 
-  const optimizedRefreshFiles = useFileRefresh(async () => {
-    await refreshFiles();
-    await refreshStats();
-  });
-
   const handleUploadComplete = (uploadedFiles: UploadFile[]) => {
-    // 🎯 ENTERPRISE-GRADE: Optimized refresh with debouncing
-    optimizedRefreshFiles();
+    // 🎯 OPTIMISTIC UI: No need for manual refresh - optimistic state handles it!
+    // Removed optimizedRefreshFiles() to prevent overwriting optimistic updates
 
     showNotification(
       "success",
@@ -185,7 +205,7 @@ const FilesView: React.FC<FilesViewProps> = () => {
     ) {
       // En una app real, aquí se llamaría a la API de eliminación
       showNotification("success", `Archivo "${file.originalName}" eliminado`);
-      optimizedRefreshFiles(); // Refrescar después de eliminar
+      // No need for manual refresh - optimistic UI handles it
     }
   };
 
@@ -477,6 +497,13 @@ const FilesView: React.FC<FilesViewProps> = () => {
                 onUploadError={handleUploadError}
                 selectedCategory={selectedUploadCategory}
                 detectCategory={detectCategoryByMimeType}
+                // 🏆 ENTERPRISE STATE LIFTING: Pass hook functions as props
+                isUploading={fileUploadHook.isUploading}
+                uploadProgress={fileUploadHook.uploadProgress}
+                uploadError={fileUploadHook.error}
+                uploadFiles={fileUploadHook.uploadFiles}
+                clearError={fileUploadHook.clearError}
+                resetProgress={fileUploadHook.resetProgress}
               />
             </div>
           )}

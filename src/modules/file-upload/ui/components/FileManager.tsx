@@ -342,9 +342,10 @@ const FileManager: React.FC<FileManagerProps> = ({
               <Image
                 src={file.url}
                 alt={file.originalName || "Vista previa del archivo"}
-                className="w-full h-full object-cover"
+                fill
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
+                className="object-cover"
                 loading="lazy"
-                style={{ aspectRatio: "1 / 1" }}
               />
             ) : (
               <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center">
