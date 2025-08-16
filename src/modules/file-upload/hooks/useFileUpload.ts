@@ -151,6 +151,9 @@ export const useFileUpload = (config?: UploadConfig): UseFileUploadReturn => {
   // 🎯 Track initialization to prevent false reversion detection
   const hasInitializedTracking = useRef(false);
 
+  // 🎯 Track active deletion to prevent false reversion detection
+  const isDeletingFile = useRef(false);
+
   // 🎯 Immediate refresh after each upload success (like users module)
 
   // 🎯 Optimistic State
@@ -400,10 +403,19 @@ export const useFileUpload = (config?: UploadConfig): UseFileUploadReturn => {
   // 🎯 Delete File with Optimistic UI (React Compiler memoized)
   const deleteFile = useCallback(
     async (fileId: string) => {
+      console.log("🗑️ DELETE: Starting file deletion", {
+        fileId,
+        timestamp: Date.now(),
+      });
+
       if (!user) throw new Error("Usuario no autenticado");
+
+      // 🎯 Mark deletion in progress to prevent false reversion detection
+      isDeletingFile.current = true;
 
       // ✨ Optimistic UI: Remove immediately
       startTransition(() => {
+        console.log("🗑️ DELETE: Adding optimistic removal", { fileId });
         addOptimistic({ type: "DELETE_FILE", fileId });
       });
 
@@ -411,19 +423,52 @@ export const useFileUpload = (config?: UploadConfig): UseFileUploadReturn => {
         const formData = new FormData();
         formData.append("id", fileId);
 
+        console.log("🗑️ DELETE: Calling server action", { fileId });
         const result = await deleteFileServerAction(formData);
+
+        console.log("🗑️ DELETE: Server response", {
+          fileId,
+          success: result?.success,
+          error: result?.error,
+        });
 
         if (!result?.success) {
           // Server handles revert through state consistency
           throw new Error(result?.error || "Delete failed");
         }
+
+        console.log("✅ DELETE: File deleted successfully", { fileId });
+
+        // Refresh data like users module
+        startRefresh(() => {
+          console.log("🔄 DELETE: Refreshing files and stats after deletion", {
+            fileId,
+          });
+          filesAction();
+          statsAction();
+        });
+
+        // 🎯 Keep deletion flag for a brief moment to prevent false reversion detection
+        setTimeout(() => {
+          isDeletingFile.current = false;
+          console.log("🎯 DELETE: Reversion detection re-enabled", { fileId });
+        }, 1000);
       } catch (error) {
+        // 🎯 Reset deletion flag on error
+        isDeletingFile.current = false;
         // Optimistic UI will be reverted naturally on next refresh
-        console.error("Delete error:", error);
+        console.error("❌ DELETE: Delete error:", error);
         throw error;
       }
     },
-    [user, addOptimistic, startTransition]
+    [
+      user,
+      addOptimistic,
+      startTransition,
+      startRefresh,
+      filesAction,
+      statsAction,
+    ]
   );
 
   // 🎯 Update File with Optimistic UI (React Compiler memoized)
@@ -615,10 +660,12 @@ export const useFileUpload = (config?: UploadConfig): UseFileUploadReturn => {
     }
 
     // Only check for reversion AFTER initialization to avoid false positives
+    // Also ignore reversions during file deletions (legitimate decreases)
     const isReversion =
       hasInitializedTracking.current &&
       lastLength &&
-      currentLength < lastLength;
+      currentLength < lastLength &&
+      !isDeletingFile.current;
 
     if (hasInitializedTracking.current || currentLength > 0) {
       console.log(isReversion ? "❌ FILES REVERTED:" : "🎯 FILES UPDATED:", {
@@ -627,6 +674,7 @@ export const useFileUpload = (config?: UploadConfig): UseFileUploadReturn => {
         previousLength: lastLength,
         isReversion,
         initialized: hasInitializedTracking.current,
+        deletionInProgress: isDeletingFile.current,
         timestamp: Date.now(),
       });
     }

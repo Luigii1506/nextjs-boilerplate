@@ -15,13 +15,27 @@ import {
   FileText,
   Loader2,
 } from "lucide-react";
-import type { UploadCardData } from "../../types";
-import { useFileUpload } from "../../hooks/useFileUpload";
+import type { UploadCardData, UploadProgress } from "../../types";
+// import { useFileUpload } from "../../hooks/useFileUpload"; // ← REMOVED: Using enterprise state lifting
 import Image from "next/image";
 
 interface FileManagerProps {
-  // Optional props for full control - if not provided, uses internal hook
-  files?: UploadCardData[];
+  // 🏆 ENTERPRISE STATE LIFTING: Required props from parent hook
+  files: UploadCardData[]; // Now required as prop
+  uploadProgress: UploadProgress[]; // Now required as prop
+  uploadFiles: (
+    files: File[],
+    options?: {
+      provider?: "local" | "s3" | "cloudinary";
+      categoryId?: string;
+      makePublic?: boolean;
+    }
+  ) => Promise<
+    Array<{ success: boolean; file?: UploadCardData; error?: string }>
+  >; // Now required as prop
+  deleteFile: (fileId: string) => Promise<void>; // Now required as prop
+
+  // Optional callback props
   onFileSelect?: (file: UploadCardData) => void;
   onFileDelete?: (file: UploadCardData) => void;
   onFileDownload?: (file: UploadCardData) => void;
@@ -31,7 +45,10 @@ interface FileManagerProps {
 }
 
 const FileManager: React.FC<FileManagerProps> = ({
-  files: externalFiles,
+  files, // Now from props (Enterprise State Lifting)
+  uploadProgress, // Now from props
+  uploadFiles, // Now from props
+  deleteFile, // Now from props
   onFileSelect,
   onFileDelete,
   onFileDownload,
@@ -39,16 +56,11 @@ const FileManager: React.FC<FileManagerProps> = ({
   selectable = false,
   categoryFilter,
 }) => {
-  // 🚀 Use Enterprise Hook for internal state management
-  const {
-    files: hookFiles,
-    uploadProgress,
-    uploadFiles,
-    deleteFile,
-  } = useFileUpload();
+  // 🏆 ENTERPRISE STATE LIFTING: All functions received from parent hook
+  // No hook duplication - parent manages all state!
 
-  // Use external files if provided, otherwise internal hook files
-  const displayFiles = externalFiles || hookFiles;
+  // Use files directly from props
+  const displayFiles = files;
 
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [showMenu, setShowMenu] = useState<string | null>(null);
@@ -127,7 +139,7 @@ const FileManager: React.FC<FileManagerProps> = ({
     setDragActive(false);
 
     const droppedFiles = Array.from(e.dataTransfer.files);
-    if (droppedFiles.length > 0 && !externalFiles) {
+    if (droppedFiles.length > 0) {
       startTransition(async () => {
         await uploadFiles(droppedFiles, {
           provider: "local",

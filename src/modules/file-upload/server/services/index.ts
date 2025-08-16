@@ -202,10 +202,20 @@ export class FileUploadService {
 
   // Eliminar archivo
   async deleteFile(id: string) {
+    console.log("🗑️ SERVICE: Starting file deletion", { fileId: id });
+
     const upload = await getUploadByIdQuery(id);
     if (!upload) {
+      console.log("❌ SERVICE: File not found in database", { fileId: id });
       throw new Error(`File with ID '${id}' not found`);
     }
+
+    console.log("🗑️ SERVICE: File found", {
+      fileId: id,
+      provider: upload.provider,
+      key: upload.key,
+      originalName: upload.originalName,
+    });
 
     try {
       // Eliminar del proveedor
@@ -213,15 +223,40 @@ export class FileUploadService {
         upload.provider === "cloudinary" ? "s3" : upload.provider;
       const provider =
         this.providers[supportedProvider as keyof typeof this.providers];
+
       if (upload.key && provider) {
-        await provider.delete(upload.key);
+        console.log("🗑️ SERVICE: Deleting from storage provider", {
+          fileId: id,
+          provider: supportedProvider,
+          key: upload.key,
+        });
+
+        const deleteResult = await provider.delete(upload.key);
+
+        console.log("🗑️ SERVICE: Storage deletion result", {
+          fileId: id,
+          provider: supportedProvider,
+          success: deleteResult,
+        });
+      } else {
+        console.log(
+          "⚠️ SERVICE: No key or provider, skipping storage deletion",
+          {
+            fileId: id,
+            hasKey: !!upload.key,
+            hasProvider: !!provider,
+          }
+        );
       }
 
       // Eliminar de BD
+      console.log("🗑️ SERVICE: Deleting from database", { fileId: id });
       await deleteUploadQuery(id);
+      console.log("✅ SERVICE: Database deletion successful", { fileId: id });
 
       return { success: true };
     } catch (error) {
+      console.error("❌ SERVICE: Delete failed", { fileId: id, error });
       throw new Error(
         `Delete failed: ${
           error instanceof Error ? error.message : "Unknown error"

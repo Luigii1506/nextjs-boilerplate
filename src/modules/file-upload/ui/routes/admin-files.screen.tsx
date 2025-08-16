@@ -90,7 +90,7 @@ const FilesView: React.FC<FilesViewProps> = () => {
 
   // 🏆 THIRD: ENTERPRISE STATE LIFTING - Single source of truth for ALL components
   const fileUploadHook = useFileUpload(uploadConfig); // ← ONE hook to rule them all
-  const { files, stats } = fileUploadHook;
+  const { files, stats, deleteFile } = fileUploadHook;
 
   // 🏆 Enterprise: Track files data changes
   const filesLength = files?.length || 0;
@@ -197,15 +197,26 @@ const FilesView: React.FC<FilesViewProps> = () => {
     showNotification("error", `Error: ${error}`);
   };
 
-  const handleFileDelete = (file: UploadCardData) => {
+  const handleFileDelete = async (file: UploadCardData) => {
     if (
       window.confirm(
         `¿Estás seguro de que quieres eliminar "${file.originalName}"?`
       )
     ) {
-      // En una app real, aquí se llamaría a la API de eliminación
-      showNotification("success", `Archivo "${file.originalName}" eliminado`);
-      // No need for manual refresh - optimistic UI handles it
+      try {
+        // 🏆 ENTERPRISE: Use real deleteFile from hook
+        await deleteFile(file.id);
+        showNotification(
+          "success",
+          `Archivo "${file.originalName}" eliminado correctamente`
+        );
+      } catch (error) {
+        console.error("Error deleting file:", error);
+        showNotification(
+          "error",
+          `Error eliminando "${file.originalName}": ${error}`
+        );
+      }
     }
   };
 
@@ -605,6 +616,9 @@ const FilesView: React.FC<FilesViewProps> = () => {
 
               <FileManager
                 files={filteredFiles}
+                uploadProgress={fileUploadHook.uploadProgress}
+                uploadFiles={fileUploadHook.uploadFiles}
+                deleteFile={fileUploadHook.deleteFile}
                 onFileSelect={(file) =>
                   showNotification(
                     "info",

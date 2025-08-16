@@ -25,7 +25,7 @@ export const UploadFileSchema = z.object({
 });
 
 export const UpdateUploadSchema = z.object({
-  id: z.string().uuid("Invalid upload ID"),
+  id: z.string().cuid("Invalid upload ID"),
   filename: z.string().min(1).optional(),
   isPublic: z.boolean().optional(),
   tags: z.array(z.string()).optional(),
@@ -33,7 +33,7 @@ export const UpdateUploadSchema = z.object({
 });
 
 export const DeleteUploadSchema = z.object({
-  id: z.string().uuid("Invalid upload ID"),
+  id: z.string().cuid("Invalid upload ID"),
 });
 
 // ========================
@@ -49,7 +49,7 @@ export const CreateCategorySchema = z.object({
 });
 
 export const UpdateCategorySchema = z.object({
-  id: z.string().uuid("Invalid category ID"),
+  id: z.string().cuid("Invalid category ID"),
   name: z.string().min(1).max(50).optional(),
   description: z.string().max(200).optional(),
   icon: z.string().optional(),

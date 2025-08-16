@@ -329,11 +329,17 @@ export async function deleteFileServerAction(
   formData: FormData
 ): Promise<FileActionResult> {
   const timestamp = new Date().toISOString();
+  const requestId = `delete-${Date.now()}-${Math.random()
+    .toString(36)
+    .substr(2, 9)}`;
+
+  console.log("🗑️ DELETE SERVER: Starting deletion", { requestId, timestamp });
 
   try {
     // 🛡️ Auth & Authorization
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) {
+      console.log("🗑️ DELETE SERVER: Unauthorized", { requestId });
       return {
         success: false,
         error: "No autorizado",
@@ -343,8 +349,13 @@ export async function deleteFileServerAction(
 
     // 📋 Parse form data
     const id = formData.get("id") as string;
+    console.log("🗑️ DELETE SERVER: Processing deletion", {
+      requestId,
+      fileId: id,
+    });
 
     if (!id) {
+      console.log("🗑️ DELETE SERVER: Missing ID", { requestId });
       return {
         success: false,
         error: "ID de archivo requerido",
@@ -354,7 +365,18 @@ export async function deleteFileServerAction(
 
     // ✅ Use schema validation
     const validated = parseDeleteUploadInput({ id });
+
+    console.log("🗑️ DELETE SERVER: Calling service deleteFile", {
+      requestId,
+      fileId: validated.id,
+    });
+
     await fileUploadService.deleteFile(validated.id);
+
+    console.log("✅ DELETE SERVER: Service deletion successful", {
+      requestId,
+      fileId: validated.id,
+    });
 
     // 🔄 Smart cache invalidation
     revalidateTag("user-files");
@@ -362,13 +384,18 @@ export async function deleteFileServerAction(
     revalidatePath("/files");
     revalidatePath("/admin/files");
 
+    console.log("✅ DELETE SERVER: Cache invalidated", {
+      requestId,
+      fileId: validated.id,
+    });
+
     return {
       success: true,
       message: "Archivo eliminado exitosamente",
       timestamp,
     };
   } catch (error) {
-    console.error("🗑️ Delete File Error:", error);
+    console.error("❌ DELETE SERVER: Error:", { requestId, error });
     return {
       success: false,
       error:
