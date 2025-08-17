@@ -83,6 +83,7 @@
 ### **📊 Módulos con Feature Flags (Experimentales/Opcionales)**
 
 **Cuándo usar:**
+
 - ✅ Funcionalidades en desarrollo/testing
 - ✅ A/B testing de características
 - ✅ Funcionalidades que pueden ser deshabilitadas
@@ -90,6 +91,7 @@
 - ✅ Módulos que dependen de configuraciones externas
 
 **Características:**
+
 - Configuration Manager con feature flags
 - Inicialización condicional basada en flags
 - UI que se adapta según flags activos
@@ -98,12 +100,14 @@
 ### **🏗️ Módulos Core (Siempre Activos)**
 
 **Cuándo usar:**
+
 - ✅ Funcionalidades esenciales del sistema
 - ✅ Módulos críticos para la operación
 - ✅ Funcionalidades que NUNCA deben ser deshabilitadas
 - ✅ Componentes base de la arquitectura
 
 **Características:**
+
 - Configuration Manager simplificado (sin feature flags)
 - Inicialización directa sin verificaciones
 - UI siempre disponible
@@ -156,7 +160,7 @@ export const CORE_CONFIG = {
   // 🕐 Timing constants
   refreshDelayMs: 1000,
   retryDelayMs: 1000,
-  
+
   // 📊 UI Constants
   itemsPerPage: 20,
   maxItemSize: 100 * 1024 * 1024, // 100MB
@@ -396,7 +400,9 @@ export class CoreConfigManager {
   }
 
   // 🏗️ Para módulos core - configuraciones siempre disponibles
-  public getPerformanceSetting(key: keyof CoreModuleConfig["performance"]): number {
+  public getPerformanceSetting(
+    key: keyof CoreModuleConfig["performance"]
+  ): number {
     return this.getConfig().performance[key];
   }
 
@@ -698,10 +704,7 @@ export const useCoreModuleName = (userConfig?: CoreConfig): Return => {
   const hasInitialized = useRef(false);
 
   // 🏗️ CORE: Configuration management (sin feature flags)
-  const coreConfiguration = useMemo(
-    () => coreConfig.getConfig(),
-    [userConfig]
-  );
+  const coreConfiguration = useMemo(() => coreConfig.getConfig(), [userConfig]);
 
   // 🎯 CORE: Structured logging (siempre habilitado)
   coreLogger.timeStart("Core Hook Initialization");
@@ -1211,21 +1214,22 @@ afterAll(() => server.close());
 
 ### **🔍 Matriz de Decisión**
 
-| Característica del Módulo | **Feature Flags** 🔧 | **Core** 🏗️ |
-|---------------------------|----------------------|-------------|
-| **Funcionalidad experimental** | ✅ | ❌ |
-| **A/B Testing requerido** | ✅ | ❌ |
-| **Puede ser deshabilitado** | ✅ | ❌ |
-| **Rollout gradual necesario** | ✅ | ❌ |
-| **Funcionalidad crítica** | ❌ | ✅ |
-| **Siempre debe estar disponible** | ❌ | ✅ |
-| **Parte de la arquitectura base** | ❌ | ✅ |
-| **Dependencias externas variables** | ✅ | ❌ |
-| **Configuración compleja** | ✅ | ❌ |
+| Característica del Módulo           | **Feature Flags** 🔧 | **Core** 🏗️ |
+| ----------------------------------- | -------------------- | ----------- |
+| **Funcionalidad experimental**      | ✅                   | ❌          |
+| **A/B Testing requerido**           | ✅                   | ❌          |
+| **Puede ser deshabilitado**         | ✅                   | ❌          |
+| **Rollout gradual necesario**       | ✅                   | ❌          |
+| **Funcionalidad crítica**           | ❌                   | ✅          |
+| **Siempre debe estar disponible**   | ❌                   | ✅          |
+| **Parte de la arquitectura base**   | ❌                   | ✅          |
+| **Dependencias externas variables** | ✅                   | ❌          |
+| **Configuración compleja**          | ✅                   | ❌          |
 
 ### **📊 Ejemplos Prácticos por Tipo**
 
 #### **🔧 Módulos con Feature Flags:**
+
 - **file-upload**: Subida de archivos (puede tener diferentes providers)
 - **ai-chat**: Chat con IA (experimental, puede ser costoso)
 - **social-sharing**: Compartir en redes sociales (opcional)
@@ -1234,6 +1238,7 @@ afterAll(() => server.close());
 - **dark-mode**: Modo oscuro (preference del usuario)
 
 #### **🏗️ Módulos Core:**
+
 - **auth**: Autenticación (crítico para seguridad)
 - **users**: Gestión de usuarios (esencial)
 - **notifications**: Sistema de notificaciones (core UX)
@@ -1260,6 +1265,7 @@ afterAll(() => server.close());
 #### **🔧 Módulos con Feature Flags**
 
 **✅ Ventajas:**
+
 - Flexibilidad total para habilitar/deshabilitar
 - Ideal para experimentación y A/B testing
 - Rollouts graduales seguros
@@ -1267,6 +1273,7 @@ afterAll(() => server.close());
 - Fácil rollback en caso de problemas
 
 **❌ Desventajas:**
+
 - Código más complejo (verificaciones de flags)
 - Overhead de configuración
 - Posibles ramas de código muertas
@@ -1275,12 +1282,14 @@ afterAll(() => server.close());
 #### **🏗️ Módulos Core**
 
 **✅ Ventajas:**
+
 - Código más simple y directo
 - Performance ligeramente mejor
 - Menos complejidad de testing
 - Garantía de disponibilidad
 
 **❌ Desventajas:**
+
 - Menos flexibilidad
 - Cambios requieren deploys
 - No hay rollback granular
@@ -1360,6 +1369,7 @@ Para migrar un módulo existente al estándar empresarial:
 ### **Orden de Implementación Recomendado**
 
 #### **🚦 Paso 0: Decisión de Arquitectura**
+
 - Usar la matriz de decisión para determinar el tipo de módulo
 - **Feature Flags** 🔧 para experimentales/opcionales
 - **Core** 🏗️ para críticos/esenciales
@@ -1367,16 +1377,19 @@ Para migrar un módulo existente al estándar empresarial:
 #### **📊 Fase 1: Foundation**
 
 **Para Módulos con Feature Flags:**
+
 - Crear `/constants/index.ts` con `ENTERPRISE_CONFIG` (incluir feature flags)
 - Implementar `/utils/logger.ts` con EnterpriseLogger
 - Configurar `/config/index.ts` con `ModuleConfigManager` + `isFeatureEnabled()`
 
 **Para Módulos Core:**
+
 - Crear `/constants/index.ts` con `CORE_CONFIG` (sin feature flags)
 - Implementar `/utils/logger.ts` con EnterpriseLogger
 - Configurar `/config/index.ts` con `CoreConfigManager` (configuraciones directas)
 
 #### **🔄 Fase 2: State Management**
+
 - Crear `/reducers/index.ts` con optimistic state (igual para ambos tipos)
 - Implementar selectors para queries eficientes
 - Configurar action types centralizados
@@ -1384,16 +1397,19 @@ Para migrar un módulo existente al estándar empresarial:
 #### **🏆 Fase 3: Hook Enhancement**
 
 **Para Módulos con Feature Flags:**
+
 - Hook `useFeatureModuleName` con verificaciones de flags
 - Lógica condicional: `if (config.features.featureName)`
 - React 19 compliance con `useActionState`
 
 **Para Módulos Core:**
+
 - Hook `useCoreModuleName` sin verificaciones
 - Funcionalidades siempre activas
 - React 19 compliance con `useActionState`
 
 #### **🎨 Fase 4: UI Optimization**
+
 - Crear shared components reutilizables
 - Implementar React.memo y useCallback
 - Configurar lazy loading
@@ -1401,12 +1417,14 @@ Para migrar un módulo existente al estándar empresarial:
 - **Core**: Renderizado directo
 
 #### **🏗️ Fase 5: Server Integration**
+
 - Enhancear Server Actions con logging (igual para ambos)
 - Implementar error handling robusto
 - Configurar cache invalidation
 - **Feature Flags**: Verificar flags en server si aplica
 
 #### **✅ Fase 6: Quality & Documentation**
+
 - Tests unitarios y E2E
 - **Feature Flags**: Tests con flags on/off + fallbacks
 - **Core**: Tests de funcionalidad siempre disponible
@@ -1430,11 +1448,13 @@ Para migrar un módulo existente al estándar empresarial:
 ✅ **Flexibilidad total** para cualquier tipo de funcionalidad
 
 ### **🔧 Para Módulos con Feature Flags:**
+
 - Ideal para features experimentales, A/B testing, rollouts graduales
 - Configuración granular y control total sobre habilitación/deshabilitación
 - Perfect para módulos como `file-upload`, `ai-chat`, `social-sharing`
 
 ### **🏗️ Para Módulos Core:**
+
 - Perfecto para funcionalidades críticas y de infraestructura
 - Código más simple y directo, performance optimizado
 - Ideal para módulos como `auth`, `users`, `notifications`

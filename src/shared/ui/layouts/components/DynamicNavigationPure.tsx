@@ -1,104 +1,54 @@
 /**
- * 🧭 DYNAMIC NAVIGATION PURE - SERVER ACTIONS
- * ============================================
+ * 🧭 DYNAMIC NAVIGATION ENTERPRISE - PURE SERVER ACTIONS
+ * =======================================================
  *
- * Versión 100% pura usando Server Actions directamente.
- * Sin API routes, solo Next.js 15 + React 19 features.
+ * Navegación enterprise usando el módulo core de navegación.
+ * 100% Server Actions + patrones enterprise + React 19 compliance.
  *
- * Created: 2025-01-29 - Pure Server Actions implementation
+ * Updated: 2025-01-17 - Enterprise navigation integration
  */
 
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { Users, Home, Upload, Sliders } from "lucide-react";
+import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useIsEnabled } from "@/shared/hooks/useFeatureFlagsServerActions";
-
-// 🏷️ Navigation items configuration
-const NAVIGATION_CONFIG = [
-  {
-    href: "/dashboard",
-    icon: Home,
-    label: "Dashboard",
-    requiresAuth: true,
-    requiredRole: null,
-    requiredFeature: null,
-  },
-  {
-    href: "/users",
-    icon: Users,
-    label: "Usuarios",
-    requiresAuth: true,
-    requiredRole: null,
-    requiredFeature: null,
-  },
-  {
-    href: "/files",
-    icon: Upload,
-    label: "📁 Gestión de Archivos",
-    requiresAuth: true,
-    requiredRole: null,
-    requiredFeature: "fileUpload" as const,
-  },
-  {
-    href: "/feature-flags",
-    icon: Sliders,
-    label: "🎛️ Feature Flags",
-    requiresAuth: true,
-    requiredRole: "admin" as const,
-    requiredFeature: null,
-  },
-] as const;
-
-// 🎨 Static styles
-const navStyles = {
-  base: "w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-lg transition-colors",
-  active: "bg-slate-100 text-slate-800 font-medium",
-  idle: "text-slate-600 hover:text-slate-800 hover:bg-slate-50",
-} as const;
+import {
+  useNavigation,
+  NAVIGATION_STYLES,
+  type FeatureFlagChecker,
+  type NavigationItem,
+} from "@/core";
 
 interface DynamicNavigationPureProps {
   isAdmin: boolean;
 }
 
 /**
- * 🧭 Pure Client Component Navigation Item
- * Uses Server Actions directly - no API calls
+ * 🧭 Enterprise Navigation Item Component
+ * Uses core navigation infrastructure
  */
-function PureNavItem({
+function NavigationItem({
   item,
   isActive,
-  isAdmin,
-  featureEnabled,
 }: {
-  item: (typeof NAVIGATION_CONFIG)[number];
+  item: NavigationItem;
   isActive: boolean;
-  isAdmin: boolean;
-  featureEnabled: boolean;
 }) {
-  // 🛡️ Check role requirements
-  if (item.requiredRole === "admin" && !isAdmin) {
-    return null;
-  }
-
-  // 🎛️ Check feature flag requirements
-  if (item.requiredFeature && !featureEnabled) {
-    return null;
-  }
-
   const Icon = item.icon;
 
   return (
     <Link
       href={item.href}
-      className={`${navStyles.base} ${
-        isActive ? navStyles.active : navStyles.idle
+      className={`${NAVIGATION_STYLES.base} ${
+        isActive ? NAVIGATION_STYLES.active : NAVIGATION_STYLES.idle
       }`}
     >
       <Icon className="w-4 h-4" />
       <span>{item.label}</span>
+      {item.badge && (
+        <span className={NAVIGATION_STYLES.badge}>{item.badge}</span>
+      )}
     </Link>
   );
 }
@@ -109,15 +59,15 @@ function PureNavItem({
 function NavigationSkeleton() {
   return (
     <nav className="mt-8 space-y-2">
-      <Link href="/dashboard" className={`${navStyles.base} ${navStyles.idle}`}>
-        <Home className="w-4 h-4" />
-        <span>Dashboard</span>
-      </Link>
-      <Link href="/users" className={`${navStyles.base} ${navStyles.idle}`}>
-        <Users className="w-4 h-4" />
-        <span>Usuarios</span>
-      </Link>
-      <div className={`${navStyles.base} opacity-60`}>
+      <div className={`${NAVIGATION_STYLES.base} opacity-60`}>
+        <div className="w-4 h-4 bg-slate-300 rounded animate-pulse" />
+        <span className="text-slate-400">Cargando menú...</span>
+      </div>
+      <div className={`${NAVIGATION_STYLES.base} opacity-60`}>
+        <div className="w-4 h-4 bg-slate-300 rounded animate-pulse" />
+        <span className="text-slate-400">Cargando menú...</span>
+      </div>
+      <div className={`${NAVIGATION_STYLES.base} opacity-60`}>
         <div className="w-4 h-4 bg-slate-300 rounded animate-pulse" />
         <span className="text-slate-400">Cargando menú...</span>
       </div>
@@ -126,15 +76,14 @@ function NavigationSkeleton() {
 }
 
 /**
- * 🚀 PURE DYNAMIC NAVIGATION
- * 100% Server Actions - Zero API routes!
- * Leverages React 19 + Next.js 15 features
+ * 🚀 ENTERPRISE DYNAMIC NAVIGATION
+ * Uses core navigation infrastructure + Server Actions
+ * React 19 compliant with performance optimization
  */
 export default function DynamicNavigationPure({
   isAdmin,
 }: DynamicNavigationPureProps) {
-  const pathname = usePathname();
-  const isEnabled = useIsEnabled(); // ⚡ Pure Server Actions hook
+  const isEnabled = useIsEnabled(); // ⚡ Feature flags hook
   const [isHydrated, setIsHydrated] = useState(false);
 
   // 🛡️ Hydration detection
@@ -142,33 +91,62 @@ export default function DynamicNavigationPure({
     setIsHydrated(true);
   }, []);
 
-  // 🎯 Route active detection
-  const isActive = (href: string) =>
-    pathname === href || pathname.startsWith(href + "/");
+  // 🎯 Enhanced feature flag checker that uses the hook
+  const enhancedFeatureFlagChecker: FeatureFlagChecker = useMemo(
+    () => ({
+      isEnabled: (feature) => {
+        if (!feature) return true;
+        return isEnabled(feature);
+      },
+    }),
+    [isEnabled]
+  );
 
-  // 🛡️ Show skeleton during hydration
-  if (!isHydrated) {
+  // 🧭 Use core navigation hook
+  const { navigationItems, isLoading, error, isRouteActive } = useNavigation(
+    isAdmin ? "admin" : "user", // UserRole
+    true, // isAuthenticated (already checked by layout)
+    enhancedFeatureFlagChecker,
+    {
+      maxItems: 20,
+      debugMode: process.env.NODE_ENV === "development",
+    }
+  );
+
+  // 🛡️ Show skeleton during hydration or loading
+  if (!isHydrated || isLoading) {
     return <NavigationSkeleton />;
   }
 
-  // ✅ Render navigation with pure Server Actions
+  // ❌ Show error state
+  if (error) {
+    return (
+      <nav className="mt-8 space-y-2">
+        <div className={`${NAVIGATION_STYLES.base} text-red-600`}>
+          <span>⚠️ Error al cargar navegación</span>
+        </div>
+      </nav>
+    );
+  }
+
+  // ✅ Render navigation with enterprise infrastructure
   return (
     <nav className="mt-8 space-y-2">
-      {NAVIGATION_CONFIG.map((item) => {
-        const featureEnabled = item.requiredFeature
-          ? isEnabled(item.requiredFeature)
-          : true;
+      {navigationItems.map((item) => (
+        <NavigationItem
+          key={item.id}
+          item={item}
+          isActive={isRouteActive(item.href)}
+        />
+      ))}
 
-        return (
-          <PureNavItem
-            key={item.href}
-            item={item}
-            isActive={isActive(item.href)}
-            isAdmin={isAdmin}
-            featureEnabled={featureEnabled}
-          />
-        );
-      })}
+      {/* 🎯 Debug info in development */}
+      {process.env.NODE_ENV === "development" && (
+        <div className="mt-4 p-2 bg-slate-100 rounded text-xs text-slate-600">
+          <div>📊 Items: {navigationItems.length}</div>
+          <div>🎭 Role: {isAdmin ? "admin" : "user"}</div>
+        </div>
+      )}
     </nav>
   );
 }
