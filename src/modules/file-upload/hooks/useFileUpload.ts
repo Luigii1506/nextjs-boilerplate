@@ -53,14 +53,12 @@ export const useFileUpload = (
     [userConfig]
   );
 
-  // 🎯 ENTERPRISE: Structured logging with performance tracking
-  fileUploadLogger.timeStart("Hook Initialization");
+  // 🎯 LITE: Structured logging simplificado
   fileUploadLogger.debug("useFileUpload hook initialized", {
     hasUserConfig: !!userConfig,
     userConfigOptions: userConfig ? Object.keys(userConfig) : [],
     enterpriseFeatures: fileUploadConfig.getConfigSummary(),
   });
-  fileUploadLogger.timeEnd("Hook Initialization");
 
   // 🎯 PRIMARY DATA STATE (Server Actions as Source of Truth)
   const [filesState, filesAction, filesPending] = useActionState(
@@ -247,7 +245,6 @@ export const useFileUpload = (
     async (fileId: string) => {
       if (!user) throw new Error("Usuario no autenticado");
 
-      fileUploadLogger.timeStart(`Delete File ${fileId}`);
       fileUploadLogger.info("Deleting file", {
         fileId,
         userId: user.id,
@@ -265,7 +262,6 @@ export const useFileUpload = (
         }
 
         fileUploadLogger.info("File deleted successfully", { fileId });
-        fileUploadLogger.timeEnd(`Delete File ${fileId}`);
 
         // 🔄 AUTO-REFRESH (Server as Source of Truth) - Configurable
         if (enterpriseConfig.features.autoRefresh) {
@@ -279,7 +275,7 @@ export const useFileUpload = (
           fileId,
           userId: user.id,
         });
-        fileUploadLogger.timeEnd(`Delete File ${fileId}`);
+
         throw error;
       }
     },
@@ -291,7 +287,6 @@ export const useFileUpload = (
     if (!hasInitialized.current && user) {
       hasInitialized.current = true;
 
-      fileUploadLogger.group("Module Initialization");
       fileUploadLogger.info("Initializing file upload module", {
         userId: user.id,
         userEmail: user.email,
@@ -303,8 +298,6 @@ export const useFileUpload = (
         filesAction();
         statsAction();
       });
-
-      fileUploadLogger.groupEnd();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]); // Only depend on user - actions are stable
@@ -339,7 +332,7 @@ export const useFileUpload = (
         statsAction();
       });
     } else {
-      fileUploadLogger.warn("Auto-refresh is disabled in configuration");
+      fileUploadLogger.debug("Auto-refresh is disabled in configuration");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enterpriseConfig.features.autoRefresh]);

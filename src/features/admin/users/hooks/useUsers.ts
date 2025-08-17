@@ -18,11 +18,7 @@ import {
   useEffect,
 } from "react";
 import { USERS_ACTIONS } from "../constants";
-import {
-  usersHookLogger,
-  usersSecurityLogger,
-  usersAnalyticsLogger,
-} from "../utils/logger";
+import { usersHookLogger, usersSecurityLogger } from "../utils/logger";
 import {
   usersConfig,
   adaptConfigForHook,
@@ -148,13 +144,11 @@ export const useUsers = (userConfig?: UseUsersConfig): UseUsersReturn => {
   );
 
   // 🎯 CORE: Structured logging (siempre habilitado)
-  usersHookLogger.timeStart("Users Hook Initialization");
   usersHookLogger.debug("Users hook initialized", {
     hasUserConfig: !!userConfig,
     autoLoad: userConfig?.autoLoad ?? true,
     configSummary: usersConfig.getConfigSummary(),
   });
-  usersHookLogger.timeEnd("Users Hook Initialization");
 
   // 🎯 PRIMARY DATA STATE (Server Actions as Source of Truth)
   const [usersState, usersAction, usersPending] = useActionState(
@@ -179,7 +173,6 @@ export const useUsers = (userConfig?: UseUsersConfig): UseUsersReturn => {
     if (!hasInitialized.current && (userConfig?.autoLoad ?? true)) {
       hasInitialized.current = true;
 
-      usersHookLogger.group("Core Users Module Initialization");
       usersHookLogger.info("Initializing core users module", {
         config: coreConfiguration,
         initialUsers: userConfig?.initialUsers?.length || 0,
@@ -189,8 +182,6 @@ export const useUsers = (userConfig?: UseUsersConfig): UseUsersReturn => {
       startTransition(() => {
         usersAction();
       });
-
-      usersHookLogger.groupEnd();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userConfig?.autoLoad]);
@@ -296,8 +287,8 @@ export const useUsers = (userConfig?: UseUsersConfig): UseUsersReturn => {
             usersAction();
           });
 
-          // 📊 Analytics
-          usersAnalyticsLogger.analytics("user_created", {
+          // 📊 Analytics (simplified)
+          usersHookLogger.info("User created analytics", {
             userId: result.data?.id,
             role: userData.role,
             tempId,
@@ -356,7 +347,7 @@ export const useUsers = (userConfig?: UseUsersConfig): UseUsersReturn => {
             usersAction();
           });
 
-          usersAnalyticsLogger.analytics("user_updated", {
+          usersHookLogger.info("user_updated", {
             userId: userData.id,
           });
         }
@@ -410,7 +401,7 @@ export const useUsers = (userConfig?: UseUsersConfig): UseUsersReturn => {
             usersAction();
           });
 
-          usersAnalyticsLogger.analytics("user_deleted", {
+          usersHookLogger.info("user_deleted", {
             userId,
           });
         }
@@ -466,7 +457,7 @@ export const useUsers = (userConfig?: UseUsersConfig): UseUsersReturn => {
             usersAction();
           });
 
-          usersAnalyticsLogger.analytics("user_banned", {
+          usersHookLogger.info("user_banned", {
             userId: banData.id,
             reason: banData.reason,
           });
@@ -518,7 +509,7 @@ export const useUsers = (userConfig?: UseUsersConfig): UseUsersReturn => {
             usersAction();
           });
 
-          usersAnalyticsLogger.analytics("user_unbanned", {
+          usersHookLogger.info("user_unbanned", {
             userId,
           });
         }
@@ -582,7 +573,7 @@ export const useUsers = (userConfig?: UseUsersConfig): UseUsersReturn => {
             usersAction();
           });
 
-          usersAnalyticsLogger.analytics("role_changed", {
+          usersHookLogger.info("role_changed", {
             userId,
             fromRole: oldRole,
             toRole: newRole,
@@ -637,7 +628,7 @@ export const useUsers = (userConfig?: UseUsersConfig): UseUsersReturn => {
             usersAction();
           });
 
-          usersAnalyticsLogger.analytics("bulk_update", {
+          usersHookLogger.info("bulk_update", {
             userCount: data.userIds.length,
             newRole: data.newRole,
           });

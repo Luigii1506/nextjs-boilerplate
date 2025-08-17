@@ -180,7 +180,11 @@ export function optimisticReducer(
     }
 
     default: {
-      optimisticLogger.warn("Unknown optimistic action", { action });
+      optimisticLogger.error(
+        "Unknown optimistic action",
+        new Error("Unknown action"),
+        { action }
+      );
       return state;
     }
   }

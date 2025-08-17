@@ -29,14 +29,15 @@ export {
   LOG_PREFIXES,
 } from "./constants";
 
-// 📝 Enterprise Logging System
+// 📝 Lite Logging System (Simplificado)
 export {
-  createLogger,
+  createFileUploadLogger,
+  fileUploadHookLogger,
+  fileUploadServerActionLogger,
+  fileUploadSecurityLogger,
   fileUploadLogger,
-  serverActionLogger,
-  optimisticLogger,
-  cacheLogger,
-  log, // Legacy compatibility
+  serverActionLogger, // Alias para compatibilidad
+  optimisticLogger, // Para compatibilidad
 } from "./utils/logger";
 
 // 🔄 State Management (Optimistic Updates)

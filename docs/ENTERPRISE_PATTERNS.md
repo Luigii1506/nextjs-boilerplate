@@ -222,20 +222,16 @@ class LiteLogger {
   }
 
   private shouldLog(): boolean {
-    return (
-      ENTERPRISE_CONFIG.enableAdvancedLogging ||
-      process.env.NODE_ENV === "production"
-    );
+    return ENTERPRISE_CONFIG.enableAdvancedLogging || process.env.NODE_ENV === "production";
   }
 
   // ❌ ERROR LOGGING (Siempre habilitado)
   error(message: string, error?: unknown, context?: LogContext): void {
     console.error(`❌ ${this.module} | ${message}`, {
       timestamp: new Date().toISOString(),
-      error:
-        error instanceof Error
-          ? { name: error.name, message: error.message, stack: error.stack }
-          : error,
+      error: error instanceof Error
+        ? { name: error.name, message: error.message, stack: error.stack }
+        : error,
       ...context,
     });
   }
@@ -362,14 +358,12 @@ class EnterpriseLogger extends LiteLogger {
 #### **🟢 LITE LOGGER (Recomendado para la mayoría)**
 
 **✅ Usar cuando:**
-
 - Proyectos en MVP o crecimiento temprano
-- Equipo pequeño (1-5 desarrolladores)
+- Equipo pequeño (1-5 desarrolladores) 
 - Menos de 10,000 usuarios
 - Necesitas debugging básico + seguridad crítica
 
 **🎯 Incluye solo lo esencial:**
-
 - ❌ Error logging (siempre habilitado)
 - 🔐 Security events (operaciones críticas)
 - 🎯 Operation logging (success/failure de acciones importantes)
@@ -379,7 +373,6 @@ class EnterpriseLogger extends LiteLogger {
 #### **🟡 ENTERPRISE LOGGER (Para scale grande)**
 
 **✅ Usar cuando:**
-
 - +50,000 usuarios activos
 - Equipo distribuido (+10 desarrolladores)
 - Compliance estricto (GDPR, SOX, PCI-DSS)
@@ -387,7 +380,6 @@ class EnterpriseLogger extends LiteLogger {
 - Operaciones críticas con dinero/pagos
 
 **🎯 Incluye todo del Lite +:**
-
 - ⏱️ Performance timing para optimization
 - 📊 Analytics tracking detallado
 - 🗂️ Grouped logging para debugging complejo
@@ -396,13 +388,11 @@ class EnterpriseLogger extends LiteLogger {
 #### **🔴 HERRAMIENTAS EXTERNAS (Alternativa simple)**
 
 **✅ Usar cuando:**
-
 - Quieres logging profesional sin código custom
 - Tienes presupuesto para herramientas ($50-500/mes)
 - Equipo pequeño sin tiempo para implementar
 
 **🛠️ Opciones recomendadas:**
-
 - **Sentry** - Error tracking + performance
 - **DataDog** - Logging + monitoring
 - **LogRocket** - Frontend logging + session replay

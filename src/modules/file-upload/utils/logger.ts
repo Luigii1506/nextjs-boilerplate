@@ -1,86 +1,57 @@
-// 🏆 ENTERPRISE LOGGER - Sistema de logging estructurado y reutilizable
-// =======================================================================
+/**
+ * 📁 FILE-UPLOAD LITE LOGGER
+ * ==========================
+ *
+ * Sistema de logging simplificado para operaciones críticas de file-upload
+ * Solo mantiene lo esencial: errores, operaciones importantes y uploads críticos
+ *
+ * Updated: 2025-01-17 - Enterprise patterns v2.0 (Simplified)
+ */
 
-import { ENTERPRISE_CONFIG, LOG_LEVELS, LOG_PREFIXES } from "../constants";
+import { ENTERPRISE_CONFIG } from "../constants";
 
-export type LogLevel = (typeof LOG_LEVELS)[keyof typeof LOG_LEVELS];
 export type LogContext = Record<string, unknown>;
 
-interface LogEntry {
-  level: LogLevel;
-  module: string;
-  message: string;
-  context?: LogContext;
-  timestamp: string;
-  sessionId?: string;
+// 📁 File operation context
+export interface FileLogContext extends LogContext {
+  userId?: string;
+  fileName?: string;
+  fileSize?: number;
+  fileType?: string;
+  uploadId?: string;
+  requestId?: string;
 }
 
-class EnterpriseLogger {
+/**
+ * 🏗️ FILE-UPLOAD LITE LOGGER
+ *
+ * Versión simplificada enfocada solo en lo crítico:
+ * - ❌ Error logging para debugging
+ * - 📁 File operation logging para auditoría
+ * - 🚨 Security events para archivos sospechosos
+ */
+class FileUploadLiteLogger {
   private module: string;
-  private sessionId: string;
 
   constructor(module: string) {
     this.module = module;
-    this.sessionId = `session-${Date.now()}-${Math.random()
-      .toString(36)
-      .substr(2, 9)}`;
   }
 
-  private createLogEntry(
-    level: LogLevel,
-    message: string,
-    context?: LogContext
-  ): LogEntry {
-    return {
-      level,
-      module: this.module,
-      message,
-      context,
-      timestamp: new Date().toISOString(),
-      sessionId: this.sessionId,
-    };
+  private shouldLog(): boolean {
+    return (
+      ENTERPRISE_CONFIG.enableAdvancedLogging ||
+      process.env.NODE_ENV === "production"
+    );
   }
 
-  private shouldLog(level: LogLevel): boolean {
-    if (level === "error") return true; // Always log errors
-    return ENTERPRISE_CONFIG.enableAdvancedLogging;
+  private getTimestamp(): string {
+    return new Date().toISOString();
   }
 
-  private formatMessage(entry: LogEntry): string {
-    const emoji = {
-      info: "🏆",
-      debug: "🔍",
-      warn: "⚠️",
-      error: "❌",
-    }[entry.level];
-
-    return `${emoji} ${entry.module} ${entry.message}`;
-  }
-
-  info(message: string, context?: LogContext): void {
-    if (!this.shouldLog("info")) return;
-
-    const entry = this.createLogEntry("info", message, context);
-    console.log(this.formatMessage(entry), context || "");
-  }
-
-  debug(message: string, context?: LogContext): void {
-    if (!this.shouldLog("debug")) return;
-
-    const entry = this.createLogEntry("debug", message, context);
-    console.debug(this.formatMessage(entry), context || "");
-  }
-
-  warn(message: string, context?: LogContext): void {
-    if (!this.shouldLog("warn")) return;
-
-    const entry = this.createLogEntry("warn", message, context);
-    console.warn(this.formatMessage(entry), context || "");
-  }
-
+  // ❌ ERROR LOGGING (Siempre habilitado)
   error(message: string, error?: unknown, context?: LogContext): void {
-    const entry = this.createLogEntry("error", message, {
-      ...context,
+    console.error(`❌ ${this.module} | ${message}`, {
+      timestamp: this.getTimestamp(),
       error:
         error instanceof Error
           ? {
@@ -89,56 +60,89 @@ class EnterpriseLogger {
               stack: error.stack,
             }
           : error,
+      ...context,
     });
-
-    console.error(this.formatMessage(entry), entry.context);
   }
 
-  // 🎯 Enterprise method: Log with performance timing
-  timeStart(label: string): void {
-    if (this.shouldLog("debug")) {
-      console.time(`⏱️ ${this.module} ${label}`);
+  // 🚨 SECURITY LOGGING (Para archivos sospechosos)
+  security(event: string, context: FileLogContext): void {
+    console.warn(`🚨 ${this.module} | SECURITY: ${event}`, {
+      timestamp: this.getTimestamp(),
+      level: "SECURITY_AUDIT",
+      ...context,
+    });
+  }
+
+  // 📁 FILE OPERATION LOGGING (Solo operaciones críticas)
+  fileOperation(
+    operation: string,
+    fileName: string,
+    success: boolean,
+    details?: FileLogContext
+  ): void {
+    const status = success ? "✅" : "❌";
+    console.log(`📁 ${this.module} | ${operation} ${status}`, {
+      timestamp: this.getTimestamp(),
+      operation,
+      fileName,
+      success,
+      ...(details || {}),
+    });
+  }
+
+  // 📤 UPLOAD LOGGING (CRÍTICO)
+  upload(
+    uploadId: string,
+    fileName: string,
+    fileSize: number,
+    status: "START" | "SUCCESS" | "FAILED",
+    context?: FileLogContext
+  ): void {
+    const statusEmoji =
+      status === "SUCCESS" ? "✅" : status === "FAILED" ? "❌" : "🔄";
+    console.log(`📤 ${this.module} | UPLOAD_${status} ${statusEmoji}`, {
+      timestamp: this.getTimestamp(),
+      uploadId,
+      fileName,
+      fileSize,
+      status,
+      ...(context || {}),
+    });
+  }
+
+  // ℹ️ INFO LOGGING (Solo en desarrollo)
+  info(message: string, context?: LogContext): void {
+    if (this.shouldLog()) {
+      console.log(`ℹ️ ${this.module} | ${message}`, {
+        timestamp: this.getTimestamp(),
+        ...context,
+      });
     }
   }
 
-  timeEnd(label: string): void {
-    if (this.shouldLog("debug")) {
-      console.timeEnd(`⏱️ ${this.module} ${label}`);
-    }
-  }
-
-  // 🎯 Enterprise method: Log with call stack
-  trace(message: string, context?: LogContext): void {
-    if (!this.shouldLog("debug")) return;
-
-    const entry = this.createLogEntry("debug", message, context);
-    console.trace(this.formatMessage(entry), context || "");
-  }
-
-  // 🎯 Enterprise method: Group related logs
-  group(title: string): void {
-    if (this.shouldLog("debug")) {
-      console.group(`🗂️ ${this.module} ${title}`);
-    }
-  }
-
-  groupEnd(): void {
-    if (this.shouldLog("debug")) {
-      console.groupEnd();
+  // 🔍 DEBUG LOGGING (Solo en desarrollo)
+  debug(message: string, context?: LogContext): void {
+    if (process.env.NODE_ENV === "development") {
+      console.debug(`🔍 ${this.module} | ${message}`, {
+        timestamp: this.getTimestamp(),
+        ...context,
+      });
     }
   }
 }
 
-// 🏗️ Factory function for creating module-specific loggers
-export function createLogger(module: string): EnterpriseLogger {
-  return new EnterpriseLogger(`${LOG_PREFIXES.FILE_UPLOAD} ${module}`);
+// 🏗️ Factory function simplificada
+export function createFileUploadLogger(module: string): FileUploadLiteLogger {
+  return new FileUploadLiteLogger(`[FileUpload] ${module}`);
 }
 
-// 🎯 Pre-configured loggers for common use cases
-export const fileUploadLogger = createLogger("Hook");
-export const serverActionLogger = createLogger("ServerAction");
-export const optimisticLogger = createLogger("Optimistic");
-export const cacheLogger = createLogger("Cache");
+// 🎯 Pre-configured loggers (solo los esenciales)
+export const fileUploadHookLogger = createFileUploadLogger("Hook");
+export const fileUploadServerActionLogger =
+  createFileUploadLogger("ServerAction");
+export const fileUploadSecurityLogger = createFileUploadLogger("Security");
 
-// 🔧 Legacy compatibility
-export const log = fileUploadLogger;
+// Para backward compatibility
+export const fileUploadLogger = createFileUploadLogger("Main");
+export const serverActionLogger = createFileUploadLogger("ServerAction"); // Alias
+export const optimisticLogger = createFileUploadLogger("Optimistic");

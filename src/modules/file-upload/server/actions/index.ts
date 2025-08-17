@@ -17,6 +17,10 @@ import {
   parseGetSignedUrlInput,
 } from "../../schemas";
 import { fileUploadService, fileCategoryService } from "../services";
+import {
+  fileUploadServerActionLogger,
+  fileUploadSecurityLogger,
+} from "../../utils/logger";
 
 // 🎯 Enterprise Action Result Interface
 export interface FileActionResult<T = unknown> {
@@ -36,11 +40,18 @@ export async function uploadFileServerAction(
   formData: FormData
 ): Promise<FileActionResult> {
   const timestamp = new Date().toISOString();
+  const requestId = `upload-${Date.now()}-${Math.random()
+    .toString(36)
+    .substr(2, 9)}`;
 
   try {
     // 🛡️ Auth & Authorization
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) {
+      fileUploadSecurityLogger.security("UNAUTHORIZED_UPLOAD_ATTEMPT", {
+        requestId,
+        timestamp,
+      });
       return {
         success: false,
         error: "No autorizado",
@@ -74,11 +85,37 @@ export async function uploadFileServerAction(
     });
 
     // 🚀 Upload with service layer
+    fileUploadServerActionLogger.upload(
+      requestId,
+      file.name,
+      file.size,
+      "START",
+      {
+        userId: session.user.id,
+        provider,
+        requestId,
+      }
+    );
+
     const result = await fileUploadService.uploadFile(
       file,
       session.user.id,
       uploadData.provider,
       categoryId
+    );
+
+    // 📁 Log successful upload (CRÍTICO)
+    fileUploadServerActionLogger.upload(
+      requestId,
+      file.name,
+      file.size,
+      "SUCCESS",
+      {
+        userId: session.user.id,
+        provider,
+        fileId: result.id,
+        requestId,
+      }
     );
 
     // 🔄 Smart cache invalidation
@@ -96,7 +133,23 @@ export async function uploadFileServerAction(
       timestamp,
     };
   } catch (error) {
-    console.error("📤 Upload Error:", error);
+    fileUploadServerActionLogger.error("Upload failed", error, { requestId });
+
+    // 📁 Log failed upload (CRÍTICO)
+    const fileName = formData.get("file") as File;
+    if (fileName?.name) {
+      fileUploadServerActionLogger.upload(
+        requestId,
+        fileName.name,
+        fileName.size,
+        "FAILED",
+        {
+          requestId,
+          error: error instanceof Error ? error.message : "Unknown error",
+        }
+      );
+    }
+
     return {
       success: false,
       error: error instanceof Error ? error.message : "Error de upload",
@@ -351,10 +404,17 @@ export async function deleteFileServerAction(
 
     await fileUploadService.deleteFile(validated.id);
 
-    console.log("✅ DELETE SERVER: Service deletion successful", {
-      requestId,
-      fileId: validated.id,
-    });
+    // 📁 Log successful file deletion (CRÍTICO)
+    fileUploadServerActionLogger.fileOperation(
+      "DELETE_FILE",
+      `file-${validated.id}`,
+      true,
+      {
+        fileId: validated.id,
+        userId: session.user.id,
+        requestId,
+      }
+    );
 
     // 🔄 Smart cache invalidation
     revalidateTag("user-files");
@@ -373,7 +433,25 @@ export async function deleteFileServerAction(
       timestamp,
     };
   } catch (error) {
-    console.error("❌ DELETE SERVER: Error:", { requestId, error });
+    fileUploadServerActionLogger.error("File deletion failed", error, {
+      requestId,
+    });
+
+    // 📁 Log failed file deletion (CRÍTICO)
+    const fileId = formData.get("id") as string;
+    if (fileId) {
+      fileUploadServerActionLogger.fileOperation(
+        "DELETE_FILE",
+        `file-${fileId}`,
+        false,
+        {
+          fileId,
+          requestId,
+          error: error instanceof Error ? error.message : "Unknown error",
+        }
+      );
+    }
+
     return {
       success: false,
       error:

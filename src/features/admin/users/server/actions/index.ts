@@ -32,8 +32,7 @@ export async function getAllUsersAction(
     .toString(36)
     .substr(2, 9)}`;
 
-  usersServerActionLogger.timeStart(`Get Users ${requestId}`);
-  usersServerActionLogger.info("Get all users action started", {
+  usersServerActionLogger.debug("Get all users action started", {
     requestId,
     limit,
     offset,
@@ -50,44 +49,18 @@ export async function getAllUsersAction(
       searchField,
     });
 
-    usersServerActionLogger.debug("Input validated", {
-      requestId,
-      searchParams,
-    });
-
     // 🛡️ Session validation
     const session = await validators.getValidatedSession();
     validators.validateUserListAccess(session.user.role);
 
-    usersServerActionLogger.debug("Session validated", {
-      requestId,
-      userId: session.user.id,
-      userRole: session.user.role,
-    });
-
     // 🏢 Business logic via service
     const userService = await createUserService();
-    const startTime = Date.now();
     const result = await userService.getAllUsers(searchParams);
-    const queryDuration = Date.now() - startTime;
 
-    usersServerActionLogger.query(
-      "getAllUsers",
-      queryDuration,
-      result.users.length,
-      {
-        requestId,
-        limit: searchParams.limit,
-        offset: searchParams.offset,
-      }
-    );
-
-    usersServerActionLogger.timeEnd(`Get Users ${requestId}`);
-    usersServerActionLogger.info("Users retrieved successfully", {
+    usersServerActionLogger.debug("Users retrieved successfully", {
       requestId,
       userCount: result.users.length,
       totalUsers: result.pagination.total,
-      queryDuration,
     });
 
     return {
@@ -99,7 +72,6 @@ export async function getAllUsersAction(
     };
   } catch (error) {
     usersServerActionLogger.error("Get users failed", error, { requestId });
-    usersServerActionLogger.timeEnd(`Get Users ${requestId}`);
 
     return {
       success: false,
@@ -148,29 +120,13 @@ export async function createUserAction(
     .toString(36)
     .substr(2, 9)}`;
 
-  usersServerActionLogger.timeStart(`Create User ${requestId}`);
-  usersServerActionLogger.info("Create user action started", { requestId });
-
   try {
     const userData = schemas.parseCreateUserFormData(formData);
-
-    usersServerActionLogger.debug("Create user data validated", {
-      requestId,
-      email: userData.email,
-      role: userData.role,
-      // Password is NOT logged for security
-    });
 
     // 🛡️ Session validation
     const session = await validators.getValidatedSession();
 
-    usersServerActionLogger.debug("Session validated for user creation", {
-      requestId,
-      adminId: session.user.id,
-      adminRole: session.user.role,
-    });
-
-    // 🔐 Security audit log
+    // 🔐 Security audit log (CRÍTICO)
     usersSecurityLogger.userOperation(
       "CREATE_USER",
       session.user.id,
@@ -180,47 +136,24 @@ export async function createUserAction(
         requestId,
         targetEmail: userData.email,
         targetRole: userData.role,
-        adminRole: session.user.role,
+        currentUserRole: session.user.role,
       }
     );
 
     // 🏢 Business logic via service
     const userService = await createUserService();
-    const startTime = Date.now();
     const newUser = await userService.createUser(userData);
-    const operationDuration = Date.now() - startTime;
 
-    usersServerActionLogger.performance("createUser", operationDuration, {
-      requestId,
-      userId: newUser.id,
-      operationType: "USER_CREATION",
-    });
-
-    // 🔄 Cache invalidation with enterprise logging
+    // 🔄 Cache invalidation
     revalidateTag(USERS_CACHE_TAGS.USERS);
     revalidateTag(USERS_CACHE_TAGS.USER_STATS);
     revalidatePath("/users");
 
-    usersServerActionLogger.cache("SET", USERS_CACHE_TAGS.USERS, {
-      requestId,
-      action: "INVALIDATE_AFTER_CREATE",
-    });
-
-    usersServerActionLogger.timeEnd(`Create User ${requestId}`);
     usersServerActionLogger.info("User created successfully", {
       requestId,
       userId: newUser.id,
       email: userData.email,
       role: userData.role,
-      operationDuration,
-    });
-
-    // 📊 Analytics event
-    usersServerActionLogger.analytics("user_created", {
-      requestId,
-      userId: newUser.id,
-      role: userData.role,
-      adminId: session.user.id,
     });
 
     return {
@@ -232,31 +165,12 @@ export async function createUserAction(
     };
   } catch (error) {
     usersServerActionLogger.error("Create user failed", error, { requestId });
-    usersServerActionLogger.timeEnd(`Create User ${requestId}`);
 
     // 🔐 Security audit for failed attempt
-    try {
-      const userData = schemas.parseCreateUserFormData(formData);
-      usersSecurityLogger.securityEvent(
-        "CREATE_USER_FAILED",
-        {
-          requestId,
-          targetEmail: userData.email,
-          error: error instanceof Error ? error.message : "Unknown error",
-        },
-        "MEDIUM"
-      );
-    } catch {
-      // If we can't parse form data, just log the failure
-      usersSecurityLogger.securityEvent(
-        "CREATE_USER_PARSE_FAILED",
-        {
-          requestId,
-          error: error instanceof Error ? error.message : "Unknown error",
-        },
-        "HIGH"
-      );
-    }
+    usersSecurityLogger.security("CREATE_USER_FAILED", {
+      requestId,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
 
     return {
       success: false,
@@ -308,20 +222,9 @@ export async function updateUserRoleAction(
     .toString(36)
     .substr(2, 9)}`;
 
-  usersServerActionLogger.timeStart(`Update Role ${requestId}`);
-  usersServerActionLogger.info("Update user role action started", {
-    requestId,
-  });
-
   try {
     // 🔍 Validate and parse input
     const roleData = schemas.parseUpdateRoleFormData(formData);
-
-    usersServerActionLogger.debug("Role change data validated", {
-      requestId,
-      userId: roleData.userId,
-      newRole: roleData.role,
-    });
 
     // 🛡️ Session validation
     const session = await validators.getValidatedSession();
@@ -331,15 +234,6 @@ export async function updateUserRoleAction(
     const currentUser = await userService.getUserDetails(roleData.userId);
     const previousRole = currentUser.role;
 
-    usersServerActionLogger.debug("Session validated for role change", {
-      requestId,
-      adminId: session.user.id,
-      adminRole: session.user.role,
-      targetUserId: roleData.userId,
-      fromRole: previousRole,
-      toRole: roleData.role,
-    });
-
     // 🔐 CRITICAL SECURITY AUDIT - Role changes are HIGH security events
     usersSecurityLogger.roleChange(
       session.user.id,
@@ -348,57 +242,28 @@ export async function updateUserRoleAction(
       roleData.role,
       {
         requestId,
-        adminRole: session.user.role,
-        ipAddress: "TODO", // Would come from headers
-        userAgent: "TODO", // Would come from headers
+        currentUserRole: session.user.role,
       }
     );
 
     // 🏢 Business logic via service
-    const startTime = Date.now();
     const updatedUser = await userService.updateUserRole(
       roleData.userId,
       roleData.role
     );
-    const operationDuration = Date.now() - startTime;
 
-    usersServerActionLogger.performance("updateUserRole", operationDuration, {
-      requestId,
-      userId: roleData.userId,
-      operationType: "ROLE_CHANGE",
-      fromRole: previousRole,
-      toRole: roleData.role,
-    });
-
-    // 🔄 Cache invalidation with enterprise logging
+    // 🔄 Cache invalidation
     revalidateTag(USERS_CACHE_TAGS.USERS);
     revalidateTag(USERS_CACHE_TAGS.USER_STATS);
-    revalidateTag(USERS_CACHE_TAGS.USER_PERMISSIONS); // Important for role changes
+    revalidateTag(USERS_CACHE_TAGS.USER_PERMISSIONS);
     revalidatePath("/users");
 
-    usersServerActionLogger.cache("SET", USERS_CACHE_TAGS.USERS, {
-      requestId,
-      action: "INVALIDATE_AFTER_ROLE_CHANGE",
-    });
-
-    usersServerActionLogger.timeEnd(`Update Role ${requestId}`);
     usersServerActionLogger.info("User role updated successfully", {
       requestId,
       userId: roleData.userId,
       fromRole: previousRole,
       toRole: roleData.role,
       adminId: session.user.id,
-      operationDuration,
-    });
-
-    // 📊 Critical analytics event for role changes
-    usersServerActionLogger.analytics("role_changed", {
-      requestId,
-      userId: roleData.userId,
-      fromRole: previousRole,
-      toRole: roleData.role,
-      adminId: session.user.id,
-      adminRole: session.user.role,
     });
 
     return {
@@ -412,34 +277,12 @@ export async function updateUserRoleAction(
     usersServerActionLogger.error("Update user role failed", error, {
       requestId,
     });
-    usersServerActionLogger.timeEnd(`Update Role ${requestId}`);
 
-    // 🔐 Security audit for failed role change attempt
-    try {
-      const roleData = schemas.parseUpdateRoleFormData(formData);
-      const session = await validators.getValidatedSession();
-
-      usersSecurityLogger.securityEvent(
-        "ROLE_CHANGE_FAILED",
-        {
-          requestId,
-          adminId: session.user.id,
-          targetUserId: roleData.userId,
-          attemptedRole: roleData.role,
-          error: error instanceof Error ? error.message : "Unknown error",
-        },
-        "HIGH"
-      );
-    } catch {
-      usersSecurityLogger.securityEvent(
-        "ROLE_CHANGE_CRITICAL_FAILURE",
-        {
-          requestId,
-          error: error instanceof Error ? error.message : "Unknown error",
-        },
-        "CRITICAL"
-      );
-    }
+    // 🔐 Security audit for failed role change attempt (CRÍTICO)
+    usersSecurityLogger.security("ROLE_CHANGE_FAILED", {
+      requestId,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
 
     return {
       success: false,
@@ -490,28 +333,12 @@ export async function banUserAction(
     .toString(36)
     .substr(2, 9)}`;
 
-  usersServerActionLogger.timeStart(`Ban User ${requestId}`);
-  usersServerActionLogger.info("Ban user action started", { requestId });
-
   try {
     // 🔍 Validate and parse input
     const banData = schemas.parseBanUserFormData(formData);
 
-    usersServerActionLogger.debug("Ban user data validated", {
-      requestId,
-      userId: banData.id,
-      reason: banData.reason,
-    });
-
     // 🛡️ Session validation
     const session = await validators.getValidatedSession();
-
-    usersServerActionLogger.debug("Session validated for user ban", {
-      requestId,
-      adminId: session.user.id,
-      adminRole: session.user.role,
-      targetUserId: banData.id,
-    });
 
     // 🔐 CRITICAL SECURITY AUDIT - User banning
     usersSecurityLogger.banOperation(
@@ -521,50 +348,24 @@ export async function banUserAction(
       banData.reason,
       {
         requestId,
-        adminRole: session.user.role,
-        ipAddress: "TODO", // Would come from headers
-        userAgent: "TODO", // Would come from headers
+        currentUserRole: session.user.role,
       }
     );
 
     // 🏢 Business logic via service
     const userService = await createUserService();
-    const startTime = Date.now();
     const bannedUser = await userService.banUser(banData.id, banData.reason);
-    const operationDuration = Date.now() - startTime;
 
-    usersServerActionLogger.performance("banUser", operationDuration, {
-      requestId,
-      userId: banData.id,
-      operationType: "USER_BAN",
-    });
-
-    // 🔄 Cache invalidation with enterprise logging
+    // 🔄 Cache invalidation
     revalidateTag(USERS_CACHE_TAGS.USERS);
     revalidateTag(USERS_CACHE_TAGS.USER_STATS);
     revalidatePath("/users");
 
-    usersServerActionLogger.cache("SET", USERS_CACHE_TAGS.USERS, {
-      requestId,
-      action: "INVALIDATE_AFTER_BAN",
-    });
-
-    usersServerActionLogger.timeEnd(`Ban User ${requestId}`);
     usersServerActionLogger.info("User banned successfully", {
       requestId,
       userId: banData.id,
       reason: banData.reason,
       adminId: session.user.id,
-      operationDuration,
-    });
-
-    // 📊 Security analytics event
-    usersServerActionLogger.analytics("user_banned", {
-      requestId,
-      userId: banData.id,
-      reason: banData.reason,
-      adminId: session.user.id,
-      adminRole: session.user.role,
     });
 
     return {
@@ -576,34 +377,12 @@ export async function banUserAction(
     };
   } catch (error) {
     usersServerActionLogger.error("Ban user failed", error, { requestId });
-    usersServerActionLogger.timeEnd(`Ban User ${requestId}`);
 
-    // 🔐 Security audit for failed ban attempt
-    try {
-      const banData = schemas.parseBanUserFormData(formData);
-      const session = await validators.getValidatedSession();
-
-      usersSecurityLogger.securityEvent(
-        "BAN_USER_FAILED",
-        {
-          requestId,
-          adminId: session.user.id,
-          targetUserId: banData.id,
-          reason: banData.reason,
-          error: error instanceof Error ? error.message : "Unknown error",
-        },
-        "HIGH"
-      );
-    } catch {
-      usersSecurityLogger.securityEvent(
-        "BAN_USER_CRITICAL_FAILURE",
-        {
-          requestId,
-          error: error instanceof Error ? error.message : "Unknown error",
-        },
-        "CRITICAL"
-      );
-    }
+    // 🔐 Security audit for failed ban attempt (CRÍTICO)
+    usersSecurityLogger.security("BAN_USER_FAILED", {
+      requestId,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
 
     return {
       success: false,
