@@ -10,6 +10,8 @@ export {
   FeatureFlagsServerProvider,
 } from "./hooks/useFeatureFlagsServerActions";
 export { usePermissions } from "./hooks/usePermissions";
+export { useNotifications } from "./hooks/useNotifications";
+// useActionNotifications eliminado - usar useSmartNotifications
 
 // 📝 Tipos Compartidos
 export * from "./types";

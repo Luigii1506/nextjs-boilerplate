@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "../styles/globals.css";
 import { FeatureFlagsServerProvider } from "@/shared/hooks/useFeatureFlagsServerActions";
+import { NotificationProvider } from "@/shared/providers/NotificationProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,7 +29,21 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <FeatureFlagsServerProvider>{children}</FeatureFlagsServerProvider>
+        <FeatureFlagsServerProvider>
+          <NotificationProvider
+            theme="system"
+            visibleToasts={5}
+            config={{
+              position: "top-right",
+              richColors: true,
+              closeButton: true,
+              dismissible: true,
+              pauseWhenPageIsHidden: true,
+            }}
+          >
+            {children}
+          </NotificationProvider>
+        </FeatureFlagsServerProvider>
       </body>
     </html>
   );

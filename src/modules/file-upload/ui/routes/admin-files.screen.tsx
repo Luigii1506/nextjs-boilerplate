@@ -21,7 +21,7 @@ import type {
 } from "../../types";
 import { useFileUpload } from "../../hooks"; // ← RESTORED: For enterprise state lifting
 import { formatFileSize } from "../../utils";
-import { useFileNotifications } from "../../hooks/useFileNotifications";
+import { useSmartNotifications } from "@/shared/utils/smartNotifications";
 import FileUploader from "../components/FileUploader";
 import FileManager from "../components/FileManager";
 import FileStats from "../components/FileStats";
@@ -203,61 +203,83 @@ const FilesView: React.FC<FilesViewProps> = () => {
     (file) => file.mimeType?.startsWith("image/") || false
   );
 
-  const { notification: fileNotification, showNotification } =
-    useFileNotifications();
+  // 🧠 SISTEMA SIMPLE E INTELIGENTE - UNA SOLA LÍNEA
+  const { notify } = useSmartNotifications();
 
-  const handleUploadComplete = (uploadedFiles: UploadFile[]) => {
-    // 🎯 OPTIMISTIC UI: No need for manual refresh - optimistic state handles it!
-    // Removed optimizedRefreshFiles() to prevent overwriting optimistic updates
+  // 🧠 SÚPER SIMPLE: Completar upload - INTELIGENCIA AUTOMÁTICA
+  const handleUploadComplete = async (uploadedFiles: UploadFile[]) => {
+    // ✨ UNA SOLA LÍNEA - detecta TODO automáticamente
+    await notify(
+      async () => {
+        // 🎯 OPTIMISTIC UI: No need for manual refresh - optimistic state handles it!
+        // Removed optimizedRefreshFiles() to prevent overwriting optimistic updates
 
-    showNotification(
-      "success",
+        // Mostrar categorías detectadas
+        if (uploadedFiles.length > 0) {
+          const categoriesDetected = uploadedFiles
+            .map((file) => file.category?.name)
+            .filter(Boolean)
+            .join(", ");
+          if (categoriesDetected) {
+            console.log(`Categorías asignadas: ${categoriesDetected}`);
+          }
+        }
+      },
+      "Procesando archivos...",
       `${uploadedFiles.length} archivo(s) subido(s) exitosamente`
     );
-    // Mostrar categorías detectadas en la notificación
-    if (uploadedFiles.length > 0) {
-      const categoriesDetected = uploadedFiles
-        .map((file) => file.category?.name)
-        .filter(Boolean)
-        .join(", ");
-      if (categoriesDetected) {
-        // 🎯 ENTERPRISE-GRADE: Show category info immediately
-        showNotification("info", `Categorías asignadas: ${categoriesDetected}`);
-      }
-    }
   };
 
-  const handleUploadError = (error: string) => {
-    showNotification("error", `Error: ${error}`);
+  // 🧠 SÚPER SIMPLE: Error en upload - INTELIGENCIA AUTOMÁTICA
+  const handleUploadError = async (error: string) => {
+    // ✨ UNA SOLA LÍNEA - detecta TODO automáticamente
+    await notify(
+      async () => {
+        // 🧠 INTELIGENTE: "📤 Error subiendo archivo: [razón específica]" (automático)
+        throw new Error(error);
+      },
+      "Procesando error...",
+      undefined
+    );
   };
 
+  // 🧠 SÚPER SIMPLE: Eliminar archivo - INTELIGENCIA AUTOMÁTICA
   const handleFileDelete = async (file: UploadCardData) => {
     if (
-      window.confirm(
+      !window.confirm(
         `¿Estás seguro de que quieres eliminar "${file.originalName}"?`
       )
-    ) {
-      try {
+    )
+      return;
+
+    // ✨ UNA SOLA LÍNEA - detecta TODO automáticamente
+    await notify(
+      async () => {
         // 🏆 ENTERPRISE: Use real deleteFile from hook
         await deleteFile(file.id);
-        showNotification(
-          "success",
-          `Archivo "${file.originalName}" eliminado correctamente`
-        );
-      } catch (error) {
-        console.error("Error deleting file:", error);
-        showNotification(
-          "error",
-          `Error eliminando "${file.originalName}": ${error}`
-        );
-      }
-    }
+      },
+      `Eliminando "${file.originalName}"...`,
+      `Archivo "${file.originalName}" eliminado exitosamente`
+    );
   };
 
-  const handleFileDownload = (file: UploadCardData) => {
-    // In a real app, this would handle S3 signed URLs for private files
-    window.open(file.url, "_blank");
-    showNotification("info", `Descargando "${file.originalName}"`);
+  // 🧠 SÚPER SIMPLE: Descargar archivo - INTELIGENCIA AUTOMÁTICA
+  const handleFileDownload = async (file: UploadCardData) => {
+    // ✨ Acción inmediata sin notificación de carga para downloads
+    try {
+      // In a real app, this would handle S3 signed URLs for private files
+      window.open(file.url, "_blank");
+      console.log(`📥 Descargando "${file.originalName}"`);
+    } catch (error) {
+      // 🧠 INTELIGENTE: Solo notificar si hay error
+      await notify(
+        async () => {
+          throw error;
+        },
+        "Procesando descarga...",
+        undefined
+      );
+    }
   };
 
   const tabs = [
@@ -294,20 +316,7 @@ const FilesView: React.FC<FilesViewProps> = () => {
         </div>
       </div>
 
-      {/* Notification */}
-      {fileNotification && (
-        <div
-          className={`p-4 rounded-xl border ${
-            fileNotification.type === "success"
-              ? "bg-green-50 border-green-200 text-green-800"
-              : fileNotification.type === "error"
-              ? "bg-red-50 border-red-200 text-red-800"
-              : "bg-blue-50 border-blue-200 text-blue-800"
-          }`}
-        >
-          {fileNotification.message}
-        </div>
-      )}
+      {/* Notificaciones ahora manejadas por Sonner automáticamente */}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -653,10 +662,7 @@ const FilesView: React.FC<FilesViewProps> = () => {
                 uploadFiles={fileUploadHook.uploadFiles}
                 deleteFile={fileUploadHook.deleteFile}
                 onFileSelect={(file) =>
-                  showNotification(
-                    "info",
-                    `Archivo seleccionado: ${file.originalName}`
-                  )
+                  console.log(`Archivo seleccionado: ${file.originalName}`)
                 }
                 onFileDelete={handleFileDelete}
                 onFileDownload={handleFileDownload}
@@ -689,10 +695,7 @@ const FilesView: React.FC<FilesViewProps> = () => {
                 <ImageGallery
                   images={imageFiles}
                   onImageSelect={(image) =>
-                    showNotification(
-                      "info",
-                      `Imagen seleccionada: ${image.originalName}`
-                    )
+                    console.log(`Imagen seleccionada: ${image.originalName}`)
                   }
                   onImageDelete={handleFileDelete}
                   onImageDownload={handleFileDownload}

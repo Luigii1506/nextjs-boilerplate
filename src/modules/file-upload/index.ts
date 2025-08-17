@@ -4,7 +4,7 @@
 
 // 🎯 Core Hooks (Enterprise Enhanced)
 export { useFileUpload } from "./hooks/useFileUpload";
-export { useFileNotifications } from "./hooks/useFileNotifications";
+// useFileNotifications eliminado - usar useSmartNotifications del sistema principal
 
 // 📝 Types & Interfaces
 export * from "./types";

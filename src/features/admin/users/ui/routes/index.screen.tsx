@@ -32,11 +32,15 @@ import {
 } from "../../server/actions";
 import UserCard from "@/features/admin/users/ui/components/UserCard";
 import UserModal from "@/features/admin/users/ui/components/UserModal";
+import { useSmartNotifications } from "@/shared/utils/smartNotifications";
 
 // Use the type from our module
 type OptimisticUsersState = UserOptimisticState;
 
 const UsersView: React.FC = () => {
+  // 🧠 SISTEMA SIMPLE E INTELIGENTE - UNA SOLA LÍNEA
+  const { notify } = useSmartNotifications();
+
   // 🎛️ Filter & UI State
   const [searchTerm, setSearchTerm] = React.useState("");
   const [filterRole, setFilterRole] = React.useState<string>("all");
@@ -142,171 +146,147 @@ const UsersView: React.FC = () => {
     });
   };
 
-  // 🚀 REACT 19: Create user with Server Action + Optimistic UI
-  const handleCreateUser = async (userData: CreateUserForm) => {
-    try {
-      // Prepare FormData for Server Action OUTSIDE of transition
-      const formData = new FormData();
-      formData.append("email", userData.email);
-      formData.append("name", userData.name);
-      formData.append("password", userData.password || "");
-      formData.append("role", userData.role);
-
-      // Execute Server Action first
-      const result = await createUserAction(formData);
-
-      if (result.success) {
-        // Close modal on success
-        setIsModalOpen(false);
-
-        // Refresh server data to get the real user with proper ID
-        startRefresh(() => {
-          usersAction();
-        });
-      } else {
-        // Show error message
-        console.error("Error creating user:", result.error);
-        throw new Error(result.error || "Error creating user");
-      }
-    } catch (error) {
-      console.error("Error creating user:", error);
-      throw error;
-    }
+  // ✅ Helper para refresh después de acciones
+  const refreshUsers = () => {
+    startRefresh(() => {
+      usersAction();
+    });
   };
 
-  // 🚀 REACT 19: Edit user with Server Action + Optimistic UI
+  // 🧠 SÚPER SIMPLE: Crear usuario - INTELIGENCIA AUTOMÁTICA
+  const handleCreateUser = async (userData: CreateUserForm) => {
+    // ✨ UNA SOLA LÍNEA - detecta TODO automáticamente
+    await notify(
+      async () => {
+        const formData = new FormData();
+        formData.append("email", userData.email);
+        formData.append("name", userData.name);
+        formData.append("password", userData.password || "");
+        formData.append("role", userData.role);
+
+        const result = await createUserAction(formData);
+
+        if (!result.success) {
+          // 🧠 INTELIGENTE: Formatea automáticamente el error específico
+          // "❌ Error creando usuario: Email ya existe" (detecta automáticamente)
+          throw new Error(result.error || "Error creating user");
+        }
+
+        setIsModalOpen(false);
+        refreshUsers();
+      },
+      "Creando usuario...",
+      "Usuario creado exitosamente"
+    );
+  };
+
+  // 🧠 SÚPER SIMPLE: Editar usuario - INTELIGENCIA AUTOMÁTICA
   const handleEditUser = async (userData: CreateUserForm) => {
     if (!editingUser) return;
 
-    try {
-      // Prepare FormData for Server Action OUTSIDE of transition
+    // ✨ UNA SOLA LÍNEA - detecta TODO automáticamente
+    await notify(async () => {
       const formData = new FormData();
       formData.append("id", editingUser.id);
       formData.append("email", userData.email);
       formData.append("name", userData.name);
       formData.append("role", userData.role);
 
-      // Execute Server Action first
       const result = await updateUserAction(formData);
 
-      if (result.success) {
-        // Close modal on success
-        setEditingUser(null);
-        setIsModalOpen(false);
-
-        // Refresh server data to get updated user data
-        startRefresh(() => {
-          usersAction();
-        });
-      } else {
-        // Show error message
-        console.error("Error editing user:", result.error);
-        throw new Error(result.error || "Error editing user");
+      if (!result.success) {
+        // 🧠 INTELIGENTE: "❌ Error actualizando usuario: Email duplicado" (automático)
+        throw new Error(result.error || "Error updating user");
       }
-    } catch (error) {
-      console.error("Error editing user:", error);
-      throw error;
-    }
+
+      setEditingUser(null);
+      setIsModalOpen(false);
+      refreshUsers();
+    }, "Actualizando usuario...");
   };
 
-  // 🚀 REACT 19: Delete user with Server Action + Optimistic UI
+  // 🧠 SÚPER SIMPLE: Eliminar usuario - INTELIGENCIA AUTOMÁTICA
   const handleDeleteUser = async (userId: string) => {
-    if (
-      !confirm(
-        "¿Estás seguro de que quieres eliminar este usuario? Esta acción no se puede deshacer."
-      )
-    ) {
-      return;
-    }
+    if (!confirm("¿Estás seguro de que quieres eliminar este usuario?")) return;
 
-    try {
-      // Prepare FormData for Server Action OUTSIDE of transition
+    // ✨ UNA SOLA LÍNEA - detecta TODO automáticamente
+    await notify(async () => {
       const formData = new FormData();
       formData.append("id", userId);
 
-      // Execute Server Action first
       const result = await deleteUserAction(formData);
 
-      if (result.success) {
-        // Refresh server data to reflect deletion
-        startRefresh(() => {
-          usersAction();
-        });
-      } else {
-        // Show error message
-        console.error("Error deleting user:", result.error);
+      if (!result.success) {
+        // 🧠 INTELIGENTE: "❌ Error eliminando usuario: Usuario no encontrado" (automático)
         throw new Error(result.error || "Error deleting user");
       }
-    } catch (error) {
-      console.error("Error deleting user:", error);
-    }
+
+      refreshUsers();
+    }, "Eliminando usuario...");
   };
 
-  // 🚀 REACT 19: Toggle ban status with Server Action + Optimistic UI
+  // 🧠 SÚPER SIMPLE: Toggle ban - INTELIGENCIA AUTOMÁTICA
   const handleToggleBan = async (userId: string) => {
     const user = users.find((u) => u.id === userId);
     if (!user) return;
 
-    try {
-      const isBanned = user.status === "banned";
-      let banReason = "";
+    const isBanned = user.status === "banned";
 
-      if (!isBanned) {
-        banReason = prompt("Razón del baneo:") || "";
-        if (!banReason) return;
-      }
+    if (isBanned) {
+      // ✨ UNA SOLA LÍNEA - detecta TODO automáticamente
+      await notify(async () => {
+        const formData = new FormData();
+        formData.append("id", userId);
 
-      // Prepare FormData for Server Action OUTSIDE of transition
-      const formData = new FormData();
-      formData.append("id", userId);
-      if (!isBanned && banReason) {
+        const result = await unbanUserAction(formData);
+
+        if (!result.success) {
+          // 🧠 INTELIGENTE: "❌ Error desbaneando usuario: [razón específica]" (automático)
+          throw new Error(result.error || "Error unbanning user");
+        }
+
+        refreshUsers();
+      }, "Desbaneando usuario...");
+    } else {
+      // Banear
+      const banReason = prompt("Razón del baneo:") || "";
+      if (!banReason) return;
+
+      // ✨ UNA SOLA LÍNEA - detecta TODO automáticamente
+      await notify(async () => {
+        const formData = new FormData();
+        formData.append("id", userId);
         formData.append("reason", banReason);
-      }
 
-      // Execute appropriate Server Action first
-      const result = isBanned
-        ? await unbanUserAction(formData)
-        : await banUserAction(formData);
+        const result = await banUserAction(formData);
 
-      if (result.success) {
-        // Refresh server data to reflect ban status change
-        startRefresh(() => {
-          usersAction();
-        });
-      } else {
-        // Show error message
-        console.error("Error toggling ban:", result.error);
-        throw new Error(result.error || "Error toggling ban status");
-      }
-    } catch (error) {
-      console.error("Error toggling ban:", error);
+        if (!result.success) {
+          // 🧠 INTELIGENTE: "🚫 Error baneando usuario: [razón específica]" (automático)
+          throw new Error(result.error || "Error banning user");
+        }
+
+        refreshUsers();
+      }, "Baneando usuario...");
     }
   };
 
-  // 🚀 REACT 19: Change user role with Server Action + Optimistic UI
+  // 🧠 SÚPER SIMPLE: Cambiar rol - INTELIGENCIA AUTOMÁTICA
   const handleChangeRole = async (userId: string, role: User["role"]) => {
-    try {
-      // Prepare FormData for Server Action OUTSIDE of transition
+    // ✨ UNA SOLA LÍNEA - detecta TODO automáticamente
+    await notify(async () => {
       const formData = new FormData();
-      formData.append("userId", userId); // updateUserRoleAction expects "userId" not "id"
+      formData.append("userId", userId);
       formData.append("role", role);
 
-      // Execute Server Action first - using updateUserRoleAction for proper super_admin support
       const result = await updateUserRoleAction(formData);
 
-      if (result.success) {
-        // Refresh server data to reflect role change
-        startRefresh(() => {
-          usersAction();
-        });
-      } else {
-        // Show error message
-        console.error("Error changing role:", result.error);
-        throw new Error(result.error || "Error changing user role");
+      if (!result.success) {
+        // 🧠 INTELIGENTE: "👑 Error cambiando rol: Permisos insuficientes" (automático)
+        throw new Error(result.error || "Error changing role");
       }
-    } catch (error) {
-      console.error("Error changing role:", error);
-    }
+
+      refreshUsers();
+    }, `Cambiando rol a ${role}...`);
   };
 
   const totalPages = Math.ceil(totalUsers / usersPerPage);

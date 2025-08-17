@@ -13,7 +13,7 @@ export { getFeatureFlagMetadata } from "./config";
 export {
   useFeatureFlagAdmin,
   useFeatureFlagStats,
-  useNotifications,
+  // useNotifications eliminado - usar el sistema principal de @/shared/hooks/useNotifications
 } from "./hooks";
 
 // 🏗️ Server (nueva arquitectura)

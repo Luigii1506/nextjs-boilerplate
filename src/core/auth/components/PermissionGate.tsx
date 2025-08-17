@@ -67,7 +67,7 @@ export const PermissionGate: React.FC<PermissionGateProps> = ({
   showLoading = true,
 }) => {
   const {
-    hasPermission,
+    hasPermissionAsync,
     canAccess,
     currentRole,
     currentLevel,
@@ -91,7 +91,7 @@ export const PermissionGate: React.FC<PermissionGateProps> = ({
 
         if (permissions) {
           if (serverCheck) {
-            allowed = await hasPermission(permissions);
+            allowed = await hasPermissionAsync(permissions);
           } else {
             allowed = canAccess(permissions);
           }
@@ -129,7 +129,7 @@ export const PermissionGate: React.FC<PermissionGateProps> = ({
     requiredRole,
     minLevel,
     serverCheck,
-    hasPermission,
+    hasPermissionAsync,
     canAccess,
     currentRole,
     currentLevel,

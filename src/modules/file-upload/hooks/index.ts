@@ -9,7 +9,7 @@ export { useFileUpload, default } from "./useFileUpload";
 export { useFileUpload as useSingleFileUpload } from "./useFileUpload";
 
 // 🛠️ Additional Hooks
-export { useFileNotifications } from "./useFileNotifications";
+// useFileNotifications eliminado - usar useSmartNotifications del sistema principal
 
 // Re-exports de tipos para conveniencia
 export type {

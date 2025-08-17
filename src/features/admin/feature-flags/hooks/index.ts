@@ -280,53 +280,6 @@ export const useFeatureFlagStats = () => {
   return stats;
 };
 
-// ⚡ Hook para notificaciones (React Compiler optimized)
-export const useNotifications = () => {
-  const [notification, setNotification] = useState<NotificationState | null>(
-    null
-  );
-  const notificationTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
-
-  // 🎯 ENTERPRISE-GRADE: Auto-clear notifications with proper cleanup
-  useEffect(() => {
-    if (notification) {
-      // Clear any existing timeout
-      if (notificationTimeoutRef.current) {
-        clearTimeout(notificationTimeoutRef.current);
-      }
-
-      // Set new timeout
-      notificationTimeoutRef.current = setTimeout(() => {
-        setNotification(null);
-      }, 5000);
-    }
-
-    // Cleanup on unmount
-    return () => {
-      if (notificationTimeoutRef.current) {
-        clearTimeout(notificationTimeoutRef.current);
-      }
-    };
-  }, [notification]);
-
-  // React Compiler will memoize these functions automatically
-  const showNotification = useCallback(
-    (type: NotificationState["type"], message: string) => {
-      setNotification({ type, message });
-    },
-    []
-  );
-
-  const hideNotification = useCallback(() => {
-    setNotification(null);
-    if (notificationTimeoutRef.current) {
-      clearTimeout(notificationTimeoutRef.current);
-    }
-  }, []);
-
-  return {
-    notification,
-    showNotification,
-    hideNotification,
-  };
-};
+// 🔔 Usar el sistema de notificaciones principal
+// El sistema Sonner ya maneja todo esto automáticamente
+// Si necesitas notificaciones aquí, importa: import { useNotifications } from "@/shared/hooks/useNotifications";
