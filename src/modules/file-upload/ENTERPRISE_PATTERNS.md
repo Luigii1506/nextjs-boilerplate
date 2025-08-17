@@ -94,12 +94,12 @@ export const ENTERPRISE_CONFIG = {
   debounceMs: 300,
   maxRetries: 3,
   cacheTimeout: 5 * 60 * 1000, // 5 minutes
-  
+
   // 🕐 Timing constants
   uploadProgressDelay: 50,
   clearCompletedDelay: 2000,
   retryDelayMs: 1000,
-  
+
   // 📊 UI Constants
   maxFilesPerBatch: 10,
   maxFileSize: 50 * 1024 * 1024, // 50MB
@@ -109,7 +109,7 @@ export const ENTERPRISE_CONFIG = {
 // Action constants - TIPADOS Y CENTRALIZADOS
 export const MODULE_ACTIONS = {
   START_UPLOAD: "START_UPLOAD",
-  UPDATE_PROGRESS: "UPDATE_PROGRESS", 
+  UPDATE_PROGRESS: "UPDATE_PROGRESS",
   COMPLETE_UPLOAD: "COMPLETE_UPLOAD",
   FAIL_UPLOAD: "FAIL_UPLOAD",
   CLEAR_COMPLETED: "CLEAR_COMPLETED",
@@ -118,7 +118,7 @@ export const MODULE_ACTIONS = {
 // Status constants
 export const MODULE_STATUS = {
   PENDING: "pending",
-  UPLOADING: "uploading", 
+  UPLOADING: "uploading",
   COMPLETED: "completed",
   ERROR: "error",
 } as const;
@@ -133,7 +133,7 @@ export const CACHE_TAGS = {
 // Logging levels
 export const LOG_LEVELS = {
   INFO: "info",
-  ERROR: "error", 
+  ERROR: "error",
   DEBUG: "debug",
   WARN: "warn",
 } as const;
@@ -154,7 +154,9 @@ class EnterpriseLogger {
 
   constructor(module: string) {
     this.module = module;
-    this.sessionId = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    this.sessionId = `session-${Date.now()}-${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
   }
 
   private shouldLog(level: LogLevel): boolean {
@@ -173,13 +175,16 @@ class EnterpriseLogger {
   }
 
   error(message: string, error?: unknown, context?: LogContext): void {
-    console.error(`❌ ${this.module} ${message}`, { 
+    console.error(`❌ ${this.module} ${message}`, {
       ...context,
-      error: error instanceof Error ? {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-      } : error,
+      error:
+        error instanceof Error
+          ? {
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+            }
+          : error,
     });
   }
 
@@ -269,7 +274,9 @@ export class ModuleConfigManager {
     this.overrides = this.deepClone(overrides);
   }
 
-  public isFeatureEnabled(feature: keyof EnterpriseModuleConfig["features"]): boolean {
+  public isFeatureEnabled(
+    feature: keyof EnterpriseModuleConfig["features"]
+  ): boolean {
     return this.getConfig().features[feature];
   }
 }
@@ -291,15 +298,23 @@ export interface OptimisticState {
 }
 
 export type OptimisticAction =
-  | { type: typeof MODULE_ACTIONS.START_UPLOAD; files: File[]; tempIds: string[] }
-  | { type: typeof MODULE_ACTIONS.UPDATE_PROGRESS; tempId: string; progress: number }
+  | {
+      type: typeof MODULE_ACTIONS.START_UPLOAD;
+      files: File[];
+      tempIds: string[];
+    }
+  | {
+      type: typeof MODULE_ACTIONS.UPDATE_PROGRESS;
+      tempId: string;
+      progress: number;
+    }
   | { type: typeof MODULE_ACTIONS.COMPLETE_UPLOAD; tempId: string }
   | { type: typeof MODULE_ACTIONS.CLEAR_COMPLETED };
 
 // 🎯 Helper functions
 const calculateActiveItems = (items: Item[]): number => {
-  return items.filter(item => 
-    item.status === "pending" || item.status === "processing"
+  return items.filter(
+    (item) => item.status === "pending" || item.status === "processing"
   ).length;
 };
 
@@ -329,7 +344,7 @@ export function optimisticReducer(
       };
 
       nextState.totalActiveItems = calculateActiveItems(nextState.items);
-      
+
       optimisticLogger.info(`Started ${newItems.length} item(s)`, {
         totalItems: nextState.items.length,
         activeItems: nextState.totalActiveItems,
@@ -345,19 +360,22 @@ export function optimisticReducer(
 // 🎯 Selector functions for derived state
 export const optimisticSelectors = {
   getActiveItems: (state: OptimisticState) =>
-    state.items.filter(item => 
-      item.status === "pending" || item.status === "processing"
+    state.items.filter(
+      (item) => item.status === "pending" || item.status === "processing"
     ),
 
-  getCompletedItems: (state: OptimisticState) => 
-    state.items.filter(item => item.status === "completed"),
+  getCompletedItems: (state: OptimisticState) =>
+    state.items.filter((item) => item.status === "completed"),
 
   hasActiveItems: (state: OptimisticState) => state.totalActiveItems > 0,
 
   getOverallProgress: (state: OptimisticState) => {
     if (state.items.length === 0) return 0;
-    
-    const totalProgress = state.items.reduce((sum, item) => sum + item.progress, 0);
+
+    const totalProgress = state.items.reduce(
+      (sum, item) => sum + item.progress,
+      0
+    );
     return Math.round(totalProgress / state.items.length);
   },
 };
@@ -367,11 +385,23 @@ export const optimisticSelectors = {
 
 ```typescript
 // hooks/useModuleName.ts
-import { useActionState, useOptimistic, useCallback, useMemo, useRef, useTransition, useEffect } from "react";
+import {
+  useActionState,
+  useOptimistic,
+  useCallback,
+  useMemo,
+  useRef,
+  useTransition,
+  useEffect,
+} from "react";
 import { MODULE_ACTIONS } from "../constants";
 import { moduleLogger } from "../utils/logger";
 import { moduleConfig, adaptConfigForHook } from "../config";
-import { optimisticReducer, createInitialOptimisticState, optimisticSelectors } from "../reducers";
+import {
+  optimisticReducer,
+  createInitialOptimisticState,
+  optimisticSelectors,
+} from "../reducers";
 
 export const useModuleName = (userConfig?: Config): Return => {
   const { user } = useAuth();
@@ -379,8 +409,11 @@ export const useModuleName = (userConfig?: Config): Return => {
   const hasInitialized = useRef(false);
 
   // 🏗️ ENTERPRISE: Configuration management
-  const enterpriseConfig = useMemo(() => adaptConfigForHook(userConfig), [userConfig]);
-  
+  const enterpriseConfig = useMemo(
+    () => adaptConfigForHook(userConfig),
+    [userConfig]
+  );
+
   // 🎯 ENTERPRISE: Structured logging with performance tracking
   moduleLogger.timeStart("Hook Initialization");
   moduleLogger.debug("Hook initialized", {
@@ -408,7 +441,7 @@ export const useModuleName = (userConfig?: Config): Return => {
   useEffect(() => {
     if (!hasInitialized.current && user) {
       hasInitialized.current = true;
-      
+
       moduleLogger.group("Module Initialization");
       moduleLogger.info("Initializing module", {
         userId: user.id,
@@ -419,83 +452,95 @@ export const useModuleName = (userConfig?: Config): Return => {
       startTransition(() => {
         dataAction();
       });
-      
+
       moduleLogger.groupEnd();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]); // Only depend on user - actions are stable
 
   // 🎯 COMPUTED STATES (Enterprise patterns)
-  const isLoading = useMemo(() => dataPending || isPending, [dataPending, isPending]);
-  const data = useMemo(() => (dataState?.success ? dataState.data : []), [dataState]);
+  const isLoading = useMemo(
+    () => dataPending || isPending,
+    [dataPending, isPending]
+  );
+  const data = useMemo(
+    () => (dataState?.success ? dataState.data : []),
+    [dataState]
+  );
   const error = useMemo(() => dataState?.error || null, [dataState?.error]);
 
   // 🏆 ENTERPRISE RETURN INTERFACE (Enhanced with selectors and performance metrics)
-  return useMemo(() => ({
-    // 📊 Core Data
-    data,
-    optimisticState: optimisticState.items,
+  return useMemo(
+    () => ({
+      // 📊 Core Data
+      data,
+      optimisticState: optimisticState.items,
 
-    // 🔄 Loading States (Enhanced with granular state)
-    isLoading,
-    isProcessing: optimisticSelectors.hasActiveItems(optimisticState),
-    isPending,
-    
-    // 🎯 Analytics
-    activeItems: optimisticSelectors.getActiveItems(optimisticState),
-    completedItems: optimisticSelectors.getCompletedItems(optimisticState),
-    overallProgress: optimisticSelectors.getOverallProgress(optimisticState),
+      // 🔄 Loading States (Enhanced with granular state)
+      isLoading,
+      isProcessing: optimisticSelectors.hasActiveItems(optimisticState),
+      isPending,
 
-    // ❌ Error States
-    error,
-    hasError: !!error,
+      // 🎯 Analytics
+      activeItems: optimisticSelectors.getActiveItems(optimisticState),
+      completedItems: optimisticSelectors.getCompletedItems(optimisticState),
+      overallProgress: optimisticSelectors.getOverallProgress(optimisticState),
 
-    // 🎯 Actions (Performance optimized)
-    performAction: useCallback(async (input) => {
-      // Optimistic UI (configurable)
-      if (enterpriseConfig.features.optimisticUI) {
-        startTransition(() => {
-          addOptimistic({ 
-            type: MODULE_ACTIONS.START_UPLOAD, 
-            files: input.files, 
-            tempIds: input.tempIds 
-          });
-        });
-      }
+      // ❌ Error States
+      error,
+      hasError: !!error,
 
-      // Server Action
-      const result = await performServerAction(input);
+      // 🎯 Actions (Performance optimized)
+      performAction: useCallback(
+        async (input) => {
+          // Optimistic UI (configurable)
+          if (enterpriseConfig.features.optimisticUI) {
+            startTransition(() => {
+              addOptimistic({
+                type: MODULE_ACTIONS.START_UPLOAD,
+                files: input.files,
+                tempIds: input.tempIds,
+              });
+            });
+          }
 
-      // Auto-refresh (configurable)
-      if (result.success && enterpriseConfig.features.autoRefresh) {
-        startTransition(() => {
-          dataAction();
-        });
-      }
+          // Server Action
+          const result = await performServerAction(input);
 
-      return result;
-    }, [enterpriseConfig, addOptimistic, dataAction]),
+          // Auto-refresh (configurable)
+          if (result.success && enterpriseConfig.features.autoRefresh) {
+            startTransition(() => {
+              dataAction();
+            });
+          }
 
-    // 🔄 Refresh Actions
-    refresh: useCallback(() => {
-      moduleLogger.debug("Manual refresh requested");
-      startTransition(() => dataAction());
-    }, []),
+          return result;
+        },
+        [enterpriseConfig, addOptimistic, dataAction]
+      ),
 
-    // 🏗️ Configuration & Debugging
-    config: enterpriseConfig,
-    configSummary: moduleConfig.getConfigSummary(),
-    
-    // 📊 Performance Metrics (Development only)
-    ...(process.env.NODE_ENV === "development" && {
-      debug: {
-        hasInitialized: hasInitialized.current,
-        optimisticState,
-        enterpriseConfig,
-        selectors: optimisticSelectors,
-      },
+      // 🔄 Refresh Actions
+      refresh: useCallback(() => {
+        moduleLogger.debug("Manual refresh requested");
+        startTransition(() => dataAction());
+      }, []),
+
+      // 🏗️ Configuration & Debugging
+      config: enterpriseConfig,
+      configSummary: moduleConfig.getConfigSummary(),
+
+      // 📊 Performance Metrics (Development only)
+      ...(process.env.NODE_ENV === "development" && {
+        debug: {
+          hasInitialized: hasInitialized.current,
+          optimisticState,
+          enterpriseConfig,
+          selectors: optimisticSelectors,
+        },
+      }),
     }),
-  }), [data, optimisticState, isLoading, isPending, error, enterpriseConfig]);
+    [data, optimisticState, isLoading, isPending, error, enterpriseConfig]
+  );
 };
 ```
 
@@ -509,8 +554,10 @@ import { CACHE_TAGS } from "../../constants";
 export async function performActionServerAction(
   formData: FormData
 ): Promise<ActionResult> {
-  const requestId = `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  
+  const requestId = `req-${Date.now()}-${Math.random()
+    .toString(36)
+    .substr(2, 9)}`;
+
   serverActionLogger.timeStart(`Action ${requestId}`);
   serverActionLogger.info("Server action started", { requestId });
 
@@ -518,22 +565,33 @@ export async function performActionServerAction(
     // 1. Authentication & Authorization
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) {
-      serverActionLogger.error("Unauthorized access attempt", null, { requestId });
+      serverActionLogger.error("Unauthorized access attempt", null, {
+        requestId,
+      });
       return { success: false, error: "No autorizado" };
     }
 
     // 2. Validation (Zod schemas)
     const validated = parseInputSchema(Object.fromEntries(formData));
-    serverActionLogger.debug("Input validated", { requestId, inputKeys: Object.keys(validated) });
+    serverActionLogger.debug("Input validated", {
+      requestId,
+      inputKeys: Object.keys(validated),
+    });
 
     // 3. Business Logic (Service layer)
     const result = await moduleService.performAction(validated);
-    serverActionLogger.info("Business logic completed", { requestId, resultType: typeof result });
+    serverActionLogger.info("Business logic completed", {
+      requestId,
+      resultType: typeof result,
+    });
 
     // 4. Cache Invalidation (with logging)
     revalidateTag(CACHE_TAGS.DATA);
     revalidatePath("/module");
-    serverActionLogger.debug("Cache invalidated", { requestId, tags: [CACHE_TAGS.DATA] });
+    serverActionLogger.debug("Cache invalidated", {
+      requestId,
+      tags: [CACHE_TAGS.DATA],
+    });
 
     serverActionLogger.timeEnd(`Action ${requestId}`);
     return { success: true, data: result };
@@ -555,7 +613,7 @@ export async function performActionServerAction(
 // 🎯 Core Hooks (Enterprise Enhanced)
 export { useModuleName } from "./hooks/useModuleName";
 
-// 📝 Types & Interfaces  
+// 📝 Types & Interfaces
 export * from "./types";
 
 // 🏗️ Enterprise Configuration System
@@ -614,18 +672,23 @@ interface FileIconProps {
   size?: "sm" | "md" | "lg";
 }
 
-export const FileIcon = React.memo<FileIconProps>(({ filename, className, size = "md" }) => {
-  const icon = getFileIcon(filename);
-  const sizeClasses = {
-    sm: "w-4 h-4",
-    md: "w-6 h-6", 
-    lg: "w-8 h-8",
-  };
+export const FileIcon = React.memo<FileIconProps>(
+  ({ filename, className, size = "md" }) => {
+    const icon = getFileIcon(filename);
+    const sizeClasses = {
+      sm: "w-4 h-4",
+      md: "w-6 h-6",
+      lg: "w-8 h-8",
+    };
 
-  return React.cloneElement(icon as React.ReactElement<{ className?: string }>, {
-    className: `${sizeClasses[size]} ${className || ""}`.trim(),
-  });
-});
+    return React.cloneElement(
+      icon as React.ReactElement<{ className?: string }>,
+      {
+        className: `${sizeClasses[size]} ${className || ""}`.trim(),
+      }
+    );
+  }
+);
 
 FileIcon.displayName = "FileIcon";
 
@@ -637,13 +700,13 @@ export const FileSize = React.memo<{ size: number; className?: string }>(
 );
 
 // ui/components/shared/ProgressBar.tsx
-export const ProgressBar = React.memo<{ 
-  progress: number; 
+export const ProgressBar = React.memo<{
+  progress: number;
   className?: string;
   showPercentage?: boolean;
 }>(({ progress, className, showPercentage = true }) => (
   <div className={`w-full bg-gray-200 rounded-full h-2 ${className}`}>
-    <div 
+    <div
       className="bg-blue-600 h-2 rounded-full transition-all duration-300"
       style={{ width: `${Math.min(progress, 100)}%` }}
     />
@@ -655,7 +718,7 @@ export const ProgressBar = React.memo<{
 
 // ui/components/shared/index.ts
 export { FileIcon } from "./FileIcon";
-export { FileSize } from "./FileSize"; 
+export { FileSize } from "./FileSize";
 export { ProgressBar } from "./ProgressBar";
 ```
 
@@ -739,32 +802,34 @@ export class ModuleErrorBoundary extends React.Component<
 export const OptimizedComponent = React.memo<ComponentProps>(
   ({ data, onAction, config }) => {
     // Memoized calculations
-    const processedData = useMemo(() => 
-      data.map(item => processItem(item, config)), 
+    const processedData = useMemo(
+      () => data.map((item) => processItem(item, config)),
       [data, config]
     );
 
     // Memoized callbacks
-    const handleAction = useCallback((id: string) => {
-      onAction(id);
-    }, [onAction]);
+    const handleAction = useCallback(
+      (id: string) => {
+        onAction(id);
+      },
+      [onAction]
+    );
 
     // Memoized sub-components
-    const ItemComponent = useMemo(() => 
-      React.memo<ItemProps>(({ item, onItemAction }) => (
-        <div onClick={() => onItemAction(item.id)}>
-          {item.name}
-        </div>
-      )),
+    const ItemComponent = useMemo(
+      () =>
+        React.memo<ItemProps>(({ item, onItemAction }) => (
+          <div onClick={() => onItemAction(item.id)}>{item.name}</div>
+        )),
       []
     );
 
     return (
       <div>
-        {processedData.map(item => (
-          <ItemComponent 
-            key={item.id} 
-            item={item} 
+        {processedData.map((item) => (
+          <ItemComponent
+            key={item.id}
+            item={item}
             onItemAction={handleAction}
           />
         ))}
@@ -793,9 +858,9 @@ export const OptimizedComponent = React.memo<ComponentProps>(
 
 ```typescript
 // Lazy loading pattern
-const HeavyComponent = React.lazy(() => 
-  import("./HeavyComponent").then(module => ({
-    default: module.HeavyComponent
+const HeavyComponent = React.lazy(() =>
+  import("./HeavyComponent").then((module) => ({
+    default: module.HeavyComponent,
   }))
 );
 
@@ -818,7 +883,7 @@ import { useModuleName } from "../hooks/useModuleName";
 describe("useModuleName", () => {
   it("should initialize with correct default state", () => {
     const { result } = renderHook(() => useModuleName());
-    
+
     expect(result.current.data).toEqual([]);
     expect(result.current.isLoading).toBe(false);
     expect(result.current.error).toBe(null);
@@ -826,7 +891,7 @@ describe("useModuleName", () => {
 
   it("should handle optimistic updates correctly", async () => {
     const { result } = renderHook(() => useModuleName());
-    
+
     await act(async () => {
       await result.current.performAction({ files: [mockFile] });
     });
@@ -861,6 +926,7 @@ afterAll(() => server.close());
 Para migrar un módulo existente al estándar empresarial:
 
 ### **Arquitectura**
+
 - [ ] **📊 Constants centralizados** en `/constants/index.ts`
 - [ ] **⚙️ Configuration Manager** con patrón Singleton
 - [ ] **📝 Sistema de logging** con EnterpriseLogger
@@ -868,24 +934,28 @@ Para migrar un módulo existente al estándar empresarial:
 - [ ] **🧩 Shared components** micro-reutilizables
 
 ### **Hook Enterprise**
+
 - [ ] **🏆 Un solo hook** por módulo con configuración avanzada
 - [ ] **React 19 compliance** con useActionState correcto
 - [ ] **Performance optimization** con memoización
 - [ ] **Estado unificado** con analytics integradas
 
 ### **Server Layer**
+
 - [ ] **🏗️ Server Actions** como única fuente de verdad
 - [ ] **Logging estructurado** en todas las acciones
 - [ ] **Cache invalidation** automática con tags
 - [ ] **Error handling** robusto con categorías
 
 ### **UI Layer**
+
 - [ ] **📄 Barrel exports** organizados por responsabilidad
 - [ ] **🎨 Componentes optimizados** con React.memo
 - [ ] **Error boundaries** para manejo de errores
 - [ ] **Lazy loading** para componentes pesados
 
 ### **Quality Assurance**
+
 - [ ] **TypeScript strict** mode habilitado
 - [ ] **ESLint** configurado con reglas enterprise
 - [ ] **Tests unitarios** para hooks y componentes
@@ -899,26 +969,31 @@ Para migrar un módulo existente al estándar empresarial:
 ### **Orden de Implementación Recomendado**
 
 1. **Fase 1: Foundation**
+
    - Crear `/constants/index.ts` con configuración centralizada
    - Implementar `/utils/logger.ts` con EnterpriseLogger
    - Configurar `/config/index.ts` con ConfigManager
 
 2. **Fase 2: State Management**
+
    - Crear `/reducers/index.ts` con optimistic state
    - Implementar selectors para queries eficientes
    - Configurar action types centralizados
 
 3. **Fase 3: Hook Enhancement**
+
    - Refactorizar hook principal con nuevos patrones
    - Implementar React 19 compliance
    - Agregar performance optimizations
 
 4. **Fase 4: UI Optimization**
+
    - Crear shared components reutilizables
    - Implementar React.memo y useCallback
    - Configurar lazy loading
 
-5. **Fase 5: Server Integration** 
+5. **Fase 5: Server Integration**
+
    - Enhancear Server Actions con logging
    - Implementar error handling robusto
    - Configurar cache invalidation
