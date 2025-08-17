@@ -127,7 +127,7 @@ src/modules/file-upload/
 ├── ui/components/shared/       # 🧩 Componentes reutilizables optimizados
 ├── types/index.ts              # 📝 Tipos consolidados y enterprise
 ├── server/                     # 🏗️ Backend optimizado
-├── ENTERPRISE_PATTERNS.md      # 📚 Guía de patrones empresariales  
+├── ENTERPRISE_PATTERNS.md      # 📚 Guía de patrones empresariales
 └── REACT_19_GUIDE.md           # 🚀 Guía completa de React 19
 ```
 

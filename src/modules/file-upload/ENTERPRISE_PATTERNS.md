@@ -38,7 +38,8 @@
 ### **1. Configuration-Driven Architecture**
 
 - **Configuration Manager** centralizado con patrón Singleton
-- **Feature flags** para habilitar/deshabilitar funcionalidades
+- **Feature flags** para módulos experimentales/opcionales
+- **Core modules** siempre activos (sin feature flags)
 - **Environment-specific configs** (dev, prod, high-performance)
 - **User overrides** permitidos con merge inteligente
 
@@ -77,14 +78,49 @@
 - **Lazy loading** de componentes pesados
 - **Background sync** y refresh inteligente
 
+## 🔀 TIPOS DE MÓDULOS ENTERPRISE
+
+### **📊 Módulos con Feature Flags (Experimentales/Opcionales)**
+
+**Cuándo usar:**
+- ✅ Funcionalidades en desarrollo/testing
+- ✅ A/B testing de características
+- ✅ Funcionalidades que pueden ser deshabilitadas
+- ✅ Rollouts graduales de features
+- ✅ Módulos que dependen de configuraciones externas
+
+**Características:**
+- Configuration Manager con feature flags
+- Inicialización condicional basada en flags
+- UI que se adapta según flags activos
+- Fallbacks cuando features están deshabilitadas
+
+### **🏗️ Módulos Core (Siempre Activos)**
+
+**Cuándo usar:**
+- ✅ Funcionalidades esenciales del sistema
+- ✅ Módulos críticos para la operación
+- ✅ Funcionalidades que NUNCA deben ser deshabilitadas
+- ✅ Componentes base de la arquitectura
+
+**Características:**
+- Configuration Manager simplificado (sin feature flags)
+- Inicialización directa sin verificaciones
+- UI siempre disponible
+- Configuración centrada en performance y UX
+
+---
+
 ## 🛠️ PATRONES DE IMPLEMENTACIÓN V2.0
 
 ### **📊 Constants Pattern (NUEVO)**
 
+#### **🔧 Para Módulos con Feature Flags:**
+
 ```typescript
 // constants/index.ts
 export const ENTERPRISE_CONFIG = {
-  // 🔧 Feature flags
+  // 🔧 Feature flags (módulo experimental/opcional)
   enableOptimisticUI: true,
   enableAdvancedLogging: process.env.NODE_ENV === "development",
   enableProgressTracking: true,
@@ -104,6 +140,31 @@ export const ENTERPRISE_CONFIG = {
   maxFilesPerBatch: 10,
   maxFileSize: 50 * 1024 * 1024, // 50MB
   progressUpdateInterval: 100,
+} as const;
+```
+
+#### **🏗️ Para Módulos Core (Siempre Activos):**
+
+```typescript
+// constants/index.ts
+export const CORE_CONFIG = {
+  // ⚡ Performance settings (sin feature flags)
+  debounceMs: 300,
+  maxRetries: 3,
+  cacheTimeout: 5 * 60 * 1000, // 5 minutes
+
+  // 🕐 Timing constants
+  refreshDelayMs: 1000,
+  retryDelayMs: 1000,
+  
+  // 📊 UI Constants
+  itemsPerPage: 20,
+  maxItemSize: 100 * 1024 * 1024, // 100MB
+  updateInterval: 200,
+
+  // 🔧 Core features (siempre habilitadas)
+  advancedLogging: process.env.NODE_ENV === "development",
+  performanceTracking: true,
 } as const;
 
 // Action constants - TIPADOS Y CENTRALIZADOS
@@ -228,6 +289,8 @@ export const optimisticLogger = createLogger("Optimistic");
 
 ### **⚙️ Configuration Manager Pattern (NUEVO)**
 
+#### **🔧 Para Módulos con Feature Flags:**
+
 ```typescript
 // config/index.ts
 import { ENTERPRISE_CONFIG } from "../constants";
@@ -274,6 +337,7 @@ export class ModuleConfigManager {
     this.overrides = this.deepClone(overrides);
   }
 
+  // 🎯 Para feature flags
   public isFeatureEnabled(
     feature: keyof EnterpriseModuleConfig["features"]
   ): boolean {
@@ -282,6 +346,66 @@ export class ModuleConfigManager {
 }
 
 export const moduleConfig = ModuleConfigManager.getInstance();
+```
+
+#### **🏗️ Para Módulos Core (Siempre Activos):**
+
+```typescript
+// config/index.ts
+import { CORE_CONFIG } from "../constants";
+
+export interface CoreModuleConfig {
+  // Sin sección de features - todo siempre activo
+  performance: {
+    debounceMs: number;
+    maxRetries: number;
+    cacheTimeout: number;
+  };
+  ui: {
+    itemsPerPage: number;
+    maxItemSize: number;
+  };
+  settings: {
+    advancedLogging: boolean;
+    performanceTracking: boolean;
+  };
+}
+
+export class CoreConfigManager {
+  private static instance: CoreConfigManager;
+  private config: CoreModuleConfig;
+  private overrides: Partial<CoreModuleConfig> = {};
+
+  private constructor() {
+    this.config = this.deepClone(DEFAULT_CORE_CONFIG);
+  }
+
+  public static getInstance(): CoreConfigManager {
+    if (!CoreConfigManager.instance) {
+      CoreConfigManager.instance = new CoreConfigManager();
+    }
+    return CoreConfigManager.instance;
+  }
+
+  public getConfig(): CoreModuleConfig {
+    return this.mergeConfigs(this.config, this.overrides);
+  }
+
+  public setOverrides(overrides: Partial<CoreModuleConfig>): void {
+    this.overrides = this.deepClone(overrides);
+  }
+
+  // 🏗️ Para módulos core - configuraciones siempre disponibles
+  public getPerformanceSetting(key: keyof CoreModuleConfig["performance"]): number {
+    return this.getConfig().performance[key];
+  }
+
+  public isSettingEnabled(key: keyof CoreModuleConfig["settings"]): boolean {
+    return this.getConfig().settings[key];
+  }
+}
+
+export const coreConfig = CoreConfigManager.getInstance();
 ```
 
 ### **🎯 Optimistic Reducer Pattern (NUEVO)**
@@ -383,8 +507,10 @@ export const optimisticSelectors = {
 
 ### **🏆 Enhanced Hook Pattern (ACTUALIZADO)**
 
+#### **🔧 Para Módulos con Feature Flags:**
+
 ```typescript
-// hooks/useModuleName.ts
+// hooks/useFeatureModuleName.ts
 import {
   useActionState,
   useOptimistic,
@@ -403,12 +529,12 @@ import {
   optimisticSelectors,
 } from "../reducers";
 
-export const useModuleName = (userConfig?: Config): Return => {
+export const useFeatureModuleName = (userConfig?: Config): Return => {
   const { user } = useAuth();
   const [isPending, startTransition] = useTransition();
   const hasInitialized = useRef(false);
 
-  // 🏗️ ENTERPRISE: Configuration management
+  // 🏗️ ENTERPRISE: Configuration management with feature flags
   const enterpriseConfig = useMemo(
     () => adaptConfigForHook(userConfig),
     [userConfig]
@@ -490,10 +616,10 @@ export const useModuleName = (userConfig?: Config): Return => {
       error,
       hasError: !!error,
 
-      // 🎯 Actions (Performance optimized)
+      // 🎯 Actions (Performance optimized with feature flags)
       performAction: useCallback(
         async (input) => {
-          // Optimistic UI (configurable)
+          // 🔧 Optimistic UI (verificar feature flag)
           if (enterpriseConfig.features.optimisticUI) {
             startTransition(() => {
               addOptimistic({
@@ -507,7 +633,7 @@ export const useModuleName = (userConfig?: Config): Return => {
           // Server Action
           const result = await performServerAction(input);
 
-          // Auto-refresh (configurable)
+          // 🔧 Auto-refresh (verificar feature flag)
           if (result.success && enterpriseConfig.features.autoRefresh) {
             startTransition(() => {
               dataAction();
@@ -540,6 +666,166 @@ export const useModuleName = (userConfig?: Config): Return => {
       }),
     }),
     [data, optimisticState, isLoading, isPending, error, enterpriseConfig]
+  );
+};
+```
+
+#### **🏗️ Para Módulos Core (Siempre Activos):**
+
+```typescript
+// hooks/useCoreModuleName.ts
+import {
+  useActionState,
+  useOptimistic,
+  useCallback,
+  useMemo,
+  useRef,
+  useTransition,
+  useEffect,
+} from "react";
+import { MODULE_ACTIONS } from "../constants";
+import { coreLogger } from "../utils/logger";
+import { coreConfig } from "../config";
+import {
+  optimisticReducer,
+  createInitialOptimisticState,
+  optimisticSelectors,
+} from "../reducers";
+
+export const useCoreModuleName = (userConfig?: CoreConfig): Return => {
+  const { user } = useAuth();
+  const [isPending, startTransition] = useTransition();
+  const hasInitialized = useRef(false);
+
+  // 🏗️ CORE: Configuration management (sin feature flags)
+  const coreConfiguration = useMemo(
+    () => coreConfig.getConfig(),
+    [userConfig]
+  );
+
+  // 🎯 CORE: Structured logging (siempre habilitado)
+  coreLogger.timeStart("Core Hook Initialization");
+  coreLogger.debug("Core hook initialized", {
+    hasUserConfig: !!userConfig,
+    performanceSettings: coreConfiguration.performance,
+  });
+  coreLogger.timeEnd("Core Hook Initialization");
+
+  // 🎯 PRIMARY DATA STATE (Server Actions as Source of Truth)
+  const [dataState, dataAction, dataPending] = useActionState(
+    async (): Promise<ActionResult> => {
+      coreLogger.debug("Fetching core data from server");
+      return await getCoreDataServerAction();
+    },
+    null
+  );
+
+  // 🎯 OPTIMISTIC STATE (siempre habilitado para módulos core)
+  const [optimisticState, addOptimistic] = useOptimistic(
+    createInitialOptimisticState(),
+    optimisticReducer
+  );
+
+  // 🚀 AUTO-INITIALIZATION (Direct - sin verificación de flags)
+  useEffect(() => {
+    if (!hasInitialized.current && user) {
+      hasInitialized.current = true;
+
+      coreLogger.group("Core Module Initialization");
+      coreLogger.info("Initializing core module", {
+        userId: user.id,
+        config: coreConfiguration,
+      });
+
+      // Load initial data AFTER render (React 19 compliance)
+      startTransition(() => {
+        dataAction();
+      });
+
+      coreLogger.groupEnd();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  // 🎯 COMPUTED STATES (Core patterns)
+  const isLoading = useMemo(
+    () => dataPending || isPending,
+    [dataPending, isPending]
+  );
+  const data = useMemo(
+    () => (dataState?.success ? dataState.data : []),
+    [dataState]
+  );
+  const error = useMemo(() => dataState?.error || null, [dataState?.error]);
+
+  // 🏗️ CORE RETURN INTERFACE (Siempre disponible)
+  return useMemo(
+    () => ({
+      // 📊 Core Data
+      data,
+      optimisticState: optimisticState.items,
+
+      // 🔄 Loading States
+      isLoading,
+      isProcessing: optimisticSelectors.hasActiveItems(optimisticState),
+      isPending,
+
+      // 🎯 Analytics (siempre disponibles)
+      activeItems: optimisticSelectors.getActiveItems(optimisticState),
+      completedItems: optimisticSelectors.getCompletedItems(optimisticState),
+      overallProgress: optimisticSelectors.getOverallProgress(optimisticState),
+
+      // ❌ Error States
+      error,
+      hasError: !!error,
+
+      // 🎯 Actions (Siempre con Optimistic UI y Auto-refresh)
+      performAction: useCallback(
+        async (input) => {
+          // ✅ Optimistic UI (siempre habilitado)
+          startTransition(() => {
+            addOptimistic({
+              type: MODULE_ACTIONS.START_UPLOAD,
+              files: input.files,
+              tempIds: input.tempIds,
+            });
+          });
+
+          // Server Action
+          const result = await performServerAction(input);
+
+          // ✅ Auto-refresh (siempre habilitado)
+          if (result.success) {
+            startTransition(() => {
+              dataAction();
+            });
+          }
+
+          return result;
+        },
+        [addOptimistic, dataAction]
+      ),
+
+      // 🔄 Refresh Actions
+      refresh: useCallback(() => {
+        coreLogger.debug("Manual refresh requested");
+        startTransition(() => dataAction());
+      }, []),
+
+      // 🏗️ Configuration & Debugging
+      config: coreConfiguration,
+
+      // 📊 Performance Metrics (Development only)
+      ...(coreConfiguration.settings.performanceTracking && {
+        debug: {
+          hasInitialized: hasInitialized.current,
+          optimisticState,
+          coreConfiguration,
+          selectors: optimisticSelectors,
+        },
+      }),
+    }),
+    [data, optimisticState, isLoading, isPending, error, coreConfiguration]
   );
 };
 ```
@@ -921,45 +1207,150 @@ afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 ```
 
+## 🚦 GUÍA DE DECISIÓN: ¿QUÉ TIPO DE MÓDULO CREAR?
+
+### **🔍 Matriz de Decisión**
+
+| Característica del Módulo | **Feature Flags** 🔧 | **Core** 🏗️ |
+|---------------------------|----------------------|-------------|
+| **Funcionalidad experimental** | ✅ | ❌ |
+| **A/B Testing requerido** | ✅ | ❌ |
+| **Puede ser deshabilitado** | ✅ | ❌ |
+| **Rollout gradual necesario** | ✅ | ❌ |
+| **Funcionalidad crítica** | ❌ | ✅ |
+| **Siempre debe estar disponible** | ❌ | ✅ |
+| **Parte de la arquitectura base** | ❌ | ✅ |
+| **Dependencias externas variables** | ✅ | ❌ |
+| **Configuración compleja** | ✅ | ❌ |
+
+### **📊 Ejemplos Prácticos por Tipo**
+
+#### **🔧 Módulos con Feature Flags:**
+- **file-upload**: Subida de archivos (puede tener diferentes providers)
+- **ai-chat**: Chat con IA (experimental, puede ser costoso)
+- **social-sharing**: Compartir en redes sociales (opcional)
+- **advanced-analytics**: Analytics avanzados (puede ser premium)
+- **video-calling**: Videollamadas (feature beta)
+- **dark-mode**: Modo oscuro (preference del usuario)
+
+#### **🏗️ Módulos Core:**
+- **auth**: Autenticación (crítico para seguridad)
+- **users**: Gestión de usuarios (esencial)
+- **notifications**: Sistema de notificaciones (core UX)
+- **search**: Búsqueda principal (funcionalidad base)
+- **navigation**: Navegación del sitio (siempre necesaria)
+- **error-handling**: Manejo de errores (infraestructura)
+
+### **🎯 Proceso de Decisión**
+
+```
+¿Es una funcionalidad crítica que NUNCA debe fallar?
+├─ SÍ → ¿Es parte de la infraestructura base?
+│  ├─ SÍ → 🏗️ MÓDULO CORE
+│  └─ NO → Revisar si realmente es crítica
+└─ NO → ¿Necesita ser habilitada/deshabilitada dinámicamente?
+   ├─ SÍ → 🔧 MÓDULO CON FEATURE FLAGS
+   └─ NO → ¿Podría necesitarlo en el futuro?
+      ├─ SÍ → 🔧 MÓDULO CON FEATURE FLAGS
+      └─ NO → 🏗️ MÓDULO CORE
+```
+
+### **⚡ Ventajas y Desventajas**
+
+#### **🔧 Módulos con Feature Flags**
+
+**✅ Ventajas:**
+- Flexibilidad total para habilitar/deshabilitar
+- Ideal para experimentación y A/B testing
+- Rollouts graduales seguros
+- Configuración granular por usuario/ambiente
+- Fácil rollback en caso de problemas
+
+**❌ Desventajas:**
+- Código más complejo (verificaciones de flags)
+- Overhead de configuración
+- Posibles ramas de código muertas
+- Más superficie de testing
+
+#### **🏗️ Módulos Core**
+
+**✅ Ventajas:**
+- Código más simple y directo
+- Performance ligeramente mejor
+- Menos complejidad de testing
+- Garantía de disponibilidad
+
+**❌ Desventajas:**
+- Menos flexibilidad
+- Cambios requieren deploys
+- No hay rollback granular
+- Difícil hacer A/B testing
+
+---
+
 ## 📚 MIGRATION CHECKLIST V2.0
 
 Para migrar un módulo existente al estándar empresarial:
 
-### **Arquitectura**
+### **1. Decisión de Arquitectura**
+
+- [ ] **🚦 Determinar tipo de módulo** usando la matriz de decisión
+- [ ] **🔧 Feature Flags** si es experimental/opcional/configurable
+- [ ] **🏗️ Core Module** si es crítico/esencial/infraestructura
+
+### **2. Arquitectura Base**
 
 - [ ] **📊 Constants centralizados** en `/constants/index.ts`
+  - [ ] Para Feature Flags: Incluir `ENTERPRISE_CONFIG` con feature flags
+  - [ ] Para Core: Incluir `CORE_CONFIG` sin feature flags
 - [ ] **⚙️ Configuration Manager** con patrón Singleton
+  - [ ] Para Feature Flags: `ModuleConfigManager` con `isFeatureEnabled()`
+  - [ ] Para Core: `CoreConfigManager` con configuraciones directas
 - [ ] **📝 Sistema de logging** con EnterpriseLogger
 - [ ] **🎯 Reducers optimistas** con selectors
 - [ ] **🧩 Shared components** micro-reutilizables
 
-### **Hook Enterprise**
+### **3. Hook Enterprise**
 
 - [ ] **🏆 Un solo hook** por módulo con configuración avanzada
+  - [ ] Para Feature Flags: `useFeatureModuleName` con verificaciones de flags
+  - [ ] Para Core: `useCoreModuleName` con funcionalidades siempre activas
 - [ ] **React 19 compliance** con useActionState correcto
 - [ ] **Performance optimization** con memoización
 - [ ] **Estado unificado** con analytics integradas
+- [ ] **Conditional logic** según tipo de módulo:
+  - [ ] Feature Flags: `if (config.features.featureName)` antes de acciones
+  - [ ] Core: Ejecución directa sin verificaciones
 
-### **Server Layer**
+### **4. Server Layer**
 
 - [ ] **🏗️ Server Actions** como única fuente de verdad
 - [ ] **Logging estructurado** en todas las acciones
 - [ ] **Cache invalidation** automática con tags
 - [ ] **Error handling** robusto con categorías
+- [ ] **Feature validation** según tipo:
+  - [ ] Feature Flags: Verificar flags en server actions si aplica
+  - [ ] Core: Funcionalidad siempre disponible
 
-### **UI Layer**
+### **5. UI Layer**
 
 - [ ] **📄 Barrel exports** organizados por responsabilidad
 - [ ] **🎨 Componentes optimizados** con React.memo
 - [ ] **Error boundaries** para manejo de errores
 - [ ] **Lazy loading** para componentes pesados
+- [ ] **Conditional rendering** según tipo:
+  - [ ] Feature Flags: `{isFeatureEnabled && <FeatureComponent />}`
+  - [ ] Core: Renderizado directo sin condiciones
 
-### **Quality Assurance**
+### **6. Quality Assurance**
 
 - [ ] **TypeScript strict** mode habilitado
 - [ ] **ESLint** configurado con reglas enterprise
 - [ ] **Tests unitarios** para hooks y componentes
 - [ ] **Tests E2E** para flujos críticos
+- [ ] **Feature flag testing**:
+  - [ ] Tests con flags habilitados/deshabilitados (si aplica)
+  - [ ] Tests de fallbacks y estados por defecto
 - [ ] **📊 Documentación** actualizada (ENTERPRISE_PATTERNS.md)
 
 ---
@@ -968,40 +1359,58 @@ Para migrar un módulo existente al estándar empresarial:
 
 ### **Orden de Implementación Recomendado**
 
-1. **Fase 1: Foundation**
+#### **🚦 Paso 0: Decisión de Arquitectura**
+- Usar la matriz de decisión para determinar el tipo de módulo
+- **Feature Flags** 🔧 para experimentales/opcionales
+- **Core** 🏗️ para críticos/esenciales
 
-   - Crear `/constants/index.ts` con configuración centralizada
-   - Implementar `/utils/logger.ts` con EnterpriseLogger
-   - Configurar `/config/index.ts` con ConfigManager
+#### **📊 Fase 1: Foundation**
 
-2. **Fase 2: State Management**
+**Para Módulos con Feature Flags:**
+- Crear `/constants/index.ts` con `ENTERPRISE_CONFIG` (incluir feature flags)
+- Implementar `/utils/logger.ts` con EnterpriseLogger
+- Configurar `/config/index.ts` con `ModuleConfigManager` + `isFeatureEnabled()`
 
-   - Crear `/reducers/index.ts` con optimistic state
-   - Implementar selectors para queries eficientes
-   - Configurar action types centralizados
+**Para Módulos Core:**
+- Crear `/constants/index.ts` con `CORE_CONFIG` (sin feature flags)
+- Implementar `/utils/logger.ts` con EnterpriseLogger
+- Configurar `/config/index.ts` con `CoreConfigManager` (configuraciones directas)
 
-3. **Fase 3: Hook Enhancement**
+#### **🔄 Fase 2: State Management**
+- Crear `/reducers/index.ts` con optimistic state (igual para ambos tipos)
+- Implementar selectors para queries eficientes
+- Configurar action types centralizados
 
-   - Refactorizar hook principal con nuevos patrones
-   - Implementar React 19 compliance
-   - Agregar performance optimizations
+#### **🏆 Fase 3: Hook Enhancement**
 
-4. **Fase 4: UI Optimization**
+**Para Módulos con Feature Flags:**
+- Hook `useFeatureModuleName` con verificaciones de flags
+- Lógica condicional: `if (config.features.featureName)`
+- React 19 compliance con `useActionState`
 
-   - Crear shared components reutilizables
-   - Implementar React.memo y useCallback
-   - Configurar lazy loading
+**Para Módulos Core:**
+- Hook `useCoreModuleName` sin verificaciones
+- Funcionalidades siempre activas
+- React 19 compliance con `useActionState`
 
-5. **Fase 5: Server Integration**
+#### **🎨 Fase 4: UI Optimization**
+- Crear shared components reutilizables
+- Implementar React.memo y useCallback
+- Configurar lazy loading
+- **Feature Flags**: Conditional rendering `{isEnabled && <Component />}`
+- **Core**: Renderizado directo
 
-   - Enhancear Server Actions con logging
-   - Implementar error handling robusto
-   - Configurar cache invalidation
+#### **🏗️ Fase 5: Server Integration**
+- Enhancear Server Actions con logging (igual para ambos)
+- Implementar error handling robusto
+- Configurar cache invalidation
+- **Feature Flags**: Verificar flags en server si aplica
 
-6. **Fase 6: Quality & Documentation**
-   - Configurar tests unitarios y E2E
-   - Crear documentación enterprise
-   - Configurar barrel exports
+#### **✅ Fase 6: Quality & Documentation**
+- Tests unitarios y E2E
+- **Feature Flags**: Tests con flags on/off + fallbacks
+- **Core**: Tests de funcionalidad siempre disponible
+- Documentación enterprise actualizada
 
 ---
 
@@ -1009,14 +1418,25 @@ Para migrar un módulo existente al estándar empresarial:
 
 **Este template representa el estándar MÁS ALTO de desarrollo de módulos empresariales:**
 
-✅ **Arquitectura modular** y escalable
-✅ **Performance optimizado** con métricas
-✅ **Logging estructurado** para debugging
-✅ **Configuración extensible** por ambiente
-✅ **Estado predecible** con analytics
-✅ **React 19 compliance** total
-✅ **TypeScript strict** mode
-✅ **Testing** comprehensivo
-✅ **Documentación** completa
+✅ **Arquitectura dual** (Feature Flags + Core) escalable y flexible
+✅ **Performance optimizado** con métricas para ambos tipos
+✅ **Logging estructurado** para debugging avanzado
+✅ **Configuración extensible** por ambiente y tipo de módulo
+✅ **Estado predecible** con analytics integradas
+✅ **React 19 compliance** total en ambas variantes
+✅ **TypeScript strict** mode con tipos específicos
+✅ **Testing comprehensivo** incluyendo feature flags
+✅ **Documentación completa** con guías de decisión
+✅ **Flexibilidad total** para cualquier tipo de funcionalidad
 
-**🚀 Úsalo como base para TODOS los módulos futuros.**
+### **🔧 Para Módulos con Feature Flags:**
+- Ideal para features experimentales, A/B testing, rollouts graduales
+- Configuración granular y control total sobre habilitación/deshabilitación
+- Perfect para módulos como `file-upload`, `ai-chat`, `social-sharing`
+
+### **🏗️ Para Módulos Core:**
+- Perfecto para funcionalidades críticas y de infraestructura
+- Código más simple y directo, performance optimizado
+- Ideal para módulos como `auth`, `users`, `notifications`
+
+**🚀 Úsalo como base para TODOS los módulos futuros, eligiendo el tipo según tus necesidades.**

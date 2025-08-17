@@ -11,6 +11,7 @@ Esta guía explica **cómo funciona nuestro código enterprise** usando las nuev
 ### **1. useActionState - El Nuevo useState para Server Actions**
 
 #### **¿Qué es useActionState?**
+
 En React 18 usábamos `useState` + `useEffect` para manejar llamadas al servidor:
 
 ```typescript
@@ -23,7 +24,7 @@ useEffect(() => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/files');
+      const response = await fetch("/api/files");
       const result = await response.json();
       setData(result.data);
     } catch (err) {
@@ -32,7 +33,7 @@ useEffect(() => {
       setLoading(false);
     }
   };
-  
+
   fetchData();
 }, []);
 ```
@@ -64,6 +65,7 @@ const [filesState, filesAction, filesPending] = useActionState(
 3. **`filesPending`**: Boolean que indica si la acción está en progreso
 
 **Ventajas vs React 18:**
+
 - ✅ **No más useState múltiples** (data, loading, error)
 - ✅ **No más useEffect** para llamadas iniciales
 - ✅ **Estado automático** de pending/loading
@@ -94,6 +96,7 @@ console.log(filesPending); // false (completado)
 ### **2. useOptimistic - UI Optimista Inteligente**
 
 #### **¿Qué es Optimistic UI?**
+
 **Optimistic UI** significa mostrar el resultado esperado ANTES de que el servidor confirme la operación.
 
 **Ejemplo real**: Cuando das "like" en Facebook, el corazón se pone rojo inmediatamente, aunque la petición al servidor aún esté en progreso.
@@ -108,26 +111,29 @@ const [uploadProgress, setUploadProgress] = useState([]);
 const uploadFile = async (file) => {
   // 1. Actualización optimista manual
   const tempId = `temp-${Date.now()}`;
-  setUploadProgress(prev => [...prev, { 
-    id: tempId, 
-    status: 'uploading', 
-    progress: 0 
-  }]);
+  setUploadProgress((prev) => [
+    ...prev,
+    {
+      id: tempId,
+      status: "uploading",
+      progress: 0,
+    },
+  ]);
 
   try {
     // 2. Server call
     const result = await uploadServerAction(file);
-    
+
     // 3. Actualización manual del estado real
-    setFiles(prev => [...prev, result.data]);
-    
+    setFiles((prev) => [...prev, result.data]);
+
     // 4. Limpiar estado optimista manualmente
-    setUploadProgress(prev => prev.filter(p => p.id !== tempId));
+    setUploadProgress((prev) => prev.filter((p) => p.id !== tempId));
   } catch (error) {
     // 5. Revertir cambios manualmente
-    setUploadProgress(prev => prev.map(p => 
-      p.id === tempId ? { ...p, status: 'error' } : p
-    ));
+    setUploadProgress((prev) =>
+      prev.map((p) => (p.id === tempId ? { ...p, status: "error" } : p))
+    );
   }
 };
 ```
@@ -136,26 +142,27 @@ const uploadFile = async (file) => {
 // ✅ REACT 19 - useOptimistic automático
 const [optimisticState, addOptimistic] = useOptimistic(
   { uploadProgress: [] }, // Estado base
-  optimisticReducer       // Función que maneja los cambios
+  optimisticReducer // Función que maneja los cambios
 );
 
 const uploadFile = async (file) => {
   // 1. Actualización optimista automática
-  addOptimistic({ 
-    type: "START_UPLOAD", 
-    files: [file], 
-    tempIds: [`temp-${Date.now()}`] 
+  addOptimistic({
+    type: "START_UPLOAD",
+    files: [file],
+    tempIds: [`temp-${Date.now()}`],
   });
 
   // 2. Server call
   const result = await uploadServerAction(file);
-  
+
   // 3. React automáticamente sincroniza el estado real
   // No necesitas limpiar manualmente!
 };
 ```
 
 #### **Ventajas clave:**
+
 - ✅ **Automático**: React maneja la sincronización
 - ✅ **Predecible**: Usa reducers como Redux
 - ✅ **Reversible**: Si falla, React revierte automáticamente
@@ -166,12 +173,13 @@ const uploadFile = async (file) => {
 ### **3. useTransition - Transiciones No Bloqueantes**
 
 #### **¿Qué problema resuelve?**
+
 En React 18, las actualizaciones de estado podían "bloquear" la UI:
 
 ```typescript
 // ❌ REACT 18 - Puede bloquear la UI
 const handleSearch = (query) => {
-  setSearchQuery(query);        // Esto puede ser lento
+  setSearchQuery(query); // Esto puede ser lento
   setFilteredResults(filter()); // Esto también
   // La UI se "congela" hasta completarse
 };
@@ -185,7 +193,7 @@ const [isPending, startTransition] = useTransition();
 
 const handleSearch = (query) => {
   setSearchQuery(query); // Actualización inmediata (urgent)
-  
+
   startTransition(() => {
     setFilteredResults(filter()); // Actualización no bloqueante
   });
@@ -202,7 +210,7 @@ const [isPending, startTransition] = useTransition();
 useEffect(() => {
   if (!hasInitialized.current && user) {
     hasInitialized.current = true;
-    
+
     // CRÍTICO: Envolver en startTransition para React 19 compliance
     startTransition(() => {
       filesAction(); // No bloquea la UI
@@ -221,6 +229,7 @@ const refresh = useCallback(() => {
 ```
 
 **¿Por qué es importante?**
+
 - ✅ **UI responsive**: Los clicks funcionan inmediatamente
 - ✅ **Better UX**: No hay "lag" percibido
 - ✅ **React 19 compliance**: Requerido para Server Actions
@@ -238,9 +247,9 @@ Es como **Redux**, pero específicamente diseñado para manejar **cambios optimi
 ```typescript
 // reducers/index.ts
 export interface OptimisticState {
-  uploadProgress: UploadProgress[];  // Estado optimista
-  lastUpdated: string;               // Timestamp
-  totalActiveUploads: number;        // Métricas calculadas
+  uploadProgress: UploadProgress[]; // Estado optimista
+  lastUpdated: string; // Timestamp
+  totalActiveUploads: number; // Métricas calculadas
 }
 
 export type OptimisticAction =
@@ -282,11 +291,13 @@ export function optimisticReducer(
       };
 
       // 📈 Recalcular métricas
-      nextState.totalActiveUploads = calculateActiveUploads(nextState.uploadProgress);
-      
+      nextState.totalActiveUploads = calculateActiveUploads(
+        nextState.uploadProgress
+      );
+
       return nextState;
     }
-    
+
     case "UPDATE_PROGRESS": {
       // 🎯 Actualizar progreso específico
       const nextState = {
@@ -299,7 +310,9 @@ export function optimisticReducer(
         lastUpdated: new Date().toISOString(),
       };
 
-      nextState.totalActiveUploads = calculateActiveUploads(nextState.uploadProgress);
+      nextState.totalActiveUploads = calculateActiveUploads(
+        nextState.uploadProgress
+      );
       return nextState;
     }
 
@@ -347,7 +360,7 @@ sequenceDiagram
 useEffect(() => {
   if (!hasInitialized.current && user) {
     hasInitialized.current = true;
-    
+
     // 2. 🔄 Ejecutar Server Action en transición
     startTransition(() => {
       filesAction(); // Llama a getFilesServerAction()
@@ -361,7 +374,7 @@ const [filesState, filesAction] = useActionState(
   async (): Promise<FileActionResult> => {
     // 4. 🏗️ Logging estructurado
     fileUploadLogger.debug("Fetching files from server");
-    
+
     // 5. 🔗 Llamada a la capa de servicios
     return await getFilesServerAction();
   },
@@ -404,118 +417,126 @@ sequenceDiagram
 
 ```typescript
 // 1. 🎯 Usuario ejecuta acción
-const uploadFiles = useCallback(async (files: File[]) => {
-  // 2. 📊 Validation empresarial
-  if (files.length > enterpriseConfig.ui.maxFilesPerBatch) {
-    throw new Error(`Too many files. Maximum: ${enterpriseConfig.ui.maxFilesPerBatch}`);
-  }
-
-  // 3. 🏷️ Generar IDs temporales
-  const tempIds = files.map(() => `temp-${Date.now()}-${Math.random()}`);
-
-  // 4. ✨ OPTIMISTIC UI: Mostrar cambios inmediatamente
-  if (enterpriseConfig.features.optimisticUI) {
-    startTransition(() => {
-      addOptimistic({
-        type: FILE_UPLOAD_ACTIONS.START_UPLOAD,
-        files,
-        tempIds,
-      });
-    });
-  }
-
-  try {
-    // 5. 🔄 Procesar archivos en paralelo
-    const results = await Promise.all(
-      files.map(async (file, index) => {
-        const tempId = tempIds[index];
-
-        // 6. 📈 Actualizar progreso optimísticamente
-        if (enterpriseConfig.features.progressTracking) {
-          setTimeout(() => {
-            startTransition(() => {
-              addOptimistic({
-                type: FILE_UPLOAD_ACTIONS.UPDATE_PROGRESS,
-                tempId,
-                progress: 50,
-              });
-            });
-          }, enterpriseConfig.timing.uploadProgressDelay);
-        }
-
-        // 7. 🏗️ Server Action real
-        const result = await uploadFileServerAction(formData);
-
-        if (result.success) {
-          // 8. ✅ Marcar como completado
-          startTransition(() => {
-            addOptimistic({
-              type: FILE_UPLOAD_ACTIONS.COMPLETE_UPLOAD,
-              tempId,
-            });
-          });
-
-          return { success: true, file: result.data };
-        } else {
-          throw new Error(result.error || "Upload failed");
-        }
-      })
-    );
-
-    // 9. 🔄 AUTO-REFRESH: Sincronizar con servidor
-    const successCount = results.filter((r) => r.success).length;
-    if (successCount > 0 && enterpriseConfig.features.autoRefresh) {
-      startTransition(() => {
-        filesAction(); // Refresh files
-        statsAction(); // Refresh stats
-      });
-
-      // 10. 🧹 Limpiar estado optimista
-      setTimeout(() => {
-        startTransition(() => {
-          addOptimistic({ type: FILE_UPLOAD_ACTIONS.CLEAR_COMPLETED });
-        });
-      }, enterpriseConfig.timing.clearCompletedDelay);
+const uploadFiles = useCallback(
+  async (files: File[]) => {
+    // 2. 📊 Validation empresarial
+    if (files.length > enterpriseConfig.ui.maxFilesPerBatch) {
+      throw new Error(
+        `Too many files. Maximum: ${enterpriseConfig.ui.maxFilesPerBatch}`
+      );
     }
 
-    return results;
-  } catch (error) {
-    // 11. ❌ Manejo de errores
-    fileUploadLogger.error("Batch upload failed", error);
-    throw error;
-  }
-}, [enterpriseConfig, addOptimistic, filesAction, statsAction]);
+    // 3. 🏷️ Generar IDs temporales
+    const tempIds = files.map(() => `temp-${Date.now()}-${Math.random()}`);
+
+    // 4. ✨ OPTIMISTIC UI: Mostrar cambios inmediatamente
+    if (enterpriseConfig.features.optimisticUI) {
+      startTransition(() => {
+        addOptimistic({
+          type: FILE_UPLOAD_ACTIONS.START_UPLOAD,
+          files,
+          tempIds,
+        });
+      });
+    }
+
+    try {
+      // 5. 🔄 Procesar archivos en paralelo
+      const results = await Promise.all(
+        files.map(async (file, index) => {
+          const tempId = tempIds[index];
+
+          // 6. 📈 Actualizar progreso optimísticamente
+          if (enterpriseConfig.features.progressTracking) {
+            setTimeout(() => {
+              startTransition(() => {
+                addOptimistic({
+                  type: FILE_UPLOAD_ACTIONS.UPDATE_PROGRESS,
+                  tempId,
+                  progress: 50,
+                });
+              });
+            }, enterpriseConfig.timing.uploadProgressDelay);
+          }
+
+          // 7. 🏗️ Server Action real
+          const result = await uploadFileServerAction(formData);
+
+          if (result.success) {
+            // 8. ✅ Marcar como completado
+            startTransition(() => {
+              addOptimistic({
+                type: FILE_UPLOAD_ACTIONS.COMPLETE_UPLOAD,
+                tempId,
+              });
+            });
+
+            return { success: true, file: result.data };
+          } else {
+            throw new Error(result.error || "Upload failed");
+          }
+        })
+      );
+
+      // 9. 🔄 AUTO-REFRESH: Sincronizar con servidor
+      const successCount = results.filter((r) => r.success).length;
+      if (successCount > 0 && enterpriseConfig.features.autoRefresh) {
+        startTransition(() => {
+          filesAction(); // Refresh files
+          statsAction(); // Refresh stats
+        });
+
+        // 10. 🧹 Limpiar estado optimista
+        setTimeout(() => {
+          startTransition(() => {
+            addOptimistic({ type: FILE_UPLOAD_ACTIONS.CLEAR_COMPLETED });
+          });
+        }, enterpriseConfig.timing.clearCompletedDelay);
+      }
+
+      return results;
+    } catch (error) {
+      // 11. ❌ Manejo de errores
+      fileUploadLogger.error("Batch upload failed", error);
+      throw error;
+    }
+  },
+  [enterpriseConfig, addOptimistic, filesAction, statsAction]
+);
 ```
 
 ### **3. FLUJO DE ELIMINACIÓN (DELETE)**
 
 ```typescript
-const deleteFile = useCallback(async (fileId: string) => {
-  // 1. 🔍 Logging con performance tracking
-  fileUploadLogger.timeStart(`Delete File ${fileId}`);
-  
-  try {
-    // 2. 🏗️ Server Action
-    const result = await deleteFileServerAction(formData);
+const deleteFile = useCallback(
+  async (fileId: string) => {
+    // 1. 🔍 Logging con performance tracking
+    fileUploadLogger.timeStart(`Delete File ${fileId}`);
 
-    if (!result?.success) {
-      throw new Error(result?.error || "Delete failed");
+    try {
+      // 2. 🏗️ Server Action
+      const result = await deleteFileServerAction(formData);
+
+      if (!result?.success) {
+        throw new Error(result?.error || "Delete failed");
+      }
+
+      // 3. 🔄 Auto-refresh si está habilitado
+      if (enterpriseConfig.features.autoRefresh) {
+        startTransition(() => {
+          filesAction(); // Datos frescos del servidor
+          statsAction(); // Stats actualizadas
+        });
+      }
+
+      fileUploadLogger.timeEnd(`Delete File ${fileId}`);
+    } catch (error) {
+      fileUploadLogger.error("Delete failed", error);
+      throw error;
     }
-
-    // 3. 🔄 Auto-refresh si está habilitado
-    if (enterpriseConfig.features.autoRefresh) {
-      startTransition(() => {
-        filesAction(); // Datos frescos del servidor
-        statsAction(); // Stats actualizadas
-      });
-    }
-
-    fileUploadLogger.timeEnd(`Delete File ${fileId}`);
-  } catch (error) {
-    fileUploadLogger.error("Delete failed", error);
-    throw error;
-  }
-}, [enterpriseConfig.features.autoRefresh]);
+  },
+  [enterpriseConfig.features.autoRefresh]
+);
 ```
 
 ---
@@ -530,7 +551,7 @@ En React 18, las configuraciones estaban hardcodeadas o dispersas:
 // ❌ React 18 - Configuración dispersa
 const MAX_FILES = 10; // Hardcoded
 const DEBOUNCE_MS = 300; // Hardcoded
-const ENABLE_LOGGING = process.env.NODE_ENV === 'development'; // Disperso
+const ENABLE_LOGGING = process.env.NODE_ENV === "development"; // Disperso
 ```
 
 Nuestro **Configuration Manager** centraliza todo:
@@ -539,7 +560,7 @@ Nuestro **Configuration Manager** centraliza todo:
 // ✅ Enterprise - Configuración centralizada
 export class FileUploadConfigManager {
   private static instance: FileUploadConfigManager;
-  
+
   // 🏗️ Singleton pattern
   public static getInstance(): FileUploadConfigManager {
     if (!FileUploadConfigManager.instance) {
@@ -549,7 +570,9 @@ export class FileUploadConfigManager {
   }
 
   // 🎯 Feature flags dinámicos
-  public isFeatureEnabled(feature: keyof EnterpriseFileUploadConfig["features"]): boolean {
+  public isFeatureEnabled(
+    feature: keyof EnterpriseFileUploadConfig["features"]
+  ): boolean {
     return this.getConfig().features[feature];
   }
 
@@ -573,7 +596,9 @@ const useFileUpload = (userConfig?: UploadConfig) => {
 
   // 🎯 Usar configuración en toda la lógica
   if (files.length > enterpriseConfig.ui.maxFilesPerBatch) {
-    throw new Error(`Too many files. Maximum: ${enterpriseConfig.ui.maxFilesPerBatch}`);
+    throw new Error(
+      `Too many files. Maximum: ${enterpriseConfig.ui.maxFilesPerBatch}`
+    );
   }
 
   if (enterpriseConfig.features.optimisticUI) {
@@ -603,7 +628,7 @@ const useFileUpload = (userConfig?: UploadConfig) => {
 // ❌ React 18 - API routes + fetch
 // pages/api/files.ts
 export default async function handler(req, res) {
-  if (req.method === 'POST') {
+  if (req.method === "POST") {
     const result = await uploadFile(req.body);
     res.json(result);
   }
@@ -611,8 +636,8 @@ export default async function handler(req, res) {
 
 // components/FileUpload.tsx
 const uploadFile = async (file) => {
-  const response = await fetch('/api/files', {
-    method: 'POST',
+  const response = await fetch("/api/files", {
+    method: "POST",
     body: formData,
   });
   const result = await response.json();
@@ -648,9 +673,13 @@ const result = await uploadFileServerAction(formData); // Llamada directa!
 
 ```typescript
 // server/actions/index.ts
-export async function uploadFileServerAction(formData: FormData): Promise<FileActionResult> {
-  const requestId = `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  
+export async function uploadFileServerAction(
+  formData: FormData
+): Promise<FileActionResult> {
+  const requestId = `req-${Date.now()}-${Math.random()
+    .toString(36)
+    .substr(2, 9)}`;
+
   // 🔍 Performance tracking
   serverActionLogger.timeStart(`Upload ${requestId}`);
   serverActionLogger.info("Upload started", { requestId });
@@ -659,22 +688,33 @@ export async function uploadFileServerAction(formData: FormData): Promise<FileAc
     // 1. 🔐 Authentication
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) {
-      serverActionLogger.error("Unauthorized upload attempt", null, { requestId });
+      serverActionLogger.error("Unauthorized upload attempt", null, {
+        requestId,
+      });
       return { success: false, error: "No autorizado" };
     }
 
     // 2. ✅ Validation
     const validated = parseUploadSchema(Object.fromEntries(formData));
-    serverActionLogger.debug("Input validated", { requestId, fileName: validated.fileName });
+    serverActionLogger.debug("Input validated", {
+      requestId,
+      fileName: validated.fileName,
+    });
 
     // 3. 🏗️ Business Logic
     const result = await fileUploadService.uploadFile(validated);
-    serverActionLogger.info("File uploaded successfully", { requestId, fileId: result.id });
+    serverActionLogger.info("File uploaded successfully", {
+      requestId,
+      fileId: result.id,
+    });
 
     // 4. 🔄 Cache Invalidation
     revalidateTag(CACHE_TAGS.FILES);
     revalidatePath("/files");
-    serverActionLogger.debug("Cache invalidated", { requestId, tags: [CACHE_TAGS.FILES] });
+    serverActionLogger.debug("Cache invalidated", {
+      requestId,
+      tags: [CACHE_TAGS.FILES],
+    });
 
     serverActionLogger.timeEnd(`Upload ${requestId}`);
     return { success: true, data: result };
@@ -719,7 +759,7 @@ export const optimisticSelectors = {
   // 📈 Progreso general
   getOverallProgress: (state: OptimisticState) => {
     if (state.uploadProgress.length === 0) return 0;
-    
+
     const totalProgress = state.uploadProgress.reduce(
       (sum, p) => sum + p.progress,
       0
@@ -733,25 +773,29 @@ export const optimisticSelectors = {
 
 ```typescript
 // hooks/useFileUpload.ts
-return useMemo(() => ({
-  // 📊 Core Data
-  files,
-  uploadProgress: optimisticState.uploadProgress,
+return useMemo(
+  () => ({
+    // 📊 Core Data
+    files,
+    uploadProgress: optimisticState.uploadProgress,
 
-  // 🔄 Loading States (usando selectors)
-  isUploading: optimisticSelectors.hasActiveUploads(optimisticState),
-  
-  // 🎯 Upload Progress Analytics (usando selectors)
-  activeUploads: optimisticSelectors.getActiveUploads(optimisticState),
-  completedUploads: optimisticSelectors.getCompletedUploads(optimisticState),
-  failedUploads: optimisticSelectors.getFailedUploads(optimisticState),
-  overallProgress: optimisticSelectors.getOverallProgress(optimisticState),
+    // 🔄 Loading States (usando selectors)
+    isUploading: optimisticSelectors.hasActiveUploads(optimisticState),
 
-  // ... resto del estado
-}), [files, optimisticState, /* ... */]);
+    // 🎯 Upload Progress Analytics (usando selectors)
+    activeUploads: optimisticSelectors.getActiveUploads(optimisticState),
+    completedUploads: optimisticSelectors.getCompletedUploads(optimisticState),
+    failedUploads: optimisticSelectors.getFailedUploads(optimisticState),
+    overallProgress: optimisticSelectors.getOverallProgress(optimisticState),
+
+    // ... resto del estado
+  }),
+  [files, optimisticState /* ... */]
+);
 ```
 
 **Ventajas de los Selectors:**
+
 - ✅ **Performance**: Cálculos memorizados
 - ✅ **Reutilización**: Misma lógica en múltiples lugares
 - ✅ **Testing**: Funciones puras fáciles de testear
@@ -764,6 +808,7 @@ return useMemo(() => ({
 ### **1. useActionState vs useState + useEffect**
 
 **Antes (React 18):**
+
 ```typescript
 const [files, setFiles] = useState([]);
 const [loading, setLoading] = useState(false);
@@ -774,7 +819,7 @@ useEffect(() => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/files');
+      const response = await fetch("/api/files");
       const data = await response.json();
       setFiles(data);
     } catch (err) {
@@ -783,17 +828,22 @@ useEffect(() => {
       setLoading(false);
     }
   };
-  
+
   fetchFiles();
 }, []);
 ```
 
 **Ahora (React 19):**
+
 ```typescript
-const [filesState, filesAction, filesPending] = useActionState(getFilesServerAction, null);
+const [filesState, filesAction, filesPending] = useActionState(
+  getFilesServerAction,
+  null
+);
 ```
 
 **¿Por qué el cambio?**
+
 - ✅ **90% menos código**
 - ✅ **Error handling automático**
 - ✅ **Loading states automáticos**
@@ -803,6 +853,7 @@ const [filesState, filesAction, filesPending] = useActionState(getFilesServerAct
 ### **2. Optimistic UI vs Loading States**
 
 **Antes:**
+
 ```typescript
 const [isUploading, setIsUploading] = useState(false);
 
@@ -814,6 +865,7 @@ const upload = async (file) => {
 ```
 
 **Ahora:**
+
 ```typescript
 const upload = async (file) => {
   addOptimistic({ type: "START_UPLOAD", file }); // Usuario ve resultado inmediato
@@ -822,6 +874,7 @@ const upload = async (file) => {
 ```
 
 **¿Por qué optimistic?**
+
 - ✅ **UX superior**: Feedback inmediato
 - ✅ **Percepción de velocidad**: App se siente más rápida
 - ✅ **Reversible**: Si falla, se revierte automáticamente
@@ -830,6 +883,7 @@ const upload = async (file) => {
 ### **3. Configuration Manager vs Hardcoded**
 
 **¿Por qué centralizar configuración?**
+
 - ✅ **Feature flags**: Habilitar/deshabilitar funcionalidades sin deploy
 - ✅ **A/B testing**: Diferentes configs para diferentes usuarios
 - ✅ **Environment-specific**: Dev vs Prod configs
@@ -839,6 +893,7 @@ const upload = async (file) => {
 ### **4. Structured Logging vs console.log**
 
 **¿Por qué logging estructurado?**
+
 - ✅ **Debugging**: Contexto completo para troubleshooting
 - ✅ **Performance tracking**: Métricas de tiempo automáticas
 - ✅ **Production ready**: Logs seguros para producción
@@ -850,6 +905,7 @@ const upload = async (file) => {
 ## 🚀 **VENTAJAS DEL SISTEMA COMPLETO**
 
 ### **Para Desarrolladores:**
+
 1. **🎯 Menos código**: useActionState elimina boilerplate
 2. **🔍 Mejor debugging**: Logging estructurado y detallado
 3. **⚡ Performance**: Optimistic UI + memoización
@@ -857,12 +913,14 @@ const upload = async (file) => {
 5. **🧪 Testeable**: Pure functions y patterns predecibles
 
 ### **Para Usuarios:**
+
 1. **🏃‍♂️ App más rápida**: Optimistic UI
 2. **🎨 UI responsive**: useTransition no bloquea
 3. **🔄 Datos frescos**: Cache invalidation automática
 4. **❌ Mejor error handling**: Errores claros y recovery automático
 
 ### **Para el Negocio:**
+
 1. **📈 Maintainability**: Código modular y bien documentado
 2. **🔧 Flexibility**: Feature flags y configuración dinámica
 3. **📊 Analytics**: Métricas detalladas de uso
@@ -873,6 +931,7 @@ const upload = async (file) => {
 ## 🎯 **PRÓXIMOS PASOS PARA APRENDER**
 
 ### **1. Experimenta con el código:**
+
 ```bash
 # Clona y ejecuta el proyecto
 npm run dev
@@ -882,6 +941,7 @@ npm run dev
 ```
 
 ### **2. Modifica configuraciones:**
+
 ```typescript
 // Cambia estas configuraciones y observa las diferencias:
 const config = {
@@ -889,17 +949,19 @@ const config = {
     optimisticUI: false, // ¿Cómo cambia la UX?
     advancedLogging: true, // ¿Qué logs aparecen?
     autoRefresh: false, // ¿Los datos se actualizan?
-  }
+  },
 };
 ```
 
 ### **3. Lee el código paso a paso:**
+
 1. **Empieza por**: `hooks/useFileUpload.ts`
 2. **Después**: `reducers/index.ts`
 3. **Luego**: `server/actions/index.ts`
 4. **Finalmente**: `config/index.ts`
 
 ### **4. Recursos adicionales:**
+
 - [React 19 Beta Docs](https://react.dev/blog/2024/04/25/react-19)
 - [Server Actions Guide](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions)
 - [useOptimistic Examples](https://react.dev/reference/react/useOptimistic)
