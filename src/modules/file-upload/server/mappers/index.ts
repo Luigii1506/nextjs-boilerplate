@@ -118,13 +118,65 @@ export const mapStatsToFileStats = (stats: {
   byMimeType: Array<{
     mimeType: string;
     _count: { _all: number };
+    _sum: { size: number | null };
   }>;
 }): FileStatsData => {
+  // Calculate file type counts from byMimeType
+  const imageCount = stats.byMimeType
+    .filter((m) => m.mimeType.startsWith("image/"))
+    .reduce((sum, m) => sum + m._count._all, 0);
+  
+  const documentCount = stats.byMimeType
+    .filter((m) => 
+      m.mimeType.includes("pdf") || 
+      m.mimeType.includes("document") || 
+      m.mimeType.includes("text/")
+    )
+    .reduce((sum, m) => sum + m._count._all, 0);
+  
+  const videoCount = stats.byMimeType
+    .filter((m) => m.mimeType.startsWith("video/"))
+    .reduce((sum, m) => sum + m._count._all, 0);
+  
+  const audioCount = stats.byMimeType
+    .filter((m) => m.mimeType.startsWith("audio/"))
+    .reduce((sum, m) => sum + m._count._all, 0);
+
+  const otherCount = stats.totalFiles - (imageCount + documentCount + videoCount + audioCount);
+
+  // Default storage limit (can be made configurable)
+  const storageLimit = 1024 * 1024 * 1024 * 10; // 10GB default
+  const storagePercentage = storageLimit > 0 ? Math.round((stats.totalSize / storageLimit) * 100) : 0;
+
+  // Create legacy filesByType format
+  const filesByType: Record<string, number> = {};
+  stats.byMimeType.forEach((m) => {
+    const fileType = getFileType(m.mimeType);
+    filesByType[fileType] = (filesByType[fileType] || 0) + m._count._all;
+  });
+
   return {
+    // 📊 Basic Stats
     totalFiles: stats.totalFiles,
     totalSize: stats.totalSize,
     totalSizeFormatted: formatFileSize(stats.totalSize),
     recentFiles: stats.recentFiles,
+    averageFileSize:
+      stats.totalFiles > 0 ? Math.round(stats.totalSize / stats.totalFiles) : 0,
+
+    // 💾 Storage Stats
+    storageUsed: stats.totalSize,
+    storageLimit,
+    storagePercentage,
+
+    // 📂 File Type Counts
+    imageCount,
+    documentCount,
+    videoCount,
+    audioCount,
+    otherCount,
+
+    // 🔗 Detailed Breakdowns
     byProvider: stats.byProvider.map((p) => ({
       provider: p.provider as UploadProvider,
       count: p._count._all,
@@ -135,9 +187,12 @@ export const mapStatsToFileStats = (stats: {
       mimeType: m.mimeType,
       count: m._count._all,
       fileType: getFileType(m.mimeType),
+      size: m._sum.size || 0,
     })),
-    averageFileSize:
-      stats.totalFiles > 0 ? Math.round(stats.totalSize / stats.totalFiles) : 0,
+
+    // 📈 Legacy compatibility
+    filesByType,
+    recentUploads: stats.recentFiles, // Alias
   };
 };
 

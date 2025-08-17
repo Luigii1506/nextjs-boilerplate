@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Upload,
   Grid,
@@ -13,39 +13,27 @@ import {
   Video,
   Music,
 } from "lucide-react";
-import type { UploadFile, UploadConfig, UploadCardData } from "../../types";
+import type {
+  UploadFile,
+  UploadConfig,
+  UploadCardData,
+  FileStatsData,
+} from "../../types";
 import { useFileUpload } from "../../hooks"; // ← RESTORED: For enterprise state lifting
+import { formatFileSize } from "../../utils";
 import { useFileNotifications } from "../../hooks/useFileNotifications";
 import FileUploader from "../components/FileUploader";
 import FileManager from "../components/FileManager";
 import FileStats from "../components/FileStats";
 import ImageGallery from "../components/ImageGallery";
 
-// Tipo para FileStats (ya que no existe en los tipos actuales)
-interface FileStatsType {
-  totalFiles: number;
-  totalSize: number;
-  storageLimit: number;
-  storageUsed: number;
-  filesByType: Record<string, number>;
-  recentUploads: number;
-  imageCount: number;
-  documentCount: number;
-  videoCount: number;
-  audioCount: number;
-}
+// ✅ Using enterprise FileStatsData type
 
 // FilesView component props (none currently needed)
 type FilesViewProps = Record<string, never>;
 
 const FilesView: React.FC<FilesViewProps> = () => {
-  // DEBUG: Log every render to track data changes
-  const globalDebug = globalThis as Record<string, unknown>;
-  globalDebug.renderCount = ((globalDebug.renderCount as number) || 0) + 1;
-  console.log("🏆 FilesView render (Enterprise State Lifting):", {
-    renderCount: globalDebug.renderCount,
-    filesCount: 0, // Will be updated after hook initialization
-  });
+  // 🏆 ENTERPRISE: Component implementing state lifting pattern
 
   // 🎯 FIRST: Define all local states
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
@@ -90,38 +78,97 @@ const FilesView: React.FC<FilesViewProps> = () => {
 
   // 🏆 THIRD: ENTERPRISE STATE LIFTING - Single source of truth for ALL components
   const fileUploadHook = useFileUpload(uploadConfig); // ← ONE hook to rule them all
-  const { files, stats, deleteFile } = fileUploadHook;
+  const { files, deleteFile } = fileUploadHook;
 
-  // 🏆 Enterprise: Track files data changes
-  const filesLength = files?.length || 0;
-  if (filesLength !== ((globalDebug.lastRenderFilesLength as number) || 0)) {
-    globalDebug.lastRenderFilesLength = filesLength;
-    console.log("📁 Files data updated:", {
-      filesCount: filesLength,
-      source: "ENTERPRISE_STATE_LIFTING",
-    });
-  }
+  // 🎯 ENTERPRISE: Files state is managed by lifted hook
   // Notification state handled by enterprise hook
 
-  // Stats calculation - temporary fallback (TODO: implement proper data flow)
-  const calculatedStats: FileStatsType = {
-    totalFiles: files.length,
-    totalSize: files.reduce((sum, file) => sum + (file.size || 0), 0),
-    imageCount: files.filter((f) => f.mimeType?.startsWith("image/") || false)
-      .length,
-    documentCount: files.filter(
+  // 🏆 ENTERPRISE: Stats calculation - complete FileStatsData implementation
+  const calculatedStats: FileStatsData = useMemo(() => {
+    const totalFiles = files.length;
+    const totalSize = files.reduce((sum, file) => sum + (file.size || 0), 0);
+    const imageCount = files.filter(
+      (f) => f.mimeType?.startsWith("image/") || false
+    ).length;
+    const documentCount = files.filter(
       (f) =>
         f.mimeType?.includes("pdf") || f.mimeType?.includes("document") || false
-    ).length,
-    videoCount: files.filter((f) => f.mimeType?.startsWith("video/") || false)
-      .length,
-    audioCount: files.filter((f) => f.mimeType?.startsWith("audio/") || false)
-      .length,
-    storageUsed: files.reduce((sum, file) => sum + (file.size || 0), 0),
-    storageLimit: 100 * 1024 * 1024 * 1024, // 100GB
-    filesByType: {},
-    recentUploads: files.length,
-  };
+    ).length;
+    const videoCount = files.filter(
+      (f) => f.mimeType?.startsWith("video/") || false
+    ).length;
+    const audioCount = files.filter(
+      (f) => f.mimeType?.startsWith("audio/") || false
+    ).length;
+    const otherCount =
+      totalFiles - (imageCount + documentCount + videoCount + audioCount);
+
+    const storageLimit = 100 * 1024 * 1024 * 1024; // 100GB
+    const storageUsed = totalSize;
+    const storagePercentage = Math.round((storageUsed / storageLimit) * 100);
+    const averageFileSize =
+      totalFiles > 0 ? Math.round(totalSize / totalFiles) : 0;
+    const recentFiles = files.filter((f) => {
+      const fileDate = new Date(f.createdAt);
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      return fileDate > sevenDaysAgo;
+    }).length;
+
+    return {
+      // 📊 Basic Stats
+      totalFiles,
+      totalSize,
+      totalSizeFormatted: formatFileSize(totalSize),
+      recentFiles,
+      averageFileSize,
+
+      // 💾 Storage Stats
+      storageUsed,
+      storageLimit,
+      storagePercentage,
+
+      // 📂 File Type Counts
+      imageCount,
+      documentCount,
+      videoCount,
+      audioCount,
+      otherCount,
+
+      // 🔗 Detailed Breakdowns (simplified for now)
+      byProvider: [
+        {
+          provider: "local" as const,
+          count: totalFiles,
+          size: totalSize,
+          sizeFormatted: formatFileSize(totalSize),
+        },
+      ],
+      byMimeType: [
+        { mimeType: "image/*", count: imageCount, fileType: "image", size: 0 },
+        {
+          mimeType: "application/pdf",
+          count: documentCount,
+          fileType: "document",
+          size: 0,
+        },
+        { mimeType: "video/*", count: videoCount, fileType: "video", size: 0 },
+        { mimeType: "audio/*", count: audioCount, fileType: "audio", size: 0 },
+      ].filter((item) => item.count > 0),
+
+      // 📈 Performance Data (simplified)
+      filesByType: {
+        images: imageCount,
+        documents: documentCount,
+        videos: videoCount,
+        audio: audioCount,
+        other: otherCount,
+      },
+
+      // 📊 Legacy compatibility
+      recentUploads: recentFiles, // Alias for recentFiles
+    };
+  }, [files]);
 
   // Filter files - incluir filtro por provider (TODO: implement proper filtering when data flow is fixed)
   const filteredFiles = files.filter((file) => {
@@ -155,19 +202,6 @@ const FilesView: React.FC<FilesViewProps> = () => {
   const imageFiles = files.filter(
     (file) => file.mimeType?.startsWith("image/") || false
   );
-
-  // Función para detectar categoría automáticamente por MIME type
-  const detectCategoryByMimeType = (mimeType: string): string | null => {
-    const category = categories.find((cat) =>
-      cat.allowedTypes.some((allowedType) => {
-        if (allowedType.endsWith("/*")) {
-          return mimeType.startsWith(allowedType.slice(0, -1));
-        }
-        return mimeType === allowedType;
-      })
-    );
-    return category?.id || null;
-  };
 
   const { notification: fileNotification, showNotification } =
     useFileNotifications();
@@ -294,6 +328,7 @@ const FilesView: React.FC<FilesViewProps> = () => {
         <div className="bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-lg transition-shadow">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+              {/* eslint-disable-next-line jsx-a11y/alt-text */}
               <Image className="w-6 h-6 text-blue-600" />
             </div>
             <div>
@@ -507,14 +542,12 @@ const FilesView: React.FC<FilesViewProps> = () => {
                 onUploadComplete={handleUploadComplete}
                 onUploadError={handleUploadError}
                 selectedCategory={selectedUploadCategory}
-                detectCategory={detectCategoryByMimeType}
                 // 🏆 ENTERPRISE STATE LIFTING: Pass hook functions as props
                 isUploading={fileUploadHook.isUploading}
                 uploadProgress={fileUploadHook.uploadProgress}
                 uploadError={fileUploadHook.error}
                 uploadFiles={fileUploadHook.uploadFiles}
                 clearError={fileUploadHook.clearError}
-                resetProgress={fileUploadHook.resetProgress}
               />
             </div>
           )}
@@ -667,6 +700,7 @@ const FilesView: React.FC<FilesViewProps> = () => {
                 />
               ) : (
                 <div className="text-center py-12">
+                  {/* eslint-disable-next-line jsx-a11y/alt-text */}
                   <Image className="w-16 h-16 text-slate-300 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-slate-900 mb-2">
                     No hay imágenes

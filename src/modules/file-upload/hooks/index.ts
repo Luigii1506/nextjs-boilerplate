@@ -3,7 +3,10 @@
 // React 19 + Next.js 15 Optimized Hooks
 
 // 🚀 PRIMARY ENTERPRISE HOOK
-export { useFileUpload, useSingleFileUpload } from "./useFileUpload";
+export { useFileUpload, default } from "./useFileUpload";
+
+// 🎯 Single File Upload Alias (Enterprise pattern)
+export { useFileUpload as useSingleFileUpload } from "./useFileUpload";
 
 // 🛠️ Additional Hooks
 export { useFileNotifications } from "./useFileNotifications";

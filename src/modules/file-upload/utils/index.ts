@@ -1,260 +1,229 @@
-// 🔧 FILE UPLOAD UTILITIES
-// ========================
-// Utilidades adicionales para el módulo de file upload
+// 🛠️ FILE UPLOAD UTILITIES - ENTERPRISE GRADE
+// ==============================================
+// Utilities compartidos para evitar código duplicado
+
+import React from "react";
+import {
+  Image as LucideImage,
+  File,
+  Video,
+  Music,
+  FileText,
+} from "lucide-react";
+
+// 🎯 ENTERPRISE UTILITIES - Shared across components
 
 /**
- * Crea un preview de imagen para mostrar antes del upload
+ * Formatea el tamaño de archivo de bytes a formato legible
+ * @param bytes - Tamaño en bytes
+ * @returns String formateado (ej: "1.5 MB")
  */
-export function createImagePreview(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    if (!file.type.startsWith("image/")) {
-      reject(new Error("El archivo no es una imagen"));
-      return;
-    }
+export const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+};
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      resolve(e.target?.result as string);
-    };
-    reader.onerror = () => {
-      reject(new Error("Error leyendo el archivo"));
-    };
-    reader.readAsDataURL(file);
+/**
+ * Formatea fecha para mostrar en componentes
+ * @param dateString - String de fecha ISO
+ * @returns Fecha formateada en español
+ */
+export const formatDate = (dateString: string): string => {
+  return new Date(dateString).toLocaleDateString("es-ES", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
-}
+};
 
 /**
- * Redimensiona una imagen manteniendo el aspect ratio
+ * Formatea fecha simple sin hora
+ * @param dateString - String de fecha ISO
+ * @returns Fecha formateada simple
  */
-export function resizeImage(
-  file: File,
-  maxWidth: number,
-  maxHeight: number,
-  quality = 0.8
-): Promise<File> {
-  return new Promise((resolve, reject) => {
-    if (!file.type.startsWith("image/")) {
-      reject(new Error("El archivo no es una imagen"));
-      return;
-    }
-
-    const img = new Image();
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-
-    img.onload = () => {
-      // Calcular nuevas dimensiones
-      let { width, height } = img;
-
-      if (width > maxWidth) {
-        height = (height * maxWidth) / width;
-        width = maxWidth;
-      }
-
-      if (height > maxHeight) {
-        width = (width * maxHeight) / height;
-        height = maxHeight;
-      }
-
-      // Redimensionar
-      canvas.width = width;
-      canvas.height = height;
-
-      if (!ctx) {
-        reject(new Error("No se pudo crear el contexto del canvas"));
-        return;
-      }
-
-      ctx.drawImage(img, 0, 0, width, height);
-
-      // Convertir a blob
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) {
-            reject(new Error("Error generando imagen redimensionada"));
-            return;
-          }
-
-          const resizedFile = new File([blob], file.name, {
-            type: file.type,
-            lastModified: Date.now(),
-          });
-
-          resolve(resizedFile);
-        },
-        file.type,
-        quality
-      );
-    };
-
-    img.onerror = () => {
-      reject(new Error("Error cargando la imagen"));
-    };
-
-    img.src = URL.createObjectURL(file);
+export const formatDateSimple = (dateString: string): string => {
+  return new Date(dateString).toLocaleDateString("es-ES", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
   });
-}
+};
 
 /**
- * Convierte bytes a formato legible
+ * Obtiene el ícono apropiado según el tipo MIME
+ * @param mimeType - Tipo MIME del archivo
+ * @param size - Tamaño del ícono (por defecto 24)
+ * @returns Componente React con el ícono
  */
-export function humanFileSize(bytes: number, si = false, dp = 1): string {
-  const thresh = si ? 1000 : 1024;
+export const getFileIcon = (
+  mimeType: string,
+  size: number = 24
+): React.ReactElement => {
+  const iconProps = { size, className: "flex-shrink-0" };
 
-  if (Math.abs(bytes) < thresh) {
-    return bytes + " B";
-  }
+  if (mimeType.startsWith("image/"))
+    return React.createElement(LucideImage, {
+      ...iconProps,
+      className: "flex-shrink-0 text-blue-500",
+    });
 
-  const units = si
-    ? ["kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"]
-    : ["KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"];
-  let u = -1;
-  const r = 10 ** dp;
+  if (mimeType.startsWith("video/"))
+    return React.createElement(Video, {
+      ...iconProps,
+      className: "flex-shrink-0 text-purple-500",
+    });
 
-  do {
-    bytes /= thresh;
-    ++u;
-  } while (
-    Math.round(Math.abs(bytes) * r) / r >= thresh &&
-    u < units.length - 1
-  );
+  if (mimeType.startsWith("audio/"))
+    return React.createElement(Music, {
+      ...iconProps,
+      className: "flex-shrink-0 text-green-500",
+    });
 
-  return bytes.toFixed(dp) + " " + units[u];
-}
+  if (mimeType.includes("pdf") || mimeType.includes("document"))
+    return React.createElement(FileText, {
+      ...iconProps,
+      className: "flex-shrink-0 text-red-500",
+    });
 
-/**
- * Genera un nombre de archivo único
- */
-export function generateUniqueFileName(originalName: string): string {
-  const timestamp = Date.now();
-  const random = Math.random().toString(36).substring(2, 15);
-  const extension = originalName.split(".").pop();
-  const nameWithoutExt = originalName.replace(/\.[^/.]+$/, "");
-
-  return `${nameWithoutExt}-${timestamp}-${random}.${extension}`;
-}
-
-/**
- * Valida múltiples archivos
- */
-export function validateFiles(
-  files: File[],
-  config: {
-    maxFiles?: number;
-    maxSize?: number;
-    allowedTypes?: string[];
-    maxTotalSize?: number;
-  }
-): { valid: File[]; invalid: Array<{ file: File; error: string }> } {
-  const valid: File[] = [];
-  const invalid: Array<{ file: File; error: string }> = [];
-
-  // Validar número máximo de archivos
-  if (config.maxFiles && files.length > config.maxFiles) {
-    return {
-      valid: [],
-      invalid: files.map((file) => ({
-        file,
-        error: `Máximo ${config.maxFiles} archivos permitidos`,
-      })),
-    };
-  }
-
-  // Validar tamaño total
-  if (config.maxTotalSize) {
-    const totalSize = files.reduce((sum, file) => sum + file.size, 0);
-    if (totalSize > config.maxTotalSize) {
-      return {
-        valid: [],
-        invalid: files.map((file) => ({
-          file,
-          error: `El tamaño total excede el límite de ${humanFileSize(
-            config.maxTotalSize!
-          )}`,
-        })),
-      };
-    }
-  }
-
-  // Validar cada archivo individualmente
-  files.forEach((file) => {
-    let error = "";
-
-    // Validar tamaño
-    if (config.maxSize && file.size > config.maxSize) {
-      error = `Archivo muy grande. Máximo: ${humanFileSize(config.maxSize)}`;
-    }
-    // Validar tipo
-    else if (config.allowedTypes) {
-      const isValidType =
-        config.allowedTypes.includes(file.type) ||
-        config.allowedTypes.some((allowedType) => {
-          if (allowedType.endsWith("/*")) {
-            const baseType = allowedType.slice(0, -2);
-            return file.type.startsWith(baseType + "/");
-          }
-          return false;
-        });
-
-      if (!isValidType) {
-        error = `Tipo de archivo no permitido: ${file.type}`;
-      }
-    }
-
-    if (error) {
-      invalid.push({ file, error });
-    } else {
-      valid.push(file);
-    }
+  return React.createElement(File, {
+    ...iconProps,
+    className: "flex-shrink-0 text-slate-500",
   });
-
-  return { valid, invalid };
-}
+};
 
 /**
- * Extrae metadatos de un archivo
+ * Obtiene la clase CSS para el grid responsivo según columnas
+ * @param columns - Número de columnas deseadas
+ * @returns String con clases CSS de Tailwind
  */
-export async function extractFileMetadata(
-  file: File
-): Promise<Record<string, unknown>> {
-  const metadata: Record<string, unknown> = {
-    name: file.name,
-    size: file.size,
-    type: file.type,
-    lastModified: file.lastModified,
+export const getGridColumns = (columns: number): string => {
+  const gridClasses = {
+    1: "grid-cols-1",
+    2: "grid-cols-1 sm:grid-cols-2",
+    3: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
+    4: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
+    5: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5",
   };
 
-  // Para imágenes, extraer dimensiones
-  if (file.type.startsWith("image/")) {
-    try {
-      const dimensions = await getImageDimensions(file);
-      metadata.width = dimensions.width;
-      metadata.height = dimensions.height;
-      metadata.aspectRatio = dimensions.width / dimensions.height;
-    } catch (error) {
-      console.warn("Error extracting image dimensions:", error);
-    }
-  }
-
-  return metadata;
-}
+  return gridClasses[columns as keyof typeof gridClasses] || gridClasses[3];
+};
 
 /**
- * Obtiene las dimensiones de una imagen
+ * Valida si un archivo es válido según configuración
+ * @param file - Archivo a validar
+ * @param config - Configuración de validación
+ * @returns String con error o null si es válido
  */
-function getImageDimensions(
-  file: File
-): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      resolve({ width: img.naturalWidth, height: img.naturalHeight });
-      URL.revokeObjectURL(img.src);
-    };
-    img.onerror = () => {
-      reject(new Error("Error loading image"));
-      URL.revokeObjectURL(img.src);
-    };
-    img.src = URL.createObjectURL(file);
+export const validateFile = (
+  file: File,
+  config: {
+    maxFileSize: number;
+    allowedTypes: string[];
+  }
+): string | null => {
+  // Validar tamaño
+  if (file.size > config.maxFileSize) {
+    return `El archivo es muy grande. Máximo ${formatFileSize(
+      config.maxFileSize
+    )}`;
+  }
+
+  // Validar tipo MIME
+  const mimeType = file.type;
+  const isValidType = config.allowedTypes.some((type) => {
+    if (type.endsWith("/*")) {
+      return mimeType.startsWith(type.slice(0, -1));
+    }
+    return mimeType === type;
   });
-}
+
+  if (!isValidType) {
+    return `Tipo de archivo no permitido. Permitidos: ${config.allowedTypes.join(
+      ", "
+    )}`;
+  }
+
+  return null;
+};
+
+/**
+ * Obtiene el porcentaje de uso de almacenamiento
+ * @param used - Espacio usado
+ * @param limit - Límite total
+ * @returns Porcentaje (0-100)
+ */
+export const getStoragePercentage = (used: number, limit: number): number => {
+  if (limit === 0) return 0;
+  return Math.round((used / limit) * 100);
+};
+
+/**
+ * Obtiene la clase CSS de color según porcentaje de uso
+ * @param percentage - Porcentaje de uso
+ * @returns Clase CSS de color
+ */
+export const getStorageColor = (percentage: number): string => {
+  if (percentage >= 90) return "bg-red-500";
+  if (percentage >= 75) return "bg-yellow-500";
+  return "bg-blue-500";
+};
+
+/**
+ * Detecta si un archivo es una imagen
+ * @param mimeType - Tipo MIME
+ * @returns true si es imagen
+ */
+export const isImageFile = (mimeType: string): boolean => {
+  return mimeType.startsWith("image/");
+};
+
+/**
+ * Obtiene la extensión del archivo
+ * @param filename - Nombre del archivo
+ * @returns Extensión sin el punto
+ */
+export const getFileExtension = (filename: string): string => {
+  return filename.split(".").pop()?.toUpperCase() || "";
+};
+
+/**
+ * Genera un ID temporal para optimistic UI
+ * @returns ID temporal único
+ */
+export const generateTempId = (): string => {
+  return `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+};
+
+// 🎯 ENTERPRISE CONSTANTS
+export const FILE_UPLOAD_CONSTANTS = {
+  // Límites por defecto
+  DEFAULT_MAX_SIZE: 10 * 1024 * 1024, // 10MB
+  DEFAULT_ALLOWED_TYPES: ["image/*", "application/pdf", "text/*"],
+  
+  // Configuraciones de UI
+  DEFAULT_GRID_COLUMNS: 3,
+  UPLOAD_PROGRESS_UPDATE_INTERVAL: 100,
+  
+  // Colores para tipos de archivo
+  FILE_TYPE_COLORS: {
+    image: "text-blue-500",
+    video: "text-purple-500",
+    audio: "text-green-500",
+    document: "text-red-500",
+    default: "text-slate-500",
+  },
+  
+  // Mensajes por defecto
+  MESSAGES: {
+    NO_FILES: "No hay archivos",
+    DRAG_DROP: "Arrastra archivos aquí o haz clic para seleccionar",
+    UPLOAD_SUCCESS: "Archivos subidos correctamente",
+    UPLOAD_ERROR: "Error al subir archivos",
+    DELETE_CONFIRM: "¿Estás seguro de que quieres eliminar este archivo?",
+  },
+} as const;

@@ -25,7 +25,6 @@ interface FileUploaderProps {
   onUploadComplete: (files: UploadFile[]) => void;
   onUploadError: (error: string) => void;
   selectedCategory?: string | null;
-  detectCategory?: (mimeType: string) => string | null;
 
   // 🏆 ENTERPRISE STATE LIFTING: Receive functions from parent hook
   isUploading: boolean;
@@ -42,7 +41,6 @@ interface FileUploaderProps {
     Array<{ success: boolean; file?: UploadCardData; error?: string }>
   >;
   clearError: () => void;
-  resetProgress: () => void;
 }
 
 const FileUploader: React.FC<FileUploaderProps> = ({
@@ -50,39 +48,24 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   onUploadComplete,
   onUploadError,
   selectedCategory,
-  detectCategory,
   // 🏆 ENTERPRISE STATE LIFTING: Received from parent
   isUploading,
   uploadProgress,
   uploadError,
   uploadFiles,
   clearError,
-  resetProgress,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]); // Archivos seleccionados
-  const [shouldCleanupProgress, setShouldCleanupProgress] = useState(false);
 
   // 🏆 ENTERPRISE STATE LIFTING: All functions received from parent hook
   // No hook duplication - parent manages all state!
 
-  // 🎯 ENTERPRISE-GRADE: Progress cleanup with useEffect instead of setTimeout
-  useEffect(() => {
-    if (shouldCleanupProgress) {
-      const timeoutId = setTimeout(() => {
-        resetProgress();
-        setShouldCleanupProgress(false);
-      }, 2000);
-
-      // Cleanup on component unmount or state change
-      return () => {
-        clearTimeout(timeoutId);
-      };
-    }
-  }, [shouldCleanupProgress, resetProgress]);
+  // 🏆 ENTERPRISE: Auto-cleanup handled by hook automatically
 
   const getFileIcon = (mimeType: string) => {
     if (mimeType.startsWith("image/"))
+      // eslint-disable-next-line jsx-a11y/alt-text
       return <Image size={20} className="text-blue-500" />;
     if (mimeType.startsWith("video/"))
       return <Video size={20} className="text-purple-500" />;
@@ -174,7 +157,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
     // Limpiar errores previos
     clearError();
-    resetProgress();
 
     try {
       // Usar el hook real para subir archivos
@@ -213,9 +195,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       // Limpiar archivos seleccionados si todo fue exitoso
       if (errors.length === 0) {
         setSelectedFiles([]);
-
-        // ⏳ ENTERPRISE-GRADE: Trigger cleanup through state
-        setShouldCleanupProgress(true);
+        // 🏆 ENTERPRISE: Auto-cleanup handled by hook
       }
     } catch (error) {
       onUploadError("Error general durante la subida");

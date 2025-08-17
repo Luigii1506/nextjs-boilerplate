@@ -1,28 +1,63 @@
-// 📁 FILE UPLOAD MODULE
-// =====================
-// Módulo completo de gestión de archivos siguiendo arquitectura feature-first
+// 🏆 ENTERPRISE FILE UPLOAD MODULE - BARREL EXPORTS
+// ==================================================
+// Central export file for entire enterprise module
 
-// 📋 Schemas & Types
-export * from "./schemas";
+// 🎯 Core Hooks (Enterprise Enhanced)
+export { useFileUpload } from "./hooks/useFileUpload";
+export { useFileNotifications } from "./hooks/useFileNotifications";
+
+// 📝 Types & Interfaces
 export * from "./types";
+
+// 🏗️ Enterprise Configuration System
+export {
+  type EnterpriseFileUploadConfig,
+  FileUploadConfigManager,
+  fileUploadConfig,
+  adaptConfigForHook,
+  configUtils,
+} from "./config";
+
+// 📊 Enterprise Constants
+export {
+  ENTERPRISE_CONFIG,
+  FILE_UPLOAD_ACTIONS,
+  FILE_UPLOAD_STATUS,
+  DEFAULT_PROVIDERS,
+  CACHE_TAGS,
+  LOG_LEVELS,
+  LOG_PREFIXES,
+} from "./constants";
+
+// 📝 Enterprise Logging System
+export {
+  createLogger,
+  fileUploadLogger,
+  serverActionLogger,
+  optimisticLogger,
+  cacheLogger,
+  log, // Legacy compatibility
+} from "./utils/logger";
+
+// 🔄 State Management (Optimistic Updates)
+export {
+  optimisticReducer,
+  createInitialOptimisticState,
+  optimisticSelectors,
+} from "./reducers";
 
 // 🎯 Server Layer
 export * from "./server";
 
-// 🛠️ Providers
+// 🛠️ Providers & Legacy Support
 export * from "./providers";
+export * from "./schemas";
 
-// 🪝 Hooks
-export * from "./hooks";
-
-// 🎨 UI Components
-export * from "./ui";
-
-// ⚙️ Configuration
-export * from "./config";
-
-// 🔧 Utils
+// 🔧 Utilities
 export * from "./utils";
+
+// 🎨 UI Components (Enterprise Ready)
+export * from "./ui";
 
 // 🎯 Main services for convenience
 export { fileUploadService, fileCategoryService } from "./server/services";

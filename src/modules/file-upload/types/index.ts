@@ -140,25 +140,22 @@ export interface FileUploaderProps {
   children?: React.ReactNode;
 }
 
-// Hook return types - Enterprise Grade
+// 🏆 ENTERPRISE HOOK RETURN TYPE
 export interface UseFileUploadReturn {
-  // Optimistic State
+  // 📊 Core Data
   files: UploadCardData[];
   stats: FileStatsData | null;
   uploadProgress: UploadProgress[];
 
-  // Loading States
+  // 🔄 Loading States
   isLoading: boolean;
-  uploading: boolean; // Legacy alias
   isUploading: boolean;
-  isDeleting: boolean;
-  isUpdating: boolean;
 
-  // Error States
-  hasError: boolean;
+  // ❌ Error States
   error: string | null;
+  hasError: boolean;
 
-  // Actions
+  // 🎯 Actions
   uploadFiles: (
     files: File[],
     options?: {
@@ -181,25 +178,10 @@ export interface UseFileUploadReturn {
 
   deleteFile: (fileId: string) => Promise<void>;
 
-  updateFile: (
-    fileId: string,
-    updates: { filename?: string; isPublic?: boolean; tags?: string[] }
-  ) => Promise<void>;
+  refresh: () => void;
 
-  refreshFiles: () => Promise<void>;
-  refreshStats: () => Promise<void>;
-
-  // Legacy Compatibility
-  progress: UploadProgress[]; // Alias for uploadProgress
-  clearError: () => void; // No-op
-  resetProgress: () => void; // No-op
-
-  // Raw States (advanced usage)
-  uploadState: unknown;
-  filesState: unknown;
-  deleteState: unknown;
-  updateState: unknown;
-  statsState: unknown;
+  // 🔧 Utilities
+  clearError: () => void;
 }
 
 export interface UseS3UploadReturn {
@@ -281,11 +263,28 @@ export interface UploadCardData {
   extension: string;
 }
 
+// 🏆 ENTERPRISE FILE STATS - Consolidated interface
 export interface FileStatsData {
+  // 📊 Basic Stats
   totalFiles: number;
   totalSize: number;
   totalSizeFormatted: string;
   recentFiles: number;
+  averageFileSize: number;
+
+  // 💾 Storage Stats
+  storageUsed: number;
+  storageLimit: number;
+  storagePercentage: number;
+
+  // 📂 File Type Counts (for components)
+  imageCount: number;
+  documentCount: number;
+  videoCount: number;
+  audioCount: number;
+  otherCount: number;
+
+  // 🔗 Detailed Breakdowns
   byProvider: Array<{
     provider: UploadProvider;
     count: number;
@@ -296,8 +295,12 @@ export interface FileStatsData {
     mimeType: string;
     count: number;
     fileType: string;
+    size: number;
   }>;
-  averageFileSize: number;
+  
+  // 📈 Legacy compatibility (can be computed from byMimeType)
+  filesByType: Record<string, number>;
+  recentUploads: number; // Alias for recentFiles
 }
 
 // ========================

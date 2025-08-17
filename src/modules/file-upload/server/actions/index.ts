@@ -4,7 +4,7 @@
 
 "use server";
 
-import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { headers } from "next/headers";
 import { auth } from "@/core/auth/server/auth";
 import {
@@ -87,11 +87,7 @@ export async function uploadFileServerAction(
     revalidatePath("/files");
     revalidatePath("/admin/files");
 
-    console.log("✅ Cache invalidated after upload:", {
-      file: file.name,
-      tags: ["user-files", "file-stats"],
-      userId: session.user.id,
-    });
+    // ✅ Upload completed - cache invalidated
 
     return {
       success: true,
@@ -223,26 +219,12 @@ export async function getFilesServerAction(
     const parsedFilters = parseFileFilters(filters);
 
     // 🔄 Cache with tags for automatic invalidation (RESTORED)
-    const requestId = `req-${Date.now()}-${Math.random()
-      .toString(36)
-      .substr(2, 9)}`;
-    console.log("🔍 getFilesServerAction START:", {
-      requestId,
-      userId: session.user.id,
-      timestamp: Date.now(),
-      cacheEnabled: true,
-    });
+    // 🔍 Starting files retrieval
 
     // 🔄 DIRECT DB call like users module (NO CACHE)
-    console.log("🔍 Fetching DIRECT from DB like users module");
     const files = await fileUploadService.getFilesForUI(parsedFilters);
-    console.log("🔍 Direct DB files:", files?.length || 0, "files");
 
-    console.log("🔍 getFilesServerAction END:", {
-      requestId,
-      resultCount: files?.length || 0,
-      timestamp: Date.now(),
-    });
+    // ✅ Files retrieved successfully
 
     return {
       success: true,
@@ -333,13 +315,12 @@ export async function deleteFileServerAction(
     .toString(36)
     .substr(2, 9)}`;
 
-  console.log("🗑️ DELETE SERVER: Starting deletion", { requestId, timestamp });
+  // 🗑️ Starting file deletion process
 
   try {
     // 🛡️ Auth & Authorization
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) {
-      console.log("🗑️ DELETE SERVER: Unauthorized", { requestId });
       return {
         success: false,
         error: "No autorizado",
@@ -349,10 +330,7 @@ export async function deleteFileServerAction(
 
     // 📋 Parse form data
     const id = formData.get("id") as string;
-    console.log("🗑️ DELETE SERVER: Processing deletion", {
-      requestId,
-      fileId: id,
-    });
+    // 🗑️ Processing deletion request
 
     if (!id) {
       console.log("🗑️ DELETE SERVER: Missing ID", { requestId });

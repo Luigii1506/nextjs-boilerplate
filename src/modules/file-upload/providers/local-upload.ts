@@ -4,7 +4,7 @@
 
 import { writeFile, mkdir, unlink, access, stat } from "fs/promises";
 import { join } from "path";
-import { generateUploadPath } from "../config";
+import { generateUploadPath } from "../config/legacy";
 import type { UploadResult } from "../types";
 
 const UPLOAD_DIR = join(process.cwd(), "public", "uploads");

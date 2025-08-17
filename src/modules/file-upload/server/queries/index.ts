@@ -119,6 +119,7 @@ export const getUploadStatsQuery = async (userId?: string) => {
         by: ["mimeType"],
         where,
         _count: { _all: true },
+        _sum: { size: true },
         orderBy: { mimeType: "asc" },
         take: 10,
       }),
