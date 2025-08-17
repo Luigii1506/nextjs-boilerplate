@@ -139,14 +139,6 @@ export default function DynamicNavigationPure({
           isActive={isRouteActive(item.href)}
         />
       ))}
-
-      {/* 🎯 Debug info in development */}
-      {process.env.NODE_ENV === "development" && (
-        <div className="mt-4 p-2 bg-slate-100 rounded text-xs text-slate-600">
-          <div>📊 Items: {navigationItems.length}</div>
-          <div>🎭 Role: {isAdmin ? "admin" : "user"}</div>
-        </div>
-      )}
     </nav>
   );
 }

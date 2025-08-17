@@ -469,21 +469,6 @@ export default function AdminShellPure({
           </div>
         </main>
       </div>
-
-      {/* 🔍 Development Debug Panel */}
-      {debug && (
-        <div className="fixed bottom-4 right-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg shadow-lg text-xs text-yellow-700 max-w-xs z-50">
-          <div className="font-semibold mb-2">🔧 Debug Info</div>
-          <div>
-            👤 User: {user.name} ({user.role})
-          </div>
-          <div>🛡️ Role: {enterpriseRoleInfo?.level || "unknown"}</div>
-          <div>📱 Sidebar: {sidebarOpen ? "open" : "closed"}</div>
-          <div>🖥️ Admin: {isAdmin ? "yes" : "no"}</div>
-          <div>👑 Super: {isSuperAdmin ? "yes" : "no"}</div>
-          <div>📊 Actions: {headerActions.length}</div>
-        </div>
-      )}
     </div>
   );
 }

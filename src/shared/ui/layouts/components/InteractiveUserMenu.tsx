@@ -440,16 +440,6 @@ export const InteractiveUserMenu = React.memo<InteractiveUserMenuProps>(
             ))}
           </div>
         )}
-
-        {/* 🔍 Debug Info */}
-        {debug && (
-          <div className="absolute top-full right-0 mt-1 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700 z-40">
-            <div>👤 User: {user.id}</div>
-            <div>🔖 Role: {enterpriseRoleInfo.level}</div>
-            <div>📱 Compact: {compact.toString()}</div>
-            <div>📋 Actions: {menuActions.length}</div>
-          </div>
-        )}
       </div>
     );
   }

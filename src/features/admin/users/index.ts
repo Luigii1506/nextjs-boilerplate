@@ -1,21 +1,112 @@
-// 👥 USERS FEATURE MODULE
-// =======================
-// Main barrel export for users admin feature (Hexagonal Architecture + React 19)
+/**
+ * 👥 USERS CORE MODULE - ENTERPRISE
+ * =================================
+ *
+ * Main barrel export for users core module following Enterprise patterns v2.0
+ * Hexagonal Architecture + React 19 + Enterprise patterns
+ *
+ * Updated: 2025-01-17 - Enterprise patterns v2.0
+ */
 
-// 🎯 Types & Interfaces
+// 🏗️ Core Hooks (Enterprise Enhanced)
+export { useUsers } from "./hooks/useUsers";
+export type { UseUsersReturn } from "./hooks/useUsers";
+
+// 📝 Types & Interfaces (Enhanced)
 export * from "./types";
 
 // 📋 Validation Schemas
 export * from "./schemas";
 
-// 🏢 Server-side (Services, Actions, Queries, Validators)
+// 🏗️ Enterprise Configuration System
+export {
+  type UsersModuleConfig,
+  UsersConfigManager,
+  usersConfig,
+  adaptConfigForHook,
+  configUtils,
+} from "./config";
+
+// 📊 Enterprise Constants
+export {
+  USERS_CORE_CONFIG,
+  USERS_ACTIONS,
+  USERS_STATUS,
+  USERS_ROLES,
+  ROLE_HIERARCHY,
+  USERS_CACHE_TAGS,
+  LOG_LEVELS,
+  SEARCH_CONFIG,
+  FILTER_OPTIONS,
+  UI_CONFIG,
+  USERS_ERROR_CODES,
+  ANALYTICS_EVENTS,
+  PERMISSIONS,
+  ROLE_PERMISSIONS,
+  PAGINATION,
+} from "./constants";
+
+// 📝 Enterprise Logging System
+export {
+  createUsersLogger,
+  usersHookLogger,
+  usersServerActionLogger,
+  usersOptimisticLogger,
+  usersServiceLogger,
+  usersUILogger,
+  usersSecurityLogger,
+  usersAnalyticsLogger,
+} from "./utils/logger";
+
+// 🔄 State Management (Optimistic Updates)
+export {
+  usersOptimisticReducer,
+  createInitialUsersOptimisticState,
+  usersOptimisticSelectors,
+  type UsersOptimisticState,
+  type UsersOptimisticAction,
+} from "./reducers";
+
+// 🎯 Server Layer (Enhanced with Logging)
 export * from "./server";
 
-// 🎨 UI Components
+// 🧩 UI Components (Enterprise Ready)
 export * from "./ui";
 
-// 🛠️ Utilities (when available)
-// export * from "./utils";
+// 🧩 Shared Components (Reusable)
+export {
+  UserAvatar,
+  UserRoleBadge,
+  UserStatusBadge,
+  UserInfo,
+} from "./ui/components/shared";
 
-// 🔧 Hooks (when available)
-// export * from "./hooks";
+// 🔧 Utilities (Enhanced)
+export {
+  getRoleHierarchy,
+  canManageUser,
+  getRoleLabel,
+  getRoleColor,
+  getUserInitials,
+  getUserDisplayName,
+  formatUserRole,
+  formatLastLogin,
+  formatUserDate,
+  validateEmail,
+  validatePassword,
+  validateUserName,
+  getUserStatusColor,
+  getUserStatusLabel,
+  normalizeSearchTerm,
+  matchesSearchTerm,
+  calculateUserStats,
+  hasPermission,
+  canDeleteUser,
+  canChangeBanStatus,
+  canChangeRole,
+  filterUsersByRole,
+  filterUsersByStatus,
+  sortUsers,
+  sanitizeUserInput,
+  generateTempUserId,
+} from "./utils";

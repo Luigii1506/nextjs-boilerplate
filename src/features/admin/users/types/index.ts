@@ -83,12 +83,15 @@ export interface BulkUpdateData {
   newRole: "user" | "admin" | "super_admin";
 }
 
-// 🎯 Action Results
+// 🎯 Action Results (Enhanced for Enterprise logging)
 export interface ActionResult<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
   message?: string;
+  timestamp?: string; // Enterprise tracking
+  requestId?: string; // Enterprise tracking
+  metadata?: Record<string, unknown>; // Additional context
 }
 
 export type UserActionResult = ActionResult<User>;

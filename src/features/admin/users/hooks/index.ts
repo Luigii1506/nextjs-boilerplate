@@ -1,15 +1,12 @@
-// 👥 Users Hooks Barrel
-// =====================
-// Entry point para hooks de usuarios
+/**
+ * 👥 USERS HOOKS BARREL
+ * ======================
+ *
+ * Entry point para hooks enterprise del módulo de usuarios
+ *
+ * Updated: 2025-01-17 - Enterprise patterns v2.0
+ */
 
-// TODO: Implementar hooks cuando sean necesarios
-// Los hooks serán implementados cuando se necesiten para:
-// - Queries con React Query
-// - Mutaciones de usuarios
-// - Validaciones de permisos
-// - Estado local del módulo
-
-// Ejemplos de hooks futuros:
-// export { useUsersQuery } from "./useUsersQuery";
-// export { useUserMutations } from "./useUserMutations";
-// export { useUserPermissions } from "./useUserPermissions";
+// 🏗️ Core Users Hook (Enterprise Enhanced)
+export { useUsers } from "./useUsers";
+export type { UseUsersReturn } from "./useUsers";
