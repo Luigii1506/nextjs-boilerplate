@@ -1,0 +1,102 @@
+{
+  "generator": {
+    "version": "2.0.0",
+    "name": "Enterprise Module Generator",
+    "description": "Generador automatizado de módulos Enterprise siguiendo ENTERPRISE_PATTERNS.md"
+  },
+  "defaults": {
+    "moduleType": "feature",
+    "category": "feature",
+    "requiredRole": "user",
+    "order": 50,
+    "icon": "Settings",
+    "enablePrisma": true,
+    "enableUI": true,
+    "enableTests": true
+  },
+  "paths": {
+    "coreModules": "src/features",
+    "featureModules": "src/modules",
+    "navigation": "src/core/navigation/constants.ts",
+    "featureFlags": "src/core/config/feature-flags.ts",
+    "prismaSchema": "src/core/database/prisma/schema.prisma"
+  },
+  "patterns": {
+    "enforceEnterprisePatterns": true,
+    "requireDocumentation": true,
+    "autoFormatCode": true,
+    "validateTypeScript": true,
+    "generateTests": false
+  },
+  "ui": {
+    "availableIcons": [
+      "Home",
+      "Users",
+      "Upload",
+      "Sliders",
+      "Database",
+      "Shield",
+      "Bell",
+      "Search",
+      "BarChart3",
+      "MessageCircle",
+      "Calendar",
+      "Settings",
+      "FileText",
+      "Image",
+      "Video",
+      "Music",
+      "Download",
+      "Share",
+      "Heart",
+      "Star",
+      "Bookmark",
+      "Tag",
+      "Archive",
+      "Trash",
+      "Edit",
+      "Copy",
+      "Cut",
+      "Paste",
+      "Save",
+      "Print",
+      "Mail",
+      "Phone",
+      "MapPin",
+      "Globe",
+      "Wifi",
+      "Bluetooth",
+      "Camera",
+      "Mic",
+      "Speaker",
+      "Monitor",
+      "Smartphone",
+      "Tablet",
+      "CreditCard",
+      "ShoppingCart",
+      "Package",
+      "Truck",
+      "Plane",
+      "Car"
+    ]
+  },
+  "validation": {
+    "moduleNamePattern": "^[a-z][a-z0-9-]*$",
+    "maxModuleNameLength": 50,
+    "maxDisplayNameLength": 100,
+    "maxDescriptionLength": 500,
+    "maxPrismaFields": 20
+  },
+  "features": {
+    "supportBothModuleTypes": true,
+    "autoIntegrateNavigation": true,
+    "autoUpdateFeatureFlags": true,
+    "generatePrismaSchema": true,
+    "generateUIComponents": true,
+    "generateServerActions": true,
+    "generateValidationSchemas": true,
+    "generateBarrelExports": true,
+    "generateDocumentation": true,
+    "formatGeneratedCode": true
+  }
+}
