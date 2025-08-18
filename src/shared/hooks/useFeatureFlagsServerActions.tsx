@@ -134,6 +134,20 @@ export function FeatureFlagsServerProvider({
       const formData = new FormData();
       formData.append("flagKey", flagKey);
       formAction(formData);
+
+      // 📡 Notificar otras pestañas inmediatamente
+      try {
+        const broadcastChannel = new BroadcastChannel("feature-flags-sync");
+        broadcastChannel.postMessage({
+          type: "FEATURE_FLAGS_CHANGED",
+          flagKey,
+          timestamp: Date.now(),
+        });
+        broadcastChannel.close();
+      } catch (error) {
+        // BroadcastChannel no disponible en algunos entornos
+        console.debug("BroadcastChannel not available:", error);
+      }
     },
     [flags, formAction, setOptimisticFlags, startTransition]
   );
@@ -149,6 +163,47 @@ export function FeatureFlagsServerProvider({
       loadFlags(); // Sincronizar estado real
     }
   }, [actionState, loadFlags]);
+
+  // 🔄 Auto-refresh cuando regresa el foco (detecta cambios externos)
+  useEffect(() => {
+    const handleFocus = () => {
+      loadFlags();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        loadFlags();
+      }
+    };
+
+    // Escuchar focus de ventana y visibility change
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [loadFlags]);
+
+  // 📡 Broadcasting entre pestañas para sincronización instantánea
+  useEffect(() => {
+    const broadcastChannel = new BroadcastChannel("feature-flags-sync");
+
+    // Escuchar cambios de otras pestañas
+    const handleBroadcast = (event: MessageEvent) => {
+      if (event.data?.type === "FEATURE_FLAGS_CHANGED") {
+        loadFlags(); // Recargar inmediatamente
+      }
+    };
+
+    broadcastChannel.addEventListener("message", handleBroadcast);
+
+    return () => {
+      broadcastChannel.removeEventListener("message", handleBroadcast);
+      broadcastChannel.close();
+    };
+  }, [loadFlags]);
 
   const value: FeatureFlagsContextType = {
     flags: optimisticFlags,

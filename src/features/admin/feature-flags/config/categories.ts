@@ -18,7 +18,7 @@ export const CATEGORY_CONFIG: Record<FeatureGroup, CategoryConfig> = {
     icon: "Shield",
     color: "blue",
   },
-  modules: {
+  module: {
     title: "Módulos",
     description: "Funcionalidades adicionales y extensiones",
     icon: "Package",

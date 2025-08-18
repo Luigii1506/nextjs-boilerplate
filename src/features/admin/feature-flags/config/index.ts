@@ -1,9 +1,12 @@
-// 🔧 FEATURE FLAGS CONFIG INDEX
-// =============================
-// Exportaciones centralizadas de configuración de feature flags
+// 🔧 FEATURE FLAGS CONFIG
+// =======================
+// Configuración simplificada para feature flags
 
-export * from "../../../../features/admin/feature-flags/config/metadata";
-export * from "../../../../features/admin/feature-flags/config/categories";
+// 🎨 Categories Configuration
+export * from "./categories";
+
+// 🎯 Metadata (si se usa)
+export * from "./metadata";
 
 // Re-export types for convenience
 export type { FeatureFlag, FeatureGroup } from "@/core/config/feature-flags";

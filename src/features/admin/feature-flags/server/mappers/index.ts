@@ -47,7 +47,7 @@ export const mapDomainToFeatureFlagCard = (
 
   // Mapear categoría de BD a grupo de UI
   const categoryMap: { [key: string]: FeatureGroup } = {
-    module: "modules",
+    module: "module",
     ui: "ui",
     experimental: "experimental",
     core: "core",
@@ -78,7 +78,7 @@ export const calculateFeatureFlagStats = (
     totalFlags: flags.length,
     enabledFlags: flags.filter((f) => f.enabled).length,
     coreFlags: flags.filter((f) => f.category === "core").length,
-    moduleFlags: flags.filter((f) => f.category === "modules").length,
+    moduleFlags: flags.filter((f) => f.category === "module").length,
     experimentalFlags: flags.filter((f) => f.category === "experimental")
       .length,
     uiFlags: flags.filter((f) => f.category === "ui").length,

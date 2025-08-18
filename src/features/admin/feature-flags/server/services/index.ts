@@ -257,6 +257,7 @@ export class FeatureFlagService {
         hasPrismaModels: true,
         dependencies: [],
         conflicts: [],
+        rolloutPercentage: 100,
       },
       {
         key: "analytics",
@@ -267,6 +268,7 @@ export class FeatureFlagService {
         hasPrismaModels: false,
         dependencies: [],
         conflicts: [],
+        rolloutPercentage: 100,
       },
       {
         key: "darkMode",
@@ -277,6 +279,7 @@ export class FeatureFlagService {
         hasPrismaModels: false,
         dependencies: [],
         conflicts: [],
+        rolloutPercentage: 100,
       },
       {
         key: "betaFeatures",
@@ -287,6 +290,7 @@ export class FeatureFlagService {
         hasPrismaModels: false,
         dependencies: [],
         conflicts: [],
+        rolloutPercentage: 100,
       },
     ];
 

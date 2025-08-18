@@ -1,60 +1,29 @@
-// 🎛️ FEATURE FLAGS FEATURE BARREL
-// ===============================
-// Entry point para la feature de feature flags (nueva arquitectura)
+// 🎛️ FEATURE FLAGS MODULE
+// =======================
+// Patrón directo simplificado (como users) - sin complejidad enterprise
 
-// 🎨 UI components
+// 🎨 UI Components
 export { default as FeatureFlagsView } from "./ui/routes/index.screen";
 export { FeatureFlagCard } from "./ui/components";
 
-// 📊 Configuration
-export { getFeatureFlagMetadata } from "./config";
-
-// 🪝 Hooks personalizados
+// 🏗️ Server Actions (Patrón Directo)
 export {
-  useFeatureFlagAdmin,
-  useFeatureFlagStats,
-  // useNotifications eliminado - usar el sistema principal de @/shared/hooks/useNotifications
-} from "./hooks";
+  getAllFeatureFlagsServerAction,
+  toggleFeatureFlagServerAction,
+} from "./server/actions";
 
-// 🏗️ Server (nueva arquitectura)
-export { featureFlagService } from "./server";
-
-// 🎯 Types
+// 🎯 Types esenciales
 export type {
-  FeatureFlagState,
-  NotificationState,
-  FeatureFlagStats,
+  FeatureFlagDomain,
   FeatureFlagCardData,
-  FeatureFlagCategory,
+  FeatureFlagStats,
 } from "./types";
 
-// 🔧 Utils
-export {
-  filterFeatureFlags,
-  groupByCategory,
-  getCategoryColors,
-  getCategoryIcon,
-  getNotificationStyles,
-} from "./utils";
+// 🎨 Configuración de categorías
+export { CATEGORY_CONFIG } from "./config/categories";
 
-// 🔍 Schemas & Validation
-export {
-  CreateFeatureFlagSchema,
-  UpdateFeatureFlagSchema,
-  ToggleFeatureFlagSchema,
-  FeatureFlagFiltersSchema,
-  parseCreateFeatureFlag,
-  parseUpdateFeatureFlag,
-  parseToggleFeatureFlag,
-  parseFeatureFlagFilters,
-} from "./schemas";
+// 🔧 Utils básicos
+export { getCategoryColors, getCategoryIcon } from "./utils";
 
-export type {
-  CreateFeatureFlagInput,
-  UpdateFeatureFlagInput,
-  ToggleFeatureFlagInput,
-  FeatureFlagFilters,
-} from "./schemas";
-
-// ✅ Todas las funcionalidades están disponibles a través de la nueva arquitectura
-// Para funciones del servidor usar: ./server/services/index.ts
+// 📊 Constants básicos
+export { FEATURE_FLAGS_CACHE_TAGS, FEATURE_FLAGS_PATHS } from "./constants";

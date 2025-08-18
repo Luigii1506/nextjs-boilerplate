@@ -77,7 +77,7 @@ export function getFeaturesByModule(
 // 🧪 FEATURE FLAG GROUPS - Para UI
 export const FEATURE_GROUPS = {
   core: ["authentication", "roleBasedAccess", "userManagement", "dashboard"],
-  modules: ["fileUpload", "payments", "inventory", "ecommerce"],
+  module: ["fileUpload", "payments", "inventory", "ecommerce"],
   experimental: ["betaFeatures", "debugMode", "newDashboard"],
   ui: ["darkMode", "animations", "notifications"],
   admin: ["advancedUserManagement", "systemLogs", "dataExport"],

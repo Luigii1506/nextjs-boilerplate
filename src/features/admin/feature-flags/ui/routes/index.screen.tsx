@@ -4,35 +4,178 @@
 
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { RefreshCw, Flag, Search, Filter, BarChart3 } from "lucide-react";
 
-// 🪝 Hooks personalizados
-import { useFeatureFlagAdmin } from "../../hooks";
+// 🧠 Notificaciones Inteligentes (como Users)
+import { useActionNotifications } from "@/shared/hooks/useActionNotifications";
+
+// 🔄 Provider para sincronización instantánea con navegación
+import {
+  useFeatureFlagsServer,
+  useToggleFlag,
+} from "@/shared/hooks/useFeatureFlagsServerActions";
 
 // 🎨 Componentes y utilidades
 import FeatureFlagCard from "../components/FeatureFlagCard";
-import {
-  getCategoryColors,
-  getCategoryIcon,
-  getNotificationStyles,
-  cn,
-} from "../../utils";
+import { getCategoryColors, getCategoryIcon, cn } from "../../utils";
 import { CATEGORY_CONFIG } from "../../config/categories";
+import type { FeatureFlagCardData, FeatureFlagDomain } from "../../types";
 
-// 🎯 Componente principal
+// 🎯 Componente principal (Híbrido: Provider + Direct)
 export default function FeatureFlagsAdmin() {
+  // 🧠 SISTEMA SIMPLE E INTELIGENTE - UNA SOLA LÍNEA
+  const { notify } = useActionNotifications();
+
+  // 🔄 Provider compartido para sincronización con navegación
   const {
-    flags,
-    filteredFlags,
-    stats,
-    groupedFlags,
+    flags: providerFlags,
+    isPending,
     isLoading,
     error,
-    filters,
-    notification,
-    actions: { updateFilters, handleToggle, handleRefresh, clearFilters },
-  } = useFeatureFlagAdmin();
+  } = useFeatureFlagsServer();
+  const toggleFlag = useToggleFlag();
+
+  // 🔍 Estado local para filtros
+  const [filters, setFilters] = React.useState({
+    search: "",
+    category: "all",
+    status: "all",
+  });
+
+  // 🔄 Convertir flags del provider a formato FeatureFlagDomain
+  const flags: FeatureFlagDomain[] = useMemo(() => {
+    return providerFlags.map((flag) => ({
+      key: flag.key,
+      name: flag.name,
+      description: flag.description || "",
+      enabled: flag.enabled,
+      category: flag.category,
+      version: flag.version,
+      hasPrismaModels: flag.hasPrismaModels,
+      dependencies: flag.dependencies,
+      conflicts: flag.conflicts,
+      rolloutPercentage: flag.rolloutPercentage,
+      createdAt: flag.createdAt,
+      updatedAt: flag.updatedAt,
+    }));
+  }, [providerFlags]);
+
+  // 📊 Computed values from provider (sincronizado automáticamente)
+  const loading = isLoading && flags.length === 0;
+
+  // 🔄 Refresh handler (usa el provider)
+  const handleRefresh = () => {
+    // El provider maneja el refresh automáticamente
+    window.location.reload();
+  };
+
+  // 🧠 SÚPER SIMPLE: Toggle flag - SINCRONIZACIÓN AUTOMÁTICA
+  const handleToggle = async (flagKey: string) => {
+    // ✨ UNA SOLA LÍNEA - usa el provider compartido para sincronización instantánea
+    await notify(async () => {
+      toggleFlag(flagKey);
+
+      // 📡 Notificar otras pestañas (redundante pero asegura sincronización)
+      try {
+        const broadcastChannel = new BroadcastChannel("feature-flags-sync");
+        broadcastChannel.postMessage({
+          type: "FEATURE_FLAGS_CHANGED",
+          flagKey,
+          source: "feature-flags-page",
+          timestamp: Date.now(),
+        });
+        broadcastChannel.close();
+      } catch (error) {
+        // BroadcastChannel no disponible en algunos entornos
+        console.debug("BroadcastChannel not available:", error);
+      }
+    }, `Cambiando estado de '${flagKey}'...`);
+  };
+
+  // 🔄 Mapear FeatureFlagDomain a FeatureFlagCardData (como Users)
+  const mappedFlags = useMemo((): FeatureFlagCardData[] => {
+    return flags.map((flag) => ({
+      id: flag.key as FeatureFlagCardData["id"],
+      name: flag.name,
+      description: flag.description || "",
+      category: flag.category as FeatureFlagCardData["category"],
+      enabled: flag.enabled,
+      icon: "Package", // Default icon
+      isPremium: false,
+      dependencies: flag.dependencies as FeatureFlagCardData["dependencies"],
+      lastModified: flag.updatedAt
+        ? flag.updatedAt.toISOString()
+        : new Date().toISOString(),
+      modifiedBy: "System", // FeatureFlagDomain no tiene modifiedBy
+    }));
+  }, [flags]);
+
+  // Filter flags based on current filters (como Users)
+  const filteredFlags = useMemo(() => {
+    let filtered = mappedFlags;
+
+    if (filters.search) {
+      const search = filters.search.toLowerCase();
+      filtered = filtered.filter(
+        (flag) =>
+          flag.name.toLowerCase().includes(search) ||
+          flag.id.toLowerCase().includes(search) ||
+          flag.description.toLowerCase().includes(search)
+      );
+    }
+
+    if (filters.category && filters.category !== "all") {
+      filtered = filtered.filter((flag) => flag.category === filters.category);
+    }
+
+    if (filters.status && filters.status !== "all") {
+      filtered = filtered.filter((flag) =>
+        filters.status === "enabled" ? flag.enabled : !flag.enabled
+      );
+    }
+
+    return filtered;
+  }, [mappedFlags, filters]);
+
+  const groupedFlags = useMemo(() => {
+    return filteredFlags.reduce((groups, flag) => {
+      const category = flag.category || "core";
+      if (!groups[category]) groups[category] = [];
+      groups[category].push(flag);
+      return groups;
+    }, {} as Record<string, typeof filteredFlags>);
+  }, [filteredFlags]);
+
+  // Calculate stats from optimistic state (como Users)
+  const stats = useMemo(
+    () => ({
+      total: flags.length,
+      enabled: flags.filter((f) => f.enabled).length,
+      disabled: flags.filter((f) => !f.enabled).length,
+      active: flags.filter((f) => f.enabled).length,
+      byCategory: {
+        core: flags.filter((f) => f.category === "core").length,
+        module: flags.filter((f) => f.category === "module").length,
+        ui: flags.filter((f) => f.category === "ui").length,
+        experimental: flags.filter((f) => f.category === "experimental").length,
+        admin: flags.filter((f) => f.category === "admin").length,
+      },
+    }),
+    [flags]
+  );
+
+  // 🎯 Handlers optimizados (como Users)
+  const updateFilters = React.useCallback(
+    (newFilters: Partial<typeof filters>) => {
+      setFilters((prev) => ({ ...prev, ...newFilters }));
+    },
+    []
+  );
+
+  const clearFilters = React.useCallback(() => {
+    setFilters({ search: "", category: "all", status: "all" });
+  }, []);
 
   // 🏷️ Crear categorías para renderizado
   const categories = Object.entries(CATEGORY_CONFIG)
@@ -64,20 +207,21 @@ export default function FeatureFlagsAdmin() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {/* 🔄 Refresh button with provider state */}
           <button
             onClick={handleRefresh}
-            disabled={isLoading}
+            disabled={isPending || isLoading}
             className={cn(
               "px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg",
-              "transition-colors disabled:opacity-50 flex items-center gap-2"
+              "transition-colors disabled:opacity-50 flex items-center gap-2",
+              isPending || isLoading ? "animate-pulse" : ""
             )}
           >
-            {isLoading ? (
-              <RefreshCw size={16} className="animate-spin" />
-            ) : (
-              <RefreshCw size={16} />
-            )}
-            Actualizar
+            <RefreshCw
+              size={16}
+              className={isPending || isLoading ? "animate-spin" : ""}
+            />
+            {isPending || isLoading ? "Actualizando..." : "Actualizar"}
           </button>
         </div>
       </div>
@@ -98,64 +242,38 @@ export default function FeatureFlagsAdmin() {
         </div>
       )}
 
-      {/* Notificación */}
-      {notification && (
-        <div
-          className={cn(
-            "p-4 rounded-lg flex items-center space-x-3",
-            getNotificationStyles(notification.type).container
-          )}
-        >
-          {React.createElement(
-            getNotificationStyles(notification.type).IconComponent,
-            {
-              className: cn(
-                "w-5 h-5",
-                getNotificationStyles(notification.type).icon
-              ),
-            }
-          )}
-          <span
-            className={cn(
-              "text-sm font-medium",
-              getNotificationStyles(notification.type).text
-            )}
-          >
-            {notification.message}
-          </span>
-        </div>
-      )}
+      {/* ✅ Notificaciones automáticas - manejadas por useActionNotifications */}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <StatsCard
           icon="Flag"
           label="Total"
-          value={stats.totalFlags}
+          value={stats.total}
           color="slate"
         />
         <StatsCard
           icon="CheckCircle"
           label="Activas"
-          value={stats.enabledFlags}
+          value={stats.enabled}
           color="emerald"
         />
         <StatsCard
           icon="Shield"
           label="Core"
-          value={stats.coreFlags}
+          value={stats.byCategory?.core || 0}
           color="blue"
         />
         <StatsCard
           icon="Package"
           label="Módulos"
-          value={stats.moduleFlags}
+          value={stats.byCategory?.module || 0}
           color="green"
         />
         <StatsCard
           icon="Palette"
           label="Interfaz"
-          value={stats.uiFlags}
+          value={stats.byCategory?.ui || 0}
           color="purple"
         />
       </div>
@@ -275,12 +393,12 @@ export default function FeatureFlagsAdmin() {
                   <FeatureFlagCard
                     key={flag.id}
                     flag={flag}
-                    dependencies={flags.filter((f) =>
+                    dependencies={mappedFlags.filter((f) =>
                       flag.dependencies?.includes(f.id)
                     )}
                     hasChanges={false} // Ya no manejamos cambios locales
-                    isLoading={isLoading}
-                    onToggle={handleToggle} // ✅ Pasar función del hook
+                    isLoading={isPending}
+                    onToggle={(flagKey) => handleToggle(flagKey)} // ✅ Sincronización automática con navegación
                   />
                 ))}
               </div>
@@ -290,7 +408,7 @@ export default function FeatureFlagsAdmin() {
       </div>
 
       {/* Empty State */}
-      {filteredFlags.length === 0 && !isLoading && (
+      {filteredFlags.length === 0 && !loading && (
         <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
           <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Flag className="w-8 h-8 text-slate-400" />
@@ -322,8 +440,7 @@ export default function FeatureFlagsAdmin() {
                 Estado del Sistema
               </h3>
               <p className="text-sm text-slate-600">
-                {stats.enabledFlags} de {stats.totalFlags} funcionalidades
-                activas
+                {stats.enabled} de {stats.total} funcionalidades activas
               </p>
             </div>
           </div>
