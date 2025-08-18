@@ -3,6 +3,10 @@
 // Esquemas de validación Zod para file-upload
 
 import { z } from "zod";
+import {
+  OptionalUserIdSchema,
+  UserIdSchema,
+} from "@/shared/utils/idValidation";
 
 // ========================
 // 📤 UPLOAD SCHEMAS
@@ -62,12 +66,7 @@ export const UpdateCategorySchema = z.object({
 // ========================
 
 export const FileFiltersSchema = z.object({
-  userId: z
-    .string()
-    .uuid()
-    .optional()
-    .or(z.null())
-    .transform((val) => val || undefined),
+  userId: OptionalUserIdSchema,
   provider: z
     .enum(["local", "s3", "cloudinary"])
     .optional()
@@ -109,12 +108,7 @@ export const FileFiltersSchema = z.object({
 // ========================
 
 export const GetStatsSchema = z.object({
-  userId: z
-    .string()
-    .uuid()
-    .optional()
-    .or(z.null())
-    .transform((val) => val || undefined),
+  userId: UserIdSchema,
   period: z.enum(["day", "week", "month", "year"]).default("month"),
 });
 

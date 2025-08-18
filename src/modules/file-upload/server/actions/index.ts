@@ -329,26 +329,38 @@ export async function getFileStatsServerAction(
     const session = await validators.getValidatedSession();
     validators.validateFileAccess(session.user.role);
 
-    // 📋 Parse optional target user ID (for admins)
+    // 🔍 Determine target user ID with proper validation
+    let targetUserId = session.user.id; // Default to current user
+
+    // If a specific user ID is requested (for admins)
     const targetUserIdFromForm = formData?.get("userId");
-    const userId =
-      targetUserIdFromForm && targetUserIdFromForm !== ""
-        ? (targetUserIdFromForm as string)
-        : session.user.id;
-
-    // 🛡️ Permission check for viewing other users' stats
-    validators.validateStatsAccess(session.user.id, userId, session.user.role);
-
-    // Only process if valid UUID
-    const statsInputData: { userId?: string; period?: string } = {};
-
-    try {
-      validators.validateUUID(userId, "User ID");
-      statsInputData.userId = userId;
-    } catch {
-      // If invalid UUID, use current user
-      statsInputData.userId = session.user.id;
+    if (targetUserIdFromForm && targetUserIdFromForm !== "") {
+      try {
+        // Validate the requested user ID format
+        validators.validateUUID(
+          targetUserIdFromForm as string,
+          "Target User ID"
+        );
+        targetUserId = targetUserIdFromForm as string;
+      } catch {
+        // If invalid UUID provided, fall back to current user
+        targetUserId = session.user.id;
+      }
     }
+
+    // 🛡️ Permission check for viewing other users' stats (only if different user)
+    if (targetUserId !== session.user.id) {
+      validators.validateStatsAccess(
+        session.user.id,
+        targetUserId,
+        session.user.role
+      );
+    }
+
+    // 🔍 Prepare stats input data
+    const statsInputData: { userId: string; period?: string } = {
+      userId: targetUserId, // Always a valid ID (UUID or CUID) at this point
+    };
 
     // Add period if provided
     const period = formData?.get("period");

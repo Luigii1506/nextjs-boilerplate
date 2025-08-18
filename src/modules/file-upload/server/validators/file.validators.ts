@@ -10,6 +10,7 @@
 
 import { headers } from "next/headers";
 import { auth } from "@/core/auth/server/auth";
+import { validateUserId } from "@/shared/utils/idValidation";
 import { fileUploadSecurityLogger } from "../../utils/logger";
 
 // 🎯 Tipos para session validada
@@ -109,16 +110,11 @@ export function validateStatsAccess(
 }
 
 /**
- * 🔍 VALIDACIÓN DE UUID
- * Verifica que un ID tenga formato UUID válido
+ * 🔍 VALIDACIÓN DE ID (UUID, CUID, CUID2)
+ * Usa utilidad centralizada para validación de IDs
  */
 export function validateUUID(id: string, fieldName: string = "ID"): void {
-  const uuidRegex =
-    /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
-
-  if (!id || !uuidRegex.test(id)) {
-    throw new Error(`${fieldName} debe ser un UUID válido`);
-  }
+  validateUserId(id, fieldName);
 }
 
 /**
