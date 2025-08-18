@@ -60,11 +60,19 @@ export const DEFAULT_PROVIDERS = {
   CLOUDINARY: "cloudinary",
 } as const;
 
-// 🏷️ Cache tags for revalidation
-export const CACHE_TAGS = {
-  FILES: "user-files",
-  STATS: "file-stats",
-  CATEGORIES: "file-categories",
+// 🏷️ Cache tags for revalidation (Enterprise pattern)
+export const FILE_UPLOAD_CACHE_TAGS = {
+  FILES: "file-upload-files",
+  STATS: "file-upload-stats", 
+  CATEGORIES: "file-upload-categories",
+  USER_FILES: "file-upload-user-files",
+} as const;
+
+// 🔄 Paths for revalidation
+export const FILE_UPLOAD_PATHS = {
+  FILES: "/files",
+  ADMIN_FILES: "/admin/files", 
+  CATEGORIES: "/admin/categories",
 } as const;
 
 // 📝 Logging levels and prefixes

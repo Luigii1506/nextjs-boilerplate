@@ -63,7 +63,7 @@ export const useFileUpload = (
   // 🎯 PRIMARY DATA STATE (Server Actions as Source of Truth)
   const [filesState, filesAction, filesPending] = useActionState(
     async (): Promise<FileActionResult> => {
-      fileUploadLogger.debug("Fetching files from server");
+      fileUploadLogger.info("Fetching files from server");
       return await getFilesServerAction();
     },
     null

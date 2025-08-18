@@ -1,26 +1,24 @@
-// ⚡ FILE UPLOAD ACTIONS - ENTERPRISE GRADE
-// ==========================================
-// React 19 + Next.js 15 Optimized Server Actions
-
 "use server";
 
-import { revalidatePath, revalidateTag } from "next/cache";
-import { headers } from "next/headers";
-import { auth } from "@/core/auth/server/auth";
-import {
-  parseUploadFileInput,
-  parseUpdateUploadInput,
-  parseDeleteUploadInput,
-  parseCreateCategoryInput,
-  parseFileFilters,
-  parseGetStatsInput,
-  parseGetSignedUrlInput,
-} from "../../schemas";
+/**
+ * 📁 FILE-UPLOAD ENTERPRISE SERVER ACTIONS
+ * ========================================
+ *
+ * Next.js 15 Server Actions siguiendo el patrón enterprise del módulo users
+ * React 19 + Hexagonal Architecture + Enterprise patterns
+ *
+ * Updated: 2025-01-18 - Enterprise patterns refactor
+ */
+
+import { revalidateTag, revalidatePath } from "next/cache";
+import * as schemas from "../../schemas";
+import * as validators from "../validators/file.validators";
 import { fileUploadService, fileCategoryService } from "../services";
 import {
   fileUploadServerActionLogger,
   fileUploadSecurityLogger,
 } from "../../utils/logger";
+import { FILE_UPLOAD_CACHE_TAGS, FILE_UPLOAD_PATHS } from "../../constants";
 
 // 🎯 Enterprise Action Result Interface
 export interface FileActionResult<T = unknown> {
@@ -28,38 +26,24 @@ export interface FileActionResult<T = unknown> {
   data?: T;
   error?: string;
   message?: string;
-  timestamp?: string;
-  optimisticId?: string; // For optimistic UI
+  timestamp: string;
+  requestId?: string;
 }
 
-// ========================
-// 📤 UPLOAD ACTIONS (Optimized)
-// ========================
-
+// 📤 UPLOAD FILE (Enterprise Server Action)
 export async function uploadFileServerAction(
   formData: FormData
 ): Promise<FileActionResult> {
-  const timestamp = new Date().toISOString();
   const requestId = `upload-${Date.now()}-${Math.random()
     .toString(36)
     .substr(2, 9)}`;
 
   try {
-    // 🛡️ Auth & Authorization
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user) {
-      fileUploadSecurityLogger.security("UNAUTHORIZED_UPLOAD_ATTEMPT", {
-        requestId,
-        timestamp,
-      });
-      return {
-        success: false,
-        error: "No autorizado",
-        timestamp,
-      };
-    }
+    // 🛡️ Session validation
+    const session = await validators.getValidatedSession();
+    validators.validateFileAccess(session.user.role);
 
-    // 📋 Schema-based parsing (consistent with feature-flags)
+    // 🔍 Parse and validate form data
     const file = formData.get("file") as File;
     const provider = (formData.get("provider") as "local" | "s3") || "local";
     const categoryId = (formData.get("categoryId") as string) || undefined;
@@ -69,12 +53,13 @@ export async function uploadFileServerAction(
       return {
         success: false,
         error: "Archivo requerido",
-        timestamp,
+        timestamp: new Date().toISOString(),
+        requestId,
       };
     }
 
     // ✅ Validate using schemas
-    const uploadData = parseUploadFileInput({
+    const uploadData = schemas.parseUploadFileInput({
       filename: file.name,
       originalName: file.name,
       mimeType: file.type,
@@ -84,19 +69,20 @@ export async function uploadFileServerAction(
       tags: [],
     });
 
-    // 🚀 Upload with service layer
-    fileUploadServerActionLogger.upload(
-      requestId,
-      file.name,
-      file.size,
-      "START",
-      {
-        userId: session.user.id,
-        provider,
-        requestId,
-      }
-    );
+    validators.validateProvider(uploadData.provider);
+    validators.validateCategory(categoryId || null);
+    validators.validateFileLimits([file]);
 
+    // 🔐 Security audit log (CRÍTICO)
+    fileUploadSecurityLogger.security("FILE_UPLOAD_ATTEMPT", {
+      requestId,
+      userId: session.user.id,
+      filename: file.name,
+      fileSize: file.size,
+      provider: uploadData.provider,
+    });
+
+    // 🏢 Business logic via service
     const result = await fileUploadService.uploadFile(
       file,
       session.user.id,
@@ -104,151 +90,57 @@ export async function uploadFileServerAction(
       categoryId
     );
 
-    // 📁 Log successful upload (CRÍTICO)
-    fileUploadServerActionLogger.upload(
+    // 🔄 Cache invalidation
+    revalidateTag(FILE_UPLOAD_CACHE_TAGS.FILES);
+    revalidateTag(FILE_UPLOAD_CACHE_TAGS.STATS);
+    revalidatePath(FILE_UPLOAD_PATHS.FILES);
+    revalidatePath(FILE_UPLOAD_PATHS.ADMIN_FILES);
+
+    fileUploadServerActionLogger.info("File uploaded successfully", {
       requestId,
-      file.name,
-      file.size,
-      "SUCCESS",
-      {
-        userId: session.user.id,
-        provider,
-        fileId: result.id,
-        requestId,
-      }
-    );
-
-    // 🔄 Smart cache invalidation
-    revalidateTag("user-files");
-    revalidateTag("file-stats");
-    revalidatePath("/files");
-    revalidatePath("/admin/files");
-
-    // ✅ Upload completed - cache invalidated
+      fileId: result.id,
+      filename: file.name,
+      userId: session.user.id,
+    });
 
     return {
       success: true,
       data: result,
       message: `Archivo "${file.name}" subido exitosamente`,
-      timestamp,
+      timestamp: new Date().toISOString(),
+      requestId,
     };
   } catch (error) {
     fileUploadServerActionLogger.error("Upload failed", error, { requestId });
 
-    // 📁 Log failed upload (CRÍTICO)
-    const fileName = formData.get("file") as File;
-    if (fileName?.name) {
-      fileUploadServerActionLogger.upload(
-        requestId,
-        fileName.name,
-        fileName.size,
-        "FAILED",
-        {
-          requestId,
-          error: error instanceof Error ? error.message : "Unknown error",
-        }
-      );
-    }
+    // 🔐 Security audit for failed attempt
+    fileUploadSecurityLogger.security("FILE_UPLOAD_FAILED", {
+      requestId,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
 
     return {
       success: false,
       error: error instanceof Error ? error.message : "Error de upload",
-      timestamp,
+      timestamp: new Date().toISOString(),
+      requestId,
     };
   }
 }
 
-export async function uploadMultipleFilesServerAction(
-  formData: FormData
-): Promise<FileActionResult> {
-  const timestamp = new Date().toISOString();
-
-  try {
-    // 🛡️ Auth & Authorization
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user) {
-      return {
-        success: false,
-        error: "No autorizado",
-        timestamp,
-      };
-    }
-
-    // 📋 Parse form data
-    const files = formData.getAll("files") as File[];
-    const provider = (formData.get("provider") as "local" | "s3") || "local";
-    const categoryId = (formData.get("categoryId") as string) || undefined;
-
-    if (!files || files.length === 0) {
-      return {
-        success: false,
-        error: "Archivos requeridos",
-        timestamp,
-      };
-    }
-
-    // 🚀 Bulk upload with service layer
-    const result = await fileUploadService.uploadMultipleFiles(
-      files,
-      session.user.id,
-      provider,
-      categoryId
-    );
-
-    // 🔄 Smart cache invalidation
-    revalidateTag("user-files");
-    revalidateTag("file-stats");
-    revalidatePath("/files");
-    revalidatePath("/admin/files");
-
-    return {
-      success: true,
-      data: result,
-      message: `${files.length} archivos procesados`,
-      timestamp,
-    };
-  } catch (error) {
-    console.error("📤 Bulk Upload Error:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Error de upload múltiple",
-      timestamp,
-    };
-  }
-}
-
-// ========================
-// 📋 FILE MANAGEMENT ACTIONS
-// ========================
-
+// 📋 GET FILES (Enterprise Server Action)
 export async function getFilesServerAction(
   formData?: FormData
 ): Promise<FileActionResult> {
-  const timestamp = new Date().toISOString();
-
   try {
-    // 🛡️ Auth check
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user) {
-      return {
-        success: false,
-        error: "No autorizado",
-        timestamp,
-      };
-    }
+    // 🛡️ Session validation
+    const session = await validators.getValidatedSession();
+    validators.validateFileAccess(session.user.role);
 
-    // 📋 Parse filters from FormData if provided
-    // Validate userId format before including it
-    const isValidUUID = (id: string) =>
-      id &&
-      id.match(
-        /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/
-      );
-
+    // 📋 Parse filters from FormData
     const filters = formData
       ? {
-          ...(isValidUUID(session.user.id) && { userId: session.user.id }),
+          userId: session.user.id,
           categoryId: formData.get("categoryId") || undefined,
           provider: formData.get("provider") || undefined,
           search: formData.get("search") || undefined,
@@ -265,53 +157,39 @@ export async function getFilesServerAction(
           sortBy: formData.get("sortBy") || undefined,
           sortOrder: formData.get("sortOrder") || undefined,
         }
-      : isValidUUID(session.user.id)
-      ? { userId: session.user.id }
-      : {};
+      : { userId: session.user.id };
 
-    const parsedFilters = parseFileFilters(filters);
+    const parsedFilters = schemas.parseFileFilters(filters);
 
-    // 🔄 Cache with tags for automatic invalidation (RESTORED)
-    // 🔍 Starting files retrieval
-
-    // 🔄 DIRECT DB call like users module (NO CACHE)
+    // 🏢 Business logic via service
     const files = await fileUploadService.getFilesForUI(parsedFilters);
-
-    // ✅ Files retrieved successfully
 
     return {
       success: true,
       data: files,
-      timestamp,
+      timestamp: new Date().toISOString(),
     };
   } catch (error) {
-    console.error("📋 Get Files Error:", error);
+    fileUploadServerActionLogger.error("Get files failed", error);
     return {
       success: false,
       error:
         error instanceof Error ? error.message : "Error obteniendo archivos",
-      timestamp,
+      timestamp: new Date().toISOString(),
     };
   }
 }
 
+// 📝 UPDATE FILE (Enterprise Server Action)
 export async function updateFileServerAction(
   formData: FormData
 ): Promise<FileActionResult> {
-  const timestamp = new Date().toISOString();
-
   try {
-    // 🛡️ Auth & Authorization
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user) {
-      return {
-        success: false,
-        error: "No autorizado",
-        timestamp,
-      };
-    }
+    // 🛡️ Session validation
+    const session = await validators.getValidatedSession();
+    validators.validateFileAccess(session.user.role);
 
-    // 📋 Parse and validate form data
+    // 🔍 Parse and validate form data
     const id = formData.get("id") as string;
     const filename = formData.get("filename") as string;
     const isPublic = formData.get("isPublic") === "true";
@@ -321,215 +199,137 @@ export async function updateFileServerAction(
       return {
         success: false,
         error: "ID de archivo requerido",
-        timestamp,
+        timestamp: new Date().toISOString(),
       };
     }
 
+    validators.validateUUID(id, "ID de archivo");
+
     // ✅ Use schema validation
-    const updateData = parseUpdateUploadInput({
+    const updateData = schemas.parseUpdateUploadInput({
       id,
       ...(filename && { filename }),
       ...(isPublic !== undefined && { isPublic }),
       ...(tags && { tags: tags.split(",") }),
     });
 
+    // 🏢 Business logic via service
     const updated = await fileUploadService.updateFile(
       updateData.id,
       updateData
     );
 
-    // 🔄 Smart cache invalidation
-    revalidateTag("user-files");
-    revalidatePath("/files");
-    revalidatePath("/admin/files");
+    // 🔄 Cache invalidation
+    revalidateTag(FILE_UPLOAD_CACHE_TAGS.FILES);
+    revalidatePath(FILE_UPLOAD_PATHS.FILES);
+    revalidatePath(FILE_UPLOAD_PATHS.ADMIN_FILES);
 
     return {
       success: true,
       data: updated,
       message: "Archivo actualizado exitosamente",
-      timestamp,
+      timestamp: new Date().toISOString(),
     };
   } catch (error) {
-    console.error("📝 Update File Error:", error);
+    fileUploadServerActionLogger.error("Update file failed", error);
     return {
       success: false,
       error:
         error instanceof Error ? error.message : "Error actualizando archivo",
-      timestamp,
+      timestamp: new Date().toISOString(),
     };
   }
 }
 
+// 🗑️ DELETE FILE (Enterprise Server Action)
 export async function deleteFileServerAction(
   formData: FormData
 ): Promise<FileActionResult> {
-  const timestamp = new Date().toISOString();
   const requestId = `delete-${Date.now()}-${Math.random()
     .toString(36)
     .substr(2, 9)}`;
 
-  // 🗑️ Starting file deletion process
-
   try {
-    // 🛡️ Auth & Authorization
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user) {
-      return {
-        success: false,
-        error: "No autorizado",
-        timestamp,
-      };
-    }
+    // 🛡️ Session validation
+    const session = await validators.getValidatedSession();
+    validators.validateFileAccess(session.user.role);
 
-    // 📋 Parse form data
+    // 🔍 Parse and validate form data
     const id = formData.get("id") as string;
-    // 🗑️ Processing deletion request
 
     if (!id) {
-      console.log("🗑️ DELETE SERVER: Missing ID", { requestId });
       return {
         success: false,
         error: "ID de archivo requerido",
-        timestamp,
+        timestamp: new Date().toISOString(),
+        requestId,
       };
     }
 
-    // ✅ Use schema validation
-    const validated = parseDeleteUploadInput({ id });
+    validators.validateUUID(id, "ID de archivo");
 
-    console.log("🗑️ DELETE SERVER: Calling service deleteFile", {
+    // ✅ Use schema validation
+    const validated = schemas.parseDeleteUploadInput({ id });
+
+    // 🔐 Security audit log (CRÍTICO)
+    fileUploadSecurityLogger.security("FILE_DELETE_ATTEMPT", {
       requestId,
+      userId: session.user.id,
       fileId: validated.id,
     });
 
+    // 🏢 Business logic via service
     await fileUploadService.deleteFile(validated.id);
 
-    // 📁 Log successful file deletion (CRÍTICO)
-    fileUploadServerActionLogger.fileOperation(
-      "DELETE_FILE",
-      `file-${validated.id}`,
-      true,
-      {
-        fileId: validated.id,
-        userId: session.user.id,
-        requestId,
-      }
-    );
+    // 🔄 Cache invalidation
+    revalidateTag(FILE_UPLOAD_CACHE_TAGS.FILES);
+    revalidateTag(FILE_UPLOAD_CACHE_TAGS.STATS);
+    revalidatePath(FILE_UPLOAD_PATHS.FILES);
+    revalidatePath(FILE_UPLOAD_PATHS.ADMIN_FILES);
 
-    // 🔄 Smart cache invalidation
-    revalidateTag("user-files");
-    revalidateTag("file-stats");
-    revalidatePath("/files");
-    revalidatePath("/admin/files");
-
-    console.log("✅ DELETE SERVER: Cache invalidated", {
+    fileUploadServerActionLogger.info("File deleted successfully", {
       requestId,
       fileId: validated.id,
+      userId: session.user.id,
     });
 
     return {
       success: true,
       message: "Archivo eliminado exitosamente",
-      timestamp,
+      timestamp: new Date().toISOString(),
+      requestId,
     };
   } catch (error) {
-    fileUploadServerActionLogger.error("File deletion failed", error, {
+    fileUploadServerActionLogger.error("Delete file failed", error, {
       requestId,
     });
 
-    // 📁 Log failed file deletion (CRÍTICO)
-    const fileId = formData.get("id") as string;
-    if (fileId) {
-      fileUploadServerActionLogger.fileOperation(
-        "DELETE_FILE",
-        `file-${fileId}`,
-        false,
-        {
-          fileId,
-          requestId,
-          error: error instanceof Error ? error.message : "Unknown error",
-        }
-      );
-    }
+    // 🔐 Security audit for failed attempt
+    fileUploadSecurityLogger.security("FILE_DELETE_FAILED", {
+      requestId,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
 
     return {
       success: false,
       error:
         error instanceof Error ? error.message : "Error eliminando archivo",
-      timestamp,
+      timestamp: new Date().toISOString(),
+      requestId,
     };
   }
 }
 
-export async function deleteMultipleFilesServerAction(
-  formData: FormData
-): Promise<FileActionResult> {
-  const timestamp = new Date().toISOString();
-
-  try {
-    // 🛡️ Auth & Authorization
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user) {
-      return {
-        success: false,
-        error: "No autorizado",
-        timestamp,
-      };
-    }
-
-    // 📋 Parse IDs from form data
-    const idsString = formData.get("ids") as string;
-    if (!idsString) {
-      return {
-        success: false,
-        error: "IDs de archivos requeridos",
-        timestamp,
-      };
-    }
-
-    const ids = JSON.parse(idsString) as string[];
-    const result = await fileUploadService.deleteMultipleFiles(ids);
-
-    // 🔄 Smart cache invalidation
-    revalidateTag("user-files");
-    revalidateTag("file-stats");
-    revalidatePath("/files");
-    revalidatePath("/admin/files");
-
-    return {
-      success: true,
-      data: result,
-      message: `${result.deleted} archivos eliminados`,
-      timestamp,
-    };
-  } catch (error) {
-    console.error("🗑️ Bulk Delete Error:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Error eliminando archivos",
-      timestamp,
-    };
-  }
-}
-
+// 📊 GET FILE STATS (Enterprise Server Action)
 export async function getFileStatsServerAction(
   formData?: FormData
 ): Promise<FileActionResult> {
-  const timestamp = new Date().toISOString();
-
   try {
-    // 🛡️ Auth check
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user) {
-      return {
-        success: false,
-        error: "No autorizado",
-        timestamp,
-      };
-    }
+    // 🛡️ Session validation
+    const session = await validators.getValidatedSession();
+    validators.validateFileAccess(session.user.role);
 
-    // 📋 Parse optional user ID (for admins)
+    // 📋 Parse optional target user ID (for admins)
     const targetUserIdFromForm = formData?.get("userId");
     const userId =
       targetUserIdFromForm && targetUserIdFromForm !== ""
@@ -537,30 +337,17 @@ export async function getFileStatsServerAction(
         : session.user.id;
 
     // 🛡️ Permission check for viewing other users' stats
-    if (
-      userId !== session.user.id &&
-      session.user.role !== "admin" &&
-      session.user.role !== "super_admin"
-    ) {
-      return {
-        success: false,
-        error: "Permisos insuficientes",
-        timestamp,
-      };
-    }
+    validators.validateStatsAccess(session.user.id, userId, session.user.role);
 
-    // Only pass userId if it's a valid UUID format, otherwise pass undefined
+    // Only process if valid UUID
     const statsInputData: { userId?: string; period?: string } = {};
 
-    // Use the same UUID validation function
-    const isValidUUID = (id: string) =>
-      id &&
-      id.match(
-        /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/
-      );
-
-    if (isValidUUID(userId)) {
+    try {
+      validators.validateUUID(userId, "User ID");
       statsInputData.userId = userId;
+    } catch {
+      // If invalid UUID, use current user
+      statsInputData.userId = session.user.id;
     }
 
     // Add period if provided
@@ -569,109 +356,39 @@ export async function getFileStatsServerAction(
       statsInputData.period = period as string;
     }
 
-    const statsInput = parseGetStatsInput(statsInputData);
+    const statsInput = schemas.parseGetStatsInput(statsInputData);
+
+    // 🏢 Business logic via service
     const stats = await fileUploadService.getStats(statsInput);
 
     return {
       success: true,
       data: stats,
-      timestamp,
+      timestamp: new Date().toISOString(),
     };
   } catch (error) {
-    console.error("📊 Get Stats Error:", error);
+    fileUploadServerActionLogger.error("Get stats failed", error);
     return {
       success: false,
       error:
         error instanceof Error
           ? error.message
           : "Error obteniendo estadísticas",
-      timestamp,
+      timestamp: new Date().toISOString(),
     };
   }
 }
 
-export async function getSignedUrlServerAction(
-  formData: FormData
-): Promise<FileActionResult> {
-  const timestamp = new Date().toISOString();
-
-  try {
-    // 🛡️ Auth check
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user) {
-      return {
-        success: false,
-        error: "No autorizado",
-        timestamp,
-      };
-    }
-
-    // 📋 Parse form data
-    const filename = formData.get("filename") as string;
-    const mimeType = formData.get("mimeType") as string;
-    const isPublic = formData.get("isPublic") === "true";
-
-    if (!filename || !mimeType) {
-      return {
-        success: false,
-        error: "Nombre de archivo y tipo MIME requeridos",
-        timestamp,
-      };
-    }
-
-    // ✅ Use schema validation
-    const validated = parseGetSignedUrlInput({
-      filename,
-      mimeType,
-      isPublic,
-    });
-
-    const signedUrl = await fileUploadService.getSignedUrl(
-      validated.filename,
-      validated.mimeType,
-      validated.isPublic
-    );
-
-    return {
-      success: true,
-      data: signedUrl,
-      timestamp,
-    };
-  } catch (error) {
-    console.error("🔗 Signed URL Error:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Error generando URL firmada",
-      timestamp,
-    };
-  }
-}
-
-// ========================
-// 📁 CATEGORY ACTIONS (Enterprise)
-// ========================
-
+// 📁 CREATE CATEGORY (Enterprise Server Action)
 export async function createCategoryServerAction(
   formData: FormData
 ): Promise<FileActionResult> {
-  const timestamp = new Date().toISOString();
-
   try {
-    // 🛡️ Auth & Admin Authorization
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (
-      !session?.user ||
-      (session.user.role !== "admin" && session.user.role !== "super_admin")
-    ) {
-      return {
-        success: false,
-        error: "Permisos insuficientes",
-        timestamp,
-      };
-    }
+    // 🛡️ Session validation
+    const session = await validators.getValidatedSession();
+    validators.validateAdminAccess(session.user.role);
 
-    // 📋 Parse form data
+    // 🔍 Parse and validate form data
     const name = formData.get("name") as string;
     const description = formData.get("description") as string;
     const icon = formData.get("icon") as string;
@@ -682,12 +399,12 @@ export async function createCategoryServerAction(
       return {
         success: false,
         error: "Nombre y tipos permitidos son requeridos",
-        timestamp,
+        timestamp: new Date().toISOString(),
       };
     }
 
     // ✅ Use schema validation
-    const categoryData = parseCreateCategoryInput({
+    const categoryData = schemas.parseCreateCategoryInput({
       name,
       description,
       icon,
@@ -695,66 +412,109 @@ export async function createCategoryServerAction(
       allowedTypes: JSON.parse(allowedTypesString),
     });
 
+    // 🏢 Business logic via service
     const category = await fileCategoryService.createCategory(categoryData);
 
-    // 🔄 Smart cache invalidation
-    revalidateTag("file-categories");
-    revalidatePath("/admin/files");
-    revalidatePath("/admin/categories");
+    // 🔄 Cache invalidation
+    revalidateTag(FILE_UPLOAD_CACHE_TAGS.CATEGORIES);
+    revalidatePath(FILE_UPLOAD_PATHS.ADMIN_FILES);
+    revalidatePath(FILE_UPLOAD_PATHS.CATEGORIES);
 
     return {
       success: true,
       data: category,
       message: `Categoría "${name}" creada exitosamente`,
-      timestamp,
+      timestamp: new Date().toISOString(),
     };
   } catch (error) {
-    console.error("📁 Create Category Error:", error);
+    fileUploadServerActionLogger.error("Create category failed", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Error creando categoría",
-      timestamp,
+      timestamp: new Date().toISOString(),
     };
   }
 }
 
+// 📂 GET CATEGORIES (Enterprise Server Action)
 export async function getCategoriesServerAction(): Promise<FileActionResult> {
-  const timestamp = new Date().toISOString();
-
   try {
-    // 🛡️ Auth check
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user) {
-      return {
-        success: false,
-        error: "No autorizado",
-        timestamp,
-      };
-    }
+    // 🛡️ Session validation
+    const session = await validators.getValidatedSession();
+    validators.validateFileAccess(session.user.role);
 
+    // 🏢 Business logic via service
     const categories = await fileCategoryService.getCategories();
 
     return {
       success: true,
       data: categories,
-      timestamp,
+      timestamp: new Date().toISOString(),
     };
   } catch (error) {
-    console.error("📁 Get Categories Error:", error);
+    fileUploadServerActionLogger.error("Get categories failed", error);
     return {
       success: false,
       error:
         error instanceof Error ? error.message : "Error obteniendo categorías",
-      timestamp,
+      timestamp: new Date().toISOString(),
     };
   }
 }
 
-// ========================
-// 🎯 LEGACY COMPATIBILITY FUNCTIONS
-// ========================
-// Backwards compatibility with existing code (will be deprecated)
+// 🔗 GET SIGNED URL (Enterprise Server Action)
+export async function getSignedUrlServerAction(
+  formData: FormData
+): Promise<FileActionResult> {
+  try {
+    // 🛡️ Session validation
+    const session = await validators.getValidatedSession();
+    validators.validateFileAccess(session.user.role);
 
+    // 🔍 Parse and validate form data
+    const filename = formData.get("filename") as string;
+    const mimeType = formData.get("mimeType") as string;
+    const isPublic = formData.get("isPublic") === "true";
+
+    if (!filename || !mimeType) {
+      return {
+        success: false,
+        error: "Nombre de archivo y tipo MIME requeridos",
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    // ✅ Use schema validation
+    const validated = schemas.parseGetSignedUrlInput({
+      filename,
+      mimeType,
+      isPublic,
+    });
+
+    // 🏢 Business logic via service
+    const signedUrl = await fileUploadService.getSignedUrl(
+      validated.filename,
+      validated.mimeType,
+      validated.isPublic
+    );
+
+    return {
+      success: true,
+      data: signedUrl,
+      timestamp: new Date().toISOString(),
+    };
+  } catch (error) {
+    fileUploadServerActionLogger.error("Get signed URL failed", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error generando URL firmada",
+      timestamp: new Date().toISOString(),
+    };
+  }
+}
+
+// 🎯 LEGACY COMPATIBILITY FUNCTIONS
 // Re-export main functions with old names for compatibility
 export const uploadFileAction = uploadFileServerAction;
 export const getFilesAction = getFilesServerAction;
@@ -763,6 +523,4 @@ export const deleteFileAction = deleteFileServerAction;
 export const getFileStatsAction = getFileStatsServerAction;
 export const createCategoryAction = createCategoryServerAction;
 export const getCategoriesAction = getCategoriesServerAction;
-
-// 🎯 Additional utility actions
 export const generateSignedUrlServerAction = getSignedUrlServerAction;
