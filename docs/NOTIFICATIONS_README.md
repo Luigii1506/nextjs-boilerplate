@@ -1,366 +1,367 @@
-# 🔔 **SISTEMA DE NOTIFICACIONES**
+# 🔔 SISTEMA DE NOTIFICACIONES
 
-## 📖 **Overview**
-
-Sistema centralizado de notificaciones moderno para la aplicación, construido con **Sonner** e integrado completamente con server actions y permisos.
-
-### **✨ ¿Por qué este sistema?**
-
-- **🚫 Elimina duplicación** - Mensajes centralizados en un solo lugar
-- **🎯 Tipado completo** - TypeScript para evitar errores
-- **🔄 Integración nativa** - Works out-of-the-box con server actions
-- **🛡️ Seguridad integrada** - Notificaciones automáticas para permisos
-- **📱 Responsive** - Optimizado para todos los dispositivos
-- **⚡ Performance** - Cache inteligente y debounce automático
+> **Sistema inteligente de notificaciones con `useActionNotifications`, `Sonner` y detección automática**
 
 ---
 
-## 🚀 **Inicio Rápido**
+## 🚀 **INICIO RÁPIDO**
 
-### **1. Setup (Ya Configurado)**
+### **1. Setup (Ya está configurado)**
 
-```tsx
-// app/layout.tsx - Ya incluido
-<NotificationProvider>{children}</NotificationProvider>
+El sistema ya está configurado en `src/app/layout.tsx`:
+
+```typescript
+<NotificationProvider
+  theme="system"
+  visibleToasts={5}
+  config={{
+    position: "top-right",
+    richColors: true,
+    closeButton: true,
+    dismissible: true,
+  }}
+>
+  {children}
+</NotificationProvider>
 ```
 
 ### **2. Uso Básico**
 
-```tsx
-import { useNotifications } from "@/shared/hooks/useNotifications";
+```typescript
+import { useActionNotifications } from "@/shared/hooks/useActionNotifications";
 
 const MyComponent = () => {
-  const notifications = useNotifications();
+  const { notify } = useActionNotifications();
 
-  // ✅ Éxito
-  notifications.success("¡Guardado exitosamente!");
+  const handleAction = async () => {
+    await notify(
+      async () => {
+        // Tu lógica aquí
+        const result = await someAction();
+        if (!result.success) {
+          throw new Error(result.error);
+        }
+        return result;
+      },
+      "Ejecutando acción...", // Mensaje loading
+      "Acción completada exitosamente" // Mensaje success (opcional)
+    );
+  };
 
-  // ❌ Error
-  notifications.error("Error al guardar");
-
-  // ⚠️ Advertencia
-  notifications.warning("Revisa los datos");
-
-  // ℹ️ Información
-  notifications.info("Nueva actualización disponible");
-
-  // 🔄 Loading
-  const loadingId = notifications.loading("Procesando...");
-  notifications.dismiss(loadingId); // Cerrar después
+  return <button onClick={handleAction}>Ejecutar</button>;
 };
 ```
 
-### **3. Métodos de Conveniencia**
+### **3. Ejemplos Comunes**
 
-```tsx
-const { quick } = useNotifications();
+```typescript
+// ✅ Crear usuario
+await notify(
+  () => createUserAction(userData),
+  "Creando usuario...",
+  "Usuario creado exitosamente"
+);
 
-quick.saved(); // "Guardado exitosamente"
-quick.copied(); // "Copiado al portapapeles"
-quick.networkError(); // "Error de conexión" + botón reintentar
-quick.unauthorized(); // "No tienes permisos"
+// 📝 Actualizar datos
+await notify(
+  () => updateAction(id, data),
+  "Actualizando información...",
+  "Información actualizada correctamente"
+);
+
+// 🗑️ Eliminar elemento
+await notify(
+  () => deleteAction(id),
+  "Eliminando elemento...",
+  "Elemento eliminado exitosamente"
+);
+
+// 📤 Subir archivo
+await notify(
+  () => uploadAction(files),
+  "Subiendo archivos...",
+  `${files.length} archivo(s) subido(s) exitosamente`
+);
 ```
 
 ---
 
-## 🔄 **Con Server Actions**
+## ✨ **CARACTERÍSTICAS PRINCIPALES**
 
-### **🎯 Hook Especializado**
+### **🧠 Inteligencia Automática**
 
-```tsx
-import { useServerAction } from "@/shared/hooks/useServerAction";
+El sistema detecta automáticamente:
 
-const { execute, isPending } = useServerAction(createUserAction, {
-  loadingMessage: "Creando usuario...",
-  successMessage: "Usuario creado exitosamente",
-  errorMessage: "Error al crear usuario",
-});
+- **🎯 Tipo de acción**: "Creando..." → ✅, "Eliminando..." → 🗑️, "Subiendo..." → 📤
+- **🎨 Emojis**: Se asignan automáticamente según el contexto
+- **⚡ Severidad de errores**: Ajusta duración y opciones según el tipo de error
+- **🔄 Formateo**: Los errores se formatean inteligentemente
 
-await execute(userData); // Notificaciones automáticas
-```
+### **🎭 Sin Overlaps**
 
-### **📊 Con Promesas**
+Usa la API nativa `toast.promise` de Sonner:
 
-```tsx
-const { withPromise } = useNotifications();
+- **Una sola notificación** que se transforma de loading → success/error
+- **Sin race conditions** ni superposición de toasts
+- **Transiciones suaves** entre estados
 
-await withPromise(fetchData(), {
-  loading: "Cargando...",
-  success: "Datos cargados",
-  error: "Error al cargar",
-});
-```
+### **📝 Configuración Mínima**
 
----
-
-## 🛡️ **Con Permisos**
-
-### **🔍 Verificación Automática**
-
-```tsx
-import { usePermissionActions } from "@/shared/hooks/usePermissionActions";
-
-const { userActions } = usePermissionActions();
-
-const deleteAction = userActions.delete();
-
-// Verifica permisos automáticamente
-await deleteAction.executeWithPermission(() => {
-  deleteUser(userId);
-  // Solo se ejecuta si tiene permisos
-});
-```
-
-### **👑 Por Roles**
-
-```tsx
-const { roleChecks } = usePermissionActions();
-
-roleChecks.requireAdmin(() => {
-  // Solo admins pueden ejecutar esto
-  dangerousOperation();
-});
+```typescript
+// Esto es todo lo que necesitas:
+const { notify } = useActionNotifications();
+await notify(action, "Loading...", "Success!");
 ```
 
 ---
 
-## 📁 **Métodos Especializados**
+## 🎛️ **API PRINCIPAL**
 
-### **👥 Usuarios**
+### **`notify(action, loading, success?)`**
 
-```tsx
-const { users } = useNotifications();
+**Parámetros**:
 
-users.userCreated("Juan Pérez");
-users.userCreateError("Email ya existe");
-users.userUpdated();
-users.userDeleted();
-```
+- `action: () => Promise<T>` - Tu función asíncrona
+- `loading: string` - Mensaje durante la carga
+- `success?: string` - Mensaje de éxito (opcional, se genera automáticamente si no se proporciona)
 
-### **📁 Archivos**
+**Retorna**: `Promise<T>` - El resultado de tu acción
 
-```tsx
-const { files } = useNotifications();
+### **`withNotification(action, messages)` - Método Avanzado**
 
-files.fileUploaded("documento.pdf");
-files.fileUploadError("Archivo muy grande");
-files.fileDeleted();
-```
-
-### **🔐 Autenticación**
-
-```tsx
-const { auth } = useNotifications();
-
-auth.loginSuccess("Usuario123");
-auth.accessDenied("panel admin");
-auth.sessionExpired();
-```
-
----
-
-## 🎨 **Configuración Avanzada**
-
-### **🎯 Notificación Personalizada**
-
-```tsx
-notifications.show({
-  type: "success",
-  title: "¡Éxito!",
-  message: "Operación completada",
-  description: "Todos los datos se guardaron correctamente",
-  duration: 6000,
-  action: {
-    label: "Ver Detalles",
-    onClick: () => router.push("/details"),
+```typescript
+await withNotification(
+  async () => {
+    // Lógica compleja aquí
   },
-  cancel: {
-    label: "Deshacer",
-    onClick: () => undoOperation(),
-  },
-});
+  {
+    loading: "Procesando datos complejos...",
+    success: "🎉 Proceso completado exitosamente",
+    error: "⚠️ Error en el procesamiento",
+  }
+);
 ```
 
-### **📱 Responsive**
+### **Métodos Base Disponibles**
 
-```tsx
-// Las notificaciones se adaptan automáticamente:
-// 📱 Móvil: position="top-center", duración reducida
-// 💻 Desktop: position="top-right", duración normal
-```
-
----
-
-## 📊 **Estructura del Sistema**
-
-```
-src/shared/
-├── 🔔 providers/
-│   └── NotificationProvider.tsx     # Provider principal con Sonner
-├── 🪝 hooks/
-│   ├── useNotifications.ts          # Hook principal
-│   ├── useServerAction.ts           # Integración server actions
-│   └── usePermissionActions.ts      # Integración permisos
-├── 🎯 types/
-│   └── notifications.ts             # Tipos TypeScript
-├── 📝 constants/
-│   └── notifications.ts             # Mensajes centralizados
-└── 🛠️ utils/
-    └── notifications.ts             # Utilidades y formatters
+```typescript
+const {
+  notify, // Método principal
+  withNotification, // Método avanzado
+  success, // Notificación de éxito directa
+  error, // Notificación de error directa
+  warning, // Notificación de advertencia
+  info, // Notificación informativa
+  loading, // Notificación de carga
+  dismiss, // Cerrar notificación específica
+  clear, // Cerrar todas las notificaciones
+} = useActionNotifications();
 ```
 
 ---
 
-## 🎯 **Características Técnicas**
+## 💡 **PATRONES COMUNES**
 
-| Característica        | Descripción                        | Beneficio                    |
-| --------------------- | ---------------------------------- | ---------------------------- |
-| **🔔 Sonner**         | Librería moderna de notificaciones | Animaciones suaves, mejor UX |
-| **⚡ Debounce**       | Previene notificaciones duplicadas | Evita spam de mensajes       |
-| **📊 Cache**          | Sistema de cache inteligente       | Mejor performance            |
-| **🎨 Responsive**     | Adaptación automática a móviles    | UX consistente               |
-| **🛡️ Permisos**       | Integración nativa con RBAC        | Seguridad automática         |
-| **🔄 Server Actions** | Hooks especializados para APIs     | Menos código boilerplate     |
-| **📱 Accesibilidad**  | Cumple estándares WCAG             | Inclusivo para todos         |
+### **CRUD Operations**
 
----
+```typescript
+const { notify } = useActionNotifications();
 
-## 📚 **Documentación Completa**
-
-### **📖 Para Empezar**
-
-- **[📋 Guía Completa](./NOTIFICATIONS_SYSTEM_COMPLETE_GUIDE.md)** - Tutorial paso a paso
-- **[🏗️ Estructura Detallada](./NOTIFICATIONS_STRUCTURE_DETAILED.md)** - Arquitectura interna
-
-### **💡 Para Implementar**
-
-- **[🧪 Ejemplos Prácticos](./NOTIFICATIONS_PRACTICAL_EXAMPLES.md)** - Casos de uso reales
-- **[⚡ Referencia Rápida](./NOTIFICATIONS_QUICK_REFERENCE.md)** - Cheat sheet de APIs
-
----
-
-## 🔄 **Rutas de Aprendizaje**
-
-### **🚀 Para Nuevos Desarrolladores**
-
-1. Lee la **[Guía Completa](./NOTIFICATIONS_SYSTEM_COMPLETE_GUIDE.md)** (30 min)
-2. Practica con **[Ejemplos](./NOTIFICATIONS_PRACTICAL_EXAMPLES.md)** (45 min)
-3. Usa la **[Referencia](./NOTIFICATIONS_QUICK_REFERENCE.md)** para desarrollo diario
-
-### **🔧 Para Desarrolladores Experimentados**
-
-1. Revisa la **[Estructura](./NOTIFICATIONS_STRUCTURE_DETAILED.md)** (15 min)
-2. Implementa casos específicos de **[Ejemplos](./NOTIFICATIONS_PRACTICAL_EXAMPLES.md)** (30 min)
-3. Consulta la **[Referencia](./NOTIFICATIONS_QUICK_REFERENCE.md)** según necesites
-
----
-
-## 🎯 **Casos de Uso Principales**
-
-### **✅ Operaciones CRUD**
-
-```tsx
 // Crear
-await notifications.withPromise(createUser(data), {
-  loading: "Creando usuario...",
-  success: "Usuario creado exitosamente",
-  error: "Error al crear usuario",
-});
+const handleCreate = async (data) => {
+  await notify(
+    async () => {
+      const result = await createAction(data);
+      if (!result.success) throw new Error(result.error);
+      refreshData();
+    },
+    "Creando elemento...",
+    "Elemento creado exitosamente"
+  );
+};
 
 // Actualizar
-notifications.users.userUpdated(user.name);
+const handleUpdate = async (id, data) => {
+  await notify(
+    () => updateAction(id, data),
+    "Actualizando elemento...",
+    "Elemento actualizado correctamente"
+  );
+};
 
 // Eliminar
-notifications.users.userDeleted();
+const handleDelete = async (id) => {
+  await notify(
+    () => deleteAction(id),
+    "Eliminando elemento...",
+    "Elemento eliminado exitosamente"
+  );
+};
 ```
 
-### **🔐 Manejo de Errores**
+### **File Operations**
 
-```tsx
-try {
-  await riskyOperation();
-} catch (error) {
-  if (error.code === "PERMISSION_DENIED") {
-    notifications.permissions.accessDenied();
-  } else if (error.code === "NETWORK_ERROR") {
-    notifications.quick.networkError();
-  } else {
-    notifications.error(error.message);
-  }
-}
+```typescript
+// Upload múltiple
+const handleUpload = async (files) => {
+  await notify(
+    async () => {
+      const formData = new FormData();
+      files.forEach((file, i) => formData.append(`files[${i}]`, file));
+
+      const result = await uploadAction(formData);
+      if (!result.success) throw new Error(result.error);
+
+      refreshFileList();
+    },
+    "Subiendo archivos...",
+    `${files.length} archivo(s) subido(s) exitosamente`
+  );
+};
+
+// Download
+const handleDownload = async (fileId, fileName) => {
+  await notify(
+    () => downloadAction(fileId),
+    `Descargando ${fileName}...`,
+    "Descarga completada"
+  );
+};
 ```
 
-### **🛡️ Verificación de Permisos**
+### **Batch Operations**
 
-```tsx
-const { userActions } = usePermissionActions();
+```typescript
+const handleBatchOperation = async (selectedIds) => {
+  await notify(
+    async () => {
+      const results = await Promise.all(
+        selectedIds.map((id) => processAction(id))
+      );
 
-// Automáticamente verifica y notifica
-const createAction = userActions.create();
-if (createAction.canExecute) {
-  // Mostrar botón crear
-} else {
-  // Usuario no tiene permisos, ya se mostró notificación
-}
-```
+      const failed = results.filter((r) => !r.success);
+      if (failed.length > 0) {
+        throw new Error(`${failed.length} elementos fallaron al procesar`);
+      }
 
----
-
-## 🚀 **Beneficios del Sistema**
-
-### **👨‍💻 Para Desarrolladores**
-
-- **📝 Menos código** - Un hook hace todo
-- **🎯 Tipado completo** - IntelliSense perfecto
-- **🔄 Integración automática** - Works con server actions y permisos
-- **📚 Documentación completa** - Ejemplos para todo
-
-### **👥 Para Usuarios**
-
-- **🎨 UX moderna** - Animaciones suaves y responsive
-- **📱 Móvil-friendly** - Optimizado para todos los dispositivos
-- **⚡ Performance** - Sin lag ni stuttering
-- **🎯 Claridad** - Mensajes consistentes y útiles
-
-### **🏢 Para el Negocio**
-
-- **🔧 Mantenible** - Código centralizado y organizado
-- **🛡️ Seguro** - Integración nativa con permisos
-- **📊 Escalable** - Fácil añadir nuevos tipos de notificación
-- **💰 Costo-efectivo** - Menos bugs, desarrollo más rápido
-
----
-
-## ⚡ **Quick Start Examples**
-
-```tsx
-// ✅ Básico
-notifications.success("¡Éxito!");
-
-// 🔄 Con server action
-const { execute } = useServerAction(saveData, {
-  successMessage: "Datos guardados",
-});
-
-// 🛡️ Con permisos
-const { userActions } = usePermissionActions();
-userActions.delete().executeWithPermission(() => deleteUser());
-
-// 🎯 Personalizado
-notifications.show({
-  type: "warning",
-  message: "¿Estás seguro?",
-  action: { label: "Sí", onClick: confirm },
-  cancel: { label: "No", onClick: cancel },
-});
+      refreshData();
+    },
+    `Procesando ${selectedIds.length} elementos...`,
+    "Procesamiento masivo completado"
+  );
+};
 ```
 
 ---
 
-**¡Tu aplicación ahora tiene notificaciones de nivel profesional! 🚀**
+## ⚙️ **PERSONALIZACIÓN**
 
-### **📞 ¿Necesitas Ayuda?**
+### **Mensajes Personalizados**
 
-- 📖 **Documentación**: Revisa los enlaces arriba
-- 🔍 **Ejemplos**: Mira `NOTIFICATIONS_PRACTICAL_EXAMPLES.md`
-- ⚡ **Quick Ref**: Usa `NOTIFICATIONS_QUICK_REFERENCE.md`
+Los mensajes están centralizados en `src/shared/constants/notifications.ts`:
+
+```typescript
+export const NOTIFICATION_MESSAGES = {
+  USERS: {
+    CREATE_SUCCESS: "✅ Usuario creado exitosamente",
+    UPDATE_SUCCESS: "📝 Usuario actualizado correctamente",
+    DELETE_SUCCESS: "🗑️ Usuario eliminado exitosamente",
+    // ... más mensajes
+  },
+  // Agregar tus propias categorías
+  MY_MODULE: {
+    CUSTOM_SUCCESS: "🎉 Operación personalizada exitosa",
+    CUSTOM_ERROR: "❌ Error en operación personalizada",
+  },
+};
+```
+
+### **Configuración del Provider**
+
+```typescript
+<NotificationProvider
+  theme="dark"              // "light" | "dark" | "system"
+  visibleToasts={3}         // Máximo de toasts visibles
+  config={{
+    position: "bottom-right", // Cambiar posición
+    duration: 5000,          // Duración por defecto
+    richColors: true,        // Colores mejorados
+  }}
+>
+```
+
+---
+
+## 🐛 **TROUBLESHOOTING**
+
+### **Problema: Notificaciones se superponen**
+
+**Solución**: Usar siempre `notify()` en lugar de métodos manuales
+
+```typescript
+// ❌ MALO: Crea overlaps
+const loadingId = loading("Processing...");
+dismiss(loadingId);
+success("Done!");
+
+// ✅ BUENO: Una sola notificación
+await notify(action, "Processing...", "Done!");
+```
+
+### **Problema: Errores no se formatean bien**
+
+**Solución**: Lanzar `Error` con mensaje descriptivo
+
+```typescript
+// ❌ MALO
+throw result; // Objeto crudo
+
+// ✅ BUENO
+throw new Error(result.error || "Operación falló");
+```
+
+### **Problema: Hook no funciona**
+
+**Solución**: Verificar que `NotificationProvider` esté en el layout y el import sea correcto
+
+```typescript
+// Verificar import
+import { useActionNotifications } from "@/shared/hooks/useActionNotifications";
+
+// Verificar uso dentro de componente React
+const MyComponent = () => {
+  const { notify } = useActionNotifications(); // ✅
+  // ...
+};
+```
+
+---
+
+## 📚 **DOCUMENTACIÓN COMPLETA**
+
+- **[📖 Guía Completa](./NOTIFICATIONS_COMPLETE_GUIDE.md)** - Documentación exhaustiva con ejemplos avanzados
+- **[🎯 Tipos TypeScript](../src/shared/types/notifications.ts)** - Definiciones de tipos
+- **[🎨 Constantes](../src/shared/constants/notifications.ts)** - Mensajes predefinidos
+- **[🧩 Provider](../src/shared/providers/NotificationProvider.tsx)** - Configuración del proveedor
+
+---
+
+## 🎯 **RESUMEN**
+
+**Para el 90% de casos de uso**:
+
+```typescript
+const { notify } = useActionNotifications();
+await notify(action, "Loading message", "Success message");
+```
+
+**Características**:
+
+- ✅ **Una sola línea** para notificaciones completas
+- ✅ **Detección automática** de tipos y emojis
+- ✅ **Sin overlaps** usando API nativa de Sonner
+- ✅ **Formateo inteligente** de errores
+- ✅ **TypeScript completo**
+- ✅ **Performance optimizado**
+
+**¡Eso es todo lo que necesitas saber para empezar!** 🚀

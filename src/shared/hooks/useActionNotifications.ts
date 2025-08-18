@@ -40,7 +40,7 @@ const detectActionType = (message: string): string => {
   return "general";
 };
 
-// 🔍 Detección inteligente de severidad por error
+// 🔍 Detección inteligente de severidad por error (para futuras mejoras)
 const detectErrorSeverity = (
   error: unknown
 ): "low" | "medium" | "high" | "critical" => {
@@ -115,7 +115,7 @@ const formatSmartError = (baseMessage: string, error: unknown): string => {
   return baseMessage;
 };
 
-// 🎯 Configuración inteligente basada en severidad
+// 🎯 Configuración inteligente basada en severidad (para futuras mejoras)
 const getSmartConfig = (severity: "low" | "medium" | "high" | "critical") => {
   const configs = {
     low: {
@@ -164,7 +164,7 @@ const getActionEmoji = (actionType: string): string => {
   return emojis[actionType as keyof typeof emojis] || "📋";
 };
 
-export const useSmartNotifications = () => {
+export const useActionNotifications = () => {
   const notifications = useNotificationContext();
 
   // 🧠 EL ÚNICO MÉTODO QUE NECESITAS - Súper inteligente
@@ -181,32 +181,23 @@ export const useSmartNotifications = () => {
       const actionType = detectActionType(messages.loading);
       const emoji = getActionEmoji(actionType);
 
-      // 🔄 Mostrar loading
-      const loadingId = notifications.loading(messages.loading);
+      // ✅ SOLUCIÓN REAL: Usar toast.promise (API nativa de Sonner)
+      const successMsg =
+        messages.success || `${emoji} Operación completada exitosamente`;
+      const baseErrorMsg = messages.error || `❌ Error en la operación`;
 
-      try {
-        const result = await action();
-
-        // ✅ Éxito automático
-        notifications.dismiss(loadingId);
-        const successMsg =
-          messages.success || `${emoji} Operación completada exitosamente`;
-        notifications.success(successMsg);
-
-        return result;
-      } catch (error) {
-        // ❌ Error inteligente multinivel
-        notifications.dismiss(loadingId);
-
-        const severity = detectErrorSeverity(error);
-        const smartConfig = getSmartConfig(severity);
-        const baseErrorMsg = messages.error || `❌ Error en la operación`;
-        const formattedError = formatSmartError(baseErrorMsg, error);
-
-        notifications.error(formattedError, smartConfig);
-
-        throw error; // Re-lanzar para que el componente lo maneje si necesita
-      }
+      // 🎯 toast.promise transforma automáticamente loading → success/error
+      return notifications.promise(action(), {
+        loading: messages.loading,
+        success: successMsg,
+        error: (error: unknown) => {
+          // Formateo inteligente de errores
+          return formatSmartError(baseErrorMsg, error);
+        },
+        config: {
+          duration: 4000, // Duración para success
+        },
+      });
     },
     [notifications]
   );
@@ -242,4 +233,4 @@ export const useSmartNotifications = () => {
   };
 };
 
-export default useSmartNotifications;
+export default useActionNotifications;

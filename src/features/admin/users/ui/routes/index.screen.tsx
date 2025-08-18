@@ -32,14 +32,14 @@ import {
 } from "../../server/actions";
 import UserCard from "@/features/admin/users/ui/components/UserCard";
 import UserModal from "@/features/admin/users/ui/components/UserModal";
-import { useSmartNotifications } from "@/shared/utils/smartNotifications";
+import { useActionNotifications } from "@/shared/hooks/useActionNotifications";
 
 // Use the type from our module
 type OptimisticUsersState = UserOptimisticState;
 
 const UsersView: React.FC = () => {
   // 🧠 SISTEMA SIMPLE E INTELIGENTE - UNA SOLA LÍNEA
-  const { notify } = useSmartNotifications();
+  const { notify } = useActionNotifications();
 
   // 🎛️ Filter & UI State
   const [searchTerm, setSearchTerm] = React.useState("");

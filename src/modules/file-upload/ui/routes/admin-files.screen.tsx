@@ -21,7 +21,7 @@ import type {
 } from "../../types";
 import { useFileUpload } from "../../hooks"; // ← RESTORED: For enterprise state lifting
 import { formatFileSize } from "../../utils";
-import { useSmartNotifications } from "@/shared/utils/smartNotifications";
+import { useActionNotifications } from "@/shared/hooks/useActionNotifications";
 import FileUploader from "../components/FileUploader";
 import FileManager from "../components/FileManager";
 import FileStats from "../components/FileStats";
@@ -204,7 +204,7 @@ const FilesView: React.FC<FilesViewProps> = () => {
   );
 
   // 🧠 SISTEMA SIMPLE E INTELIGENTE - UNA SOLA LÍNEA
-  const { notify } = useSmartNotifications();
+  const { notify } = useActionNotifications();
 
   // 🧠 SÚPER SIMPLE: Completar upload - INTELIGENCIA AUTOMÁTICA
   const handleUploadComplete = async (uploadedFiles: UploadFile[]) => {
