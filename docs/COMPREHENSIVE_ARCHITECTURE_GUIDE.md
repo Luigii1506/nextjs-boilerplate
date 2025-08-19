@@ -543,7 +543,6 @@ npm run test:enterprise-migration
 ```
 middleware.ts                    → 🛡️ Edge evaluation & auth
 server-feature-flags.ts         → 🏢 Server-side flag logic
-feature-flags-server-helpers.ts → 🔧 Helper functions
 client-cache-invalidation.ts    → 🔄 Immediate updates
 ```
 

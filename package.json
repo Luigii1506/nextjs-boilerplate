@@ -40,7 +40,10 @@
     "test:cache-invalidation": "npx tsx scripts/test-cache-invalidation.ts",
     "test:realtime-navigation": "npx tsx scripts/test-realtime-navigation.ts",
     "test:full-migration": "npx tsx scripts/test-full-migration.ts",
-    "migration:complete": "npm run test:full-migration"
+    "migration:complete": "npm run test:full-migration",
+    "create-flag": "npx tsx scripts/create-feature-flag.ts",
+    "flags:list": "npx tsx scripts/list-feature-flags.ts",
+    "flags:sync": "npx tsx scripts/sync-feature-flags.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.859.0",

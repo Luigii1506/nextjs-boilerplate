@@ -26,19 +26,8 @@ async function testEnterpriseSystem() {
     console.log("   ✅ Server feature flags module imported");
     console.log("   📦 Exports:", Object.keys(serverModule).join(", "));
 
-    // Test helpers module
-    const helpersModule = await import(
-      "../src/core/config/feature-flags-server-helpers"
-    );
-    console.log("   ✅ Helpers module imported");
-    console.log("   📦 Exports:", Object.keys(helpersModule).join(", "));
-
-    // Test components module
-    const componentsModule = await import(
-      "../src/core/config/feature-flags-server-components"
-    );
-    console.log("   ✅ Server components module imported");
-    console.log("   📦 Exports:", Object.keys(componentsModule).join(", "));
+    // Server helpers and components removed - not used in actual codebase
+    console.log("   ✅ Server helpers/components cleanup completed");
 
     // Test 2: Layout components
     console.log("\n2️⃣ Testing UI components:");

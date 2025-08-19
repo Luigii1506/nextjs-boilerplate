@@ -706,3 +706,4 @@ function createSyncChannel(channelName: string) {
 
 _Documentación generada para el proyecto Next.js Boilerplate - 2025_
 
+
