@@ -1,3 +1,8 @@
+---
+title: Introducción
+slug: /Introduccion
+---
+
 # 📚 DOCUMENTACIÓN - Next.js Boilerplate
 
 **Guías completas del proyecto enterprise**
@@ -8,9 +13,9 @@
 
 ### **🏗️ Arquitectura y Patrones**
 
-- [📋 **ENTERPRISE PATTERNS**](./ENTERPRISE_PATTERNS.md) - Patrones enterprise y mejores prácticas
-- [🔧 **CONFIG SYSTEM**](./CONFIG_README.md) - Sistema de configuración completo
-- [🎛️ **REDUCERS GUIDE**](./REDUCERS_README.md) - Guía completa de reducers y selectors
+- [📋 **ENTERPRISE PATTERNS**](./Architecture/ENTERPRISE_PATTERNS.md) - Patrones enterprise y mejores prácticas
+- [🔧 **CONFIG SYSTEM**](./Cofiguracion/CONFIG_README.md) - Sistema de configuración completo
+- [🎛️ **REDUCERS GUIDE**](./Reducers/REDUCERS_README.md) - Guía completa de reducers y selectors
 
 ### **🔐 Autenticación y Permisos**
 
@@ -233,5 +238,3 @@ export interface FeatureFlagDomain {}
 ---
 
 _Documentación mantenida para Next.js Boilerplate Enterprise - 2025_
-
-
