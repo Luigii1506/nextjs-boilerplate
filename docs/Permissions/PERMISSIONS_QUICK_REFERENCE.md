@@ -12,22 +12,36 @@ slug: /permisos/referencia
 ```typescript
 import { usePermissions } from "@/shared/hooks/usePermissions";
 
-const { canAccess, isAdmin, isSuperAdmin, currentRole } = usePermissions();
+const {
+  checkPermission, // Un permiso específico
+  canAccess, // Múltiples permisos + shortcut super_admin
+  hasPermissionAsync, // Validación servidor (uso limitado)
+  isAdmin,
+  isSuperAdmin,
+  currentRole,
+} = usePermissions();
 ```
 
 ### **✅ Verificar Permisos**
 
 ```typescript
-// Una acción
-canAccess({ user: ["create"] });
+// ⚡ Un permiso específico (más rápido)
+const canDelete = checkPermission("user:delete");
+const canUpload = checkPermission("files:upload");
 
-// Múltiples acciones del mismo recurso
-canAccess({ user: ["create", "update", "delete"] });
+// 🎯 Múltiples permisos (con shortcut super_admin)
+const canManageUsers = canAccess({
+  user: ["create", "update", "delete"],
+});
 
-// Múltiples recursos
-canAccess({
+const canWorkWithFiles = canAccess({
   user: ["create"],
   files: ["upload"],
+});
+
+// 🌐 Validación servidor (solo casos críticos)
+const hasAccess = await hasPermissionAsync({
+  admin: ["system_reset"],
 });
 ```
 
@@ -47,11 +61,12 @@ currentRole; // string del rol actual
 
 ```typescript
 import {
-  Protected,
-  AdminOnly,
-  SuperAdminOnly,
-  RoleProtected,
-  LevelProtected,
+  Protected, // Por permisos específicos
+  AdminOnly, // Solo admins
+  SuperAdminOnly, // Solo super admins
+  RoleProtected, // Por roles específicos
+  LevelProtected, // Por nivel de rol
+  NoAccess, // Mensaje de acceso denegado
 } from "@/shared/components/Protected";
 ```
 
@@ -104,39 +119,38 @@ import {
 ### **👥 Usuarios**
 
 ```typescript
-// Verificaciones
-canAccess({ user: ["create"] }); // ➕ Crear
-canAccess({ user: ["read"] }); // 👁️ Ver detalles
-canAccess({ user: ["list"] }); // 📋 Listar
-canAccess({ user: ["update"] }); // ✏️ Actualizar
-canAccess({ user: ["delete"] }); // 🗑️ Eliminar
-canAccess({ user: ["ban"] }); // 🚫 Banear
-canAccess({ user: ["impersonate"] }); // 🎭 Impersonar
-canAccess({ user: ["set-role"] }); // 👑 Cambiar rol
-canAccess({ user: ["set-password"] }); // 🔑 Cambiar contraseña
+checkPermission("user:create"); // ➕ Crear
+checkPermission("user:read"); // 👁️ Ver detalles
+checkPermission("user:list"); // 📋 Listar
+checkPermission("user:update"); // ✏️ Actualizar
+checkPermission("user:delete"); // 🗑️ Eliminar
+checkPermission("user:ban"); // 🚫 Banear
+checkPermission("user:impersonate"); // 🎭 Impersonar
+checkPermission("user:set-role"); // 👑 Cambiar rol
+checkPermission("user:set-password"); // 🔑 Cambiar contraseña
 ```
 
 ### **🔐 Sesiones**
 
 ```typescript
-canAccess({ session: ["list"] }); // 📋 Ver sesiones
-canAccess({ session: ["revoke"] }); // ❌ Revocar
-canAccess({ session: ["delete"] }); // 🗑️ Eliminar
+checkPermission("session:list"); // 📋 Ver sesiones
+checkPermission("session:revoke"); // ❌ Revocar
+checkPermission("session:delete"); // 🗑️ Eliminar
 ```
 
 ### **📁 Archivos**
 
 ```typescript
-canAccess({ files: ["read"] }); // 👁️ Ver archivos
-canAccess({ files: ["upload"] }); // 📤 Subir
-canAccess({ files: ["delete"] }); // 🗑️ Eliminar
+checkPermission("files:read"); // 👁️ Ver archivos
+checkPermission("files:upload"); // 📤 Subir
+checkPermission("files:delete"); // 🗑️ Eliminar
 ```
 
 ### **🚩 Feature Flags**
 
 ```typescript
-canAccess({ feature_flags: ["read"] }); // 👁️ Ver flags
-canAccess({ feature_flags: ["write"] }); // ✏️ Modificar flags
+checkPermission("feature_flags:read"); // 👁️ Ver flags
+checkPermission("feature_flags:write"); // ✏️ Modificar flags
 ```
 
 ---
@@ -148,20 +162,16 @@ canAccess({ feature_flags: ["write"] }); // ✏️ Modificar flags
 ```typescript
 "super_admin"; // Nivel 100 - 👑 Acceso total
 "admin"; // Nivel 80  - 🛡️ Gestión sistema
-"moderator"; // Nivel 60  - 🔨 Moderación
-"editor"; // Nivel 40  - ✏️ Edición contenido
 "user"; // Nivel 20  - 👤 Usuario estándar
-"guest"; // Nivel 10  - 👻 Solo lectura
 ```
 
 ### **🔧 Utilidades de Roles**
 
 ```typescript
-const { canManageUserRole, getManageableRoles, currentLevel } =
-  usePermissions();
+const { canManageRole, getManageableRoles, currentLevel } = usePermissions();
 
 // ¿Puede cambiar este rol?
-canManageUserRole("admin"); // boolean
+canManageRole("admin"); // boolean
 
 // ¿Qué roles puede asignar?
 getManageableRoles(); // string[]
@@ -172,55 +182,21 @@ currentLevel; // number
 
 ---
 
-## 🪝 **HOOKS ESPECÍFICOS**
-
-### **👥 Gestión de Usuarios**
-
-```typescript
-import { useUserManagement } from "@/shared/hooks/usePermissions";
-
-const {
-  canCreateUsers,
-  canEditUsers,
-  canDeleteUsers,
-  canBanUsers,
-  canSetUserRoles,
-  canImpersonateUsers,
-} = useUserManagement();
-```
-
-### **📁 Gestión de Archivos**
-
-```typescript
-import { useFileManagement } from "@/shared/hooks/usePermissions";
-
-const { canViewFiles, canUploadFiles, canDeleteFiles } = useFileManagement();
-```
-
-### **🔐 Gestión de Sesiones**
-
-```typescript
-import { useSessionManagement } from "@/shared/hooks/usePermissions";
-
-const { canViewSessions, canRevokeSessions, canDeleteSessions } =
-  useSessionManagement();
-```
-
----
-
 ## 🌐 **PROTECCIÓN SERVER-SIDE**
 
 ### **🔒 Server Actions**
 
 ```typescript
-import { ensurePermission } from "@/core/auth/config/permissions";
+import { hasPermission } from "@/core/auth/config/utils";
 import { getCurrentUser } from "@/core/auth/server/auth";
 
 export async function createUserAction(formData: FormData) {
   const user = await getCurrentUser();
 
   // 🛡️ Verificar permiso
-  await ensurePermission(user, "user:create");
+  if (!hasPermission(user, "user:create")) {
+    throw new Error("No tienes permisos para crear usuarios");
+  }
 
   // ✅ Continuar si tiene permiso
   // ...lógica de creación
@@ -231,13 +207,16 @@ export async function createUserAction(formData: FormData) {
 
 ```typescript
 // app/admin/users/page.tsx
-import { ensurePermission } from "@/core/auth/config/permissions";
+import { hasPermission } from "@/core/auth/config/utils";
+import { redirect } from "next/navigation";
 
 export default async function AdminUsersPage() {
   const user = await getCurrentUser();
 
   // 🛡️ Proteger toda la página
-  await ensurePermission(user, "user:list");
+  if (!hasPermission(user, "user:list")) {
+    redirect("/unauthorized");
+  }
 
   return <UsersList />;
 }
@@ -250,27 +229,11 @@ export default async function AdminUsersPage() {
 ### **🚫 Componente Sin Acceso**
 
 ```typescript
-import { NoAccess } from "@/shared/components/Protected";
-
 <NoAccess
   title="Acceso Denegado"
   message="No tienes permisos para esta acción"
   icon="🚫"
-/>;
-```
-
-### **🔄 Verificación con Loading**
-
-```typescript
-import { PermissionGate } from "@/shared/components/Protected";
-
-<PermissionGate
-  permissions={{ user: ["create"] }}
-  loading={<div>🔄 Verificando...</div>}
-  fallback={<NoAccess />}
->
-  <CreateUserForm />
-</PermissionGate>;
+/>
 ```
 
 ---
@@ -280,29 +243,43 @@ import { PermissionGate } from "@/shared/components/Protected";
 ### **📊 Estadísticas (Desarrollo)**
 
 ```typescript
-const { getPermissionStats } = usePermissions();
+const { getCacheStats, currentRole, currentLevel, isAuthenticated } =
+  usePermissions();
 
-// 📊 Ver estadísticas
-console.log(getPermissionStats());
+// 📊 Ver estado del cache
+console.log(getCacheStats());
 /*
 {
-  totalChecks: 15,
-  lastCheck: Date,
-  cacheSize: 8,
-  currentRole: "admin",
-  currentLevel: 80,
-  isAuthenticated: true
+  size: 8,
+  keys: ["user123-user:create", "user123-files:upload", ...]
 }
 */
+
+// 📋 Información del usuario
+console.log({
+  currentRole, // "admin"
+  currentLevel, // 80
+  isAuthenticated, // true
+});
 ```
 
 ### **🧹 Cache Management**
 
 ```typescript
-const { clearPermissionCache, refreshPermissions } = usePermissions();
+const { clearCache } = usePermissions();
 
-clearPermissionCache(); // 🧹 Limpiar cache
-refreshPermissions(); // 🔄 Refrescar todo
+clearCache(); // 🧹 Limpiar cache completo
+```
+
+### **🔍 Debug con Logs**
+
+```typescript
+// Activar logs en desarrollo
+const { checkPermission } = usePermissions({
+  logPermissions: true,
+});
+
+checkPermission("user:create"); // Muestra: 🔐 user:create: ✅
 ```
 
 ---
@@ -313,10 +290,10 @@ refreshPermissions(); // 🔄 Refrescar todo
 
 ```typescript
 const UserCard = ({ user }) => {
-  const { canAccess, canManageUserRole } = usePermissions();
+  const { checkPermission, canManageRole } = usePermissions();
 
-  const canEditThisUser = canAccess({ user: ["update"] });
-  const canChangeThisRole = canManageUserRole(user.role);
+  const canEditThisUser = checkPermission("user:update");
+  const canChangeThisRole = canManageRole(user.role);
 
   return (
     <div>
@@ -330,40 +307,25 @@ const UserCard = ({ user }) => {
 ### **🎯 Verificación Múltiple**
 
 ```typescript
-import { usePermissionValidator } from "@/shared/hooks/usePermissions";
+const UserManagement = () => {
+  const { canAccess, checkPermission } = usePermissions();
 
-const { canProceed } = usePermissionValidator([
-  {
-    name: "user_management",
-    permissions: { user: ["create", "update"] },
-    required: true,
-  },
-  {
-    name: "file_management",
-    permissions: { files: ["upload"] },
-    required: false,
-  },
-]);
+  // ✅ Una verificación para múltiples acciones
+  const canManageUsers = canAccess({
+    user: ["create", "update", "delete"],
+  });
 
-if (!canProceed) {
-  return <AccessDenied />;
-}
-```
+  // ✅ O verificaciones individuales específicas
+  const canCreate = checkPermission("user:create");
+  const canDelete = checkPermission("user:delete");
 
-### **🔄 Verificación Asíncrona**
-
-```typescript
-const { hasPermissionAsync } = usePermissions();
-
-const handleAction = async () => {
-  const canProceed = await hasPermissionAsync({ user: ["create"] });
-
-  if (!canProceed) {
-    alert("Sin permisos");
-    return;
-  }
-
-  // ✅ Proceder con la acción
+  return (
+    <div>
+      {canCreate && <CreateButton />}
+      {canDelete && <DeleteButton />}
+      {canManageUsers && <ManagementPanel />}
+    </div>
+  );
 };
 ```
 
@@ -376,9 +338,9 @@ const handleAction = async () => {
 **No se actualiza el permiso tras cambio de rol:**
 
 ```typescript
-// 🔄 Refrescar permisos
-const { refreshPermissions } = usePermissions();
-refreshPermissions();
+// 🧹 Limpiar cache
+const { clearCache } = usePermissions();
+clearCache();
 ```
 
 **Componente no se re-renderiza:**
@@ -386,8 +348,8 @@ refreshPermissions();
 ```typescript
 // ✅ Asegurar dependencias correctas
 const canDelete = useMemo(
-  () => canAccess({ user: ["delete"] }),
-  [canAccess] // 🎯 Dependencia explícita
+  () => checkPermission("user:delete"),
+  [checkPermission] // 🎯 Dependencia explícita
 );
 ```
 
@@ -397,9 +359,9 @@ const canDelete = useMemo(
 // 🧹 Limpiar cache al cambiar usuario
 useEffect(() => {
   if (user?.id !== previousUserId) {
-    clearPermissionCache();
+    clearCache();
   }
-}, [user?.id, clearPermissionCache]);
+}, [user?.id, clearCache]);
 ```
 
 ### **🔍 Verificar Estado**
@@ -407,8 +369,9 @@ useEffect(() => {
 ```typescript
 // Development only
 if (process.env.NODE_ENV === "development") {
+  const { currentRole, getCacheStats } = usePermissions();
   console.log("Current role:", currentRole);
-  console.log("Permissions:", getPermissionStats());
+  console.log("Cache stats:", getCacheStats());
 }
 ```
 
@@ -419,13 +382,17 @@ if (process.env.NODE_ENV === "development") {
 ### **📋 Verificaciones Rápidas**
 
 ```typescript
-// En lugar de canAccess({ user: ["create"] })
-const { canCreateUsers } = useUserManagement();
+// ⚡ Para un permiso específico
+const canCreate = checkPermission("user:create");
 
-// En lugar de currentRole === "admin" || currentRole === "super_admin"
+// 🎯 Para múltiples permisos del mismo recurso
+const canManageUsers = canAccess({ user: ["create", "update", "delete"] });
+
+// 👑 Verificación de rol simple
 const { isAdmin } = usePermissions();
+// En lugar de: currentRole === "admin" || currentRole === "super_admin"
 
-// En lugar de componente complejo
+// 🛡️ Componente protegido simple
 <AdminOnly>
   <AdminFeatures />
 </AdminOnly>;
@@ -438,12 +405,14 @@ import type {
   Permission,
   RoleName,
   AnyPermission,
+  Resource,
 } from "@/core/auth/config/permissions";
 
 // Uso tipado
 const permission: AnyPermission = "user:create";
 const role: RoleName = "admin";
 const perms: Permission = { user: ["create", "update"] };
+const resource: Resource = "files";
 ```
 
 ---
@@ -453,7 +422,7 @@ const perms: Permission = { user: ["create", "update"] };
 ### **✅ Para Nuevos Componentes**
 
 - [ ] ¿Necesita protección de permisos?
-- [ ] ¿Usar `Protected` o verificar en hook?
+- [ ] ¿Usar `Protected` o verificar directamente con hook?
 - [ ] ¿Mostrar fallback o ocultar?
 - [ ] ¿Verificar server-side también?
 
@@ -461,7 +430,6 @@ const perms: Permission = { user: ["create", "update"] };
 
 - [ ] ¿Añadir nuevo recurso a `PERMISSIONS`?
 - [ ] ¿Actualizar `ROLE_STATEMENTS`?
-- [ ] ¿Crear hook específico?
 - [ ] ¿Añadir protección server-side?
 - [ ] ¿Escribir tests de permisos?
 
@@ -469,10 +437,10 @@ const perms: Permission = { user: ["create", "update"] };
 
 ## 🔗 **ENLACES RÁPIDOS**
 
-- **📖 [Guía Completa](./PERMISSIONS_SYSTEM_COMPLETE_GUIDE.md)**
-- **🏗️ [Estructura Detallada](./PERMISSIONS_STRUCTURE_DETAILED.md)**
-- **💡 [Ejemplos Prácticos](./PERMISSIONS_PRACTICAL_EXAMPLES.md)**
+- **🏗️ [Nueva Arquitectura](./PERMISSIONS_NEW_ARCHITECTURE.md)**
 - **🏠 [README Principal](./PERMISSIONS_README.md)**
+- **📊 [Estructura Detallada](./PERMISSIONS_STRUCTURE_DETAILED.md)**
+- **💡 [Ejemplos Prácticos](./PERMISSIONS_PRACTICAL_EXAMPLES.md)**
 
 ---
 

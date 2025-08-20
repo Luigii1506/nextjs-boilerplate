@@ -747,11 +747,9 @@ src/
 
 ```typescript
 // src/shared/hooks/usePermissions.ts
-- usePermissions: Hook principal con todas las funcionalidades
-- usePermissionValidator: Validación múltiple
-- useUserManagement: Gestión usuarios avanzada
-- useFileManagement: Gestión archivos
-- useSessionManagement: Gestión sesiones
+- usePermissions: Hook principal con todas las funcionalidades esenciales
+- API limpia y directa sin abstracciones innecesarias
+- Cache optimizado y verificaciones eficientes
 ```
 
 #### **🛡️ Protected Components**

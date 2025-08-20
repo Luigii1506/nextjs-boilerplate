@@ -4,10 +4,20 @@
  * Tipos TypeScript para el sistema de notificaciones
  */
 
-import type {
-  NotificationType,
-  NotificationPosition,
-} from "@/shared/constants/notifications";
+// 📍 Tipos básicos de notificación (simplificados)
+export type NotificationType =
+  | "success"
+  | "error"
+  | "warning"
+  | "info"
+  | "loading";
+export type NotificationPosition =
+  | "top-left"
+  | "top-center"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-center"
+  | "bottom-right";
 
 // 🎯 Configuración básica de notificación
 export interface NotificationConfig {
@@ -171,43 +181,7 @@ export interface NotificationProviderProps {
   };
 }
 
-// 🎯 Helpers para categorías específicas
-export interface UserNotifications {
-  /** Usuario creado exitosamente */
-  userCreated: (userName?: string) => string;
-  /** Error al crear usuario */
-  userCreateError: (error?: string) => string;
-  /** Usuario actualizado */
-  userUpdated: (userName?: string) => string;
-  /** Error al actualizar usuario */
-  userUpdateError: (error?: string) => string;
-  /** Usuario eliminado */
-  userDeleted: (userName?: string) => string;
-  /** Error al eliminar usuario */
-  userDeleteError: (error?: string) => string;
-}
-
-export interface FileNotifications {
-  /** Archivo subido exitosamente */
-  fileUploaded: (fileName?: string) => string;
-  /** Error al subir archivo */
-  fileUploadError: (error?: string) => string;
-  /** Archivo eliminado */
-  fileDeleted: (fileName?: string) => string;
-  /** Error al eliminar archivo */
-  fileDeleteError: (error?: string) => string;
-}
-
-export interface AuthNotifications {
-  /** Sesión iniciada */
-  loginSuccess: (userName?: string) => string;
-  /** Error al iniciar sesión */
-  loginError: (error?: string) => string;
-  /** Sesión cerrada */
-  logoutSuccess: () => string;
-  /** Acceso denegado */
-  accessDenied: (resource?: string) => string;
-}
+// ✅ Tipos simplificados y funcionales eliminados - usar useNotifications
 
 // 🔄 Server Action Integration
 export interface ServerActionNotificationOptions {

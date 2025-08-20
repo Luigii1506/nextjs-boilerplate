@@ -8,7 +8,7 @@ import React, { useMemo } from "react";
 import { RefreshCw, Flag, Search, Filter, BarChart3 } from "lucide-react";
 
 // 🧠 Notificaciones Inteligentes (como Users)
-import { useActionNotifications } from "@/shared/hooks/useActionNotifications";
+import { useNotifications } from "@/shared/hooks/useNotifications";
 
 // 🔄 Provider para sincronización instantánea con navegación
 import {
@@ -25,7 +25,7 @@ import type { FeatureFlagCardData, FeatureFlagDomain } from "../../types";
 // 🎯 Componente principal (Híbrido: Provider + Direct)
 export default function FeatureFlagsAdmin() {
   // 🧠 SISTEMA SIMPLE E INTELIGENTE - UNA SOLA LÍNEA
-  const { notify } = useActionNotifications();
+  const { notify } = useNotifications();
 
   // 🔄 Provider compartido para sincronización con navegación
   const {
@@ -242,7 +242,7 @@ export default function FeatureFlagsAdmin() {
         </div>
       )}
 
-      {/* ✅ Notificaciones automáticas - manejadas por useActionNotifications */}
+      {/* ✅ Notificaciones automáticas - manejadas por useNotifications */}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">

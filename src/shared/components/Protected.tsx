@@ -1,12 +1,12 @@
 /**
- * 🛡️ COMPONENTES DE PROTECCIÓN DECLARATIVOS
+ * 🛡️ COMPONENTES DE PROTECCIÓN SIMPLIFICADOS
  *
- * Componentes reutilizables para proteger partes de la UI basándose en permisos
+ * Componentes esenciales para proteger UI basándose en permisos
  */
 
 import React from "react";
 import { usePermissions } from "@/shared/hooks/usePermissions";
-import type { Permission } from "@/shared/hooks/usePermissions";
+import type { Permission } from "@/core/auth/config/permissions";
 
 // 🎯 Props base para componentes protegidos
 interface BaseProtectedProps {
@@ -36,12 +36,6 @@ interface RoleProtectedProps extends BaseProtectedProps {
 interface LevelProtectedProps extends BaseProtectedProps {
   /** Nivel mínimo requerido */
   minLevel: number;
-}
-
-// 🎯 Protección personalizada
-interface CustomProtectedProps extends BaseProtectedProps {
-  /** Función personalizada de verificación */
-  condition: () => boolean;
 }
 
 /**
@@ -111,25 +105,6 @@ export const LevelProtected: React.FC<LevelProtectedProps> = ({
 };
 
 /**
- * 🎯 CustomProtected - Protección con lógica personalizada
- */
-export const CustomProtected: React.FC<CustomProtectedProps> = ({
-  condition,
-  fallback = null,
-  showFallback = false,
-  children,
-}) => {
-  // 🔍 Verificar condición personalizada
-  const hasAccess = condition();
-
-  if (!hasAccess) {
-    return showFallback ? <>{fallback}</> : null;
-  }
-
-  return <>{children}</>;
-};
-
-/**
  * 🛡️ AdminOnly - Shortcut para contenido solo de admins
  */
 export const AdminOnly: React.FC<
@@ -180,97 +155,4 @@ export const NoAccess: React.FC<{
       </div>
     </div>
   );
-};
-
-/**
- * 🔄 PermissionGate - Gate con loading state
- */
-interface PermissionGateProps extends PermissionProtectedProps {
-  /** Componente de loading */
-  loading?: React.ReactNode;
-}
-
-export const PermissionGate: React.FC<PermissionGateProps> = ({
-  permissions,
-  fallback = <NoAccess />,
-  showFallback = true,
-  loading = <div>🔄 Verificando permisos...</div>,
-  children,
-}) => {
-  const { canAccess } = usePermissions();
-  const [checking, setChecking] = React.useState(true);
-  const [hasAccess, setHasAccess] = React.useState(false);
-
-  React.useEffect(() => {
-    // Simular verificación async (si necesario)
-    const checkAccess = async () => {
-      setChecking(true);
-      const access = canAccess(permissions);
-      setHasAccess(access);
-      setChecking(false);
-    };
-
-    checkAccess();
-  }, [permissions, canAccess]);
-
-  if (checking) {
-    return <>{loading}</>;
-  }
-
-  if (!hasAccess) {
-    return showFallback ? <>{fallback}</> : null;
-  }
-
-  return <>{children}</>;
-};
-
-// 🎯 HOCs (Higher Order Components) para protección
-export const withPermissions = <P extends object>(
-  Component: React.ComponentType<P>,
-  permissions: Permission,
-  fallback?: React.ReactNode
-) => {
-  const WrappedComponent = (props: P) => (
-    <Protected permissions={permissions} fallback={fallback}>
-      <Component {...props} />
-    </Protected>
-  );
-
-  WrappedComponent.displayName = `withPermissions(${
-    Component.displayName || Component.name
-  })`;
-  return WrappedComponent;
-};
-
-export const withRoles = <P extends object>(
-  Component: React.ComponentType<P>,
-  roles: string[],
-  fallback?: React.ReactNode
-) => {
-  const WrappedComponent = (props: P) => (
-    <RoleProtected roles={roles} fallback={fallback}>
-      <Component {...props} />
-    </RoleProtected>
-  );
-
-  WrappedComponent.displayName = `withRoles(${
-    Component.displayName || Component.name
-  })`;
-  return WrappedComponent;
-};
-
-export const withAdminOnly = <P extends object>(
-  Component: React.ComponentType<P>,
-  fallback?: React.ReactNode
-) => {
-  const WrappedComponent = (props: P) => (
-    <AdminOnly fallback={fallback}>
-      <Component {...props} />
-    </AdminOnly>
-  );
-
-  WrappedComponent.displayName = `withAdminOnly(${
-    Component.displayName || Component.name
-  })`;
-  return WrappedComponent;
 };

@@ -14,7 +14,7 @@ import { useUsers } from "../../hooks/useUsers";
 import { CreateUserForm, User } from "../../types";
 import UserCard from "@/features/admin/users/ui/components/UserCard";
 import UserModal from "@/features/admin/users/ui/components/UserModal";
-import { useActionNotifications } from "@/shared/hooks/useActionNotifications";
+import { useNotifications } from "@/shared/hooks/useNotifications";
 
 /**
  * 🎯 USERS VIEW - VERSIÓN LIMPIA
@@ -28,7 +28,7 @@ import { useActionNotifications } from "@/shared/hooks/useActionNotifications";
 
 const UsersCleanView: React.FC = () => {
   // 🧠 SIMPLE: Hook para notificaciones
-  const { notify } = useActionNotifications();
+  const { notify } = useNotifications();
 
   // 🎛️ UI State (solo UI, no lógica de negocio)
   const [searchTerm, setSearchTerm] = useState("");

@@ -68,9 +68,16 @@ export const getUsersCount = async (where?: Prisma.UserWhereInput) => {
   return prisma.user.count({ where: where || {} });
 };
 
+// 📊 Count users by role
+export const countUsersByRole = async (role: string) => {
+  return prisma.user.count({
+    where: { role },
+  });
+};
+
 // 👤 Get user by ID
 export const getUserById = async (userId: string) => {
-  return prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
       id: true,
@@ -86,6 +93,14 @@ export const getUserById = async (userId: string) => {
       banExpires: true,
     },
   });
+
+  if (!user) return null;
+
+  // Ensure role has a default value
+  return {
+    ...user,
+    role: user.role || "user", // Default to "user" if role is null
+  };
 };
 
 // 📧 Get user by email

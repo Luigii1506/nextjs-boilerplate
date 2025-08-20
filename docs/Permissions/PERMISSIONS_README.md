@@ -5,9 +5,11 @@ slug: /permisos/introduccion
 
 # 🔐 **SISTEMA DE PERMISOS Y ROLES - DOCUMENTACIÓN COMPLETA**
 
+> **🚀 ARQUITECTURA SIMPLIFICADA**: El sistema ha sido refactorizado para ser más limpio, directo y mantenible, eliminando abstracciones innecesarias. Ver **[Arquitectura Simplificada](./PERMISSIONS_NEW_ARCHITECTURE.md)** para detalles de los cambios.
+
 ## 🎯 **OVERVIEW DEL SISTEMA**
 
-Este es un sistema **RBAC (Role-Based Access Control)** completo y profesional que te permite controlar:
+Este es un sistema **RBAC (Role-Based Access Control)** limpio y profesional que te permite controlar:
 
 - **🎯 QUÉ puede hacer cada usuario** (acciones permitidas)
 - **🖥️ QUÉ partes de la UI puede ver** (componentes condicionales)
@@ -20,13 +22,19 @@ Este es un sistema **RBAC (Role-Based Access Control)** completo y profesional q
 
 ### **🚀 Para Empezar**
 
+- **[🏗️ Arquitectura Simplificada](./PERMISSIONS_NEW_ARCHITECTURE.md)** ⭐
+
+  - Sistema refactorizado y simplificado
+  - API limpia y directa
+  - Mejores prácticas actualizadas
+  - Guía de migración
+
 - **[🔐 Guía Completa del Sistema](./PERMISSIONS_SYSTEM_COMPLETE_GUIDE.md)**
   - Conceptos fundamentales
   - Roles disponibles (super_admin, admin, user)
   - Recursos y acciones (user, session, files)
   - Cómo usar permisos en componentes
   - Protección de APIs y server actions
-  - Casos de uso avanzados
 
 ### **🏗️ Para Entender la Arquitectura**
 
@@ -40,9 +48,9 @@ Este es un sistema **RBAC (Role-Based Access Control)** completo y profesional q
 ### **💡 Para Implementar**
 
 - **[🧪 Ejemplos Prácticos](./PERMISSIONS_PRACTICAL_EXAMPLES.md)**
-  - 9 ejemplos completos de implementación
+  - Ejemplos completos de implementación
   - Gestión de usuarios, archivos, dashboard
-  - Casos de uso complejos y workflows
+  - Casos de uso reales y workflows
   - Testing comprehensivo
   - Mejores prácticas y patterns
 
@@ -60,35 +68,42 @@ Este es un sistema **RBAC (Role-Based Access Control)** completo y profesional q
 
 ### **🚀 Para Desarrolladores Nuevos en el Proyecto**
 
-1. **📖 Lee la [Guía Completa](./PERMISSIONS_SYSTEM_COMPLETE_GUIDE.md)** (30-45 min)
+1. **🏗️ Empieza con la [Arquitectura Simplificada](./PERMISSIONS_NEW_ARCHITECTURE.md)** (15-20 min)
+
+   - Comprende el sistema actual simplificado
+   - Ve la API limpia y directa
+   - Entiende las mejores prácticas actuales
+
+2. **📖 Lee la [Guía Completa](./PERMISSIONS_SYSTEM_COMPLETE_GUIDE.md)** (30-45 min)
 
    - Entiende qué roles existen
    - Aprende qué puede hacer cada rol
    - Ve ejemplos básicos de uso
 
-2. **🏗️ Estudia la [Estructura](./PERMISSIONS_STRUCTURE_DETAILED.md)** (20-30 min)
+3. **🏗️ Estudia la [Estructura](./PERMISSIONS_STRUCTURE_DETAILED.md)** (20-30 min)
 
    - Comprende la arquitectura
    - Conoce dónde está cada cosa
    - Entiende los tipos TypeScript
 
-3. **💡 Practica con los [Ejemplos](./PERMISSIONS_PRACTICAL_EXAMPLES.md)** (45-60 min)
+4. **💡 Practica con los [Ejemplos](./PERMISSIONS_PRACTICAL_EXAMPLES.md)** (45-60 min)
 
    - Implementa casos reales
-   - Aprende patterns avanzados
+   - Aprende patterns útiles
    - Ve cómo hacer testing
 
-4. **⚡ Usa la [Referencia Rápida](./PERMISSIONS_QUICK_REFERENCE.md)** (durante desarrollo)
+5. **⚡ Usa la [Referencia Rápida](./PERMISSIONS_QUICK_REFERENCE.md)** (durante desarrollo)
    - Consulta APIs específicas
    - Copia snippets de código
    - Resuelve problemas comunes
 
 ### **⚡ Para Desarrolladores Experimentados**
 
-1. **📖 Revisa la [Guía Completa](./PERMISSIONS_SYSTEM_COMPLETE_GUIDE.md)** - Solo los conceptos nuevos
-2. **🏗️ Escanea la [Estructura](./PERMISSIONS_STRUCTURE_DETAILED.md)** - Enfócate en extensibilidad
-3. **💡 Busca en [Ejemplos](./PERMISSIONS_PRACTICAL_EXAMPLES.md)** - Casos específicos que necesites
-4. **⚡ Bookmarkea la [Referencia](./PERMISSIONS_QUICK_REFERENCE.md)** - Para uso diario
+1. **🏗️ Lee la [Arquitectura Simplificada](./PERMISSIONS_NEW_ARCHITECTURE.md)** - Cambios importantes
+2. **📖 Revisa la [Guía Completa](./PERMISSIONS_SYSTEM_COMPLETE_GUIDE.md)** - Solo conceptos nuevos
+3. **🏗️ Escanea la [Estructura](./PERMISSIONS_STRUCTURE_DETAILED.md)** - Enfócate en extensibilidad
+4. **💡 Busca en [Ejemplos](./PERMISSIONS_PRACTICAL_EXAMPLES.md)** - Casos específicos que necesites
+5. **⚡ Bookmarkea la [Referencia](./PERMISSIONS_QUICK_REFERENCE.md)** - Para uso diario
 
 ---
 
@@ -133,12 +148,15 @@ Este es un sistema **RBAC (Role-Based Access Control)** completo y profesional q
 import { usePermissions } from "@/shared/hooks/usePermissions";
 
 const MyComponent = () => {
-  const { canAccess, isAdmin } = usePermissions();
+  const { canAccess, isAdmin, checkPermission } = usePermissions();
 
   return (
     <div>
       {/* ✅ Solo mostrar si puede crear usuarios */}
       {canAccess({ user: ["create"] }) && <button>➕ Crear Usuario</button>}
+
+      {/* ✅ Verificar un permiso específico */}
+      {checkPermission("user:delete") && <button>🗑️ Eliminar</button>}
 
       {/* ✅ Solo mostrar si es admin */}
       {isAdmin() && <AdminPanel />}
@@ -172,13 +190,15 @@ const MyApp = () => {
 ### **3. 🌐 Proteger Server Actions**
 
 ```typescript
-import { ensurePermission } from "@/core/auth/config/permissions";
+import { hasPermission } from "@/core/auth/config/utils";
 
 export async function createUserAction(formData: FormData) {
   const user = await getCurrentUser();
 
   // 🛡️ Verificar permiso antes de proceder
-  await ensurePermission(user, "user:create");
+  if (!hasPermission(user, "user:create")) {
+    throw new Error("No tienes permisos para crear usuarios");
+  }
 
   // ✅ Solo llega aquí si tiene permiso
   const newUser = await createUser(formData);
@@ -205,27 +225,29 @@ export async function createUserAction(formData: FormData) {
 
 ## 🔧 **HERRAMIENTAS INCLUIDAS**
 
-### **🪝 Hooks Especializados**
+### **🪝 Hook Principal**
 
 ```typescript
-// Gestión específica por módulo
-useUserManagement(); // 👥 Permisos de usuarios
-useFileManagement(); // 📁 Permisos de archivos
-useSessionManagement(); // 🔐 Permisos de sesiones
-
-// Validación avanzada
-usePermissionValidator(); // 🎯 Múltiples verificaciones
+// API simple y directa
+const {
+  checkPermission, // Un permiso específico
+  canAccess, // Múltiples permisos
+  hasPermissionAsync, // Validación servidor crítica
+  isAdmin,
+  isSuperAdmin,
+  currentRole,
+} = usePermissions();
 ```
 
 ### **🛡️ Componentes de Protección**
 
 ```typescript
 <Protected />           // 🔐 Por permisos específicos
-<RoleProtected />      // 👑 Por roles
-<LevelProtected />     // 📊 Por nivel de rol
-<AdminOnly />          // 🛡️ Solo admins
-<SuperAdminOnly />     // 👑 Solo super admins
-<PermissionGate />     // 🔄 Con loading states
+<RoleProtected />       // 👑 Por roles
+<LevelProtected />      // 📊 Por nivel de rol
+<AdminOnly />           // 🛡️ Solo admins
+<SuperAdminOnly />      // 👑 Solo super admins
+<NoAccess />            // 🚫 Mensaje de error
 ```
 
 ### **🧪 Utilidades de Testing**
@@ -244,24 +266,28 @@ testPermissionFlow(); // 🔍 Testing de flujos
 ### **❌ El componente no se actualiza tras cambio de rol**
 
 ```typescript
-const { refreshPermissions } = usePermissions();
-refreshPermissions(); // 🔄 Refrescar manualmente
+const { clearCache } = usePermissions();
+clearCache(); // 🧹 Limpiar cache manualmente
 ```
 
 ### **❌ Verificación muy lenta**
 
 ```typescript
-// ✅ Usar hook específico en lugar de genérico
-const { canCreateUsers } = useUserManagement();
-// En lugar de: canAccess({ user: ["create"] })
+// ✅ Usar verificación directa para casos simples
+const { checkPermission } = usePermissions();
+checkPermission("user:create"); // Más rápido para un permiso
 ```
 
 ### **❌ Permission denied inesperado**
 
 ```typescript
 // 🔍 Debug en desarrollo
-const { getPermissionStats } = usePermissions();
-console.log(getPermissionStats());
+const { getCacheStats } = usePermissions();
+console.log(getCacheStats()); // Ver estado del cache
+
+// Verificar permiso específico con logs
+const { checkPermission } = usePermissions({ logPermissions: true });
+checkPermission("user:create"); // Mostrará logs en desarrollo
 ```
 
 ---
@@ -270,7 +296,7 @@ console.log(getPermissionStats());
 
 ### **📚 Si eres nuevo:**
 
-1. Comienza con la **[Guía Completa](./PERMISSIONS_SYSTEM_COMPLETE_GUIDE.md)**
+1. Comienza con la **[Arquitectura Simplificada](./PERMISSIONS_NEW_ARCHITECTURE.md)**
 2. Practica con ejemplos simples
 3. Implementa tu primer componente protegido
 
@@ -293,7 +319,7 @@ console.log(getPermissionStats());
 Este sistema está diseñado para ser:
 
 - **🔐 Seguro por defecto** - Sin permisos = sin acceso
-- **🎯 Granular** - Control preciso sobre cada acción
+- **🎯 Simple y directo** - API clara sin abstracciones innecesarias
 - **📊 Escalable** - Fácil añadir nuevos recursos y roles
 - **🧪 Testeable** - Cada componente se puede probar independientemente
 - **🛠️ Mantenible** - Código declarativo y reutilizable
@@ -301,11 +327,12 @@ Este sistema está diseñado para ser:
 
 ### **✅ Principios Clave**
 
-1. **Verificación doble** - Cliente y servidor siempre
-2. **UI declarativa** - Los permisos se ven en el código
+1. **Validación única eficiente** - Server actions validan, UI usa cache local
+2. **UI declarativa** - Los permisos se ven claramente en el código
 3. **TypeScript estricto** - Prevenir errores en compile-time
-4. **Cache inteligente** - Performance sin sacrificar seguridad
-5. **Extensibilidad** - Fácil añadir nuevas funcionalidades
+4. **Cache inteligente** - Performance optimizada sin sacrificar seguridad
+5. **Separación de responsabilidades** - Lógica dividida por archivos específicos
+6. **Simplicidad sobre abstracción** - Código directo y comprensible
 
 ---
 
@@ -318,6 +345,6 @@ Este sistema está diseñado para ser:
 
 ---
 
-**🎉 ¡Con esta documentación tienes todo lo necesario para dominar el sistema de permisos!**
+**🎉 ¡Con esta documentación tienes todo lo necesario para dominar el sistema de permisos simplificado!**
 
 ¿Tienes alguna pregunta específica o necesitas ayuda con un caso de uso particular? ¡Consulta la documentación correspondiente o abre una issue!

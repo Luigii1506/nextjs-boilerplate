@@ -1,378 +1,236 @@
 /**
- * 🔔 USE NOTIFICATIONS HOOK
+ * 🧠 SMART NOTIFICATIONS - SISTEMA SIMPLE E INTELIGENTE
+ * ====================================================
  *
- * Hook principal para el sistema de notificaciones con métodos especializados
+ * ✅ UN SOLO HELPER para todo
+ * ✅ Detecta automáticamente el tipo de error
+ * ✅ Formateo inteligente multinivel
+ * ✅ CERO configuración repetitiva
+ * ✅ Súper simple de usar
  */
 
 "use client";
 
-import { useCallback } from "react";
 import { useNotificationContext } from "@/shared/providers/NotificationProvider";
-import { NOTIFICATION_MESSAGES } from "@/shared/constants/notifications";
-import type {
-  UserNotifications,
-  FileNotifications,
-  AuthNotifications,
-} from "@/shared/types/notifications";
+import { useCallback } from "react";
 
-/**
- * 🔔 useNotifications - Hook principal del sistema de notificaciones
- */
-export const useNotifications = () => {
-  const context = useNotificationContext();
+// 🎯 Detección inteligente de contexto por mensaje
+const detectActionType = (message: string): string => {
+  const msg = message.toLowerCase();
 
-  // 👥 Notificaciones específicas para usuarios
-  const users: UserNotifications = {
-    userCreated: useCallback(
-      (userName?: string) => {
-        const message = userName
-          ? `Usuario "${userName}" creado exitosamente`
-          : NOTIFICATION_MESSAGES.USERS.CREATE_SUCCESS;
-        return context.success(message);
-      },
-      [context]
-    ),
+  if (msg.includes("creat") || msg.includes("añad") || msg.includes("agreg"))
+    return "create";
+  if (
+    msg.includes("actualiz") ||
+    msg.includes("modific") ||
+    msg.includes("edit")
+  )
+    return "update";
+  if (msg.includes("elimin") || msg.includes("borr") || msg.includes("delet"))
+    return "delete";
+  if (msg.includes("subien") || msg.includes("upload") || msg.includes("carg"))
+    return "upload";
+  if (msg.includes("descarg") || msg.includes("download")) return "download";
+  if (msg.includes("bane") || msg.includes("block")) return "ban";
+  if (msg.includes("desbane") || msg.includes("unblock")) return "unban";
+  if (msg.includes("rol") || msg.includes("permis")) return "role";
+  if (msg.includes("sesión") || msg.includes("login") || msg.includes("auth"))
+    return "auth";
 
-    userCreateError: useCallback(
-      (error?: string) => {
-        const message = error || NOTIFICATION_MESSAGES.USERS.CREATE_ERROR;
-        return context.error(message, {
-          action: {
-            label: "Reintentar",
-            onClick: () => window.location.reload(),
-          },
-        });
-      },
-      [context]
-    ),
+  return "general";
+};
 
-    userUpdated: useCallback(
-      (userName?: string) => {
-        const message = userName
-          ? `Usuario "${userName}" actualizado correctamente`
-          : NOTIFICATION_MESSAGES.USERS.UPDATE_SUCCESS;
-        return context.success(message);
-      },
-      [context]
-    ),
+// 🔍 Detección inteligente de severidad por error (para futuras mejoras)
+const detectErrorSeverity = (
+  error: unknown
+): "low" | "medium" | "high" | "critical" => {
+  if (!error) return "medium";
 
-    userUpdateError: useCallback(
-      (error?: string) => {
-        const message = error || NOTIFICATION_MESSAGES.USERS.UPDATE_ERROR;
-        return context.error(message);
-      },
-      [context]
-    ),
+  const errorStr = String(error).toLowerCase();
 
-    userDeleted: useCallback(
-      (userName?: string) => {
-        const message = userName
-          ? `Usuario "${userName}" eliminado exitosamente`
-          : NOTIFICATION_MESSAGES.USERS.DELETE_SUCCESS;
-        return context.success(message);
-      },
-      [context]
-    ),
+  if (
+    errorStr.includes("permission") ||
+    errorStr.includes("unauthorized") ||
+    errorStr.includes("access denied")
+  )
+    return "medium";
+  if (
+    errorStr.includes("network") ||
+    errorStr.includes("fetch") ||
+    errorStr.includes("connection")
+  )
+    return "high";
+  if (
+    errorStr.includes("server error") ||
+    errorStr.includes("internal") ||
+    errorStr.includes("500")
+  )
+    return "critical";
+  if (
+    errorStr.includes("validation") ||
+    errorStr.includes("required") ||
+    errorStr.includes("invalid")
+  )
+    return "low";
+  if (errorStr.includes("not found") || errorStr.includes("404")) return "low";
 
-    userDeleteError: useCallback(
-      (error?: string) => {
-        const message = error || NOTIFICATION_MESSAGES.USERS.DELETE_ERROR;
-        return context.error(message);
-      },
-      [context]
-    ),
-  };
+  return "medium";
+};
 
-  // 📁 Notificaciones específicas para archivos
-  const files: FileNotifications = {
-    fileUploaded: useCallback(
-      (fileName?: string) => {
-        const message = fileName
-          ? `Archivo "${fileName}" subido exitosamente`
-          : NOTIFICATION_MESSAGES.FILES.UPLOAD_SUCCESS;
-        return context.success(message);
-      },
-      [context]
-    ),
+// 🎨 Formateo inteligente de errores (combina mensaje base + específico)
+const formatSmartError = (baseMessage: string, error: unknown): string => {
+  if (!error) return baseMessage;
 
-    fileUploadError: useCallback(
-      (error?: string) => {
-        const message = error || NOTIFICATION_MESSAGES.FILES.UPLOAD_ERROR;
-        return context.error(message, {
-          action: {
-            label: "Reintentar",
-            onClick: () => window.location.reload(),
-          },
-        });
-      },
-      [context]
-    ),
+  const errorStr = error instanceof Error ? error.message : String(error);
 
-    fileDeleted: useCallback(
-      (fileName?: string) => {
-        const message = fileName
-          ? `Archivo "${fileName}" eliminado exitosamente`
-          : NOTIFICATION_MESSAGES.FILES.DELETE_SUCCESS;
-        return context.success(message);
-      },
-      [context]
-    ),
+  // 🛡️ Errores de permisos - formato amigable
+  if (errorStr.includes("permission") || errorStr.includes("unauthorized")) {
+    return `🚫 ${baseMessage}: Sin permisos suficientes`;
+  }
 
-    fileDeleteError: useCallback(
-      (error?: string) => {
-        const message = error || NOTIFICATION_MESSAGES.FILES.DELETE_ERROR;
-        return context.error(message);
-      },
-      [context]
-    ),
-  };
+  // 📋 Errores de validación - formato amigable
+  if (errorStr.includes("validation") || errorStr.includes("required")) {
+    return `📋 ${baseMessage}: ${errorStr}`;
+  }
 
-  // 🔐 Notificaciones específicas para autenticación
-  const auth: AuthNotifications = {
-    loginSuccess: useCallback(
-      (userName?: string) => {
-        const message = userName
-          ? `¡Bienvenido, ${userName}!`
-          : NOTIFICATION_MESSAGES.AUTH.LOGIN_SUCCESS;
-        return context.success(message);
-      },
-      [context]
-    ),
+  // 🔐 Errores de autenticación
+  if (errorStr.includes("auth") || errorStr.includes("login")) {
+    return `🔐 ${baseMessage}: Problema de autenticación`;
+  }
 
-    loginError: useCallback(
-      (error?: string) => {
-        const message = error || NOTIFICATION_MESSAGES.AUTH.LOGIN_ERROR;
-        return context.error(message, {
-          action: {
-            label: "Ir a Login",
-            onClick: () => {
-              window.location.href = "/login";
-            },
-          },
-        });
-      },
-      [context]
-    ),
+  // 🌐 Errores de red
+  if (
+    errorStr.includes("fetch") ||
+    errorStr.includes("network") ||
+    errorStr.includes("connection")
+  ) {
+    return `🌐 ${baseMessage}: Error de conexión`;
+  }
 
-    logoutSuccess: useCallback(() => {
-      return context.info(NOTIFICATION_MESSAGES.AUTH.LOGOUT_SUCCESS);
-    }, [context]),
+  // 🔍 Error específico útil - combinarlo
+  if (errorStr && errorStr !== "Error" && !baseMessage.includes(errorStr)) {
+    return `${baseMessage}: ${errorStr}`;
+  }
 
-    accessDenied: useCallback(
-      (resource?: string) => {
-        const message = resource
-          ? `Acceso denegado a ${resource}`
-          : NOTIFICATION_MESSAGES.PERMISSIONS.ACCESS_DENIED;
-        return context.warning(message, {
-          duration: 6000,
-          action: {
-            label: "Ver Permisos",
-            onClick: () => {
-              window.location.href = "/docs/permissions";
-            },
-          },
-        });
-      },
-      [context]
-    ),
-  };
+  return baseMessage;
+};
 
-  // 🎯 Métodos de conveniencia con mensajes predefinidos
-  const quick = {
-    // ✅ Éxitos comunes
-    saved: useCallback(
-      () => context.success(NOTIFICATION_MESSAGES.GENERAL.SAVE_SUCCESS),
-      [context]
-    ),
-    copied: useCallback(
-      () =>
-        context.success(NOTIFICATION_MESSAGES.GENERAL.COPIED, {
-          duration: 2000,
-        }),
-      [context]
-    ),
-    updated: useCallback(
-      () => context.success("Actualizado exitosamente"),
-      [context]
-    ),
-    created: useCallback(
-      () => context.success("Creado exitosamente"),
-      [context]
-    ),
-    deleted: useCallback(
-      () => context.success("Eliminado exitosamente"),
-      [context]
-    ),
-
-    // ❌ Errores comunes
-    saveError: useCallback(
-      () => context.error(NOTIFICATION_MESSAGES.GENERAL.SAVE_ERROR),
-      [context]
-    ),
-    loadError: useCallback(
-      () => context.error(NOTIFICATION_MESSAGES.GENERAL.LOAD_ERROR),
-      [context]
-    ),
-    networkError: useCallback(
-      () =>
-        context.error(NOTIFICATION_MESSAGES.GENERAL.NETWORK_ERROR, {
-          action: {
-            label: "Reintentar",
-            onClick: () => window.location.reload(),
-          },
-        }),
-      [context]
-    ),
-    validationError: useCallback(
-      () => context.warning(NOTIFICATION_MESSAGES.GENERAL.VALIDATION_ERROR),
-      [context]
-    ),
-
-    // ℹ️ Información común
-    processing: useCallback(
-      () => context.loading(NOTIFICATION_MESSAGES.GENERAL.PROCESSING),
-      [context]
-    ),
-    copying: useCallback(
-      () =>
-        context.loading(NOTIFICATION_MESSAGES.GENERAL.COPYING, {
-          duration: 1000,
-        }),
-      [context]
-    ),
-    pleaseWait: useCallback(
-      () => context.info(NOTIFICATION_MESSAGES.GENERAL.PLEASE_WAIT),
-      [context]
-    ),
-
-    // ⚠️ Advertencias comunes
-    unauthorized: useCallback(
-      () => context.warning(NOTIFICATION_MESSAGES.AUTH.UNAUTHORIZED),
-      [context]
-    ),
-    sessionExpired: useCallback(
-      () =>
-        context.warning(NOTIFICATION_MESSAGES.AUTH.SESSION_EXPIRED, {
-          action: {
-            label: "Iniciar Sesión",
-            onClick: () => {
-              window.location.href = "/login";
-            },
-          },
-        }),
-      [context]
-    ),
-  };
-
-  // 🛡️ Métodos específicos para permisos
-  const permissions = {
-    accessDenied: useCallback(
-      (resource?: string) => {
-        return auth.accessDenied(resource);
-      },
-      [auth]
-    ),
-
-    roleRequired: useCallback(
-      (role: string) => {
-        return context.warning(`Se requiere rol de ${role} para esta acción`, {
-          action: {
-            label: "Ver Roles",
-            onClick: () => {
-              window.location.href = "/docs/permissions#roles";
-            },
-          },
-        });
-      },
-      [context]
-    ),
-
-    adminRequired: useCallback(() => {
-      return context.warning(NOTIFICATION_MESSAGES.PERMISSIONS.ADMIN_REQUIRED, {
-        action: {
-          label: "Contactar Admin",
-          onClick: () => {
-            window.location.href = "/contact";
-          },
-        },
-      });
-    }, [context]),
-
-    superAdminRequired: useCallback(() => {
-      return context.error(
-        NOTIFICATION_MESSAGES.PERMISSIONS.SUPER_ADMIN_REQUIRED
-      );
-    }, [context]),
-  };
-
-  // 🔄 Método para operaciones con promesas
-  const withPromise = useCallback(
-    <T>(
-      promise: Promise<T>,
-      options: {
-        loading: string;
-        success: string | ((data: T) => string);
-        error: string | ((error: unknown) => string);
-      }
-    ) => {
-      return context.promise(promise, options);
+// 🎯 Configuración inteligente basada en severidad (para futuras mejoras)
+const getSmartConfig = (severity: "low" | "medium" | "high" | "critical") => {
+  const configs = {
+    low: {
+      duration: 4000,
     },
-    [context]
-  );
+    medium: {
+      duration: 6000,
+    },
+    high: {
+      duration: 8000,
+      action: {
+        label: "Reintentar",
+        onClick: () => window.location.reload(),
+      },
+    },
+    critical: {
+      duration: 12000,
+      action: {
+        label: "Reportar",
+        onClick: () => {
+          console.error("Critical error reported:", new Date().toISOString());
+          // Aquí podrías enviar a un servicio de logging
+        },
+      },
+    },
+  };
 
-  // 📊 Método para mostrar progreso de operaciones
-  const withProgress = useCallback(
-    (
-      operation: () => Promise<unknown>,
+  return configs[severity];
+};
+
+// 🎯 Emojis automáticos por tipo de acción
+const getActionEmoji = (actionType: string): string => {
+  const emojis = {
+    create: "✅",
+    update: "🔄",
+    delete: "🗑️",
+    upload: "📤",
+    download: "📥",
+    ban: "🚫",
+    unban: "✅",
+    role: "👑",
+    auth: "🔐",
+    general: "📋",
+  };
+
+  return emojis[actionType as keyof typeof emojis] || "📋";
+};
+
+export const useNotifications = () => {
+  const notifications = useNotificationContext();
+
+  // 🧠 EL ÚNICO MÉTODO QUE NECESITAS - Súper inteligente
+  const withNotification = useCallback(
+    async <T>(
+      action: () => Promise<T>,
       messages: {
-        starting: string;
-        success: string;
+        loading: string;
+        success?: string;
         error?: string;
       }
-    ) => {
-      const loadingId = context.loading(messages.starting);
+    ): Promise<T> => {
+      // 🔍 Detectar automáticamente el tipo de acción
+      const actionType = detectActionType(messages.loading);
+      const emoji = getActionEmoji(actionType);
 
-      return operation()
-        .then((result) => {
-          context.dismiss(loadingId);
-          context.success(messages.success);
-          return result;
-        })
-        .catch((error) => {
-          context.dismiss(loadingId);
-          const errorMessage = messages.error || `Error: ${error.message}`;
-          context.error(errorMessage);
-          throw error;
-        });
+      // ✅ SOLUCIÓN REAL: Usar toast.promise (API nativa de Sonner)
+      const successMsg =
+        messages.success || `${emoji} Operación completada exitosamente`;
+      const baseErrorMsg = messages.error || `❌ Error en la operación`;
+
+      // 🎯 toast.promise transforma automáticamente loading → success/error
+      return notifications.promise(action(), {
+        loading: messages.loading,
+        success: successMsg,
+        error: (error: unknown) => {
+          // Formateo inteligente de errores
+          return formatSmartError(baseErrorMsg, error);
+        },
+        config: {
+          duration: 4000, // Duración para success
+        },
+      });
     },
-    [context]
+    [notifications]
   );
 
-  // 🎯 Retornar API completa
+  // 🎯 Método aún más simple - solo loading message
+  const notify = useCallback(
+    async <T>(
+      action: () => Promise<T>,
+      loadingMessage: string,
+      successMessage?: string
+    ): Promise<T> => {
+      return withNotification(action, {
+        loading: loadingMessage,
+        success: successMessage,
+      });
+    },
+    [withNotification]
+  );
+
   return {
-    // 🔄 Métodos principales del contexto
-    ...context,
+    // 🧠 Método principal súper inteligente
+    withNotification,
 
-    // 👥 Categorías especializadas
-    users,
-    files,
-    auth,
-    permissions,
+    // ⚡ Método ultra-simple
+    notify,
 
-    // ⚡ Métodos de conveniencia
-    quick,
-    withPromise,
-    withProgress,
-
-    // 🎨 Métodos con alias más cortos
-    notify: context.show,
-    ok: context.success,
-    fail: context.error,
-    warn: context.warning,
-    tell: context.info,
-    wait: context.loading,
+    // 🔄 Acceso directo a notificaciones básicas si necesitas
+    success: notifications.success,
+    error: notifications.error,
+    warning: notifications.warning,
+    info: notifications.info,
+    loading: notifications.loading,
   };
 };
 
-// 🎯 Export por defecto
 export default useNotifications;

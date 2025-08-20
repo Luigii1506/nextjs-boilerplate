@@ -11,7 +11,6 @@ export {
 } from "./hooks/useFeatureFlagsServerActions";
 export { usePermissions } from "./hooks/usePermissions";
 export { useNotifications } from "./hooks/useNotifications";
-export { useActionNotifications } from "./hooks/useActionNotifications";
 
 // 📝 Tipos Compartidos
 export * from "./types";

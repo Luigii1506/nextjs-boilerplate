@@ -5,7 +5,7 @@ slug: /notificacions/introduccion
 
 # 🔔 SISTEMA DE NOTIFICACIONES
 
-> **Sistema inteligente de notificaciones con `useActionNotifications`, `Sonner` y detección automática**
+> **Sistema inteligente de notificaciones con `useNotifications`, `Sonner` y detección automática**
 
 ---
 
@@ -33,10 +33,10 @@ El sistema ya está configurado en `src/app/layout.tsx`:
 ### **2. Uso Básico**
 
 ```typescript
-import { useActionNotifications } from "@/shared/hooks/useActionNotifications";
+import { useNotifications } from "@/shared/hooks/useNotifications";
 
 const MyComponent = () => {
-  const { notify } = useActionNotifications();
+  const { notify } = useNotifications();
 
   const handleAction = async () => {
     await notify(
@@ -114,7 +114,7 @@ Usa la API nativa `toast.promise` de Sonner:
 
 ```typescript
 // Esto es todo lo que necesitas:
-const { notify } = useActionNotifications();
+const { notify } = useNotifications();
 await notify(action, "Loading...", "Success!");
 ```
 
@@ -160,7 +160,7 @@ const {
   loading, // Notificación de carga
   dismiss, // Cerrar notificación específica
   clear, // Cerrar todas las notificaciones
-} = useActionNotifications();
+} = useNotifications();
 ```
 
 ---
@@ -170,7 +170,7 @@ const {
 ### **CRUD Operations**
 
 ```typescript
-const { notify } = useActionNotifications();
+const { notify } = useNotifications();
 
 // Crear
 const handleCreate = async (data) => {
@@ -261,26 +261,6 @@ const handleBatchOperation = async (selectedIds) => {
 
 ## ⚙️ **PERSONALIZACIÓN**
 
-### **Mensajes Personalizados**
-
-Los mensajes están centralizados en `src/shared/constants/notifications.ts`:
-
-```typescript
-export const NOTIFICATION_MESSAGES = {
-  USERS: {
-    CREATE_SUCCESS: "✅ Usuario creado exitosamente",
-    UPDATE_SUCCESS: "📝 Usuario actualizado correctamente",
-    DELETE_SUCCESS: "🗑️ Usuario eliminado exitosamente",
-    // ... más mensajes
-  },
-  // Agregar tus propias categorías
-  MY_MODULE: {
-    CUSTOM_SUCCESS: "🎉 Operación personalizada exitosa",
-    CUSTOM_ERROR: "❌ Error en operación personalizada",
-  },
-};
-```
-
 ### **Configuración del Provider**
 
 ```typescript
@@ -331,11 +311,11 @@ throw new Error(result.error || "Operación falló");
 
 ```typescript
 // Verificar import
-import { useActionNotifications } from "@/shared/hooks/useActionNotifications";
+import { useNotifications } from "@/shared/hooks/useNotifications";
 
 // Verificar uso dentro de componente React
 const MyComponent = () => {
-  const { notify } = useActionNotifications(); // ✅
+  const { notify } = useNotifications(); // ✅
   // ...
 };
 ```
@@ -346,7 +326,6 @@ const MyComponent = () => {
 
 - **[📖 Guía Completa](./NOTIFICATIONS_COMPLETE_GUIDE.md)** - Documentación exhaustiva con ejemplos avanzados
 - **[🎯 Tipos TypeScript](../src/shared/types/notifications.ts)** - Definiciones de tipos
-- **[🎨 Constantes](../src/shared/constants/notifications.ts)** - Mensajes predefinidos
 - **[🧩 Provider](../src/shared/providers/NotificationProvider.tsx)** - Configuración del proveedor
 
 ---
@@ -356,7 +335,7 @@ const MyComponent = () => {
 **Para el 90% de casos de uso**:
 
 ```typescript
-const { notify } = useActionNotifications();
+const { notify } = useNotifications();
 await notify(action, "Loading message", "Success message");
 ```
 
@@ -368,5 +347,6 @@ await notify(action, "Loading message", "Success message");
 - ✅ **Formateo inteligente** de errores
 - ✅ **TypeScript completo**
 - ✅ **Performance optimizado**
+- ✅ **Sistema limpio y simple**
 
 **¡Eso es todo lo que necesitas saber para empezar!** 🚀

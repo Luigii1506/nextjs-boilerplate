@@ -680,39 +680,27 @@ const FileCard = ({ file, canDelete, onDelete }) => {
 
 ```typescript
 // components/admin/CompleteDashboard.tsx
-import {
-  usePermissions,
-  useUserManagement,
-  useFileManagement,
-  useSessionManagement,
-  usePermissionValidator,
-} from "@/shared/hooks/usePermissions";
+import { usePermissions } from "@/shared/hooks/usePermissions";
 
 const CompleteDashboard = () => {
-  const { isAdmin, isSuperAdmin, currentRole, canAccess } = usePermissions();
+  const { isAdmin, isSuperAdmin, currentRole, canAccess, checkPermission } =
+    usePermissions();
 
-  const userPerms = useUserManagement();
-  const filePerms = useFileManagement();
-  const sessionPerms = useSessionManagement();
+  // 🔍 Verificar permisos esenciales para dashboard
+  const canManageUsers = canAccess({
+    user: ["list", "create", "update"],
+  });
 
-  // 🔍 Validar múltiples permisos complejos
-  const { results, canProceed } = usePermissionValidator([
-    {
-      name: "user_management",
-      permissions: { user: ["list", "create", "update"] },
-      required: true,
-    },
-    {
-      name: "file_management",
-      permissions: { files: ["read", "upload"] },
-      required: false,
-    },
-    {
-      name: "session_management",
-      permissions: { session: ["list", "revoke"] },
-      required: false,
-    },
-  ]);
+  const canManageFiles = canAccess({
+    files: ["read", "upload"],
+  });
+
+  const canManageSessions = canAccess({
+    session: ["list", "revoke"],
+  });
+
+  // ✅ Dashboard accesible si tiene permisos de gestión de usuarios (mínimo)
+  const canProceed = canManageUsers;
 
   // 📊 Datos del dashboard
   const [dashboardData, setDashboardData] = useState({
@@ -725,7 +713,7 @@ const CompleteDashboard = () => {
   const availableWidgets = useMemo(() => {
     const widgets = [];
 
-    if (userPerms.canEditUsers()) {
+    if (canManageUsers) {
       widgets.push({
         id: "users",
         title: "👥 Gestión de Usuarios",
@@ -734,7 +722,7 @@ const CompleteDashboard = () => {
       });
     }
 
-    if (filePerms.canViewFiles()) {
+    if (canManageFiles) {
       widgets.push({
         id: "files",
         title: "📁 Archivos del Sistema",
@@ -743,7 +731,7 @@ const CompleteDashboard = () => {
       });
     }
 
-    if (sessionPerms.canViewSessions()) {
+    if (canManageSessions) {
       widgets.push({
         id: "sessions",
         title: "🔐 Sesiones Activas",
@@ -753,7 +741,7 @@ const CompleteDashboard = () => {
     }
 
     return widgets;
-  }, [userPerms, filePerms, sessionPerms, dashboardData]);
+  }, [canManageUsers, canManageFiles, canManageSessions, dashboardData]);
 
   if (!canProceed) {
     return (
@@ -762,19 +750,16 @@ const CompleteDashboard = () => {
         <p>No tienes los permisos mínimos para acceder al dashboard.</p>
 
         <div className="permission-details">
-          <h3>Verificación de Permisos:</h3>
-          {results.map((result) => (
-            <div
-              key={result.name}
-              className={`permission-result ${
-                result.hasAccess ? "allowed" : "denied"
-              }`}
-            >
-              <span>{result.hasAccess ? "✅" : "❌"}</span>
-              <span>{result.name}</span>
-              {result.required && <span className="required">(Requerido)</span>}
-            </div>
-          ))}
+          <h3>Permisos Requeridos:</h3>
+          <div className="permission-result denied">
+            <span>❌</span>
+            <span>Gestión de usuarios</span>
+            <span className="required">(Requerido)</span>
+          </div>
+          <p className="help-text">
+            💡 Necesitas permisos de gestión de usuarios para acceder al
+            dashboard.
+          </p>
         </div>
       </div>
     );
@@ -1395,9 +1380,12 @@ describe("Permission Integration Tests", () => {
    });
    ```
 
-4. **📊 Usar validadores para múltiples permisos**
+4. **📊 Verificar múltiples permisos directamente**
    ```typescript
-   const { canProceed } = usePermissionValidator([...]);
+   const canCompleteWorkflow = canAccess({
+     user: ["create", "update"],
+     files: ["upload"],
+   });
    ```
 
 ### **🚀 Beneficios de Este Sistema**
