@@ -16,6 +16,9 @@ import {
   useToggleFlag,
 } from "@/shared/hooks/useFeatureFlagsServerActions";
 
+// 📡 Broadcasting centralizado
+import { useFeatureFlagsBroadcast } from "@/shared/hooks/useBroadcast";
+
 // 🎨 Componentes y utilidades
 import FeatureFlagCard from "../components/FeatureFlagCard";
 import { getCategoryColors, getCategoryIcon, cn } from "../../utils";
@@ -35,6 +38,9 @@ export default function FeatureFlagsAdmin() {
     error,
   } = useFeatureFlagsServer();
   const toggleFlag = useToggleFlag();
+
+  // 📡 Broadcasting centralizado
+  const { notifyFlagChange } = useFeatureFlagsBroadcast();
 
   // 🔍 Estado local para filtros
   const [filters, setFilters] = React.useState({
@@ -76,20 +82,8 @@ export default function FeatureFlagsAdmin() {
     await notify(async () => {
       toggleFlag(flagKey);
 
-      // 📡 Notificar otras pestañas (redundante pero asegura sincronización)
-      try {
-        const broadcastChannel = new BroadcastChannel("feature-flags-sync");
-        broadcastChannel.postMessage({
-          type: "FEATURE_FLAGS_CHANGED",
-          flagKey,
-          source: "feature-flags-page",
-          timestamp: Date.now(),
-        });
-        broadcastChannel.close();
-      } catch (error) {
-        // BroadcastChannel no disponible en algunos entornos
-        console.debug("BroadcastChannel not available:", error);
-      }
+      // 📡 Notificar otras pestañas - HOOK CENTRALIZADO
+      notifyFlagChange(flagKey);
     }, `Cambiando estado de '${flagKey}'...`);
   };
 

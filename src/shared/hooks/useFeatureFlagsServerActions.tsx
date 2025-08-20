@@ -15,6 +15,7 @@ import React, {
   ReactNode,
   useTransition,
 } from "react";
+import { useFeatureFlagsBroadcast } from "./useBroadcast";
 import {
   getAllFeatureFlagsAction,
   toggleFeatureFlagActionState,
@@ -46,6 +47,9 @@ export function FeatureFlagsServerProvider({
 
   // ⚡ useTransition for optimistic updates (React 19)
   const [isPendingTransition, startTransition] = useTransition();
+
+  // 📡 Hook de broadcast centralizado
+  const { notifyFlagChange, onFlagChange } = useFeatureFlagsBroadcast();
 
   // ⚡ useActionState para toggle (React 19)
   const [actionState, formAction, isPending] = useActionState(
@@ -135,21 +139,10 @@ export function FeatureFlagsServerProvider({
       formData.append("flagKey", flagKey);
       formAction(formData);
 
-      // 📡 Notificar otras pestañas inmediatamente
-      try {
-        const broadcastChannel = new BroadcastChannel("feature-flags-sync");
-        broadcastChannel.postMessage({
-          type: "FEATURE_FLAGS_CHANGED",
-          flagKey,
-          timestamp: Date.now(),
-        });
-        broadcastChannel.close();
-      } catch (error) {
-        // BroadcastChannel no disponible en algunos entornos
-        console.debug("BroadcastChannel not available:", error);
-      }
+      // 📡 Notificar otras pestañas - HOOK CENTRALIZADO
+      notifyFlagChange(flagKey);
     },
-    [flags, formAction, setOptimisticFlags, startTransition]
+    [flags, formAction, setOptimisticFlags, startTransition, notifyFlagChange]
   );
 
   // 🔄 Cargar flags al montar
@@ -186,24 +179,12 @@ export function FeatureFlagsServerProvider({
     };
   }, [loadFlags]);
 
-  // 📡 Broadcasting entre pestañas para sincronización instantánea
+  // 📡 Escuchar cambios de otras pestañas - HOOK CENTRALIZADO
   useEffect(() => {
-    const broadcastChannel = new BroadcastChannel("feature-flags-sync");
-
-    // Escuchar cambios de otras pestañas
-    const handleBroadcast = (event: MessageEvent) => {
-      if (event.data?.type === "FEATURE_FLAGS_CHANGED") {
-        loadFlags(); // Recargar inmediatamente
-      }
-    };
-
-    broadcastChannel.addEventListener("message", handleBroadcast);
-
-    return () => {
-      broadcastChannel.removeEventListener("message", handleBroadcast);
-      broadcastChannel.close();
-    };
-  }, [loadFlags]);
+    return onFlagChange(() => {
+      loadFlags(); // Recargar inmediatamente
+    });
+  }, [loadFlags, onFlagChange]);
 
   const value: FeatureFlagsContextType = {
     flags: optimisticFlags,
