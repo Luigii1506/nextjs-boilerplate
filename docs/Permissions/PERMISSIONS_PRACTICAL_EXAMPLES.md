@@ -1,6 +1,6 @@
 ---
-title: Ejemplos
-slug: /permisos/ejemplos
+title: Ejemplo
+slug: /permisos/ejemplo
 ---
 
 # 💡 **EJEMPLOS PRÁCTICOS DEL SISTEMA DE PERMISOS**

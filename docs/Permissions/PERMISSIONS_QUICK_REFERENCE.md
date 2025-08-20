@@ -1,6 +1,6 @@
 ---
-title: Ejemplos
-slug: /permisos/ejemplos
+title: Referencia
+slug: /permisos/referencia
 ---
 
 # ⚡ **REFERENCIA RÁPIDA DE PERMISOS**

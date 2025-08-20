@@ -1,6 +1,6 @@
 ---
-title: Estructura
-slug: /permisos/estructura
+title: Estructura detallada
+slug: /permisos/detallada
 ---
 
 # 🏗️ **ESTRUCTURA DETALLADA DEL SISTEMA DE PERMISOS**
