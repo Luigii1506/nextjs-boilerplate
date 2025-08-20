@@ -24,7 +24,7 @@ export function useBroadcast(channelName: string) {
   }, [channelName]);
 
   // 📤 Enviar mensaje - UNA SOLA FUNCIÓN
-  const send = useCallback((type: string, data?: any) => {
+  const send = useCallback((type: string, data?: unknown) => {
     if (!channelRef.current) return;
 
     try {
@@ -39,19 +39,22 @@ export function useBroadcast(channelName: string) {
   }, []);
 
   // 📥 Escuchar mensajes - UNA SOLA FUNCIÓN
-  const listen = useCallback((callback: (type: string, data?: any) => void) => {
-    if (!channelRef.current) return () => {};
+  const listen = useCallback(
+    (callback: (type: string, data?: unknown) => void) => {
+      if (!channelRef.current) return () => {};
 
-    const handler = (event: MessageEvent) => {
-      callback(event.data.type, event.data.data);
-    };
+      const handler = (event: MessageEvent) => {
+        callback(event.data.type, event.data.data);
+      };
 
-    channelRef.current.addEventListener("message", handler);
+      channelRef.current.addEventListener("message", handler);
 
-    return () => {
-      channelRef.current?.removeEventListener("message", handler);
-    };
-  }, []);
+      return () => {
+        channelRef.current?.removeEventListener("message", handler);
+      };
+    },
+    []
+  );
 
   return { send, listen };
 }
@@ -72,8 +75,13 @@ export function useFeatureFlagsBroadcast() {
   const onFlagChange = useCallback(
     (callback: (flagKey: string) => void) => {
       return listen((type, data) => {
-        if (type === "FLAG_CHANGED" && data?.flagKey) {
-          callback(data.flagKey);
+        if (
+          type === "FLAG_CHANGED" &&
+          data &&
+          typeof data === "object" &&
+          "flagKey" in data
+        ) {
+          callback((data as { flagKey: string }).flagKey);
         }
       });
     },
@@ -104,7 +112,11 @@ export function useAuthBroadcast() {
     (callback: (type: "LOGIN" | "LOGOUT", userId?: string) => void) => {
       return listen((type, data) => {
         if (type === "LOGIN" || type === "LOGOUT") {
-          callback(type, data?.userId);
+          const userId =
+            data && typeof data === "object" && "userId" in data
+              ? (data as { userId: string }).userId
+              : undefined;
+          callback(type as "LOGIN" | "LOGOUT", userId);
         }
       });
     },
@@ -130,8 +142,19 @@ export function useDataBroadcast() {
   const onDataChange = useCallback(
     (callback: (entity: string, action: string, id?: string) => void) => {
       return listen((type, data) => {
-        if (type === "DATA_CHANGED" && data?.entity && data?.action) {
-          callback(data.entity, data.action, data.id);
+        if (
+          type === "DATA_CHANGED" &&
+          data &&
+          typeof data === "object" &&
+          "entity" in data &&
+          "action" in data
+        ) {
+          const typedData = data as {
+            entity: string;
+            action: string;
+            id?: string;
+          };
+          callback(typedData.entity, typedData.action, typedData.id);
         }
       });
     },

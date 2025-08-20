@@ -33,11 +33,30 @@ import type {
   NotificationState,
 } from "@/shared/types/notifications";
 
-import {
-  NOTIFICATION_TYPES,
-  NOTIFICATION_DURATIONS,
-  DEFAULT_NOTIFICATION_CONFIG,
-} from "@/shared/constants/notifications";
+// 🎯 Constantes inline - simplificadas
+const NOTIFICATION_TYPES = {
+  SUCCESS: "success",
+  ERROR: "error",
+  WARNING: "warning",
+  INFO: "info",
+  LOADING: "loading",
+} as const;
+
+const NOTIFICATION_DURATIONS = {
+  SUCCESS: 4000,
+  ERROR: 6000,
+  WARNING: 5000,
+  INFO: 4000,
+  LOADING: 0, // Indefinido hasta que se resuelva
+} as const;
+
+const DEFAULT_NOTIFICATION_CONFIG = {
+  position: "top-right" as const,
+  duration: 4000,
+  richColors: true,
+  closeButton: true,
+  dismissible: true,
+};
 
 // 🎯 Contexto de notificaciones
 const NotificationContext = createContext<NotificationContextValue | null>(

@@ -6,8 +6,8 @@
  */
 
 import React, { ReactNode, useEffect, useState } from "react";
-import { usePermissions, type Permission } from "@/shared/hooks/usePermissions";
-import { type RoleName } from "@/core/auth/config/permissions";
+import { usePermissions } from "@/shared/hooks/usePermissions";
+import { type RoleName, type Permission } from "@/core/auth/config/permissions";
 
 interface PermissionGateProps {
   /** Child components to render if permission is granted */
