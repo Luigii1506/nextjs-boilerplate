@@ -2,6 +2,7 @@ import { auth } from "@/core/auth/server";
 import { headers } from "next/headers";
 import * as userQueries from "../queries/user.queries";
 import * as userValidators from "../validators/user.validators";
+import { ValidationError } from "../validators/user.validators";
 import * as userMappers from "../mappers";
 import type { User } from "../../types";
 
@@ -204,14 +205,45 @@ export class UserService {
 
   // 🗑️ Delete user with business logic
   async deleteUser(userId: string): Promise<void> {
-    // Validate business rules
-    await userValidators.validateUserDeletion(
-      this.options.currentUserId,
-      this.options.currentUserRole,
-      userId
-    );
+    try {
+      // 1. Obtener usuario actual (quien ejecuta la acción)
+      const currentUserData = await userQueries.getUserById(
+        this.options.currentUserId
+      );
+      if (!currentUserData) {
+        throw new ValidationError("Usuario actual no encontrado");
+      }
 
-    await userQueries.deleteUserById(userId);
+      // 2. Obtener usuario a eliminar
+      const targetUserData = await userQueries.getUserById(userId);
+      if (!targetUserData) {
+        throw new ValidationError("Usuario a eliminar no encontrado");
+      }
+
+      // 3. Mapear a tipos de dominio
+      const currentUser = userMappers.prismaUserToUser(currentUserData);
+      const targetUser = userMappers.prismaUserToUser(targetUserData);
+
+      // 4. Validar permisos y reglas de negocio
+      await userValidators.validateUserDeletion(
+        currentUser,
+        targetUser,
+        userId
+      );
+
+      // 5. Ejecutar eliminación
+      await userQueries.deleteUserById(userId);
+
+      // 6. Log de auditoría
+      console.log(`User ${targetUser.email} deleted by ${currentUser.email}`);
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+
+      console.error("Error deleting user:", error);
+      throw new ValidationError("Error interno al eliminar usuario");
+    }
   }
 
   // 🚫 Ban user with business logic

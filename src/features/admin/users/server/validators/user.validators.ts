@@ -1,5 +1,7 @@
 import * as userQueries from "../queries/user.queries";
 import { getServerSession } from "@/core/auth/server";
+import { hasPermission } from "@/core/auth/config/permissions";
+import { User } from "@/features/admin/users/types";
 
 // 🛡️ USER BUSINESS VALIDATORS
 // ============================
@@ -126,22 +128,37 @@ export const validateCreateUser = async (
 
 // 🗑️ User deletion validation
 export const validateUserDeletion = async (
-  currentUserId: string,
-  currentUserRole: string,
+  currentUser: User,
+  targetUser: User,
   targetUserId: string
 ) => {
-  // Only super admins can delete users
-  validateSuperAdminPermissions(currentUserRole);
+  // ✅ 1. PERMISOS: Usar el sistema de permisos existente
+  if (!hasPermission(currentUser, "user:delete")) {
+    throw new ValidationError("No tienes permisos para eliminar usuarios");
+  }
 
-  // Cannot delete yourself
-  if (targetUserId === currentUserId) {
+  // ✅ 2. REGLAS DE NEGOCIO: Validaciones específicas
+
+  // No eliminar a sí mismo
+  if (targetUserId === currentUser.id) {
     throw new ValidationError("No puedes eliminar tu propia cuenta");
   }
 
-  // Check if target user exists
-  const userExists = await userQueries.userExists(targetUserId);
-  if (!userExists) {
-    throw new ValidationError("Usuario no encontrado");
+  // Proteger super admins (solo otros super admins pueden eliminarlos)
+  if (targetUser.role === "super_admin" && currentUser.role !== "super_admin") {
+    throw new ValidationError(
+      "Solo un super administrador puede eliminar a otro super administrador"
+    );
+  }
+
+  // Opcional: Validar que no sea el último admin
+  if (targetUser.role === "admin") {
+    const adminCount = await userQueries.countUsersByRole("admin");
+    if (adminCount <= 1) {
+      throw new ValidationError(
+        "No puedes eliminar el último administrador del sistema"
+      );
+    }
   }
 };
 
