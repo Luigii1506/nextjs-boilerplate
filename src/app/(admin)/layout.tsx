@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { requireAuth } from "@/core/auth/server";
 import { ROLE_INFO } from "@/core/auth/config/permissions";
 import type { SessionUser } from "@/shared/types/user";
-import AdminShellPure from "@/shared/ui/layouts/AdminShellPure";
+import AdminLayout from "@/shared/ui/layouts/AdminLayout";
 
 export const runtime = "nodejs";
 
@@ -22,8 +22,8 @@ export default async function AdminRootLayout({
   if (!isAdmin) redirect("/unauthorized");
 
   return (
-    <AdminShellPure user={user} isAdmin={isAdmin} isSuperAdmin={isSuperAdmin}>
+    <AdminLayout user={user} isAdmin={isAdmin} isSuperAdmin={isSuperAdmin}>
       {children}
-    </AdminShellPure>
+    </AdminLayout>
   );
 }

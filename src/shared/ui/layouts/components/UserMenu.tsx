@@ -1,12 +1,11 @@
 /**
- * 👤 INTERACTIVE USER MENU - ENTERPRISE COMPONENT
- * ===============================================
+ * 👤 USER MENU COMPONENT
+ * ======================
  *
- * Componente avanzado para mostrar información del usuario con menú dropdown.
- * Enterprise patterns con performance optimization y funcionalidades avanzadas.
- * React 19 compliance con estado optimista.
+ * Componente de menú de usuario con dropdown.
+ * Optimizado para performance y accesibilidad.
  *
- * Updated: 2025-01-17 - Enterprise patterns integration
+ * Standard: 2025-01-17 - Clean user menu
  */
 
 "use client";
@@ -51,7 +50,7 @@ interface RoleColorScheme {
   hover: string;
 }
 
-interface InteractiveUserMenuProps {
+interface UserMenuProps {
   user: SessionUser;
   roleInfo?: EnterpriseRoleInfo;
   showDropdown?: boolean;
@@ -137,20 +136,17 @@ const ROLE_CONFIGS: Record<string, EnterpriseRoleInfo> = {
 };
 
 /**
- * 🏗️ ENTERPRISE INTERACTIVE USER MENU
+ * 🏗️ USER MENU COMPONENT
  *
  * Features:
- * - ✅ Advanced dropdown menu with actions
- * - ✅ Performance optimization with memoization
- * - ✅ Enterprise role system integration
- * - ✅ Dark/light theme support
- * - ✅ Loading states and error handling
- * - ✅ Keyboard navigation
- * - ✅ Click outside to close
+ * - ✅ Dropdown menu with actions
+ * - ✅ Performance optimized
+ * - ✅ Role system integration
+ * - ✅ Theme support
+ * - ✅ Loading states
  * - ✅ Accessibility compliance
- * - ✅ Debug mode for development
  */
-export const InteractiveUserMenu = React.memo<InteractiveUserMenuProps>(
+export const UserMenu = React.memo<UserMenuProps>(
   ({
     user,
     roleInfo,
@@ -446,13 +442,8 @@ export const InteractiveUserMenu = React.memo<InteractiveUserMenuProps>(
 );
 
 // 🏗️ Display name for debugging
-InteractiveUserMenu.displayName = "InteractiveUserMenu";
+UserMenu.displayName = "UserMenu";
 
 // 🚀 Export utilities
 export { ROLE_CONFIGS, ENTERPRISE_CONFIG };
-export type {
-  InteractiveUserMenuProps,
-  EnterpriseRoleInfo,
-  RoleColorScheme,
-  MenuAction,
-};
+export type { UserMenuProps, EnterpriseRoleInfo, RoleColorScheme, MenuAction };

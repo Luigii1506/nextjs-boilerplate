@@ -1,18 +1,17 @@
 /**
- * 🏗️ ADMIN SHELL COMPONENTS BARREL
- * =================================
+ * 🏗️ LAYOUT COMPONENTS BARREL
+ * ============================
  *
- * Exportaciones de componentes del AdminShell enterprise.
- * Separación clara entre Server y Client Components.
+ * Exportaciones de componentes de layout estándar.
+ * Componentes optimizados y limpios.
  *
- * Created: 2025-01-29
+ * Standard: 2025-01-17
  */
 
-// 🖱️ Client Components (Interactive)
+// 🖱️ Layout Components
 export { LogoutButton } from "./LogoutButton";
-export { InteractiveUserMenu } from "./InteractiveUserMenu";
-export { ActiveRouteIndicator } from "./ActiveRouteIndicator";
-export { default as DynamicNavigation } from "./DynamicNavigationPure";
+export { UserMenu } from "./UserMenu";
+export { default as Navigation } from "./Navigation";
 
 // 📝 Types (if needed)
-export type {} from "./InteractiveUserMenu";
+export type {} from "./UserMenu";

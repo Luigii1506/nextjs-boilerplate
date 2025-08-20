@@ -7,16 +7,10 @@
 // 🔧 Configuration (feature flags, environment, modules)
 export * from "./config";
 
-// 🧭 Navigation (infrastructure core)
+// 🧭 Navigation (simplified core)
 export {
   useNavigation,
-  navigationSelectors,
   navigationUtils,
-  NavigationConfigManager,
-  navigationConfig,
-  navigationConfigUtils,
-  CoreNavigationService,
-  coreNavigationService,
   NAVIGATION_CORE_CONFIG,
   NAVIGATION_REGISTRY,
   NAVIGATION_CATEGORIES,
@@ -26,16 +20,9 @@ export {
   type NavigationItem,
   type UserRole as NavigationUserRole,
   type FeatureFlag as NavigationFeatureFlag,
-  type NavigationContext,
   type NavigationItemId,
   type NavigationCategory,
   type GeneratedModuleConfig,
-  type UseNavigationReturn,
-  type NavigationHookConfig,
-  type CoreNavigationConfig,
-  type FeatureFlagChecker,
-  type NavigationFilterOptions,
-  type NavigationServiceResult,
 } from "./navigation";
 
 // 🧩 Components - Auth components moved to core/auth/components

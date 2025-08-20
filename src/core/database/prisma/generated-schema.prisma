@@ -1,0 +1,284 @@
+// 🏗️ NEXTJS ENTERPRISE BOILERPLATE - SCHEMA MODULAR
+// ================================================
+// Archivo principal: Solo configuración (generator + datasource)
+// Los modelos están organizados en archivos separados en ./models/
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["prismaSchemaFolder"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// 
+// 🎛️ ./models/feature-flags.prisma - FeatureFlag, FeatureFlagHistory, ModuleConfig
+// 🛒 ./models/ecommerce.prisma   - Order, Cart (próximamente)
+//
+// Prisma automáticamente combina todos los archivos .prisma en este directorio
+
+
+// ⚡ AUTOMATICALLY GENERATED SCHEMA
+// ================================
+// This schema is built dynamically based on active feature flags
+// Generated at: 2025-08-20T19:43:15.215Z
+// Active modules: auth, feature-flags, file-upload
+
+// 📁 AUTHENTICATION
+// ==================
+// Core authentication models - always active
+
+// 🔐 AUTHENTICATION MODELS
+// ======================
+// Modelos core para autenticación con Better Auth
+// Siempre presentes - requeridos para el funcionamiento básico
+
+model User {
+  id               String   @id @default(cuid())
+  name             String
+  email            String   @unique
+  emailVerified    Boolean  @default(false)
+  image            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  twoFactorEnabled Boolean  @default(false)
+
+  // 🛡️ Auth & Security
+  role       String?
+  banned     Boolean?
+  banReason  String?
+  banExpires DateTime?
+  
+  // 🔗 Relations
+  sessions   Session[]
+  accounts   Account[]
+
+  // 🧩 FUTURE: Modular relations (uncomment when modules are active)
+  uploads      Upload[]      // MODULE: file-upload
+  // orders       Order[]       // MODULE: ecommerce  
+  // payments     Payment[]     // MODULE: stripe-payments
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 🕵️ Impersonation support
+  impersonatedBy String?
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+
+  @@map("verification")
+} 
+
+// 📁 FEATURE FLAGS
+// =================
+// Feature flag management - always active
+
+// 🎛️ FEATURE FLAGS MODULE
+// ======================
+// Modelos para gestión dinámica de feature flags
+// CORE: Siempre presente - controla activación de otros módulos
+
+model FeatureFlag {
+  id          String   @id @default(cuid())
+  
+  // 🎯 Feature Info
+  key         String   @unique  // "fileUpload", "billing", "analytics"
+  name        String            // "File Upload System"
+  description String?           // Human readable description
+  category    String   @default("module") // "core", "module", "experimental"
+  
+  // 🎛️ State
+  enabled     Boolean  @default(false)
+  envOverride String?           // Environment-specific override
+  
+  // 📋 Dependencies
+  dependencies String[]         // Required features ["userManagement"]
+  conflicts    String[]         // Incompatible features
+  
+  // 🏗️ Schema Impact
+  hasPrismaModels Boolean @default(false) // Does this feature add DB models?
+  prismaFile      String?                 // Path to prisma models file
+  
+  // 📝 Metadata
+  version     String   @default("1.0.0")
+  author      String?
+  docs        String?           // Documentation URL
+  tags        String[]          // ["admin", "files", "storage"]
+  
+  // ⏰ Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // 🧪 A/B Testing (optional)
+  rolloutPercentage Int @default(100) // 0-100
+  targetUsers      String[]           // Specific user IDs
+  targetRoles      String[]           // Specific roles
+  
+  @@map("feature_flags")
+  @@index([key])
+  @@index([category])
+  @@index([enabled])
+}
+
+model FeatureFlagHistory {
+  id          String   @id @default(cuid())
+  
+  // 🔗 Relations
+  flagKey     String
+  
+  // 📝 Change Info
+  previousValue Boolean
+  newValue      Boolean
+  changedBy     String?  // User ID who made the change
+  reason        String?  // Reason for change
+  
+  // ⏰ Timestamps
+  createdAt   DateTime @default(now())
+  
+  @@map("feature_flag_history")
+  @@index([flagKey])
+  @@index([createdAt])
+}
+
+model ModuleConfig {
+  id           String   @id @default(cuid())
+  
+  // 🧩 Module Info
+  moduleKey    String   @unique  // "file-upload", "payment-gateway"
+  name         String              // "File Upload System"
+  description  String?
+  version      String   @default("1.0.0")
+  
+  // 📋 Dependencies
+  dependencies String[]            // Required modules
+  
+  // 🏗️ Database Schema
+  prismaModels String[]            // ["Upload", "FileCategory"]
+  apiRoutes    String[]            // ["/api/modules/file-upload"]
+  
+  // 🎛️ Feature Flags
+  requiredFlags String[]           // Feature flags this module needs
+  
+  // 📁 File Paths
+  componentPath String?            // Path to main component
+  configPath    String?            // Path to module config
+  
+  // ⏰ Timestamps
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@map("module_configs")
+  @@index([moduleKey])
+}
+
+
+// 📁 FILE UPLOAD SYSTEM
+// ======================
+// File upload and management system
+
+// 📁 FILE UPLOAD MODULE
+// ===================
+// Modelos para manejo de archivos y uploads
+// ACTIVABLE: Se incluye solo si MODULE_FILE_UPLOAD=true
+
+model Upload {
+  id            String   @id @default(cuid())
+  
+  // 📂 File Info
+  filename      String
+  originalName  String
+  mimeType      String
+  size          Int
+  
+  // 🔗 Storage Info
+  provider      String   // "local" | "s3" | "cloudinary"
+  url           String
+  key           String?  // S3 key or storage identifier
+  bucket        String?  // S3 bucket name
+  
+  // 👤 Relations
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  categoryId    String?
+  category      FileCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  
+  // 📝 Metadata
+  metadata      Json?    // Additional file metadata
+  isPublic      Boolean  @default(false)
+  tags          String[] // Array of tags for organization
+  
+  // ⏰ Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // 🗑️ Soft Delete
+  deletedAt     DateTime?
+  
+  @@map("uploads")
+  @@index([userId])
+  @@index([provider])
+  @@index([mimeType])
+  @@index([createdAt])
+}
+
+model FileCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  icon        String?  // Icon identifier
+  maxSize     Int?     // Max file size in bytes
+  allowedTypes String[] // Allowed MIME types
+  
+  // 👤 Relations
+  uploads     Upload[]
+  
+  // ⏰ Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("file_categories")
+} 
+

@@ -1,13 +1,14 @@
 /**
- * 🧭 SIMPLE NAVIGATION COMPONENT
- * ==============================
+ * 🧭 NAVIGATION COMPONENT
+ * =======================
  *
- * Navegación súper simple y funcional:
+ * Componente de navegación estándar:
  * ✅ Feature flags reactivos con broadcast
  * ✅ Filtrado por roles automático
  * ✅ Hydration safe
+ * ✅ Performance optimizado
  *
- * Simplified: 2025-01-17 - Removed all unnecessary complexity
+ * Standard: 2025-01-17 - Clean and simple navigation
  */
 
 "use client";
@@ -17,15 +18,15 @@ import Link from "next/link";
 import { useNavigation } from "@/core/navigation/useNavigation";
 import { NAVIGATION_STYLES } from "@/core";
 
-interface SimpleNavigationProps {
+interface NavigationProps {
   userRole: "user" | "admin" | "super_admin";
 }
 
 /**
- * 🚀 SUPER SIMPLE NAVIGATION
- * Una sola función que hace todo lo necesario
+ * 🧭 NAVIGATION COMPONENT
+ * Componente estándar de navegación
  */
-export default function SimpleNavigation({ userRole }: SimpleNavigationProps) {
+export default function Navigation({ userRole }: NavigationProps) {
   const [isHydrated, setIsHydrated] = useState(false);
 
   // 🛡️ Hydration detection

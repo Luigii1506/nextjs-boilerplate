@@ -1,22 +1,18 @@
 /**
- * 🏛️ ADMIN SHELL PURE - ENTERPRISE LAYOUT
- * ========================================
+ * 🏛️ ADMIN LAYOUT
+ * ================
  *
- * Layout principal Enterprise usando 100% Server Actions.
- * Zero API routes, máximo performance Next.js 15.
- * React 19 compliance con optimización avanzada.
+ * Layout estándar para administración.
+ * Optimizado para Next.js 15 y React 19.
  *
- * Updated: 2025-01-17 - Enterprise patterns integration
+ * Standard: 2025-01-17 - Clean admin layout
  */
 
 import React, { Suspense } from "react";
 import { Settings, Bell, Search, Menu, X } from "lucide-react";
 import { cn } from "@/shared/utils";
-import DynamicNavigationPure from "./components/DynamicNavigationPure";
-import {
-  InteractiveUserMenu,
-  ROLE_CONFIGS,
-} from "./components/InteractiveUserMenu";
+import Navigation from "./components/Navigation";
+import { UserMenu, ROLE_CONFIGS } from "./components/UserMenu";
 import { LogoutButton } from "./components/LogoutButton";
 import type { SessionUser } from "@/shared/types/user";
 
@@ -64,8 +60,8 @@ const RESPONSIVE_CONFIG = {
   },
 } as const;
 
-// 🎯 Enterprise Types
-interface AdminShellPureProps {
+// 🎯 Layout Types
+interface AdminLayoutProps {
   user: SessionUser;
   children: React.ReactNode;
   isAdmin: boolean;
@@ -117,50 +113,20 @@ function HeaderSkeleton() {
   );
 }
 
-function SidebarSkeleton() {
-  return (
-    <div className="h-full px-3 pb-4 bg-white">
-      <div className="p-4 mb-6 bg-slate-50 rounded-lg">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-slate-200 rounded-full animate-pulse"></div>
-          <div className="flex-1">
-            <div className="h-4 w-24 bg-slate-200 rounded animate-pulse mb-2"></div>
-            <div className="h-3 w-16 bg-slate-200 rounded animate-pulse"></div>
-          </div>
-        </div>
-      </div>
-      <div className="space-y-2">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div
-            key={i}
-            className="h-10 bg-slate-200 rounded-lg animate-pulse"
-          ></div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 /**
- * 🏗️ ENTERPRISE ADMIN SHELL PURE
+ * 🏗️ ADMIN LAYOUT
  *
  * Features:
- * - ✅ Fully responsive with mobile/tablet/desktop breakpoints
- * - ✅ Performance optimization with Suspense boundaries
- * - ✅ Enterprise role system integration
- * - ✅ Advanced loading states and error boundaries
- * - ✅ Mobile-first responsive navigation
- * - ✅ Enterprise debugging and analytics
+ * - ✅ Responsive design (mobile/tablet/desktop)
+ * - ✅ Performance optimized with Suspense
+ * - ✅ Role-based navigation
+ * - ✅ Loading states
  * - ✅ Accessibility compliance (ARIA)
- * - ✅ Server Actions + Client interactivity hybrid
- * - ✅ Theme support preparation
- * - ✅ Optimistic UI patterns
+ * - ✅ Theme support ready
  */
-export default function AdminShellPure({
+export default function AdminLayout({
   user,
   children,
-  isAdmin,
-  isSuperAdmin = false,
   sidebarOpen = false,
   onSidebarToggle,
   onSearch,
@@ -172,7 +138,7 @@ export default function AdminShellPure({
   isLoading = false,
   debug = ENTERPRISE_SHELL_CONFIG.debug,
   compact = false,
-}: AdminShellPureProps) {
+}: AdminLayoutProps) {
   // 🎯 Enterprise role integration
   const enterpriseRoleInfo = React.useMemo(() => {
     const userRole = user.role || "user";
@@ -236,7 +202,22 @@ export default function AdminShellPure({
       <div className="h-screen flex bg-slate-50">
         {/* Sidebar skeleton */}
         <aside className="hidden lg:flex lg:w-64 lg:flex-col bg-white border-r border-slate-200">
-          <SidebarSkeleton />
+          <div className="h-full px-3 pb-4 bg-white">
+            <div className="p-4 mb-6 bg-slate-50 rounded-lg animate-pulse">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-slate-200 rounded-full"></div>
+                <div className="flex-1">
+                  <div className="h-4 w-24 bg-slate-200 rounded mb-2"></div>
+                  <div className="h-3 w-16 bg-slate-200 rounded"></div>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-10 bg-slate-200 rounded-lg"></div>
+              ))}
+            </div>
+          </div>
         </aside>
 
         {/* Main content skeleton */}
@@ -278,9 +259,17 @@ export default function AdminShellPure({
             </div>
           </div>
 
-          {/* ⚡ Navigation using Enterprise patterns */}
-          <Suspense fallback={<SidebarSkeleton />}>
-            <DynamicNavigationPure isAdmin={isAdmin} />
+          {/* ⚡ Simple Navigation */}
+          <Suspense
+            fallback={
+              <div className="animate-pulse">Cargando navegación...</div>
+            }
+          >
+            <Navigation
+              userRole={
+                (user.role as "user" | "admin" | "super_admin") || "user"
+              }
+            />
           </Suspense>
 
           {/* Logout - Always at bottom */}
@@ -331,7 +320,7 @@ export default function AdminShellPure({
 
               {/* Mobile User Info */}
               <div className="p-4 mb-6 bg-slate-50 rounded-lg">
-                <InteractiveUserMenu
+                <UserMenu
                   user={user}
                   roleInfo={enterpriseRoleInfo}
                   showDropdown={false}
@@ -340,8 +329,16 @@ export default function AdminShellPure({
               </div>
 
               {/* Navigation */}
-              <Suspense fallback={<SidebarSkeleton />}>
-                <DynamicNavigationPure isAdmin={isAdmin} />
+              <Suspense
+                fallback={
+                  <div className="animate-pulse">Cargando navegación...</div>
+                }
+              >
+                <Navigation
+                  userRole={
+                    (user.role as "user" | "admin" | "super_admin") || "user"
+                  }
+                />
               </Suspense>
 
               {/* Logout */}
@@ -421,7 +418,7 @@ export default function AdminShellPure({
                     <div className="w-10 h-10 bg-slate-200 rounded-full animate-pulse"></div>
                   }
                 >
-                  <InteractiveUserMenu
+                  <UserMenu
                     user={user}
                     roleInfo={enterpriseRoleInfo}
                     showDropdown={true}
@@ -475,4 +472,4 @@ export default function AdminShellPure({
 
 // 🚀 Export configuration for reuse
 export { ENTERPRISE_SHELL_CONFIG, RESPONSIVE_CONFIG };
-export type { AdminShellPureProps, HeaderAction };
+export type { AdminLayoutProps, HeaderAction };
