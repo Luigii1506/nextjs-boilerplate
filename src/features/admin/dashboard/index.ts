@@ -5,8 +5,8 @@
  * Sigue el patrón estándar para módulos simples.
  */
 
-// 🏠 Página principal
-export { default } from "./page";
+// 🏠 Página principal (screen)
+export { default } from "./dashboard.screen";
 
 // 🧩 Componentes
 export * from "./components";
@@ -15,7 +15,7 @@ export * from "./components";
 export * from "./hooks";
 
 // 🔧 Server Actions
-export * from "./actions";
+export * from "./dashboard.actions";
 
 // 📝 Tipos
-export * from "./types";
+export * from "./dashboard.types";

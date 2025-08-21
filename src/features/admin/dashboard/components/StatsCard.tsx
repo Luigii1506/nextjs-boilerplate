@@ -1,6 +1,6 @@
 import React from "react";
 import { TrendingUp, Activity } from "lucide-react";
-import { StatsCardProps } from "../types";
+import { StatsCardProps } from "../dashboard.types";
 
 /**
  * 📊 COMPONENTE DE TARJETA DE ESTADÍSTICAS

@@ -49,29 +49,29 @@
 
 ```
 src/features/admin/[module-name]/
-├── index.ts                 # Barrel exports
-├── page.tsx                 # Página principal (Next.js App Router)
-├── components/              # Componentes específicos del módulo
-│   ├── index.ts            # Barrel exports
+├── index.ts                        # Barrel exports
+├── [module-name].screen.tsx        # Página principal (Next.js App Router)
+├── components/                     # Componentes específicos del módulo
+│   ├── index.ts                   # Barrel exports
 │   ├── [ComponentName].tsx
 │   └── [AnotherComponent].tsx
-├── hooks/                   # Hooks específicos del módulo
-│   ├── index.ts            # Barrel exports
+├── hooks/                          # Hooks específicos del módulo
+│   ├── index.ts                   # Barrel exports
 │   └── use[ModuleName].ts
-├── actions.ts              # Server Actions (Next.js 15)
-├── types.ts                # Tipos TypeScript
-└── utils.ts                # Utilidades específicas (opcional)
+├── [module-name].actions.ts        # Server Actions (Next.js 15)
+├── [module-name].types.ts          # Tipos TypeScript
+└── [module-name].utils.ts          # Utilidades específicas (opcional)
 ```
 
 ### Estructura Mínima (para módulos muy simples)
 
 ```
 src/features/admin/[module-name]/
-├── index.ts                 # Barrel exports
-├── page.tsx                 # Página principal
-├── components/              # Componentes
+├── index.ts                        # Barrel exports
+├── [module-name].screen.tsx        # Página principal
+├── components/                     # Componentes
 │   └── [ComponentName].tsx
-└── actions.ts              # Server Actions
+└── [module-name].actions.ts        # Server Actions
 ```
 
 ---
@@ -116,16 +116,16 @@ src/features/admin/users/
 
 ```
 src/features/admin/dashboard/
-├── index.ts                 # Exports
-├── page.tsx                 # Página principal
-├── components/              # Componentes
+├── index.ts                    # Exports
+├── dashboard.screen.tsx        # Página principal
+├── components/                 # Componentes
 │   ├── StatsCard.tsx
 │   ├── ActivityChart.tsx
 │   └── QuickActions.tsx
 ├── hooks/
 │   └── useDashboard.ts
-├── actions.ts              # Server Actions
-└── types.ts                # Tipos
+├── dashboard.actions.ts        # Server Actions
+└── dashboard.types.ts          # Tipos
 ```
 
 ---
@@ -136,7 +136,7 @@ src/features/admin/dashboard/
 
 ```bash
 mkdir -p src/features/admin/[module-name]/{components,hooks}
-touch src/features/admin/[module-name]/{index.ts,page.tsx,actions.ts,types.ts}
+touch src/features/admin/[module-name]/{index.ts,[module-name].screen.tsx,[module-name].actions.ts,[module-name].types.ts}
 touch src/features/admin/[module-name]/components/index.ts
 touch src/features/admin/[module-name]/hooks/index.ts
 ```
@@ -144,7 +144,7 @@ touch src/features/admin/[module-name]/hooks/index.ts
 ### Paso 2: Definir tipos básicos
 
 ```typescript
-// types.ts
+// [module-name].types.ts
 export interface [ModuleName]Data {
   id: string;
   // ... propiedades específicas
@@ -163,7 +163,7 @@ export interface [ModuleName]Props {
 ### Paso 3: Crear Server Actions
 
 ```typescript
-// actions.ts
+// [module-name].actions.ts
 "use server";
 
 import { revalidatePath } from "next/cache";
@@ -217,7 +217,7 @@ export function use[ModuleName]() {
 ### Paso 5: Crear página principal
 
 ```typescript
-// page.tsx
+// [module-name].screen.tsx
 "use client";
 
 import React from "react";
@@ -267,11 +267,11 @@ export function [ModuleName]Component({ data }: Props) {
 
 ```typescript
 // index.ts
-export { default } from "./page";
+export { default } from "./[module-name].screen";
 export * from "./components";
 export * from "./hooks";
-export * from "./types";
-export * from "./actions";
+export * from "./[module-name].types";
+export * from "./[module-name].actions";
 ```
 
 ---

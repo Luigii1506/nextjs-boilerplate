@@ -6,8 +6,11 @@ import {
   getRecentUsersAction,
   refreshDashboardAction,
   getDashboardActivityAction,
-} from "../actions";
-import { DashboardHookState, OptimisticDashboardState } from "../types";
+} from "../dashboard.actions";
+import {
+  DashboardHookState,
+  OptimisticDashboardState,
+} from "../dashboard.types";
 import { User, UserStats } from "@/shared/types/user";
 
 /**

@@ -56,7 +56,7 @@
 # Reemplaza [module-name] con el nombre de tu módulo
 MODULE_NAME="[module-name]"
 mkdir -p "src/features/admin/$MODULE_NAME"/{components,hooks}
-touch "src/features/admin/$MODULE_NAME"/{index.ts,page.tsx,actions.ts,types.ts}
+touch "src/features/admin/$MODULE_NAME"/{index.ts,$MODULE_NAME.screen.tsx,$MODULE_NAME.actions.ts,$MODULE_NAME.types.ts}
 touch "src/features/admin/$MODULE_NAME/components/index.ts"
 touch "src/features/admin/$MODULE_NAME/hooks/index.ts"
 ```
@@ -65,21 +65,21 @@ touch "src/features/admin/$MODULE_NAME/hooks/index.ts"
 
 ```
 src/features/admin/[module-name]/
-├── index.ts                 # Barrel exports
-├── page.tsx                 # Página principal
-├── actions.ts              # Server Actions
-├── types.ts                # Tipos TypeScript
-├── components/              # Componentes específicos
-│   └── index.ts            # Barrel exports
-└── hooks/                   # Hooks específicos
-    └── index.ts            # Barrel exports
+├── index.ts                        # Barrel exports
+├── [module-name].screen.tsx        # Página principal
+├── [module-name].actions.ts        # Server Actions
+├── [module-name].types.ts          # Tipos TypeScript
+├── components/                     # Componentes específicos
+│   └── index.ts                   # Barrel exports
+└── hooks/                          # Hooks específicos
+    └── index.ts                   # Barrel exports
 ```
 
 ---
 
 ## 📝 Paso 2: Definir tipos
 
-### Archivo: `types.ts`
+### Archivo: `[module-name].types.ts`
 
 ```typescript
 /**
@@ -172,7 +172,7 @@ export interface NotificationsHookState {
 
 ## 🔧 Paso 3: Crear Server Actions
 
-### Archivo: `actions.ts`
+### Archivo: `[module-name].actions.ts`
 
 ```typescript
 "use server";
@@ -334,8 +334,8 @@ import {
   get[ModuleName]DataAction,
   get[ModuleName]StatsAction,
   refresh[ModuleName]Action
-} from "../actions";
-import { [ModuleName]HookState, [ModuleName]Data, [ModuleName]Stats } from "../types";
+} from "../[module-name].actions";
+import { [ModuleName]HookState, [ModuleName]Data, [ModuleName]Stats } from "../[module-name].types";
 
 /**
  * 🎯 HOOK PRINCIPAL DE [MODULE_NAME]
@@ -449,7 +449,7 @@ export { use[ModuleName], use[ModuleName]Data } from "./use[ModuleName]";
 
 ```typescript
 import React from "react";
-import { [ModuleName]CardProps } from "../types";
+import { [ModuleName]CardProps } from "../[module-name].types";
 
 /**
  * 🧩 COMPONENTE DE TARJETA DE [MODULE_NAME]
@@ -491,7 +491,7 @@ export function [ModuleName]Card({ data, onAction }: [ModuleName]CardProps) {
 
 ```typescript
 import React from "react";
-import { [ModuleName]Stats } from "../types";
+import { [ModuleName]Stats } from "../[module-name].types";
 
 /**
  * 📊 COMPONENTE DE ESTADÍSTICAS DE [MODULE_NAME]
@@ -557,7 +557,7 @@ export { [ModuleName]StatsComponent } from "./[ModuleName]Stats";
 
 ## 🏠 Paso 6: Crear página principal
 
-### Archivo: `page.tsx`
+### Archivo: `[module-name].screen.tsx`
 
 ```typescript
 "use client";
@@ -667,8 +667,8 @@ export default function [ModuleName]Page({}: [ModuleName]PageProps) {
  * Sigue el patrón estándar para módulos simples.
  */
 
-// 🏠 Página principal
-export { default } from "./page";
+// 🏠 Página principal (screen)
+export { default } from "./[module-name].screen";
 
 // 🧩 Componentes
 export * from "./components";
@@ -677,10 +677,10 @@ export * from "./components";
 export * from "./hooks";
 
 // 🔧 Server Actions
-export * from "./actions";
+export * from "./[module-name].actions";
 
 // 📝 Tipos
-export * from "./types";
+export * from "./[module-name].types";
 ```
 
 ---
@@ -867,7 +867,7 @@ fi
 
 # Crear estructura
 mkdir -p "src/features/admin/$MODULE_NAME"/{components,hooks}
-touch "src/features/admin/$MODULE_NAME"/{index.ts,page.tsx,actions.ts,types.ts}
+touch "src/features/admin/$MODULE_NAME"/{index.ts,$MODULE_NAME.screen.tsx,$MODULE_NAME.actions.ts,$MODULE_NAME.types.ts}
 touch "src/features/admin/$MODULE_NAME/components/index.ts"
 touch "src/features/admin/$MODULE_NAME/hooks/index.ts"
 

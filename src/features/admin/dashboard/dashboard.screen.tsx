@@ -19,7 +19,7 @@ import {
   getDashboardStatsAction,
   getRecentUsersAction,
   refreshDashboardAction,
-} from "./actions";
+} from "./dashboard.actions";
 import { useIsEnabled } from "@/core/feature-flags";
 import { useHydration } from "@/shared/hooks/useHydration";
 
