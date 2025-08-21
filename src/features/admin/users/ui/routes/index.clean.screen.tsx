@@ -42,7 +42,6 @@ const UsersCleanView: React.FC = () => {
     // 📊 Data (automática)
     users,
     stats,
-    totalUsers,
 
     // 🔄 States (automáticos)
     isLoading,
@@ -65,9 +64,6 @@ const UsersCleanView: React.FC = () => {
     // 🔄 Management (automático)
     refresh,
     clearErrors,
-
-    // 🏗️ Config (para customización)
-    config,
   } = useUsers();
 
   // 🔍 SMART FILTERING: Combina búsqueda y filtros automáticamente

@@ -24,12 +24,12 @@ export {
   UsersConfigManager,
   usersConfig,
   adaptConfigForHook,
-  configUtils,
+  quickConfig,
+  SORT_OPTIONS,
 } from "./config";
 
 // 📊 Enterprise Constants
 export {
-  USERS_CORE_CONFIG,
   USERS_ACTIONS,
   USERS_STATUS,
   USERS_ROLES,

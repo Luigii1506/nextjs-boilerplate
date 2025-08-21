@@ -147,7 +147,7 @@ export const useUsers = (userConfig?: UseUsersConfig): UseUsersReturn => {
   usersHookLogger.debug("Users hook initialized", {
     hasUserConfig: !!userConfig,
     autoLoad: userConfig?.autoLoad ?? true,
-    configSummary: usersConfig.getConfigSummary(),
+    configSummary: usersConfig.getSummary(),
   });
 
   // 🎯 PRIMARY DATA STATE (Server Actions as Source of Truth)
@@ -155,7 +155,7 @@ export const useUsers = (userConfig?: UseUsersConfig): UseUsersReturn => {
     async (): Promise<ActionResult<UserListResponse>> => {
       usersHookLogger.debug("Fetching users from server");
       return await serverActions.getAllUsersAction(
-        coreConfiguration.ui.itemsPerPage,
+        coreConfiguration.display.itemsPerPage,
         0
       );
     },
@@ -735,10 +735,10 @@ export const useUsers = (userConfig?: UseUsersConfig): UseUsersReturn => {
 
       // 🏗️ Configuration & Debugging
       config: coreConfiguration,
-      configSummary: usersConfig.getConfigSummary(),
+      configSummary: usersConfig.getSummary(),
 
       // 📊 Debug Info (Development only)
-      ...(coreConfiguration.settings.performanceTracking && {
+      ...(process.env.NODE_ENV === 'development' && {
         debug: {
           hasInitialized: hasInitialized.current,
           optimisticState,
