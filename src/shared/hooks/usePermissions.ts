@@ -1,79 +1,45 @@
 /**
  * 🔐 HOOK DE PERMISOS SIMPLIFICADO
  *
- * Sistema de permisos limpio y directo al grano
+ * Sistema de permisos limpio y directo.
+ * Sin cache innecesario, sin complejidad extra.
+ *
+ * Simple: 2025-01-17 - Versión simplificada
  */
 
-import { useCallback, useMemo, useEffect } from "react";
-import { authClient } from "@/core/auth/auth-client";
-import { useAuth } from "@/shared/hooks/useAuth";
+"use client";
+
+import { useCallback, useMemo } from "react";
+import { useAuth } from "./useAuth";
 import {
+  hasPermission,
   canManageRole,
   getRoleLevel,
   getAssignableRoles,
-  hasPermission,
   type AnyPermission,
   type RoleName,
   type Permission,
-} from "@/core/auth/config/permissions";
-
-// 🎯 Configuración del hook
-interface PermissionHookOptions {
-  cacheTimeout?: number;
-  logPermissions?: boolean;
-}
-
-const DEFAULT_OPTIONS: PermissionHookOptions = {
-  cacheTimeout: 5 * 60 * 1000, // 5 minutos
-  logPermissions: process.env.NODE_ENV === "development",
-};
-
-// 📊 Cache simple de permisos
-const permissionCache = new Map<
-  string,
-  { result: boolean; timestamp: number }
->();
+} from "@/core/auth/permissions";
 
 /**
  * 🔐 usePermissions - Hook principal de permisos
  */
-export function usePermissions(options: PermissionHookOptions = {}) {
-  const { user } = useAuth();
-  const config = useMemo(() => ({ ...DEFAULT_OPTIONS, ...options }), [options]);
+export function usePermissions() {
+  const { user, isAuthenticated } = useAuth();
 
   // 📊 Información básica del usuario
   const currentRole = (user?.role as RoleName) || "user";
   const currentLevel = getRoleLevel(currentRole);
-  const isAuthenticated = Boolean(user);
 
-  // 🔍 Verificación con cache optimizada
+  // 🔍 Verificación de permisos
   const checkPermission = useCallback(
     (permission: AnyPermission): boolean => {
-      const cacheKey = `${user?.id}-${permission}`;
-
-      // Verificar cache
-      const cached = permissionCache.get(cacheKey);
-      if (cached && Date.now() - cached.timestamp < config.cacheTimeout!) {
-        return cached.result;
-      }
-
-      // Verificar permiso
-      const result = hasPermission(user || {}, permission);
-
-      // Guardar en cache
-      permissionCache.set(cacheKey, { result, timestamp: Date.now() });
-
-      // Log en desarrollo
-      if (config.logPermissions) {
-        console.log(`🔐 ${permission}: ${result ? "✅" : "❌"}`);
-      }
-
-      return result;
+      return hasPermission(user || {}, permission);
     },
-    [user, config]
+    [user]
   );
 
-  // 🎯 Verificación rápida de múltiples permisos
+  // 🎯 Verificación de múltiples permisos
   const canAccess = useCallback(
     (permissions: Permission): boolean => {
       if (!user?.role) return false;
@@ -88,29 +54,13 @@ export function usePermissions(options: PermissionHookOptions = {}) {
     [user, checkPermission]
   );
 
-  // 🔐 Verificación asíncrona (solo para casos críticos)
-  const hasPermissionAsync = useCallback(
-    async (permissions: Permission): Promise<boolean> => {
-      if (!user) return false;
-
-      try {
-        const result = await authClient.admin.hasPermission({ permissions });
-        return result.data?.success || false;
-      } catch (error) {
-        console.error("Error checking permissions:", error);
-        return false;
-      }
-    },
-    [user]
-  );
-
   // 👑 Información de rol
   const roleInfo = useMemo(
     () => ({
       currentRole,
       currentLevel,
-      isAdmin: () => currentRole === "admin" || currentRole === "super_admin",
-      isSuperAdmin: () => currentRole === "super_admin",
+      isAdmin: currentRole === "admin" || currentRole === "super_admin",
+      isSuperAdmin: currentRole === "super_admin",
       isAuthenticated,
     }),
     [currentRole, currentLevel, isAuthenticated]
@@ -126,46 +76,16 @@ export function usePermissions(options: PermissionHookOptions = {}) {
     [user?.role, currentRole]
   );
 
-  // 🧹 Utilidades de cache
-  const cacheUtils = useCallback(() => {
-    const clearCache = () => {
-      permissionCache.clear();
-      if (config.logPermissions) console.log("🧹 Permission cache cleared");
-    };
-
-    const getCacheStats = () => ({
-      size: permissionCache.size,
-      keys: Array.from(permissionCache.keys()),
-    });
-
-    return { clearCache, getCacheStats };
-  }, [config.logPermissions]);
-
-  // 🧹 Limpiar cache cuando cambie el usuario
-  useEffect(() => {
-    if (user?.id) {
-      for (const [key] of permissionCache) {
-        if (!key.startsWith(`${user.id}-`)) {
-          permissionCache.delete(key);
-        }
-      }
-    }
-  }, [user?.id]);
-
   return {
     // 🔐 Verificaciones principales
     checkPermission,
     canAccess,
-    hasPermissionAsync,
 
     // 👑 Información de rol
     ...roleInfo,
 
     // 🎯 Gestión de roles
     ...roleManagement,
-
-    // 🧹 Utilidades
-    ...cacheUtils(),
   };
 }
 

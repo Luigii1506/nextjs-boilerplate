@@ -8,7 +8,7 @@
  */
 
 import { auth } from "@/core/auth/server/auth";
-import { ROLE_INFO } from "@/core/auth/config/permissions";
+import { ROLE_INFO } from "@/core/auth/permissions";
 
 interface TestUser {
   email: string;

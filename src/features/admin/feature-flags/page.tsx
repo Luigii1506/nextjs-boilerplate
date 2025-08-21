@@ -75,16 +75,21 @@ export default function FeatureFlagsAdminPage() {
     await notify(
       async () => {
         // El contexto se actualiza automáticamente via broadcast
-        console.log("Feature flags se actualizan automáticamente");
+        console.log("Módulos se actualizan automáticamente");
       },
-      "Actualizando feature flags...",
-      "Feature flags actualizados"
+      "Actualizando módulos...",
+      "Módulos actualizados"
     );
   };
 
-  // 🔍 Filtered flags
+  // 🔍 Filtered flags - Solo mostrar módulos (category: "module")
   const filteredFlags = useMemo(() => {
     return flags.filter((flag) => {
+      // 🎯 FILTRO PRINCIPAL: Solo mostrar flags de categoría "module"
+      if (flag.category !== "module") {
+        return false;
+      }
+
       // Search filter
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
@@ -97,7 +102,7 @@ export default function FeatureFlagsAdminPage() {
         }
       }
 
-      // Category filter
+      // Category filter (ahora solo filtra dentro de "module")
       if (filters.category !== "all" && flag.category !== filters.category) {
         return false;
       }
@@ -117,10 +122,11 @@ export default function FeatureFlagsAdminPage() {
     });
   }, [flags, filters]);
 
-  // 📊 Statistics
+  // 📊 Statistics - Solo para módulos (category: "module")
   const stats = useMemo(() => {
-    const total = flags.length;
-    const enabled = flags.filter((f) => f.enabled).length;
+    const moduleFlags = flags.filter((f) => f.category === "module");
+    const total = moduleFlags.length;
+    const enabled = moduleFlags.filter((f) => f.enabled).length;
     const disabled = total - enabled;
     const byCategory = Object.keys(FEATURE_CATEGORIES).reduce(
       (acc, category) => {
@@ -139,9 +145,11 @@ export default function FeatureFlagsAdminPage() {
       {/* 📊 Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Feature Flags</h1>
+          <h1 className="text-2xl font-bold text-slate-900">
+            Módulos del Sistema
+          </h1>
           <p className="text-slate-600">
-            Gestiona las funcionalidades del sistema en tiempo real
+            Activa o desactiva módulos del sistema en tiempo real
           </p>
         </div>
 
@@ -221,7 +229,7 @@ export default function FeatureFlagsAdminPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
-                placeholder="Buscar feature flags..."
+                placeholder="Buscar módulos..."
                 value={filters.search}
                 onChange={(e) =>
                   setFilters((prev) => ({ ...prev, search: e.target.value }))
@@ -277,9 +285,7 @@ export default function FeatureFlagsAdminPage() {
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 text-red-600">⚠️</div>
-            <p className="text-red-800 font-medium">
-              Error al cargar feature flags
-            </p>
+            <p className="text-red-800 font-medium">Error al cargar módulos</p>
           </div>
           <p className="text-red-600 text-sm mt-1">{error}</p>
         </div>
@@ -300,12 +306,13 @@ export default function FeatureFlagsAdminPage() {
       {/* 📭 Empty State */}
       {filteredFlags.length === 0 && !isLoading && !error && (
         <div className="text-center py-12">
-          <Flag className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+          <Package className="w-12 h-12 text-slate-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-slate-900 mb-2">
-            No se encontraron feature flags
+            No se encontraron módulos
           </h3>
           <p className="text-slate-600">
-            Intenta ajustar los filtros o crear nuevos feature flags.
+            Intenta ajustar los filtros o verifica que existan módulos
+            configurados.
           </p>
         </div>
       )}
@@ -314,7 +321,7 @@ export default function FeatureFlagsAdminPage() {
       {isLoading && flags.length === 0 && (
         <div className="text-center py-12">
           <RefreshCw className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-slate-600">Cargando feature flags...</p>
+          <p className="text-slate-600">Cargando módulos...</p>
         </div>
       )}
     </div>

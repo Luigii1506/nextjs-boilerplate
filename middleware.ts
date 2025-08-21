@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import {
-  getServerFeatureFlags,
-  type FeatureFlagContext,
-} from "@/core/config/server-feature-flags";
-import { extractGeoData } from "@/core/types/request";
+import { getServerFeatureFlags } from "@/core/feature-flags/server";
 
 // Rutas que requieren autenticación
 const protectedRoutes = [
@@ -68,18 +64,8 @@ export async function middleware(request: NextRequest) {
 
   if (needsFeatureFlags) {
     try {
-      // 🚀 Build context for feature flag evaluation (ENTERPRISE-GRADE)
-      const geoData = extractGeoData(request);
-      const flagContext: FeatureFlagContext = {
-        userId,
-        userRole,
-        userEmail,
-        country: geoData.country,
-        userAgent: geoData.userAgent,
-      };
-
       // ⚡ Evaluate feature flags at Edge (ultra-fast)
-      featureFlags = await getServerFeatureFlags(flagContext);
+      featureFlags = await getServerFeatureFlags();
     } catch (error) {
       console.error("[Middleware] Feature flags evaluation failed:", error);
       // Continue with empty flags - Server Components will use fallback

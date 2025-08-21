@@ -6,7 +6,7 @@
 
 import React from "react";
 import { usePermissions } from "@/shared/hooks/usePermissions";
-import type { Permission } from "@/core/auth/config/permissions";
+import type { Permission } from "@/core/auth/permissions";
 
 // 🎯 Props base para componentes protegidos
 interface BaseProtectedProps {
@@ -112,7 +112,7 @@ export const AdminOnly: React.FC<
 > = ({ fallback = null, showFallback = false, children }) => {
   const { isAdmin } = usePermissions();
 
-  if (!isAdmin()) {
+  if (!isAdmin) {
     return showFallback ? <>{fallback}</> : null;
   }
 
@@ -127,7 +127,7 @@ export const SuperAdminOnly: React.FC<
 > = ({ fallback = null, showFallback = false, children }) => {
   const { isSuperAdmin } = usePermissions();
 
-  if (!isSuperAdmin()) {
+  if (!isSuperAdmin) {
     return showFallback ? <>{fallback}</> : null;
   }
 

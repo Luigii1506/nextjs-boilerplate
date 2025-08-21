@@ -1,15 +1,21 @@
-// 🔐 Core Auth Barrel
-// ===================
-// Entry point para autenticación core
+/**
+ * 🔐 CORE AUTH BARREL
+ * ===================
+ *
+ * Entry point simplificado para autenticación core.
+ * Todo consolidado y limpio.
+ *
+ * Simple: 2025-01-17 - Versión simplificada
+ */
 
-// Re-export server utilities
+// 🔐 Sistema de permisos consolidado
+export * from "./permissions";
+
+// 🖥️ Utilidades del servidor
 export * from "./server";
 
-// Re-export client
+// 👤 Cliente de autenticación
 export * from "./auth-client";
 
-// Re-export config
-export * from "./config";
-
-// Re-export components
+// 🎨 Componentes UI
 export * from "./components";

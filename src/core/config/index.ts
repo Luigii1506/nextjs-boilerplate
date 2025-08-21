@@ -5,27 +5,17 @@
  * Exporta módulos, feature flags, entorno y utilidades.
  */
 
-// 🧩 Configuración de módulos
-export {
-  MODULE_CONFIG,
-  isModuleEnabled,
-  getEnabledModules,
-  checkDependencies,
-  type ModuleName,
-  type ModuleConfig,
-} from "./modules";
-
-// 🎛️ Feature flags
+// 🎛️ Feature flags (from consolidated system)
 export {
   FEATURE_FLAGS,
-  useFeatureFlag,
+  FEATURE_CATEGORIES,
+  getFeatureCategory,
   isFeatureEnabled,
   getEnabledFeatures,
-  getFeaturesByModule,
-  FEATURE_GROUPS,
-  type FeatureFlag,
-  type FeatureGroup,
-} from "./feature-flags";
+  getFeaturesByCategory,
+} from "../feature-flags/config";
+
+export type { FeatureFlag, FeatureCategory } from "../feature-flags/types";
 
 // 🌍 Variables de entorno
 export {
@@ -35,7 +25,6 @@ export {
   getDatabaseConfig,
   getAuthConfig,
   getUploadConfig,
-  getFeatureFlags,
   getDeploymentConfig,
   EMAIL_CONFIG,
   ANALYTICS_CONFIG,

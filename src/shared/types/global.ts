@@ -83,8 +83,5 @@ export interface EnvironmentConfig {
   NEXT_PUBLIC_API_URL: string;
 }
 
-// 🎯 Feature Flag Types (re-export from core)
-export type { FeatureFlag, FeatureGroup } from "@/core/config";
-
-// 📦 Module Configuration Types (re-export from core)
-export type { ModuleName, ModuleConfig } from "@/core/config";
+// 🎯 Feature Flag Types (re-export from consolidated system)
+export type { FeatureFlag, FeatureCategory } from "@/core/feature-flags/types";

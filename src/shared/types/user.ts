@@ -1,4 +1,4 @@
-import type { RoleName } from "@/core/auth/config/permissions";
+import type { RoleName } from "@/core/auth/permissions";
 
 export interface User {
   id: string;

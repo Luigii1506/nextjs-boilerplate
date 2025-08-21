@@ -1,9 +1,17 @@
+/**
+ * 🔐 HOOK DE AUTENTICACIÓN SIMPLIFICADO
+ *
+ * Hook principal para manejar autenticación con Better Auth.
+ * Versión limpia y directa sin complejidad innecesaria.
+ *
+ * Simple: 2025-01-17 - Versión simplificada
+ */
+
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/core/auth/auth-client";
-
 import type { User } from "@/shared/types/user";
 
 interface AuthState {

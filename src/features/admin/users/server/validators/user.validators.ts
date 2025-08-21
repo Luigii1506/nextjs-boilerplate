@@ -1,6 +1,6 @@
 import * as userQueries from "../queries/user.queries";
 import { getServerSession } from "@/core/auth/server";
-import { hasPermission } from "@/core/auth/config/permissions";
+import { hasPermission } from "@/core/auth/permissions";
 import { User } from "@/features/admin/users/types";
 
 // 🛡️ USER BUSINESS VALIDATORS

@@ -1,9 +1,6 @@
----
-title: Guía completa
-slug: /permisos/completa
----
+# 🔐 **GUÍA COMPLETA DEL SISTEMA DE PERMISOS**
 
-# 🔐 **GUÍA COMPLETA DEL SISTEMA DE PERMISOS Y ROLES**
+> **🚀 SISTEMA CONSOLIDADO**: Documentación actualizada para la nueva arquitectura simplificada.
 
 ## 📋 **¿QUÉ ES EL SISTEMA DE PERMISOS?**
 
@@ -16,7 +13,29 @@ El sistema de permisos es una implementación **RBAC (Role-Based Access Control)
 
 ---
 
-## 🏗️ **ARQUITECTURA DEL SISTEMA**
+## 🏗️ **ARQUITECTURA CONSOLIDADA**
+
+### **📁 Estructura Simplificada**
+
+```
+src/core/auth/
+├── permissions.ts           ✅ TODO consolidado aquí
+├── server/
+│   ├── auth.ts             ✅ Configuración Better Auth
+│   └── index.ts            ✅ Utilidades del servidor
+├── components/             ✅ Componentes UI de auth
+├── auth-client.ts          ✅ Cliente de auth
+└── index.ts                ✅ Barrel exports
+
+src/shared/
+├── hooks/
+│   ├── useAuth.ts          ✅ Hook de autenticación
+│   └── usePermissions.ts   ✅ Hook de permisos (simplificado)
+└── components/
+    └── Protected.tsx       ✅ Componentes de protección
+```
+
+### **🎯 Flujo del Sistema**
 
 ```mermaid
 graph TD
