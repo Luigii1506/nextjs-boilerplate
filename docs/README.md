@@ -239,3 +239,4 @@ export interface FeatureFlagDomain {}
 
 _Documentación mantenida para Next.js Boilerplate Enterprise - 2025_
 
+

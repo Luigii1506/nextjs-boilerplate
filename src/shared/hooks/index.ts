@@ -3,7 +3,7 @@
 // Entry point para hooks compartidos
 
 export * from "./useAuth";
-export * from "./useFeatureFlagsServerActions";
+// useFeatureFlagsServerActions removed - consolidated into @/core/feature-flags
 export * from "./useHydration";
 export * from "./usePermissions";
 export * from "./useNotifications";

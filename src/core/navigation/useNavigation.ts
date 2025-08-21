@@ -13,9 +13,10 @@
 
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect, useReducer } from "react";
 import { usePathname } from "next/navigation";
-import { useIsEnabled } from "@/shared/hooks/useFeatureFlagsServerActions";
+import { useIsEnabled } from "@/core/feature-flags";
+import { useFeatureFlagsBroadcast } from "@/shared/hooks/useBroadcast";
 import {
   NAVIGATION_REGISTRY,
   type NavigationItem,
@@ -61,7 +62,21 @@ export function useNavigation({
   debugMode = false,
 }: UseNavigationProps): UseNavigationReturn {
   const pathname = usePathname();
-  const isEnabled = useIsEnabled(); // 🎯 Hook reactivo a broadcast
+  const isEnabled = useIsEnabled(); // 🎯 Hook del sistema consolidado
+  const { onFlagChange } = useFeatureFlagsBroadcast();
+
+  // 🔄 Force re-render when flags change via broadcast
+  const [, forceUpdate] = useReducer((x) => x + 1, 0);
+
+  useEffect(() => {
+    return onFlagChange((flagKey) => {
+      if (debugMode)
+        console.log(
+          `🎛️ Feature flag '${flagKey}' changed - updating navigation`
+        );
+      forceUpdate(); // Force re-render immediately
+    });
+  }, [onFlagChange, debugMode]);
 
   // 🧭 Filtrar elementos de navegación - UNA SOLA FUNCIÓN OPTIMIZADA
   const navigationItems = useMemo(() => {

@@ -4,11 +4,7 @@
 
 // 🪝 Hooks Compartidos
 export { useAuth, useAdminPage, useProtectedPage } from "./hooks/useAuth";
-export {
-  useFeatureFlagsServer,
-  useIsEnabled,
-  FeatureFlagsServerProvider,
-} from "./hooks/useFeatureFlagsServerActions";
+// Feature flags exports moved to @/core/feature-flags
 export { usePermissions } from "./hooks/usePermissions";
 export { useNotifications } from "./hooks/useNotifications";
 export {

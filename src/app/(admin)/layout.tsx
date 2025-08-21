@@ -4,6 +4,7 @@ import { requireAuth } from "@/core/auth/server";
 import { ROLE_INFO } from "@/core/auth/config/permissions";
 import type { SessionUser } from "@/shared/types/user";
 import AdminLayout from "@/shared/ui/layouts/AdminLayout";
+import { FeatureFlagsProvider } from "@/core/feature-flags";
 
 export const runtime = "nodejs";
 
@@ -38,8 +39,10 @@ export default async function AdminRootLayout({
 
   // ✅ Direct to AdminLayout (handles its own client state)
   return (
-    <AdminLayout user={user} isAdmin={isAdmin} isSuperAdmin={isSuperAdmin}>
-      {children}
-    </AdminLayout>
+    <FeatureFlagsProvider>
+      <AdminLayout user={user} isAdmin={isAdmin} isSuperAdmin={isSuperAdmin}>
+        {children}
+      </AdminLayout>
+    </FeatureFlagsProvider>
   );
 }

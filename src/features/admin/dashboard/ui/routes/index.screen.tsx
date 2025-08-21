@@ -20,7 +20,7 @@ import {
   getRecentUsersServerAction,
   refreshDashboardServerAction,
 } from "../../server/actions";
-import { useIsEnabled } from "@/shared/hooks/useFeatureFlagsServerActions";
+import { useIsEnabled } from "@/core/feature-flags";
 import { useHydration } from "@/shared/hooks/useHydration";
 
 interface DashboardViewProps {

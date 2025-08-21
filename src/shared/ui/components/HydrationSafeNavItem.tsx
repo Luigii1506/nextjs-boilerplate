@@ -19,10 +19,7 @@ import React from "react";
 import Link from "next/link";
 import { LucideIcon } from "lucide-react";
 import { useHydrationWithDependencies } from "@/shared/hooks/useHydration";
-import {
-  useIsEnabled,
-  useFeatureFlagsServer,
-} from "@/shared/hooks/useFeatureFlagsServerActions";
+import { useIsEnabled } from "@/core/feature-flags";
 
 interface HydrationSafeNavItemProps {
   /** Ruta de navegación */
@@ -71,7 +68,8 @@ export function HydrationSafeNavItem({
   navActive,
   navIdle,
 }: HydrationSafeNavItemProps) {
-  const { isLoading } = useFeatureFlagsServer();
+  // Feature flags are now handled by the isEnabled function directly
+  const isLoading = false; // No longer needed with consolidated system
   const isEnabled = useIsEnabled();
 
   // Detectar cuando la hidratación está completa Y los feature flags se han cargado
@@ -112,7 +110,8 @@ export function HydrationSafeNavItem({
  * Proporciona toda la lógica necesaria de manera reutilizable
  */
 export function useNavItemFeatureFlag(requiredFeatureFlag: string) {
-  const { isLoading } = useFeatureFlagsServer();
+  // Feature flags are now handled by the isEnabled function directly
+  const isLoading = false; // No longer needed with consolidated system
   const isEnabled = useIsEnabled();
   const { isReady } = useHydrationWithDependencies([!isLoading]);
 

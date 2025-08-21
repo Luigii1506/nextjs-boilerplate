@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "../styles/globals.css";
-import { FeatureFlagsServerProvider } from "@/shared/hooks/useFeatureFlagsServerActions";
+// Feature flags provider removed - only used in admin layout
 import { NotificationProvider } from "@/shared/providers/NotificationProvider";
 
 const geistSans = Geist({
@@ -29,21 +29,19 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <FeatureFlagsServerProvider>
-          <NotificationProvider
-            theme="system"
-            visibleToasts={5}
-            config={{
-              position: "top-right",
-              richColors: true,
-              closeButton: true,
-              dismissible: true,
-              pauseWhenPageIsHidden: true,
-            }}
-          >
-            {children}
-          </NotificationProvider>
-        </FeatureFlagsServerProvider>
+        <NotificationProvider
+          theme="system"
+          visibleToasts={5}
+          config={{
+            position: "top-right",
+            richColors: true,
+            closeButton: true,
+            dismissible: true,
+            pauseWhenPageIsHidden: true,
+          }}
+        >
+          {children}
+        </NotificationProvider>
       </body>
     </html>
   );
