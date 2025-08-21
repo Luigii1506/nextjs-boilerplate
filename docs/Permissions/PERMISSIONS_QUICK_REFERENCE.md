@@ -4,13 +4,13 @@
 
 ```typescript
 // 🔐 Sistema de permisos consolidado
-import { 
-  hasPermission, 
-  ROLE_INFO, 
+import {
+  hasPermission,
+  ROLE_INFO,
   ROLE_HIERARCHY,
   type RoleName,
   type AnyPermission,
-  type Permission 
+  type Permission,
 } from "@/core/auth/permissions";
 
 // 🪝 Hooks simplificados
@@ -18,13 +18,13 @@ import { usePermissions } from "@/shared/hooks/usePermissions";
 import { useAuth } from "@/shared/hooks/useAuth";
 
 // 🛡️ Componentes de protección
-import { 
-  Protected, 
-  AdminOnly, 
+import {
+  Protected,
+  AdminOnly,
   SuperAdminOnly,
   RoleProtected,
   LevelProtected,
-  NoAccess
+  NoAccess,
 } from "@/shared/components/Protected";
 
 // 🖥️ Servidor
@@ -38,18 +38,18 @@ import { getServerSession, requireAuth } from "@/core/auth/server";
 ```typescript
 const {
   // 🔍 Verificaciones
-  checkPermission,    // (permission: AnyPermission) => boolean
-  canAccess,         // (permissions: Permission) => boolean
-  
+  checkPermission, // (permission: AnyPermission) => boolean
+  canAccess, // (permissions: Permission) => boolean
+
   // 👑 Información de rol
-  currentRole,       // RoleName
-  currentLevel,      // number
-  isAdmin,          // boolean
-  isSuperAdmin,     // boolean
-  isAuthenticated,  // boolean
-  
+  currentRole, // RoleName
+  currentLevel, // number
+  isAdmin, // boolean
+  isSuperAdmin, // boolean
+  isAuthenticated, // boolean
+
   // 🎯 Gestión de roles
-  canManageRole,    // (targetRole: RoleName) => boolean
+  canManageRole, // (targetRole: RoleName) => boolean
   getManageableRoles, // () => RoleName[]
 } = usePermissions();
 ```
@@ -76,17 +76,17 @@ if (canDelete) {
 ```typescript
 // 🎯 Múltiples permisos (con shortcut super_admin)
 const canManageUsers = canAccess({
-  user: ["create", "update", "delete"]
+  user: ["create", "update", "delete"],
 });
 
 const canWorkWithFiles = canAccess({
   user: ["create"],
-  files: ["upload", "delete"]
+  files: ["upload", "delete"],
 });
 
 const canAdminSystem = canAccess({
   user: ["create", "delete", "ban"],
-  feature_flags: ["write"]
+  feature_flags: ["write"],
 });
 ```
 
@@ -119,7 +119,7 @@ const assignableRoles = getManageableRoles(); // ["user"] para admin
 ### **🎯 Protected - Permisos Específicos**
 
 ```typescript
-<Protected 
+<Protected
   permissions={{ user: ["delete"] }}
   fallback={<div>Sin permisos para eliminar</div>}
   showFallback={true}
@@ -127,9 +127,9 @@ const assignableRoles = getManageableRoles(); // ["user"] para admin
   <DeleteButton />
 </Protected>
 
-<Protected permissions={{ 
-  user: ["create", "update"], 
-  files: ["upload"] 
+<Protected permissions={{
+  user: ["create", "update"],
+  files: ["upload"]
 }}>
   <UserForm />
 </Protected>
@@ -158,15 +158,15 @@ const assignableRoles = getManageableRoles(); // ["user"] para admin
 ### **🎭 RoleProtected - Roles Específicos**
 
 ```typescript
-<RoleProtected 
+<RoleProtected
   roles={["admin", "super_admin"]}
   fallback={<div>Solo staff</div>}
 >
   <StaffPanel />
 </RoleProtected>
 
-<RoleProtected 
-  roles={["admin"]} 
+<RoleProtected
+  roles={["admin"]}
   requireAll={false}
 >
   <AdminFeature />
@@ -176,10 +176,7 @@ const assignableRoles = getManageableRoles(); // ["user"] para admin
 ### **📊 LevelProtected - Nivel Mínimo**
 
 ```typescript
-<LevelProtected 
-  minLevel={80}
-  fallback={<div>Nivel insuficiente</div>}
->
+<LevelProtected minLevel={80} fallback={<div>Nivel insuficiente</div>}>
   <AdvancedFeature />
 </LevelProtected>
 ```
@@ -187,7 +184,7 @@ const assignableRoles = getManageableRoles(); // ["user"] para admin
 ### **🚫 NoAccess - Mensaje de Error**
 
 ```typescript
-<NoAccess 
+<NoAccess
   title="Acceso Denegado"
   message="No tienes permisos para esta sección"
   icon="🔒"
@@ -206,22 +203,22 @@ import { getServerSession } from "@/core/auth/server";
 
 export async function deleteUser(userId: string) {
   const session = await getServerSession();
-  
+
   // ✅ Verificar permisos
   if (!hasPermission(session?.user, "user:delete")) {
     throw new Error("Sin permisos para eliminar usuarios");
   }
-  
+
   // Proceder...
 }
 
 export async function createUser(userData: any) {
   const session = await requireAuth(); // Lanza error si no está autenticado
-  
+
   if (!hasPermission(session.user, "user:create")) {
     throw new Error("Sin permisos para crear usuarios");
   }
-  
+
   // Crear usuario...
 }
 ```
@@ -235,13 +232,13 @@ import { hasPermission } from "@/core/auth/permissions";
 
 export async function middleware(request: NextRequest) {
   const session = await getServerSession();
-  
-  if (request.nextUrl.pathname.startsWith('/admin')) {
+
+  if (request.nextUrl.pathname.startsWith("/admin")) {
     if (!hasPermission(session?.user, "user:list")) {
-      return NextResponse.redirect(new URL('/unauthorized', request.url));
+      return NextResponse.redirect(new URL("/unauthorized", request.url));
     }
   }
-  
+
   return NextResponse.next();
 }
 ```
@@ -254,10 +251,10 @@ import { hasPermission } from "@/core/auth/permissions";
 
 export default async function AdminPage() {
   const session = await requireAuth();
-  
+
   const canDeleteUsers = hasPermission(session.user, "user:delete");
   const canManageFlags = hasPermission(session.user, "feature_flags:write");
-  
+
   return (
     <div>
       <h1>Admin Panel</h1>
@@ -294,14 +291,14 @@ const ROLE_INFO = {
     icon: "👑",
   },
   admin: {
-    name: "Administrador", 
+    name: "Administrador",
     description: "Gestión de usuarios",
     color: "orange",
     icon: "🛡️",
   },
   user: {
     name: "Usuario",
-    description: "Usuario estándar", 
+    description: "Usuario estándar",
     color: "green",
     icon: "👤",
   },
@@ -311,7 +308,11 @@ const ROLE_INFO = {
 ### **🔧 Utilidades de Roles**
 
 ```typescript
-import { getRoleLevel, canManageRole, getAssignableRoles } from "@/core/auth/permissions";
+import {
+  getRoleLevel,
+  canManageRole,
+  getAssignableRoles,
+} from "@/core/auth/permissions";
 
 // Obtener nivel de rol
 const adminLevel = getRoleLevel("admin"); // 80
@@ -331,29 +332,29 @@ const assignable = getAssignableRoles("admin"); // ["user"]
 
 ```typescript
 // 👤 Usuarios
-"user:create"      // Crear usuarios
-"user:read"        // Ver información de usuarios  
-"user:list"        // Listar usuarios
-"user:update"      // Actualizar usuarios
-"user:delete"      // Eliminar usuarios
-"user:ban"         // Banear usuarios
-"user:set-role"    // Cambiar roles
-"user:set-password" // Cambiar contraseñas
-"user:impersonate" // Suplantar usuarios
+"user:create"; // Crear usuarios
+"user:read"; // Ver información de usuarios
+"user:list"; // Listar usuarios
+"user:update"; // Actualizar usuarios
+"user:delete"; // Eliminar usuarios
+"user:ban"; // Banear usuarios
+"user:set-role"; // Cambiar roles
+"user:set-password"; // Cambiar contraseñas
+"user:impersonate"; // Suplantar usuarios
 
 // 🔐 Sesiones
-"session:list"     // Ver sesiones
-"session:revoke"   // Revocar sesiones  
-"session:delete"   // Eliminar sesiones
+"session:list"; // Ver sesiones
+"session:revoke"; // Revocar sesiones
+"session:delete"; // Eliminar sesiones
 
 // 📁 Archivos
-"files:read"       // Ver archivos
-"files:upload"     // Subir archivos
-"files:delete"     // Eliminar archivos
+"files:read"; // Ver archivos
+"files:upload"; // Subir archivos
+"files:delete"; // Eliminar archivos
 
 // 🎛️ Feature Flags
-"feature_flags:read"  // Ver feature flags
-"feature_flags:write" // Modificar feature flags
+"feature_flags:read"; // Ver feature flags
+"feature_flags:write"; // Modificar feature flags
 ```
 
 ### **🎯 Permisos por Rol**
@@ -361,22 +362,36 @@ const assignable = getAssignableRoles("admin"); // ["user"]
 ```typescript
 // 👑 Super Admin - TODOS los permisos
 const SUPER_ADMIN_PERMISSIONS = [
-  "user:*", "session:*", "files:*", "feature_flags:*"
+  "user:*",
+  "session:*",
+  "files:*",
+  "feature_flags:*",
 ];
 
 // 🛡️ Admin - Gestión de usuarios y archivos básicos
 const ADMIN_PERMISSIONS = [
-  "user:create", "user:read", "user:list", "user:update", 
-  "user:delete", "user:ban", "user:set-role", "user:set-password",
-  "session:list", "session:revoke", "session:delete",
-  "files:read", "files:upload",
-  "feature_flags:read"
+  "user:create",
+  "user:read",
+  "user:list",
+  "user:update",
+  "user:delete",
+  "user:ban",
+  "user:set-role",
+  "user:set-password",
+  "session:list",
+  "session:revoke",
+  "session:delete",
+  "files:read",
+  "files:upload",
+  "feature_flags:read",
 ];
 
 // 👤 User - Solo sesiones propias y lectura de archivos
 const USER_PERMISSIONS = [
-  "session:list", "session:revoke", "session:delete",
-  "files:read"
+  "session:list",
+  "session:revoke",
+  "session:delete",
+  "files:read",
 ];
 ```
 
@@ -389,11 +404,11 @@ const USER_PERMISSIONS = [
 ```typescript
 function UserActions({ user }: { user: User }) {
   const { checkPermission, canManageRole } = usePermissions();
-  
+
   const canEdit = checkPermission("user:update");
   const canDelete = checkPermission("user:delete");
   const canChangeRole = canManageRole(user.role);
-  
+
   return (
     <div>
       {canEdit && <EditButton />}
@@ -412,15 +427,15 @@ function AdminSection() {
     <AdminOnly>
       <div>
         <h2>Panel de Administración</h2>
-        
+
         <Protected permissions={{ user: ["create"] }}>
           <CreateUserForm />
         </Protected>
-        
+
         <Protected permissions={{ user: ["list"] }}>
           <UsersList />
         </Protected>
-        
+
         <SuperAdminOnly>
           <SystemSettings />
         </SuperAdminOnly>
@@ -435,13 +450,15 @@ function AdminSection() {
 ```typescript
 function useUserPermissions(targetUser: User) {
   const { checkPermission, canManageRole, currentRole } = usePermissions();
-  
+
   return {
     canEdit: checkPermission("user:update"),
-    canDelete: checkPermission("user:delete") && targetUser.id !== currentUser?.id,
+    canDelete:
+      checkPermission("user:delete") && targetUser.id !== currentUser?.id,
     canBan: checkPermission("user:ban") && canManageRole(targetUser.role),
     canChangeRole: canManageRole(targetUser.role),
-    canImpersonate: checkPermission("user:impersonate") && currentRole === "super_admin"
+    canImpersonate:
+      checkPermission("user:impersonate") && currentRole === "super_admin",
   };
 }
 ```
@@ -455,16 +472,16 @@ function useUserPermissions(targetUser: User) {
 ```typescript
 function DebugPermissions() {
   const permissions = usePermissions();
-  
+
   console.log("Current permissions state:", {
     role: permissions.currentRole,
     level: permissions.currentLevel,
     isAdmin: permissions.isAdmin,
     isSuperAdmin: permissions.isSuperAdmin,
     canDeleteUsers: permissions.checkPermission("user:delete"),
-    manageableRoles: permissions.getManageableRoles()
+    manageableRoles: permissions.getManageableRoles(),
   });
-  
+
   return null;
 }
 ```
@@ -479,7 +496,7 @@ describe("Permissions", () => {
     const adminUser = { role: "admin" };
     expect(hasPermission(adminUser, "user:delete")).toBe(true);
   });
-  
+
   it("should not allow user to delete users", () => {
     const regularUser = { role: "user" };
     expect(hasPermission(regularUser, "user:delete")).toBe(false);

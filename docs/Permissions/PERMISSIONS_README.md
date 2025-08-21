@@ -47,7 +47,7 @@ function MyComponent() {
 
   // ✅ Verificación simple
   const canDelete = checkPermission("user:delete");
-  
+
   // ✅ Verificación de rol
   if (isAdmin) {
     return <AdminPanel />;
@@ -55,7 +55,7 @@ function MyComponent() {
 
   // ✅ Verificación múltiple
   const canManageUsers = canAccess({
-    user: ["create", "update", "delete"]
+    user: ["create", "update", "delete"],
   });
 
   return <div>Content</div>;
@@ -73,7 +73,7 @@ import { AdminOnly, Protected } from "@/shared/components/Protected";
 </AdminOnly>
 
 // ✅ Permisos específicos
-<Protected 
+<Protected
   permissions={{ user: ["delete"] }}
   fallback={<div>Sin permisos</div>}
 >
@@ -89,11 +89,11 @@ import { getServerSession } from "@/core/auth/server";
 
 export async function deleteUser(userId: string) {
   const session = await getServerSession();
-  
+
   if (!hasPermission(session?.user, "user:delete")) {
     throw new Error("Sin permisos");
   }
-  
+
   // Proceder con la eliminación...
 }
 ```
@@ -105,6 +105,7 @@ export async function deleteUser(userId: string) {
 ### **🚀 Para Empezar**
 
 - **[⚡ Referencia Rápida](./PERMISSIONS_QUICK_REFERENCE.md)** ⭐
+
   - API completa del sistema
   - Hooks y componentes disponibles
   - Ejemplos de uso común
@@ -117,6 +118,7 @@ export async function deleteUser(userId: string) {
 ### **🏗️ Para Entender la Arquitectura**
 
 - **[🔐 Guía Completa del Sistema](./PERMISSIONS_SYSTEM_COMPLETE_GUIDE.md)**
+
   - Conceptos fundamentales
   - Roles y jerarquías
   - Recursos y acciones
@@ -130,6 +132,7 @@ export async function deleteUser(userId: string) {
 ### **🔧 Para Desarrolladores**
 
 - **[🏗️ Arquitectura Consolidada](./PERMISSIONS_NEW_ARCHITECTURE.md)**
+
   - Decisiones de diseño
   - Simplificaciones implementadas
   - Guía de migración
@@ -143,17 +146,18 @@ export async function deleteUser(userId: string) {
 
 ## 🎯 **ROLES DISPONIBLES**
 
-| Rol | Nivel | Descripción | Permisos |
-|-----|-------|-------------|----------|
-| **super_admin** | 100 | Acceso total | Todos los permisos |
-| **admin** | 80 | Gestión de usuarios | user:*, session:*, files:read/upload |
-| **user** | 20 | Usuario estándar | session:*, files:read |
+| Rol             | Nivel | Descripción         | Permisos                             |
+| --------------- | ----- | ------------------- | ------------------------------------ |
+| **super_admin** | 100   | Acceso total        | Todos los permisos                   |
+| **admin**       | 80    | Gestión de usuarios | user:_, session:_, files:read/upload |
+| **user**        | 20    | Usuario estándar    | session:\*, files:read               |
 
 ---
 
 ## 🔧 **RECURSOS Y ACCIONES**
 
 ### **👤 User (Usuarios)**
+
 - `user:create` - Crear usuarios
 - `user:read` - Ver información de usuarios
 - `user:list` - Listar usuarios
@@ -165,16 +169,19 @@ export async function deleteUser(userId: string) {
 - `user:impersonate` - Suplantar usuarios
 
 ### **🔐 Session (Sesiones)**
+
 - `session:list` - Ver sesiones
 - `session:revoke` - Revocar sesiones
 - `session:delete` - Eliminar sesiones
 
 ### **📁 Files (Archivos)**
+
 - `files:read` - Ver archivos
 - `files:upload` - Subir archivos
 - `files:delete` - Eliminar archivos
 
 ### **🎛️ Feature Flags**
+
 - `feature_flags:read` - Ver feature flags
 - `feature_flags:write` - Modificar feature flags
 
@@ -184,12 +191,12 @@ export async function deleteUser(userId: string) {
 
 ```typescript
 // 🔐 Sistema de permisos
-import { 
-  hasPermission, 
-  ROLE_INFO, 
+import {
+  hasPermission,
+  ROLE_INFO,
   ROLE_HIERARCHY,
   type RoleName,
-  type AnyPermission 
+  type AnyPermission,
 } from "@/core/auth/permissions";
 
 // 🪝 Hooks
@@ -197,10 +204,10 @@ import { usePermissions } from "@/shared/hooks/usePermissions";
 import { useAuth } from "@/shared/hooks/useAuth";
 
 // 🛡️ Componentes de protección
-import { 
-  Protected, 
-  AdminOnly, 
-  SuperAdminOnly 
+import {
+  Protected,
+  AdminOnly,
+  SuperAdminOnly,
 } from "@/shared/components/Protected";
 
 // 🖥️ Servidor

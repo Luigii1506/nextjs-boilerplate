@@ -79,6 +79,13 @@ export const FEATURE_CATEGORIES = {
     icon: "Settings",
     flags: ["advancedUserManagement", "systemLogs", "dataExport"],
   },
+  ui: {
+    name: "UI Features",
+    description: "UI functionality",
+    color: "red",
+    icon: "Layout",
+    flags: ["darkMode", "betaFeatures", "debugMode"],
+  },
 } as const;
 
 // 🔍 Utilities
