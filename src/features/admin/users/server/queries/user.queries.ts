@@ -274,3 +274,72 @@ export const unbanUser = async (userId: string) => {
     },
   });
 };
+
+// 📊 Get dashboard statistics
+export const getDashboardStats = async () => {
+  const [total, active, banned, admins] = await Promise.all([
+    // Total users
+    prisma.user.count(),
+    
+    // Active users (not banned)
+    prisma.user.count({
+      where: {
+        OR: [
+          { banned: false },
+          { banned: null }
+        ]
+      }
+    }),
+    
+    // Banned users
+    prisma.user.count({
+      where: { banned: true }
+    }),
+    
+    // Admin users (admin + super_admin)
+    prisma.user.count({
+      where: {
+        role: {
+          in: ["admin", "super_admin"]
+        }
+      }
+    })
+  ]);
+
+  return {
+    total,
+    active,
+    banned,
+    admins,
+    activePercentage: total > 0 ? Math.round((active / total) * 100) : 0,
+    adminPercentage: total > 0 ? Math.round((admins / total) * 100) : 0,
+  };
+};
+
+// 👥 Get recent users with sessions info
+export const getRecentUsers = async (limit: number = 5) => {
+  return prisma.user.findMany({
+    take: limit,
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      emailVerified: true,
+      image: true,
+      role: true,
+      createdAt: true,
+      updatedAt: true,
+      banned: true,
+      banReason: true,
+      banExpires: true,
+      sessions: {
+        take: 1,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          createdAt: true,
+        }
+      }
+    },
+  });
+};

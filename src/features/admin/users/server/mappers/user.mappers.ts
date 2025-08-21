@@ -176,3 +176,56 @@ export const bulkUpdateResultToResponse = (updateResult: {
     updatedCount: updateResult.count,
   };
 };
+
+// 📊 Transform dashboard stats from Prisma to UserStats
+export const mapDashboardStats = (stats: {
+  total: number;
+  active: number;
+  banned: number;
+  admins: number;
+  activePercentage: number;
+  adminPercentage: number;
+}) => {
+  return {
+    total: stats.total,
+    active: stats.active,
+    banned: stats.banned,
+    admins: stats.admins,
+    activePercentage: stats.activePercentage,
+    adminPercentage: stats.adminPercentage,
+  };
+};
+
+// 👥 Transform recent users from Prisma to User array with lastLogin
+export const mapRecentUsers = (
+  users: Array<{
+    id: string;
+    email: string;
+    name: string;
+    emailVerified: boolean;
+    image: string | null;
+    role: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    banned: boolean | null;
+    banReason: string | null;
+    banExpires: Date | null;
+    sessions: Array<{ createdAt: Date }>;
+  }>
+): User[] => {
+  return users.map(user => ({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    emailVerified: user.emailVerified,
+    role: (user.role as "user" | "admin" | "super_admin") || "user",
+    status: user.banned ? "banned" : "active",
+    image: user.image,
+    createdAt: user.createdAt.toISOString(),
+    updatedAt: user.updatedAt.toISOString(),
+    lastLogin: user.sessions[0]?.createdAt.toISOString() || undefined,
+    banned: user.banned || false,
+    banReason: user.banReason,
+    banExpires: user.banExpires?.toISOString() || null,
+  }));
+};

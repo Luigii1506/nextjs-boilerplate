@@ -28,6 +28,8 @@ export interface UserStats {
   active: number;
   banned: number;
   admins: number;
+  activePercentage: number;
+  adminPercentage: number;
 }
 
 export type SessionUser = {

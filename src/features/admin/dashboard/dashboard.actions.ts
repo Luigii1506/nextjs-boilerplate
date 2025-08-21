@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { User, UserStats } from "@/shared/types/user";
 import { ActionResult } from "@/features/admin/users/types";
+import * as userQueries from "@/features/admin/users/server/queries/user.queries";
+import * as userMappers from "@/features/admin/users/server/mappers/user.mappers";
 
 /**
  * 📊 DASHBOARD SERVER ACTIONS
@@ -16,14 +18,11 @@ export async function getDashboardStatsAction(): Promise<
   ActionResult<UserStats>
 > {
   try {
-    // TODO: Implementar lógica real de estadísticas
-    // Por ahora, datos mock para demostración
-    const stats: UserStats = {
-      total: 156,
-      active: 142,
-      banned: 8,
-      admins: 6,
-    };
+    // 📊 Obtener estadísticas reales de la base de datos
+    const rawStats = await userQueries.getDashboardStats();
+    
+    // 🔄 Transformar datos usando mapper
+    const stats = userMappers.mapDashboardStats(rawStats);
 
     return {
       success: true,
@@ -43,46 +42,11 @@ export async function getRecentUsersAction(
   limit: number = 5
 ): Promise<ActionResult<User[]>> {
   try {
-    // TODO: Implementar lógica real de usuarios recientes
-    // Por ahora, datos mock para demostración
-    const recentUsers: User[] = [
-      {
-        id: "1",
-        name: "Juan Pérez",
-        email: "juan@example.com",
-        emailVerified: true,
-        role: "user" as const,
-        image: null,
-        createdAt: "2024-01-15T00:00:00Z",
-        updatedAt: "2024-01-17T00:00:00Z",
-        lastLogin: "2024-01-17T10:30:00Z",
-        banned: false,
-      },
-      {
-        id: "2",
-        name: "María García",
-        email: "maria@example.com",
-        emailVerified: true,
-        role: "admin" as const,
-        image: null,
-        createdAt: "2024-01-14T00:00:00Z",
-        updatedAt: "2024-01-17T00:00:00Z",
-        lastLogin: "2024-01-17T09:15:00Z",
-        banned: false,
-      },
-      {
-        id: "3",
-        name: "Carlos López",
-        email: "carlos@example.com",
-        emailVerified: true,
-        role: "user" as const,
-        image: null,
-        createdAt: "2024-01-13T00:00:00Z",
-        updatedAt: "2024-01-16T00:00:00Z",
-        lastLogin: "2024-01-16T14:20:00Z",
-        banned: false,
-      },
-    ].slice(0, limit);
+    // 👥 Obtener usuarios recientes reales de la base de datos
+    const rawRecentUsers = await userQueries.getRecentUsers(limit);
+    
+    // 🔄 Transformar datos usando mapper
+    const recentUsers = userMappers.mapRecentUsers(rawRecentUsers);
 
     return {
       success: true,
