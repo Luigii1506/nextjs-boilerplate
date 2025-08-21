@@ -8,3 +8,4 @@ export * from "./useHydration";
 export * from "./usePermissions";
 export * from "./useNotifications";
 export * from "./useBroadcast";
+export * from "./useDarkMode";

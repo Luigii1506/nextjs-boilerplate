@@ -70,7 +70,7 @@ export const FEATURE_CATEGORIES = {
     description: "Beta features and experiments",
     color: "yellow",
     icon: "Flask",
-    flags: ["darkMode", "betaFeatures", "debugMode"],
+    flags: ["betaFeatures", "debugMode"],
   },
   admin: {
     name: "Admin Features",
@@ -81,10 +81,10 @@ export const FEATURE_CATEGORIES = {
   },
   ui: {
     name: "UI Features",
-    description: "UI functionality",
-    color: "red",
-    icon: "Layout",
-    flags: ["darkMode", "betaFeatures", "debugMode"],
+    description: "User interface and experience features",
+    color: "orange",
+    icon: "Palette",
+    flags: ["darkMode", "animations", "notifications"],
   },
 } as const;
 
