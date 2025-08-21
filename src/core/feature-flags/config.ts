@@ -25,8 +25,11 @@ export const FEATURE_FLAGS = {
   aiIntegration: process.env.FEATURE_AI === "true",
   analytics: process.env.FEATURE_ANALYTICS === "true",
 
-  // 🧪 EXPERIMENTAL
+  // 🎨 UI FEATURES
   darkMode: process.env.FEATURE_DARK_MODE === "true",
+  i18n: process.env.FEATURE_I18N === "true",
+
+  // 🧪 EXPERIMENTAL
   betaFeatures: process.env.NODE_ENV === "development",
   debugMode: process.env.NODE_ENV === "development",
 
@@ -84,7 +87,7 @@ export const FEATURE_CATEGORIES = {
     description: "User interface and experience features",
     color: "orange",
     icon: "Palette",
-    flags: ["darkMode", "animations", "notifications"],
+    flags: ["darkMode", "i18n", "animations", "notifications"],
   },
 } as const;
 

@@ -13,3 +13,4 @@ export * from "./HydrationSafeNavItem";
 
 // 🌙 Theme Components
 export * from "./DarkModeToggle";
+export * from "./I18nToggle";

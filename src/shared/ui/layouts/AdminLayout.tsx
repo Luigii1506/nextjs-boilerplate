@@ -19,7 +19,7 @@ import { usePublicPage } from "@/shared/hooks/useAuth";
 import Navigation from "./components/Navigation";
 import { UserMenu, ROLE_CONFIGS } from "./components/UserMenu";
 import { LogoutButton } from "./components/LogoutButton";
-import { DarkModeToggle } from "@/shared/ui/components";
+import { DarkModeToggle, I18nToggle } from "@/shared/ui/components";
 import type { SessionUser } from "@/shared/types/user";
 
 // 🎯 Enterprise Configuration
@@ -261,6 +261,9 @@ export default function AdminLayout({
                     variant="switch"
                     showTooltip={false}
                   />
+
+                  {/* 🌍 Mobile Language Toggle */}
+                  <I18nToggle size="sm" variant="switch" showTooltip={false} />
                 </div>
               </div>
 
@@ -354,6 +357,9 @@ export default function AdminLayout({
                     variant="button"
                     showTooltip={true}
                   />
+
+                  {/* 🌍 Language Toggle */}
+                  <I18nToggle size="md" variant="button" showTooltip={true} />
                 </div>
 
                 {/* User Menu - Always visible */}
