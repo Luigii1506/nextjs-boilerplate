@@ -189,7 +189,7 @@ export default function FeatureFlagsAdmin() {
     .filter(Boolean);
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto p-6">
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
