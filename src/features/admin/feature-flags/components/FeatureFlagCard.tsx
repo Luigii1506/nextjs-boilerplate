@@ -63,6 +63,15 @@ const CATEGORY_CONFIG = {
       badge: "bg-purple-100 text-purple-800",
     },
   },
+  ui: {
+    icon: Code,
+    colors: {
+      bg: "bg-indigo-50",
+      border: "border-indigo-200",
+      text: "text-indigo-700",
+      badge: "bg-indigo-100 text-indigo-800",
+    },
+  },
 } as const;
 
 export default function FeatureFlagCard({

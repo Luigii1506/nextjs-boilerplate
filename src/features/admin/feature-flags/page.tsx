@@ -75,18 +75,18 @@ export default function FeatureFlagsAdminPage() {
     await notify(
       async () => {
         // El contexto se actualiza automáticamente via broadcast
-        console.log("Módulos se actualizan automáticamente");
+        console.log("Feature flags se actualizan automáticamente");
       },
-      "Actualizando módulos...",
-      "Módulos actualizados"
+      "Actualizando feature flags...",
+      "Feature flags actualizados"
     );
   };
 
-  // 🔍 Filtered flags - Solo mostrar módulos (category: "module")
+  // 🔍 Filtered flags - Solo mostrar categorías "module" y "ui"
   const filteredFlags = useMemo(() => {
     return flags.filter((flag) => {
-      // 🎯 FILTRO PRINCIPAL: Solo mostrar flags de categoría "module"
-      if (flag.category !== "module") {
+      // 🎯 FILTRO PRINCIPAL: Solo mostrar flags de categorías "module" y "ui"
+      if (flag.category !== "module" && flag.category !== "ui") {
         return false;
       }
 
@@ -102,7 +102,7 @@ export default function FeatureFlagsAdminPage() {
         }
       }
 
-      // Category filter (ahora solo filtra dentro de "module")
+      // Category filter
       if (filters.category !== "all" && flag.category !== filters.category) {
         return false;
       }
@@ -122,22 +122,38 @@ export default function FeatureFlagsAdminPage() {
     });
   }, [flags, filters]);
 
-  // 📊 Statistics - Solo para módulos (category: "module")
+  // 🎨 Flags organizados por categoría (para uso futuro)
+  // const flagsByCategory = useMemo(() => {
+  //   const categorized: Record<string, typeof filteredFlags> = {};
+  //
+  //   // Inicializar todas las categorías
+  //   Object.keys(FEATURE_CATEGORIES).forEach(category => {
+  //     categorized[category] = [];
+  //   });
+  //
+  //   // Agrupar flags por categoría
+  //   filteredFlags.forEach(flag => {
+  //     if (categorized[flag.category]) {
+  //       categorized[flag.category].push(flag);
+  //     }
+  //   });
+  //
+  //   // Solo devolver categorías que tienen flags
+  //   return Object.entries(categorized).filter(([, flags]) => flags.length > 0);
+  // }, [filteredFlags]);
+
+  // 📊 Statistics - Para categorías "module" y "ui"
   const stats = useMemo(() => {
-    const moduleFlags = flags.filter((f) => f.category === "module");
-    const total = moduleFlags.length;
-    const enabled = moduleFlags.filter((f) => f.enabled).length;
+    const total = filteredFlags.length;
+    const enabled = filteredFlags.filter((f) => f.enabled).length;
     const disabled = total - enabled;
-    const byCategory = Object.keys(FEATURE_CATEGORIES).reduce(
-      (acc, category) => {
-        acc[category] = flags.filter((f) => f.category === category).length;
-        return acc;
-      },
-      {} as Record<string, number>
-    );
+    const byCategory = {
+      module: flags.filter((f) => f.category === "module").length,
+      ui: flags.filter((f) => f.category === "ui").length,
+    };
 
     return { total, enabled, disabled, byCategory };
-  }, [flags]);
+  }, [flags, filteredFlags]);
 
   // 🎨 Render
   return (
@@ -146,10 +162,11 @@ export default function FeatureFlagsAdminPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">
-            Módulos del Sistema
+            Módulos y UI del Sistema
           </h1>
           <p className="text-slate-600">
-            Activa o desactiva módulos del sistema en tiempo real
+            Gestiona módulos y funcionalidades de interfaz que se pueden
+            activar/desactivar
           </p>
         </div>
 
@@ -229,7 +246,7 @@ export default function FeatureFlagsAdminPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
-                placeholder="Buscar módulos..."
+                placeholder="Buscar módulos y UI..."
                 value={filters.search}
                 onChange={(e) =>
                   setFilters((prev) => ({ ...prev, search: e.target.value }))
@@ -285,7 +302,9 @@ export default function FeatureFlagsAdminPage() {
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 text-red-600">⚠️</div>
-            <p className="text-red-800 font-medium">Error al cargar módulos</p>
+            <p className="text-red-800 font-medium">
+              Error al cargar feature flags
+            </p>
           </div>
           <p className="text-red-600 text-sm mt-1">{error}</p>
         </div>
@@ -308,10 +327,10 @@ export default function FeatureFlagsAdminPage() {
         <div className="text-center py-12">
           <Package className="w-12 h-12 text-slate-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-slate-900 mb-2">
-            No se encontraron módulos
+            No se encontraron feature flags
           </h3>
           <p className="text-slate-600">
-            Intenta ajustar los filtros o verifica que existan módulos
+            Intenta ajustar los filtros o verifica que existan feature flags
             configurados.
           </p>
         </div>
@@ -321,7 +340,7 @@ export default function FeatureFlagsAdminPage() {
       {isLoading && flags.length === 0 && (
         <div className="text-center py-12">
           <RefreshCw className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-slate-600">Cargando módulos...</p>
+          <p className="text-slate-600">Cargando feature flags...</p>
         </div>
       )}
     </div>
