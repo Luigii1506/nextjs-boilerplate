@@ -137,7 +137,7 @@ export function PracticalSettings() {
           {[10, 20, 50, 100].map((num) => (
             <button
               key={num}
-              onClick={() => changeItemsPerPage(num as any)}
+              onClick={() => changeItemsPerPage(num as 10 | 20 | 50 | 100)}
               className="px-3 py-1 bg-blue-100 rounded text-sm"
             >
               {num}
@@ -324,7 +324,10 @@ export function CustomConfigExamples() {
 
 // 🎯 EJEMPLO 5: Información útil de la configuración
 export function ConfigInfoExamples() {
-  const [configInfo, setConfigInfo] = React.useState<any>(null);
+  const [configInfo, setConfigInfo] = React.useState<Record<
+    string,
+    unknown
+  > | null>(null);
 
   const showCurrentConfig = () => {
     const info = {

@@ -1,12 +1,21 @@
-// 📊 Dashboard Feature Barrel
-// =========================
-// Entry point para la feature de dashboard
+/**
+ * 📊 DASHBOARD MODULE BARREL
+ *
+ * Módulo simple para el dashboard administrativo.
+ * Sigue el patrón estándar para módulos simples.
+ */
 
-// Re-export UI components
-export { default as DashboardView } from "./ui/routes/index.screen";
+// 🏠 Página principal
+export { default } from "./page";
 
-// Re-export types
+// 🧩 Componentes
+export * from "./components";
+
+// 🎯 Hooks
+export * from "./hooks";
+
+// 🔧 Server Actions
+export * from "./actions";
+
+// 📝 Tipos
 export * from "./types";
-
-// Re-export server utilities when available
-// export * from "./server";

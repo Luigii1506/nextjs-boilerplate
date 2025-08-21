@@ -16,14 +16,14 @@ import {
 } from "lucide-react";
 import { User, UserStats } from "@/shared/types/user";
 import {
-  getDashboardStatsServerAction,
-  getRecentUsersServerAction,
-  refreshDashboardServerAction,
-} from "../../server/actions";
+  getDashboardStatsAction,
+  getRecentUsersAction,
+  refreshDashboardAction,
+} from "./actions";
 import { useIsEnabled } from "@/core/feature-flags";
 import { useHydration } from "@/shared/hooks/useHydration";
 
-interface DashboardViewProps {
+interface DashboardPageProps {
   onViewChange?: (view: string) => void;
 }
 
@@ -34,16 +34,16 @@ interface OptimisticDashboardState {
   isRefreshing: boolean;
 }
 
-const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
+export default function DashboardPage({ onViewChange }: DashboardPageProps) {
   // 🚀 REACT 19: useActionState for dashboard stats
   const [statsState, statsAction, isStatsLoading] = useActionState(async () => {
-    const result = await getDashboardStatsServerAction();
+    const result = await getDashboardStatsAction();
     return result;
   }, null);
 
   // 🚀 REACT 19: useActionState for recent users
   const [usersState, usersAction, isUsersLoading] = useActionState(async () => {
-    const result = await getRecentUsersServerAction(5);
+    const result = await getRecentUsersAction(5);
     return result;
   }, null);
 
@@ -84,7 +84,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
 
     startRefresh(async () => {
       try {
-        await refreshDashboardServerAction();
+        await refreshDashboardAction();
         // Reload data after refresh
         statsAction();
         usersAction();
@@ -131,15 +131,19 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">🏠 Dashboard</h1>
-          <p className="text-slate-600 mt-1">Resumen general del sistema</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+            🏠 Dashboard
+          </h1>
+          <p className="text-slate-600 dark:text-slate-400 mt-1">
+            Resumen general del sistema
+          </p>
         </div>
 
         {/* 🚀 REACT 19: Refresh button with optimistic UI */}
         <button
           onClick={handleRefresh}
           disabled={isRefreshing || optimisticState.isRefreshing}
-          className={`flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+          className={`flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed dark:bg-blue-700 dark:hover:bg-blue-600 ${
             isRefreshing || optimisticState.isRefreshing ? "animate-pulse" : ""
           }`}
         >
@@ -157,13 +161,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg border border-slate-200 p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-600">
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
                 Total Usuarios
               </p>
-              <p className="text-3xl font-bold text-slate-900 mt-2">
+              <p className="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-2">
                 {stats.total}
               </p>
               <div className="flex items-center mt-2 text-green-600">
@@ -171,19 +175,19 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
                 <span className="text-sm font-medium">+12%</span>
               </div>
             </div>
-            <div className="p-3 bg-blue-50 rounded-full">
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-full">
               <Users className="w-6 h-6 text-blue-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-slate-200 p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-600">
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
                 Usuarios Activos
               </p>
-              <p className="text-3xl font-bold text-slate-900 mt-2">
+              <p className="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-2">
                 {stats.active}
               </p>
               <div className="flex items-center mt-2 text-green-600">
@@ -191,19 +195,19 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
                 <span className="text-sm font-medium">+8%</span>
               </div>
             </div>
-            <div className="p-3 bg-green-50 rounded-full">
+            <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-full">
               <UserCheck className="w-6 h-6 text-green-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-slate-200 p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-600">
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
                 Usuarios Baneados
               </p>
-              <p className="text-3xl font-bold text-slate-900 mt-2">
+              <p className="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-2">
                 {stats.banned}
               </p>
               <div className="flex items-center mt-2 text-red-600">
@@ -211,19 +215,19 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
                 <span className="text-sm font-medium">-2%</span>
               </div>
             </div>
-            <div className="p-3 bg-red-50 rounded-full">
+            <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-full">
               <UserX className="w-6 h-6 text-red-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-slate-200 p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-600">
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
                 Administradores
               </p>
-              <p className="text-3xl font-bold text-slate-900 mt-2">
+              <p className="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-2">
                 {stats.admins}
               </p>
               <div className="flex items-center mt-2 text-slate-500">
@@ -231,7 +235,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
                 <span className="text-sm font-medium">Estable</span>
               </div>
             </div>
-            <div className="p-3 bg-amber-50 rounded-full">
+            <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-full">
               <Shield className="w-6 h-6 text-amber-600" />
             </div>
           </div>
@@ -241,9 +245,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Activity Chart Placeholder */}
-        <div className="bg-white rounded-lg border border-slate-200 p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-slate-900">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
               Actividad de Usuarios
             </h3>
             <div className="flex items-center gap-2 text-sm text-slate-500">
@@ -255,46 +259,58 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
           {/* Simple Activity Visualization */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-600">Registros</span>
+              <span className="text-sm text-slate-600 dark:text-slate-400">
+                Registros
+              </span>
               <div className="flex items-center gap-2">
-                <div className="w-24 h-2 bg-blue-100 rounded-full">
+                <div className="w-24 h-2 bg-blue-100 dark:bg-blue-900/20 rounded-full">
                   <div className="w-16 h-2 bg-blue-500 rounded-full"></div>
                 </div>
-                <span className="text-sm font-medium text-slate-900">67%</span>
+                <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                  67%
+                </span>
               </div>
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-600">Logins</span>
+              <span className="text-sm text-slate-600 dark:text-slate-400">
+                Logins
+              </span>
               <div className="flex items-center gap-2">
-                <div className="w-24 h-2 bg-green-100 rounded-full">
+                <div className="w-24 h-2 bg-green-100 dark:bg-green-900/20 rounded-full">
                   <div className="w-20 h-2 bg-green-500 rounded-full"></div>
                 </div>
-                <span className="text-sm font-medium text-slate-900">83%</span>
+                <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                  83%
+                </span>
               </div>
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-600">Verificaciones</span>
+              <span className="text-sm text-slate-600 dark:text-slate-400">
+                Verificaciones
+              </span>
               <div className="flex items-center gap-2">
-                <div className="w-24 h-2 bg-amber-100 rounded-full">
+                <div className="w-24 h-2 bg-amber-100 dark:bg-amber-900/20 rounded-full">
                   <div className="w-12 h-2 bg-amber-500 rounded-full"></div>
                 </div>
-                <span className="text-sm font-medium text-slate-900">50%</span>
+                <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                  50%
+                </span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Feature Flags Status */}
-        <div className="bg-white rounded-lg border border-slate-200 p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-slate-900">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
               🎛️ Feature Flags
             </h3>
             <button
               onClick={() => onViewChange?.("feature-flags")}
-              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium"
             >
               Administrar
             </button>
@@ -307,16 +323,16 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
                 Array.from({ length: 4 }).map((_, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between p-3 bg-slate-50 rounded-lg animate-pulse"
+                    className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg animate-pulse"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-5 h-5 bg-slate-300 rounded-full"></div>
+                      <div className="w-5 h-5 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
                       <div>
-                        <div className="w-24 h-4 bg-slate-300 rounded mb-1"></div>
-                        <div className="w-32 h-3 bg-slate-200 rounded"></div>
+                        <div className="w-24 h-4 bg-slate-300 dark:bg-slate-600 rounded mb-1"></div>
+                        <div className="w-32 h-3 bg-slate-200 dark:bg-slate-700 rounded"></div>
                       </div>
                     </div>
-                    <div className="w-8 h-5 bg-slate-300 rounded-full"></div>
+                    <div className="w-8 h-5 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
                   </div>
                 ))
               : // Render actual feature flags after hydration
@@ -347,7 +363,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
                   return (
                     <div
                       key={flag.key}
-                      className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
+                      className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg"
                     >
                       <div className="flex items-center gap-3">
                         {isEnabled ? (
@@ -356,10 +372,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
                           <XCircle className="w-5 h-5 text-red-500" />
                         )}
                         <div>
-                          <p className="text-sm font-medium text-slate-900">
+                          <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
                             {flag.label}
                           </p>
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
                             {flag.description}
                           </p>
                         </div>
@@ -367,8 +383,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-medium ${
                           isEnabled
-                            ? "bg-green-100 text-green-700"
-                            : "bg-red-100 text-red-700"
+                            ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
+                            : "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400"
                         }`}
                       >
                         {isEnabled ? "ON" : "OFF"}
@@ -381,38 +397,44 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-lg border border-slate-200 p-6">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">
+      <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
           Acciones Rápidas
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <button
             onClick={() => onViewChange?.("users")}
-            className="p-4 border-2 border-dashed border-slate-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors text-left"
+            className="p-4 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-left"
           >
             <Users className="w-6 h-6 text-blue-600 mb-2" />
-            <h4 className="font-medium text-slate-900">Gestionar Usuarios</h4>
-            <p className="text-sm text-slate-600 mt-1">
+            <h4 className="font-medium text-slate-900 dark:text-slate-100">
+              Gestionar Usuarios
+            </h4>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
               Ver, crear y editar usuarios
             </p>
           </button>
 
-          <button className="p-4 border-2 border-dashed border-slate-300 rounded-lg hover:border-green-400 hover:bg-green-50 transition-colors text-left">
+          <button className="p-4 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg hover:border-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors text-left">
             <Shield className="w-6 h-6 text-green-600 mb-2" />
-            <h4 className="font-medium text-slate-900">Configurar Roles</h4>
-            <p className="text-sm text-slate-600 mt-1">
+            <h4 className="font-medium text-slate-900 dark:text-slate-100">
+              Configurar Roles
+            </h4>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
               Administrar permisos y roles
             </p>
           </button>
 
           <button
             onClick={() => onViewChange?.("feature-flags")}
-            className="p-4 border-2 border-dashed border-slate-300 rounded-lg hover:border-orange-400 hover:bg-orange-50 transition-colors text-left"
+            className="p-4 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg hover:border-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors text-left"
           >
             <Sliders className="w-6 h-6 text-orange-600 mb-2" />
-            <h4 className="font-medium text-slate-900">Feature Flags</h4>
-            <p className="text-sm text-slate-600 mt-1">
+            <h4 className="font-medium text-slate-900 dark:text-slate-100">
+              Feature Flags
+            </h4>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
               Controlar funcionalidades
             </p>
           </button>
@@ -420,6 +442,4 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onViewChange }) => {
       </div>
     </div>
   );
-};
-
-export default DashboardView;
+}
