@@ -20,7 +20,7 @@ function UsersList() {
     <div className="users-list">
       <div className="header">
         <h2>Gestión de Usuarios</h2>
-        
+
         {/* ✅ Solo admins pueden crear usuarios */}
         <Protected permissions={{ user: ["create"] }}>
           <CreateUserButton />
@@ -28,9 +28,9 @@ function UsersList() {
       </div>
 
       <div className="users-grid">
-        {users.map(user => (
-          <UserCard 
-            key={user.id} 
+        {users.map((user) => (
+          <UserCard
+            key={user.id}
             user={user}
             canEdit={checkPermission("user:update")}
             canDelete={checkPermission("user:delete")}
@@ -52,20 +52,20 @@ import { requireAuth } from "@/core/auth/server";
 
 export async function deleteUserAction(userId: string) {
   const session = await requireAuth();
-  
+
   // ✅ Verificar permisos
   if (!hasPermission(session.user, "user:delete")) {
     throw new Error("Sin permisos para eliminar usuarios");
   }
-  
+
   // ✅ Reglas de negocio
   if (session.user.id === userId) {
     throw new Error("No puedes eliminar tu propia cuenta");
   }
-  
+
   // Proceder con la eliminación...
   await prisma.user.delete({ where: { id: userId } });
-  
+
   revalidatePath("/admin/users");
   return { success: true };
 }
@@ -76,20 +76,24 @@ export async function deleteUserAction(userId: string) {
 #### **📱 Dashboard con Secciones Protegidas**
 
 ```typescript
-import { AdminOnly, SuperAdminOnly, Protected } from "@/shared/components/Protected";
+import {
+  AdminOnly,
+  SuperAdminOnly,
+  Protected,
+} from "@/shared/components/Protected";
 
 function AdminDashboard() {
   return (
     <div className="admin-dashboard">
       <h1>Panel de Administración</h1>
-      
+
       {/* ✅ Estadísticas básicas - Solo admins */}
       <AdminOnly>
         <StatsSection />
       </AdminOnly>
 
       {/* ✅ Gestión de usuarios - Permisos específicos */}
-      <Protected 
+      <Protected
         permissions={{ user: ["list"] }}
         fallback={<div>Sin acceso a gestión de usuarios</div>}
       >
@@ -117,10 +121,10 @@ function UserProfilePage({ userId }: { userId: string }) {
   // ✅ Verificar si puede ver este perfil
   const canViewProfile = useMemo(() => {
     if (!currentUser) return false;
-    
+
     // Puede ver su propio perfil
     if (currentUser.id === userId) return true;
-    
+
     // O si tiene permisos de admin
     return checkPermission("user:read");
   }, [currentUser, userId, checkPermission]);
@@ -147,23 +151,26 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   const session = await getServerSession();
-  
+
   if (!session?.user) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
-  
+
   // ✅ Verificar permisos
   if (!hasPermission(session.user, "user:delete")) {
     return NextResponse.json({ error: "Sin permisos" }, { status: 403 });
   }
-  
+
   // ✅ Reglas de negocio
   if (session.user.id === params.id) {
-    return NextResponse.json({ 
-      error: "No puedes eliminar tu propia cuenta" 
-    }, { status: 400 });
+    return NextResponse.json(
+      {
+        error: "No puedes eliminar tu propia cuenta",
+      },
+      { status: 400 }
+    );
   }
-  
+
   await prisma.user.delete({ where: { id: params.id } });
   return NextResponse.json({ success: true });
 }
@@ -188,7 +195,8 @@ export function useUserManagement(targetUser?: User) {
       canUpdate: checkPermission("user:update") || isOwnProfile,
       canDelete: checkPermission("user:delete") && !isOwnProfile,
       canBan: checkPermission("user:ban") && canManageRole(targetUser.role),
-      canChangeRole: checkPermission("user:set-role") && canManageRole(targetUser.role),
+      canChangeRole:
+        checkPermission("user:set-role") && canManageRole(targetUser.role),
     };
   }, [targetUser, currentUser, checkPermission, canManageRole]);
 
@@ -208,7 +216,7 @@ describe("Permission System", () => {
     const superAdmin = { role: "super_admin" };
     expect(hasPermission(superAdmin, "user:delete")).toBe(true);
   });
-  
+
   it("should restrict user permissions", () => {
     const user = { role: "user" };
     expect(hasPermission(user, "user:create")).toBe(false);
@@ -226,19 +234,19 @@ import { Protected } from "@/shared/components/Protected";
 jest.mock("@/shared/hooks/usePermissions", () => ({
   usePermissions: () => ({
     canAccess: jest.fn(() => mockHasPermissions),
-  })
+  }),
 }));
 
 describe("Protected Component", () => {
   it("should show content when user has permissions", () => {
     mockHasPermissions = true;
-    
+
     render(
       <Protected permissions={{ user: ["create"] }}>
         <div>Protected Content</div>
       </Protected>
     );
-    
+
     expect(screen.getByText("Protected Content")).toBeInTheDocument();
   });
 });
