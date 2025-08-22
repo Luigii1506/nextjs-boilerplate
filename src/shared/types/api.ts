@@ -26,6 +26,14 @@ export type ApiSuccess<T> = ApiResponse<T> & { success: true; data: T };
 export type ApiFailure = ApiResponse<never> & { success: false; error: string };
 export type ApiResult<T> = ApiSuccess<T> | ApiFailure;
 
+// 🎯 Server Action Result (usado por Next.js Server Actions)
+export interface ActionResult<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
+
 // 📄 Paginated API Response
 export interface PaginatedApiResponse<T>
   extends ApiResponse<PaginatedResponse<T>> {

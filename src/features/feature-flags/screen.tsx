@@ -90,7 +90,11 @@ export default function FeatureFlagsAdminPage() {
   const filteredFlags = useMemo(() => {
     return flags.filter((flag: FeatureFlagData) => {
       // 🎯 FILTRO PRINCIPAL: Solo mostrar flags de categorías "module" y "ui"
-      if (flag.category !== "module" && flag.category !== "ui") {
+      if (
+        flag.category !== "module" &&
+        flag.category !== "ui" &&
+        flag.category !== "admin"
+      ) {
         return false;
       }
 
@@ -157,6 +161,8 @@ export default function FeatureFlagsAdminPage() {
       module: flags.filter((f: FeatureFlagData) => f.category === "module")
         .length,
       ui: flags.filter((f: FeatureFlagData) => f.category === "ui").length,
+      admin: flags.filter((f: FeatureFlagData) => f.category === "admin")
+        .length,
     };
 
     return { total, enabled, disabled, byCategory };

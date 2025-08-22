@@ -1,0 +1,66 @@
+// 📊 AUDIT TRAIL MODELS
+// ====================
+// Modelos para audit trail y activity feed
+
+model AuditEvent {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 🎯 Acción y recurso
+  action      String   // create, update, delete, login, logout, etc.
+  resource    String   // user, feature_flag, upload, etc.
+  resourceId  String   // ID del recurso afectado
+  resourceName String? // Nombre legible del recurso
+
+  // 👤 Usuario que realizó la acción
+  userId      String
+  userName    String?
+  userEmail   String
+  userRole    String   // user, admin, super_admin
+
+  // 📝 Detalles de la acción
+  severity    String   @default("medium") // low, medium, high, critical
+  description String?
+  metadata    Json?    // Datos adicionales en formato JSON
+
+  // 🌐 Información de contexto
+  ipAddress   String?
+  userAgent   String?
+
+  // 🔄 Cambios realizados (para updates)
+  changes     AuditChange[]
+
+  // 📚 Índices para optimizar consultas
+  @@index([userId])
+  @@index([resource])
+  @@index([resourceId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([severity])
+  @@index([resource, resourceId])
+  @@index([userId, createdAt])
+  @@index([action, resource])
+
+  @@map("audit_events")
+}
+
+model AuditChange {
+  id          String   @id @default(cuid())
+  
+  // 🔗 Relación con el evento
+  auditEventId String
+  auditEvent   AuditEvent @relation(fields: [auditEventId], references: [id], onDelete: Cascade)
+
+  // 📝 Detalles del cambio
+  field       String   // Nombre del campo que cambió
+  fieldLabel  String?  // Etiqueta legible del campo
+  oldValue    String?  // Valor anterior (JSON string)
+  newValue    String?  // Valor nuevo (JSON string)
+  type        String   // added, modified, removed
+
+  @@index([auditEventId])
+  @@index([field])
+
+  @@map("audit_changes")
+}

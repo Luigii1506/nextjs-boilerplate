@@ -162,6 +162,7 @@ const UsersCleanView: React.FC = () => {
   };
 
   const handleChangeRole = async (userId: string, role: User["role"]) => {
+    console.log("123");
     await notify(async () => {
       const result = await updateUserRole(userId, role);
       if (!result.success) {

@@ -15,7 +15,7 @@ export {
   getFeaturesByCategory,
 } from "../../features/feature-flags/config";
 
-export type { FeatureFlag, FeatureCategory } from "../feature-flags/types";
+export type { FeatureFlag, FeatureCategory } from "../../features/feature-flags/types";
 
 // 🌍 Variables de entorno
 export {

@@ -2,11 +2,12 @@
 // ==============================
 // Entry point para componentes UI compartidos
 
-// Placeholder for shared components
-// export { Button } from "./Button";
-// export { Card } from "./Card";
-// export { Input } from "./Input";
-// export { Spinner } from "./Spinner";
+// Basic UI Components
+export { Button } from "./Button";
+export { Card } from "./Card";
+export { Badge } from "./Badge";
+export { Input } from "./Input";
+export { Label } from "./Label";
 
 // 🧭 Navigation Components
 export * from "./HydrationSafeNavItem";

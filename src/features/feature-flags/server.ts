@@ -31,6 +31,7 @@ export const getServerFeatureFlags = unstable_cache(
 
       // 🔄 Merge with static config (DB overrides static)
       const result: Record<string, boolean> = { ...FEATURE_FLAGS };
+
       dbFlags.forEach((flag) => {
         if (flag.key in result) {
           result[flag.key] = flag.enabled;

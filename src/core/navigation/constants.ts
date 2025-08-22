@@ -8,7 +8,7 @@
  * Created: 2025-01-17 - Core navigation system
  */
 
-import { Home, Users, Upload, Sliders } from "lucide-react";
+import { Home, Users, Upload, Sliders, Shield } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 // 🏗️ CORE CONFIG (siempre activo - infraestructura base)
@@ -110,6 +110,19 @@ export const NAVIGATION_REGISTRY: NavigationItem[] = [
     isCore: true, // Admin es parte del core
     category: "admin",
     order: 90,
+  },
+  {
+    id: "audit-trail",
+    href: "/audit",
+    icon: Shield,
+    label: "📊 Audit Trail",
+    description: "Seguimiento y auditoría de actividades",
+    requiresAuth: true,
+    requiredRole: "admin",
+    requiredFeature: "auditTrail",
+    isCore: false, // Es un módulo con feature flag
+    category: "admin",
+    order: 91,
   },
 ];
 

@@ -119,83 +119,6 @@ export const getUserByEmail = async (email: string) => {
   });
 };
 
-// ✏️ Update user role
-export const updateUserRole = async (userId: string, role: string) => {
-  return prisma.user.update({
-    where: { id: userId },
-    data: { role },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      emailVerified: true,
-      image: true,
-      role: true,
-      createdAt: true,
-      updatedAt: true,
-      banned: true,
-      banReason: true,
-      banExpires: true,
-    },
-  });
-};
-
-// 📝 Update user basic data (email, name)
-export const updateUserBasicData = async (
-  userId: string,
-  data: { email?: string; name?: string }
-) => {
-  const updateData: { email?: string; name?: string } = {};
-
-  if (data.email !== undefined) {
-    updateData.email = data.email;
-  }
-
-  if (data.name !== undefined) {
-    updateData.name = data.name;
-  }
-
-  return prisma.user.update({
-    where: { id: userId },
-    data: updateData,
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      emailVerified: true,
-      image: true,
-      role: true,
-      createdAt: true,
-      updatedAt: true,
-      banned: true,
-      banReason: true,
-      banExpires: true,
-    },
-  });
-};
-
-// 🗑️ Delete user by ID
-export const deleteUserById = async (userId: string) => {
-  return prisma.user.delete({
-    where: { id: userId },
-  });
-};
-
-// 🔄 Bulk update users role
-export const bulkUpdateUsersRole = async (
-  userIds: string[],
-  newRole: string
-) => {
-  return prisma.user.updateMany({
-    where: {
-      id: { in: userIds },
-    },
-    data: {
-      role: newRole,
-    },
-  });
-};
-
 // 🏥 Check if user exists
 export const userExists = async (userId: string) => {
   const user = await prisma.user.findUnique({
@@ -221,89 +144,32 @@ export const emailExists = async (email: string, excludeUserId?: string) => {
   return !!user;
 };
 
-// 🚫 Ban user directly in database
-export const banUser = async (
-  userId: string,
-  banReason: string,
-  banExpires?: Date
-) => {
-  return prisma.user.update({
-    where: { id: userId },
-    data: {
-      banned: true,
-      banReason,
-      banExpires,
-    },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      image: true,
-      role: true,
-      banned: true,
-      banReason: true,
-      banExpires: true,
-      createdAt: true,
-      updatedAt: true,
-      emailVerified: true,
-    },
-  });
-};
-
-// ✅ Unban user directly in database
-export const unbanUser = async (userId: string) => {
-  return prisma.user.update({
-    where: { id: userId },
-    data: {
-      banned: false,
-      banReason: null,
-      banExpires: null,
-    },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      image: true,
-      role: true,
-      banned: true,
-      banReason: true,
-      banExpires: true,
-      createdAt: true,
-      updatedAt: true,
-      emailVerified: true,
-    },
-  });
-};
-
 // 📊 Get dashboard statistics
 export const getDashboardStats = async () => {
   const [total, active, banned, admins] = await Promise.all([
     // Total users
     prisma.user.count(),
-    
+
     // Active users (not banned)
     prisma.user.count({
       where: {
-        OR: [
-          { banned: false },
-          { banned: null }
-        ]
-      }
+        OR: [{ banned: false }, { banned: null }],
+      },
     }),
-    
+
     // Banned users
     prisma.user.count({
-      where: { banned: true }
+      where: { banned: true },
     }),
-    
+
     // Admin users (admin + super_admin)
     prisma.user.count({
       where: {
         role: {
-          in: ["admin", "super_admin"]
-        }
-      }
-    })
+          in: ["admin", "super_admin"],
+        },
+      },
+    }),
   ]);
 
   return {
@@ -320,7 +186,7 @@ export const getDashboardStats = async () => {
 export const getRecentUsers = async (limit: number = 5) => {
   return prisma.user.findMany({
     take: limit,
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
     select: {
       id: true,
       email: true,
@@ -335,11 +201,11 @@ export const getRecentUsers = async (limit: number = 5) => {
       banExpires: true,
       sessions: {
         take: 1,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         select: {
           createdAt: true,
-        }
-      }
+        },
+      },
     },
   });
 };
