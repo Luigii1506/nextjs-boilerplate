@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useActionState, useOptimistic, useTransition } from "react";
+import React from "react";
 import {
   Users,
   UserCheck,
@@ -14,59 +14,24 @@ import {
   XCircle,
   RefreshCw,
 } from "lucide-react";
-import { User, UserStats } from "@/shared/types/user";
-import {
-  getDashboardStatsAction,
-  getRecentUsersAction,
-  refreshDashboardAction,
-} from "./dashboard.actions";
-import { useIsEnabled } from "@/features/feature-flags";
+import { useDashboard } from "./dashboard.hooks";
+import { useIsEnabled } from "@/features/admin/feature-flags";
 import { useHydration } from "@/shared/hooks/useHydration";
 
 interface DashboardPageProps {
   onViewChange?: (view: string) => void;
 }
 
-// 🎯 Optimistic State para React 19
-interface OptimisticDashboardState {
-  stats: UserStats | null;
-  recentUsers: User[];
-  isRefreshing: boolean;
-}
-
 export default function DashboardPage({ onViewChange }: DashboardPageProps) {
-  // 🚀 REACT 19: useActionState for dashboard stats
-  const [statsState, statsAction, isStatsLoading] = useActionState(async () => {
-    const result = await getDashboardStatsAction();
-    return result;
-  }, null);
+  // 🪝 Usar el hook personalizado del dashboard
+  const {
+    stats,
+    isLoading,
+    isRefreshing,
+    refresh: handleRefresh,
+  } = useDashboard();
 
-  // 🚀 REACT 19: useActionState for recent users
-  const [usersState, usersAction, isUsersLoading] = useActionState(async () => {
-    const result = await getRecentUsersAction(5);
-    return result;
-  }, null);
-
-  // ⚡ REACT 19: useTransition for refresh
-  const [isRefreshing, startRefresh] = useTransition();
-
-  // 🎯 REACT 19: useOptimistic for instant UI feedback
-  const [optimisticState, setOptimisticState] = useOptimistic(
-    {
-      stats: statsState?.success ? (statsState.data as UserStats) : null,
-      recentUsers: usersState?.success ? (usersState.data as User[]) : [],
-      isRefreshing: false,
-    } as OptimisticDashboardState,
-    (
-      state: OptimisticDashboardState,
-      optimisticValue: Partial<OptimisticDashboardState>
-    ) => ({
-      ...state,
-      ...optimisticValue,
-    })
-  );
-
-  // 🎛️ Feature Flags (Pure Server Actions)
+  // 🎛️ Feature Flags
   const isHydrated = useHydration();
   const isEnabled = useIsEnabled();
   const featureFlags = {
@@ -75,50 +40,15 @@ export default function DashboardPage({ onViewChange }: DashboardPageProps) {
     advancedAnalytics: isEnabled("analytics"),
   };
 
-  // 🔄 Refresh handler with optimistic UI
-  const handleRefresh = async () => {
-    // Optimistic: show refreshing state immediately - WRAPPED IN TRANSITION
-    startRefresh(() => {
-      setOptimisticState({ isRefreshing: true });
-    });
-
-    startRefresh(async () => {
-      try {
-        await refreshDashboardAction();
-        // Reload data after refresh
-        statsAction();
-        usersAction();
-      } finally {
-        // WRAPPED IN TRANSITION
-        startRefresh(() => {
-          setOptimisticState({ isRefreshing: false });
-        });
-      }
-    });
-  };
-
-  // 📊 Computed values from optimistic state
-  const stats = optimisticState.stats || {
+  // 📊 Stats con valores por defecto
+  const dashboardStats = stats || {
     total: 0,
     active: 0,
     banned: 0,
     admins: 0,
   };
 
-  const isLoading = isStatsLoading || isUsersLoading;
-  const loading = isLoading && !optimisticState.stats; // Only show spinner on initial load
-
-  // 🚀 Auto-load data on component mount (React 19 way)
-  React.useEffect(() => {
-    if (!statsState || !usersState) {
-      startRefresh(() => {
-        if (!statsState) statsAction();
-        if (!usersState) usersAction();
-      });
-    }
-  }, [statsAction, usersAction, statsState, usersState, startRefresh]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -142,20 +72,13 @@ export default function DashboardPage({ onViewChange }: DashboardPageProps) {
         {/* 🚀 REACT 19: Refresh button with optimistic UI */}
         <button
           onClick={handleRefresh}
-          disabled={isRefreshing || optimisticState.isRefreshing}
+          disabled={isRefreshing}
           className={`flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed dark:bg-blue-700 dark:hover:bg-blue-600 ${
-            isRefreshing || optimisticState.isRefreshing ? "animate-pulse" : ""
+            isRefreshing ? "animate-pulse" : ""
           }`}
         >
-          <RefreshCw
-            size={18}
-            className={
-              isRefreshing || optimisticState.isRefreshing ? "animate-spin" : ""
-            }
-          />
-          {isRefreshing || optimisticState.isRefreshing
-            ? "Actualizando..."
-            : "Actualizar"}
+          <RefreshCw size={18} className={isRefreshing ? "animate-spin" : ""} />
+          {isRefreshing ? "Actualizando..." : "Actualizar"}
         </button>
       </div>
 
@@ -168,7 +91,7 @@ export default function DashboardPage({ onViewChange }: DashboardPageProps) {
                 Total Usuarios
               </p>
               <p className="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-2">
-                {stats.total}
+                {dashboardStats.total}
               </p>
               <div className="flex items-center mt-2 text-green-600">
                 <TrendingUp className="w-4 h-4 mr-1" />
@@ -188,7 +111,7 @@ export default function DashboardPage({ onViewChange }: DashboardPageProps) {
                 Usuarios Activos
               </p>
               <p className="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-2">
-                {stats.active}
+                {dashboardStats.active}
               </p>
               <div className="flex items-center mt-2 text-green-600">
                 <TrendingUp className="w-4 h-4 mr-1" />
@@ -208,7 +131,7 @@ export default function DashboardPage({ onViewChange }: DashboardPageProps) {
                 Usuarios Baneados
               </p>
               <p className="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-2">
-                {stats.banned}
+                {dashboardStats.banned}
               </p>
               <div className="flex items-center mt-2 text-red-600">
                 <TrendingUp className="w-4 h-4 mr-1 transform rotate-180" />
@@ -228,7 +151,7 @@ export default function DashboardPage({ onViewChange }: DashboardPageProps) {
                 Administradores
               </p>
               <p className="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-2">
-                {stats.admins}
+                {dashboardStats.admins}
               </p>
               <div className="flex items-center mt-2 text-slate-500">
                 <Activity className="w-4 h-4 mr-1" />

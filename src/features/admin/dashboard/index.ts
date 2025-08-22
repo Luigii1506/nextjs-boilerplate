@@ -12,7 +12,7 @@ export { default } from "./dashboard.screen";
 export * from "./components";
 
 // 🎯 Hooks
-export * from "./hooks";
+export * from "./dashboard.hooks";
 
 // 🔧 Server Actions
 export * from "./dashboard.actions";

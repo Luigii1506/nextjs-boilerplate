@@ -1,16 +1,16 @@
 "use client";
 
-import { useActionState, useOptimistic, useTransition } from "react";
+import { useActionState, useOptimistic, useTransition, useEffect } from "react";
 import {
   getDashboardStatsAction,
   getRecentUsersAction,
   refreshDashboardAction,
   getDashboardActivityAction,
-} from "../dashboard.actions";
+} from "./dashboard.actions";
 import {
   DashboardHookState,
   OptimisticDashboardState,
-} from "../dashboard.types";
+} from "./dashboard.types";
 import { User, UserStats } from "@/shared/types/user";
 
 /**
@@ -96,6 +96,16 @@ export function useDashboard(): DashboardHookState {
       activityState?.error ||
       "Error desconocido"
     : null;
+
+  // 🚀 Auto-load data on component mount (igual que tenías en la vista)
+  useEffect(() => {
+    if (!statsState || !usersState) {
+      startRefresh(() => {
+        if (!statsState) statsAction();
+        if (!usersState) usersAction();
+      });
+    }
+  }, [statsAction, usersAction, statsState, usersState, startRefresh]);
 
   return {
     stats: optimisticState.stats,
