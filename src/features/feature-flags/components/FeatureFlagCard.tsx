@@ -24,6 +24,7 @@ import {
   FEATURE_CATEGORIES,
   type FeatureFlagCardProps,
 } from "@/features/feature-flags";
+import { formatDate } from "@/shared/utils";
 
 // 🎨 Category icons and colors
 const CATEGORY_CONFIG = {
@@ -216,14 +217,3 @@ const FeatureFlagCard = React.memo(function FeatureFlagCard({
 });
 
 export default FeatureFlagCard;
-
-// 🕒 Date formatter
-function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat("es-ES", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(date));
-}
