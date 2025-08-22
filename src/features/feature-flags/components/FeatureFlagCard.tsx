@@ -74,7 +74,7 @@ const CATEGORY_CONFIG = {
   },
 } as const;
 
-export default function FeatureFlagCard({
+const FeatureFlagCard = React.memo(function FeatureFlagCard({
   flag,
   onToggle,
   isLoading = false,
@@ -213,7 +213,9 @@ export default function FeatureFlagCard({
       </div>
     </div>
   );
-}
+});
+
+export default FeatureFlagCard;
 
 // 🕒 Date formatter
 function formatDate(date: Date): string {

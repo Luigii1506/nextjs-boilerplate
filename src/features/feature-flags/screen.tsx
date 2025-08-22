@@ -11,18 +11,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import {
-  RefreshCw,
-  Flag,
-  Search,
-  Filter,
-  BarChart3,
-  Settings,
-  Zap,
-  Shield,
-  Package,
-  Beaker,
-} from "lucide-react";
+import { RefreshCw, Flag, Search, BarChart3, Zap, Package } from "lucide-react";
 
 // 🧠 Simplified hooks
 import { useNotifications } from "@/shared/hooks/useNotifications";
@@ -36,14 +25,6 @@ import {
 
 // 🎨 Components
 import FeatureFlagCard from "./components/FeatureFlagCard";
-
-// 🎯 Category icons mapping
-const CATEGORY_ICONS = {
-  core: Shield,
-  module: Package,
-  experimental: Beaker,
-  admin: Settings,
-} as const;
 
 // 🎯 Main component
 export default function FeatureFlagsAdminPage() {
@@ -63,15 +44,30 @@ export default function FeatureFlagsAdminPage() {
     status: "all" as "enabled" | "disabled" | "all",
   });
 
-  // 🔄 Handle toggle with notifications
+  // 🔄 Estado local para loading individual por flag - ANTI-PARPADEO
+  const [loadingFlags, setLoadingFlags] = useState<Set<string>>(new Set());
+
+  // 🔄 Handle toggle with notifications - SIN PARPADEO GLOBAL
   const handleToggle = async (flagKey: string) => {
-    await notify(
-      async () => {
-        await toggleFlag(flagKey);
-      },
-      `Cambiando estado de '${flagKey}'...`,
-      `Feature flag '${flagKey}' actualizado correctamente`
-    );
+    // Marcar solo este flag como loading
+    setLoadingFlags((prev) => new Set([...prev, flagKey]));
+
+    try {
+      await notify(
+        async () => {
+          await toggleFlag(flagKey);
+        },
+        `Cambiando estado de '${flagKey}'...`,
+        `Feature flag '${flagKey}' actualizado correctamente`
+      );
+    } finally {
+      // Quitar el flag del loading cuando termine
+      setLoadingFlags((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(flagKey);
+        return newSet;
+      });
+    }
   };
 
   // 🔄 Handle refresh - Ya no necesario, el contexto se actualiza automáticamente
@@ -333,14 +329,14 @@ export default function FeatureFlagsAdminPage() {
         </div>
       )}
 
-      {/* 🎛️ Feature Flags Grid */}
+      {/* 🎛️ Feature Flags Grid - LOADING INDIVIDUAL */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredFlags.map((flag: FeatureFlagData) => (
           <FeatureFlagCard
             key={flag.key}
             flag={flag}
             onToggle={handleToggle}
-            isLoading={isLoading}
+            isLoading={loadingFlags.has(flag.key)}
           />
         ))}
       </div>
