@@ -29,6 +29,9 @@ export const auditActionSchema = z.enum([
   "toggle",
   "activate",
   "deactivate",
+  "role_change",
+  "ban",
+  "unban",
 ]);
 
 export const auditResourceSchema = z.enum([

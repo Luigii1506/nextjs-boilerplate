@@ -22,6 +22,9 @@ export const AUDIT_ACTIONS: Record<string, AuditAction> = {
   TOGGLE: "toggle",
   ACTIVATE: "activate",
   DEACTIVATE: "deactivate",
+  ROLE_CHANGE: "role_change",
+  BAN: "ban",
+  UNBAN: "unban",
 } as const;
 
 // 🏷️ Action Labels

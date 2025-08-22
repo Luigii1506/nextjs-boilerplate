@@ -29,8 +29,6 @@ export {
   getAuditEventsAction,
   getAuditStatsAction,
   createAuditEventAction,
-  logCreateAction,
-  logUpdateAction,
-  logDeleteAction,
-  logUserActionAction,
+  exportAuditEventsAction,
+  getAuditEventAction,
 } from "./server/actions";
