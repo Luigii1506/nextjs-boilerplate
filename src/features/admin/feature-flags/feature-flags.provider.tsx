@@ -1,11 +1,11 @@
 /**
- * 🪝 FEATURE FLAGS CLIENT HOOKS
- * =============================
+ * 🌐 FEATURE FLAGS PROVIDER
+ * ========================
  *
- * Simple, reactive, broadcast-enabled client hooks.
- * Provides context and utilities for feature flag usage.
+ * React Context Provider para el estado global de feature flags.
+ * Maneja estado, broadcast, y operaciones CRUD.
  *
- * Simple: 2025-01-17 - Client hooks
+ * Simple: 2025-01-17 - Provider separado
  */
 
 "use client";
@@ -20,18 +20,18 @@ import React, {
   useMemo,
 } from "react";
 import { useFeatureFlagsBroadcast } from "@/shared/hooks/useBroadcast";
-import { FEATURE_FLAGS } from "./config";
+import { FEATURE_FLAGS } from "./feature-flags.config";
 import {
   getFeatureFlagsAction,
   toggleFeatureFlagAction,
   batchUpdateFeatureFlagsAction,
-} from "./actions";
+} from "./feature-flags.actions";
 import type {
   FeatureFlag,
   FeatureFlagData,
   FeatureFlagsContextType,
   FeatureFlagBatchUpdate,
-} from "./types";
+} from "./feature-flags.types";
 
 // 🎯 Context
 const FeatureFlagsContext = createContext<FeatureFlagsContextType | null>(null);
@@ -181,92 +181,13 @@ export function FeatureFlagsProvider({ children }: { children: ReactNode }) {
   return React.createElement(FeatureFlagsContext.Provider, { value }, children);
 }
 
-// 🪝 Main hook
-export function useFeatureFlags() {
+// 🪝 Context hook (base hook)
+export function useFeatureFlagsContext() {
   const context = useContext(FeatureFlagsContext);
   if (!context) {
-    throw new Error("useFeatureFlags must be used within FeatureFlagsProvider");
+    throw new Error(
+      "useFeatureFlagsContext must be used within FeatureFlagsProvider"
+    );
   }
   return context;
-}
-
-// 🎯 Simple checker hook (most common use case)
-export function useIsEnabled() {
-  const { isEnabled } = useFeatureFlags();
-  return isEnabled;
-}
-
-// 🔄 Toggle hook
-export function useToggleFlag() {
-  const { toggleFlag } = useFeatureFlags();
-  return toggleFlag;
-}
-
-// 📊 Flags data hook
-export function useFeatureFlagsData() {
-  const { flags, isLoading, error, refreshFlags } = useFeatureFlags();
-  return { flags, isLoading, error, refreshFlags };
-}
-
-// 🎯 Single flag hook
-export function useFeatureFlag(flagKey: FeatureFlag) {
-  const { isEnabled, flags } = useFeatureFlags();
-
-  return useMemo(
-    () => ({
-      enabled: isEnabled(flagKey),
-      data: flags.find((flag) => flag.key === flagKey),
-    }),
-    [isEnabled, flags, flagKey]
-  );
-}
-
-// 📊 Category hook
-export function useFeatureFlagsByCategory(category: string) {
-  const { flags } = useFeatureFlags();
-  return useMemo(
-    () => flags.filter((flag) => flag.category === category),
-    [flags, category]
-  );
-}
-
-// 🔄 Batch operations hook
-export function useBatchFeatureFlags() {
-  const { refreshFlags } = useFeatureFlags();
-
-  const batchUpdateFlags = useCallback(
-    async (updates: FeatureFlagBatchUpdate[]) => {
-      try {
-        const result = await batchUpdateFeatureFlagsAction(updates);
-        if (result.success) {
-          await refreshFlags();
-        }
-        return result;
-      } catch (error) {
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : "Unknown error",
-        };
-      }
-    },
-    [refreshFlags]
-  );
-
-  const enableAll = useCallback(
-    async (flagKeys: string[]) => {
-      const updates = flagKeys.map((key) => ({ key, enabled: true }));
-      return batchUpdateFlags(updates);
-    },
-    [batchUpdateFlags]
-  );
-
-  const disableAll = useCallback(
-    async (flagKeys: string[]) => {
-      const updates = flagKeys.map((key) => ({ key, enabled: false }));
-      return batchUpdateFlags(updates);
-    },
-    [batchUpdateFlags]
-  );
-
-  return { batchUpdateFlags, enableAll, disableAll };
 }

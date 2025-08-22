@@ -19,7 +19,7 @@ import React from "react";
 import Link from "next/link";
 import { LucideIcon } from "lucide-react";
 import { useHydrationWithDependencies } from "@/shared/hooks/useHydration";
-import { useIsEnabled } from "@/core/feature-flags";
+import { useIsEnabled } from "@/features/admin/feature-flags";
 
 interface HydrationSafeNavItemProps {
   /** Ruta de navegación */

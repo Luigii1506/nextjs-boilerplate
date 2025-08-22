@@ -32,7 +32,7 @@ import {
   FEATURE_CATEGORIES,
   type FeatureFlagData,
   type FeatureCategory,
-} from "@/core/feature-flags";
+} from "@/features/admin/feature-flags";
 
 // 🎨 Components
 import FeatureFlagCard from "./components/FeatureFlagCard";
@@ -88,7 +88,7 @@ export default function FeatureFlagsAdminPage() {
 
   // 🔍 Filtered flags - Solo mostrar categorías "module" y "ui"
   const filteredFlags = useMemo(() => {
-    return flags.filter((flag) => {
+    return flags.filter((flag: FeatureFlagData) => {
       // 🎯 FILTRO PRINCIPAL: Solo mostrar flags de categorías "module" y "ui"
       if (flag.category !== "module" && flag.category !== "ui") {
         return false;
@@ -149,11 +149,14 @@ export default function FeatureFlagsAdminPage() {
   // 📊 Statistics - Para categorías "module" y "ui"
   const stats = useMemo(() => {
     const total = filteredFlags.length;
-    const enabled = filteredFlags.filter((f) => f.enabled).length;
+    const enabled = filteredFlags.filter(
+      (f: FeatureFlagData) => f.enabled
+    ).length;
     const disabled = total - enabled;
     const byCategory = {
-      module: flags.filter((f) => f.category === "module").length,
-      ui: flags.filter((f) => f.category === "ui").length,
+      module: flags.filter((f: FeatureFlagData) => f.category === "module")
+        .length,
+      ui: flags.filter((f: FeatureFlagData) => f.category === "ui").length,
     };
 
     return { total, enabled, disabled, byCategory };
@@ -326,7 +329,7 @@ export default function FeatureFlagsAdminPage() {
 
       {/* 🎛️ Feature Flags Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredFlags.map((flag) => (
+        {filteredFlags.map((flag: FeatureFlagData) => (
           <FeatureFlagCard
             key={flag.key}
             flag={flag}

@@ -8,7 +8,7 @@
  * Simple: 2025-01-17 - Unified types
  */
 
-import { FEATURE_FLAGS, FEATURE_CATEGORIES } from "./config";
+import { FEATURE_FLAGS, FEATURE_CATEGORIES } from "./feature-flags.config";
 
 // 🎯 Core types
 export type FeatureFlag = keyof typeof FEATURE_FLAGS;
@@ -78,4 +78,3 @@ export interface FeatureFlagFilters {
   category: FeatureCategory | "all";
   status: "enabled" | "disabled" | "all";
 }
-

@@ -1,7 +1,7 @@
 export const runtime = "nodejs";
 
 import { notFound } from "next/navigation";
-import { isServerFeatureEnabled } from "@/core/feature-flags/server";
+import { isServerFeatureEnabled } from "@/features/server";
 import { AdminFilesScreen } from "@/modules/file-upload";
 
 export default async function FilesPage() {

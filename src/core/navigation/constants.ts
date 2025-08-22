@@ -31,7 +31,7 @@ export const NAVIGATION_CORE_CONFIG = {
 export type UserRole = "user" | "admin" | "super_admin";
 
 // 🎛️ Feature Flag Types (usar los del sistema)
-import type { FeatureFlag as SystemFeatureFlag } from "../feature-flags";
+import type { FeatureFlag as SystemFeatureFlag } from "../../features/feature-flags";
 export type FeatureFlag = SystemFeatureFlag | null;
 
 // 🧭 Navigation Item Interface

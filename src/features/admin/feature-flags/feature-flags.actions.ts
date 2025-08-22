@@ -10,19 +10,18 @@
 
 "use server";
 
-import { revalidateTag } from "next/cache";
 import { prisma } from "@/core/database/prisma";
 import { requireAuth } from "@/core/auth/server";
 import {
   getFeatureFlagsWithMetadata,
   invalidateFeatureFlagsCache,
-} from "./server";
+} from "./feature-flags.server";
 import type {
   FeatureFlagActionResult,
   FeatureFlagData,
   FeatureFlagBatchUpdate,
   FeatureFlagBatchResult,
-} from "./types";
+} from "./feature-flags.types";
 
 // 🛡️ Auth helper
 async function requireAdminAuth() {

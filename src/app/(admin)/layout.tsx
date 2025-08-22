@@ -4,7 +4,7 @@ import { requireAuth } from "@/core/auth/server";
 import { ROLE_INFO } from "@/core/auth/permissions";
 import type { SessionUser } from "@/shared/types/user";
 import AdminLayout from "@/shared/ui/layouts/AdminLayout";
-import { FeatureFlagsProvider } from "@/core/feature-flags";
+import { FeatureFlagsProvider } from "@/features/admin/feature-flags";
 
 export const runtime = "nodejs";
 

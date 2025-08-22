@@ -23,7 +23,7 @@ import {
 import {
   FEATURE_CATEGORIES,
   type FeatureFlagCardProps,
-} from "@/core/feature-flags";
+} from "@/features/admin/feature-flags";
 
 // 🎨 Category icons and colors
 const CATEGORY_CONFIG = {

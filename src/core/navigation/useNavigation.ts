@@ -15,7 +15,7 @@
 
 import { useMemo, useEffect, useReducer } from "react";
 import { usePathname } from "next/navigation";
-import { useIsEnabled } from "@/core/feature-flags";
+import { useIsEnabled } from "@/features/admin/feature-flags";
 import { useFeatureFlagsBroadcast } from "@/shared/hooks/useBroadcast";
 import {
   NAVIGATION_REGISTRY,
