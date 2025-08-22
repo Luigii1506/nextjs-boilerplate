@@ -3,24 +3,28 @@
  * =============================
  *
  * Componente hermoso y funcional para cambiar entre modo claro y oscuro.
+ * Actualizado para usar next-themes con feature flag integration.
  *
  * Features:
  * - ✅ Animaciones suaves
  * - ✅ Iconos dinámicos (Sol/Luna)
  * - ✅ Tooltip informativo
  * - ✅ Feature flag integration
+ * - ✅ next-themes integration
+ * - ✅ Zero FOUC
  * - ✅ Accessibility compliant
  * - ✅ Responsive design
  *
- * Created: 2025-01-17 - Dark mode implementation
+ * Updated: 2025-01-22 - Migrated to next-themes
  */
 
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Sun, Moon } from "lucide-react";
+import { useTheme } from "next-themes";
+import { useFeatureFlags } from "@/features/feature-flags";
 import { cn } from "@/shared/utils";
-import { useDarkMode } from "@/shared/hooks";
 
 // 🎯 Types
 interface DarkModeToggleProps {
@@ -48,12 +52,10 @@ const SIZE_CONFIG = {
     icon: "w-6 h-6",
     text: "text-base",
   },
-} as const;
+};
 
 /**
  * 🌙 DarkModeToggle Component
- *
- * Componente para alternar entre modo claro y oscuro
  */
 export function DarkModeToggle({
   size = "md",
@@ -62,208 +64,123 @@ export function DarkModeToggle({
   className,
   disabled = false,
 }: DarkModeToggleProps) {
-  const { isDarkMode, isEnabled, toggle } = useDarkMode();
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { isEnabled } = useFeatureFlags();
+  const [mounted, setMounted] = useState(false);
+  const isDarkModeFeatureEnabled = isEnabled("darkMode");
 
-  // 🚫 No renderizar si el feature flag está desactivado
-  if (!isEnabled) {
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Don't render if feature is disabled or not mounted
+  if (!mounted || !isDarkModeFeatureEnabled) {
     return null;
   }
 
-  const sizeConfig = SIZE_CONFIG[size];
-  const isDisabled = disabled || !isEnabled;
+  const isDark = resolvedTheme === "dark";
+  const isSystemTheme = theme === "system";
 
-  // 🎨 Button variant
-  if (variant === "button") {
+  const toggle = () => {
+    if (disabled) return;
+    // Force explicit theme, not system
+    setTheme(isDark ? "light" : "dark");
+  };
+
+  const getTooltipText = () => {
+    if (isSystemTheme) {
+      return `Tema del sistema (${isDark ? "oscuro" : "claro"})`;
+    }
+    return isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro";
+  };
+
+  if (variant === "icon") {
     return (
-      <div className="relative group">
-        <button
-          onClick={toggle}
-          disabled={isDisabled}
-          className={cn(
-            // Base styles
-            "relative rounded-lg transition-all duration-300 ease-in-out",
-            "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
-            "disabled:opacity-50 disabled:cursor-not-allowed",
-
-            // Size
-            sizeConfig.button,
-
-            // Colors - Light mode
-            "bg-slate-100 hover:bg-slate-200 text-slate-700",
-            "border border-slate-200 hover:border-slate-300",
-
-            // Colors - Dark mode
-            "dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300",
-            "dark:border-slate-700 dark:hover:border-slate-600",
-
-            // Animation
-            "transform hover:scale-105 active:scale-95",
-
-            className
-          )}
-          aria-label={
-            isDarkMode ? "Cambiar a modo claro" : "Cambiar a modo oscuro"
-          }
-          title={
-            showTooltip
-              ? isDarkMode
-                ? "Modo claro"
-                : "Modo oscuro"
-              : undefined
-          }
-        >
-          {/* Icon with rotation animation */}
-          <div className="relative flex items-center justify-center">
-            <Sun
-              className={cn(
-                sizeConfig.icon,
-                "absolute transition-all duration-500 ease-in-out",
-                isDarkMode
-                  ? "opacity-0 rotate-90 scale-0"
-                  : "opacity-100 rotate-0 scale-100"
-              )}
-            />
-            <Moon
-              className={cn(
-                sizeConfig.icon,
-                "absolute transition-all duration-500 ease-in-out",
-                isDarkMode
-                  ? "opacity-100 rotate-0 scale-100"
-                  : "opacity-0 -rotate-90 scale-0"
-              )}
-            />
-          </div>
-        </button>
-
-        {/* Tooltip */}
-        {showTooltip && (
-          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-slate-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-            {isDarkMode ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
-            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-900"></div>
-          </div>
+      <button
+        onClick={toggle}
+        disabled={disabled}
+        className={cn(
+          "rounded-md transition-colors duration-200",
+          "hover:bg-gray-100 dark:hover:bg-gray-800",
+          "focus:outline-none focus:ring-2 focus:ring-blue-500",
+          SIZE_CONFIG[size].button,
+          disabled && "opacity-50 cursor-not-allowed",
+          className
         )}
-      </div>
+        title={showTooltip ? getTooltipText() : undefined}
+        aria-label={getTooltipText()}
+      >
+        {isDark ? (
+          <Sun className={cn(SIZE_CONFIG[size].icon, "text-yellow-500")} />
+        ) : (
+          <Moon className={cn(SIZE_CONFIG[size].icon, "text-blue-600")} />
+        )}
+      </button>
     );
   }
 
-  // 🎛️ Switch variant
   if (variant === "switch") {
     return (
-      <div className="relative group">
-        <button
-          onClick={toggle}
-          disabled={isDisabled}
-          className={cn(
-            "relative inline-flex items-center rounded-full transition-all duration-300 ease-in-out",
-            "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
-            "disabled:opacity-50 disabled:cursor-not-allowed",
-
-            // Size based on size prop
-            size === "sm"
-              ? "h-6 w-11"
-              : size === "lg"
-              ? "h-8 w-14"
-              : "h-7 w-12",
-
-            // Colors
-            isDarkMode
-              ? "bg-blue-600 hover:bg-blue-700"
-              : "bg-slate-300 hover:bg-slate-400",
-
-            className
-          )}
-          aria-label={
-            isDarkMode ? "Cambiar a modo claro" : "Cambiar a modo oscuro"
-          }
-          title={
-            showTooltip
-              ? isDarkMode
-                ? "Modo claro"
-                : "Modo oscuro"
-              : undefined
-          }
-        >
-          {/* Switch knob */}
-          <span
-            className={cn(
-              "inline-block rounded-full bg-white shadow-lg transform transition-all duration-300 ease-in-out",
-
-              // Size
-              size === "sm" ? "h-4 w-4" : size === "lg" ? "h-6 w-6" : "h-5 w-5",
-
-              // Position
-              isDarkMode
-                ? size === "sm"
-                  ? "translate-x-6"
-                  : size === "lg"
-                  ? "translate-x-8"
-                  : "translate-x-7"
-                : "translate-x-1",
-
-              // Icon container
-              "flex items-center justify-center"
-            )}
-          >
-            {/* Mini icons in switch */}
-            <Sun
-              className={cn(
-                size === "sm"
-                  ? "w-2 h-2"
-                  : size === "lg"
-                  ? "w-3 h-3"
-                  : "w-2.5 h-2.5",
-                "text-yellow-500 transition-opacity duration-300",
-                isDarkMode ? "opacity-0" : "opacity-100"
-              )}
-            />
-            <Moon
-              className={cn(
-                size === "sm"
-                  ? "w-2 h-2"
-                  : size === "lg"
-                  ? "w-3 h-3"
-                  : "w-2.5 h-2.5",
-                "text-blue-600 absolute transition-opacity duration-300",
-                isDarkMode ? "opacity-100" : "opacity-0"
-              )}
-            />
-          </span>
-        </button>
-
-        {/* Tooltip for switch */}
-        {showTooltip && (
-          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-slate-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-            {isDarkMode ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
-            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-900"></div>
-          </div>
+      <label
+        className={cn(
+          "relative inline-flex items-center cursor-pointer",
+          disabled && "opacity-50 cursor-not-allowed"
         )}
-      </div>
+        title={showTooltip ? getTooltipText() : undefined}
+      >
+        <input
+          type="checkbox"
+          checked={isDark}
+          onChange={toggle}
+          disabled={disabled}
+          className="sr-only"
+          aria-label={getTooltipText()}
+        />
+        <div
+          className={cn(
+            "w-11 h-6 bg-gray-200 rounded-full peer",
+            "peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300",
+            "dark:peer-focus:ring-blue-800 dark:bg-gray-700",
+            "peer-checked:after:translate-x-full peer-checked:after:border-white",
+            "after:content-[''] after:absolute after:top-[2px] after:left-[2px]",
+            "after:bg-white after:border-gray-300 after:border after:rounded-full",
+            "after:h-5 after:w-5 after:transition-all dark:border-gray-600",
+            "peer-checked:bg-blue-600"
+          )}
+        />
+        <Moon className="absolute left-1 top-1 w-4 h-4 text-gray-400" />
+        <Sun className="absolute right-1 top-1 w-4 h-4 text-yellow-400" />
+      </label>
     );
   }
 
-  // 🎯 Icon variant (minimal)
+  // Default button variant
   return (
     <button
       onClick={toggle}
-      disabled={isDisabled}
+      disabled={disabled}
       className={cn(
-        "p-2 rounded-lg transition-all duration-200 ease-in-out",
-        "text-slate-600 hover:text-slate-900 hover:bg-slate-100",
-        "dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800",
-        "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
-        "disabled:opacity-50 disabled:cursor-not-allowed",
+        "inline-flex items-center gap-2 px-3 py-2 rounded-lg",
+        "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700",
+        "hover:bg-gray-50 dark:hover:bg-gray-700",
+        "focus:outline-none focus:ring-2 focus:ring-blue-500",
+        "transition-all duration-200 shadow-sm",
+        SIZE_CONFIG[size].text,
+        disabled && "opacity-50 cursor-not-allowed",
         className
       )}
-      aria-label={isDarkMode ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
-      title={
-        showTooltip ? (isDarkMode ? "Modo claro" : "Modo oscuro") : undefined
-      }
+      title={showTooltip ? getTooltipText() : undefined}
+      aria-label={getTooltipText()}
     >
-      {isDarkMode ? (
-        <Sun className={sizeConfig.icon} />
+      {isDark ? (
+        <Sun className={cn(SIZE_CONFIG[size].icon, "text-yellow-500")} />
       ) : (
-        <Moon className={sizeConfig.icon} />
+        <Moon className={cn(SIZE_CONFIG[size].icon, "text-blue-600")} />
       )}
+      <span className="text-gray-700 dark:text-gray-300">
+        {isDark ? "Claro" : "Oscuro"}
+      </span>
     </button>
   );
 }

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "../styles/globals.css";
-// Feature flags provider removed - only used in admin layout
 import { NotificationProvider } from "@/shared/providers/NotificationProvider";
+import { ThemeProvider } from "@/shared/providers/ThemeProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,23 +25,26 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
       >
-        <NotificationProvider
-          theme="system"
-          visibleToasts={5}
-          config={{
-            position: "top-right",
-            richColors: true,
-            closeButton: true,
-            dismissible: true,
-            pauseWhenPageIsHidden: true,
-          }}
-        >
-          {children}
-        </NotificationProvider>
+        <ThemeProvider>
+          <NotificationProvider
+            theme="system"
+            visibleToasts={5}
+            config={{
+              position: "top-right",
+              richColors: true,
+              closeButton: true,
+              dismissible: true,
+              pauseWhenPageIsHidden: true,
+            }}
+          >
+            {children}
+          </NotificationProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
