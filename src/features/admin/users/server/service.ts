@@ -279,7 +279,10 @@ export class UserService {
               newRole: roleChanges[0].newValue,
               source: "admin_panel",
             },
-            changes: roleChanges,
+            changes: roleChanges.map((change) => ({
+              ...change,
+              type: "modified" as const,
+            })),
           },
           requestInfo
         );
@@ -331,10 +334,10 @@ export class UserService {
       },
     });
 
-    // 📊 AUDIT: Log role change (CRITICAL security event)
     try {
       const { service: auditService, requestInfo } =
         await createAuditServiceWithHeaders();
+
       await auditService.createAuditEvent(
         {
           action: "role_change",
@@ -361,7 +364,10 @@ export class UserService {
         requestInfo
       );
     } catch (auditError) {
-      console.error("Error logging role change audit:", auditError);
+      console.error(
+        "❌ AUDIT DEBUG - Error logging role change audit:",
+        auditError
+      );
     }
 
     return userMappers.roleUpdateResultToUser(updatedUser);
