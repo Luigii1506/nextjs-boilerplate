@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getServerFeatureFlags } from "@/features/admin/feature-flags/feature-flags.server";
+import { getServerFeatureFlags } from "@/features/feature-flags/server";
 
 // Rutas que requieren autenticación
 const protectedRoutes = [

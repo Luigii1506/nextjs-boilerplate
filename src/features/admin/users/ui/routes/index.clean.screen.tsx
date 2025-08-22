@@ -10,7 +10,7 @@ import {
   Shield,
   RefreshCw,
 } from "lucide-react";
-import { useUsers } from "../../hooks/useUsers";
+import { useUsers } from "../../useUsers";
 import { CreateUserForm, User } from "../../types";
 import UserCard from "@/features/admin/users/ui/components/UserCard";
 import UserModal from "@/features/admin/users/ui/components/UserModal";

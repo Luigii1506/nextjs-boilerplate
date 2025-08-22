@@ -32,7 +32,7 @@ import {
   FEATURE_CATEGORIES,
   type FeatureFlagData,
   type FeatureCategory,
-} from "@/features/admin/feature-flags";
+} from "@/features/feature-flags";
 
 // 🎨 Components
 import FeatureFlagCard from "./components/FeatureFlagCard";

@@ -15,13 +15,13 @@ import { requireAuth } from "@/core/auth/server";
 import {
   getFeatureFlagsWithMetadata,
   invalidateFeatureFlagsCache,
-} from "./feature-flags.server";
+} from "./server";
 import type {
   FeatureFlagActionResult,
   FeatureFlagData,
   FeatureFlagBatchUpdate,
   FeatureFlagBatchResult,
-} from "./feature-flags.types";
+} from "./types";
 
 // 🛡️ Auth helper
 async function requireAdminAuth() {

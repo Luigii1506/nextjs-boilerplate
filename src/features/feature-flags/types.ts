@@ -8,7 +8,7 @@
  * Simple: 2025-01-17 - Unified types
  */
 
-import { FEATURE_FLAGS, FEATURE_CATEGORIES } from "./feature-flags.config";
+import { FEATURE_FLAGS, FEATURE_CATEGORIES } from "./config";
 
 // 🎯 Core types
 export type FeatureFlag = keyof typeof FEATURE_FLAGS;

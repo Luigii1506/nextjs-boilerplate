@@ -9,8 +9,8 @@
  */
 
 // 🏗️ Core Hooks (Enterprise Enhanced)
-export { useUsers } from "./hooks/useUsers";
-export type { UseUsersReturn } from "./hooks/useUsers";
+export { useUsers } from "./useUsers";
+export type { UseUsersReturn } from "./useUsers";
 
 // 📝 Types & Interfaces (Enhanced)
 export * from "./types";

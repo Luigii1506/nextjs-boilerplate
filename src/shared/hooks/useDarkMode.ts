@@ -15,7 +15,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useFeatureFlags } from "@/features/admin/feature-flags";
+import { useFeatureFlags } from "@/features/feature-flags";
 
 // 🎯 Constants
 const STORAGE_KEY = "darkMode";

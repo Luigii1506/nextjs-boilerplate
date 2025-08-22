@@ -3,8 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { User, UserStats } from "@/shared/types/user";
 import { ActionResult } from "@/features/admin/users/types";
-import * as userQueries from "@/features/admin/users/server/queries/user.queries";
-import * as userMappers from "@/features/admin/users/server/mappers/user.mappers";
+import * as userQueries from "@/features/admin/users/server/queries";
+import * as userMappers from "@/features/admin/users/server/mappers";
 
 /**
  * 📊 DASHBOARD SERVER ACTIONS
@@ -20,7 +20,7 @@ export async function getDashboardStatsAction(): Promise<
   try {
     // 📊 Obtener estadísticas reales de la base de datos
     const rawStats = await userQueries.getDashboardStats();
-    
+
     // 🔄 Transformar datos usando mapper
     const stats = userMappers.mapDashboardStats(rawStats);
 
@@ -44,7 +44,7 @@ export async function getRecentUsersAction(
   try {
     // 👥 Obtener usuarios recientes reales de la base de datos
     const rawRecentUsers = await userQueries.getRecentUsers(limit);
-    
+
     // 🔄 Transformar datos usando mapper
     const recentUsers = userMappers.mapRecentUsers(rawRecentUsers);
 

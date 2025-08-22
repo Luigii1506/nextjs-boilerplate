@@ -1,6 +1,6 @@
 import React from "react";
 import { Users, Shield, Sliders } from "lucide-react";
-import { QuickAction } from "../dashboard.types";
+import { QuickAction } from "../types";
 
 /**
  * 🚀 COMPONENTE DE ACCIONES RÁPIDAS

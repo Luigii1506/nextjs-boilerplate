@@ -14,8 +14,8 @@ import {
   XCircle,
   RefreshCw,
 } from "lucide-react";
-import { useDashboard } from "./dashboard.hooks";
-import { useIsEnabled } from "@/features/admin/feature-flags";
+import { useDashboard } from "./hooks";
+import { useIsEnabled } from "@/features/feature-flags";
 import { useHydration } from "@/shared/hooks/useHydration";
 
 interface DashboardPageProps {

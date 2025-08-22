@@ -8,9 +8,9 @@
  * Updated: 2025-01-17 - Enterprise patterns v2.0
  */
 
-import { USERS_ACTIONS } from "../constants";
-import { usersOptimisticLogger } from "../utils/logger";
-import type { User } from "../types";
+import { USERS_ACTIONS } from "./constants";
+import { usersOptimisticLogger } from "./utils/logger";
+import type { User } from "./types";
 
 // 🎯 Optimistic State Interface
 export interface UsersOptimisticState {

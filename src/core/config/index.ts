@@ -13,7 +13,7 @@ export {
   isFeatureEnabled,
   getEnabledFeatures,
   getFeaturesByCategory,
-} from "../../features/admin/feature-flags/feature-flags.config";
+} from "../../features/feature-flags/config";
 
 export type { FeatureFlag, FeatureCategory } from "../feature-flags/types";
 

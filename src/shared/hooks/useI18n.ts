@@ -16,7 +16,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { useFeatureFlags } from "@/features/admin/feature-flags";
+import { useFeatureFlags } from "@/features/feature-flags";
 import {
   Language,
   DEFAULT_LANGUAGE,

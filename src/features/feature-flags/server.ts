@@ -10,12 +10,8 @@
 
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/core/database/prisma";
-import { FEATURE_FLAGS, getFeatureCategory } from "./feature-flags.config";
-import type {
-  FeatureFlag,
-  FeatureFlagData,
-  FeatureCategory,
-} from "./feature-flags.types";
+import { FEATURE_FLAGS, getFeatureCategory } from "./config";
+import type { FeatureFlag, FeatureFlagData, FeatureCategory } from "./types";
 
 // 🗄️ Cache configuration
 const CACHE_CONFIG = {

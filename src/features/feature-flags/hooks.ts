@@ -11,12 +11,9 @@
 "use client";
 
 import { useMemo, useCallback } from "react";
-import { useFeatureFlagsContext } from "./feature-flags.provider";
-import { batchUpdateFeatureFlagsAction } from "./feature-flags.actions";
-import type {
-  FeatureFlag,
-  FeatureFlagBatchUpdate,
-} from "./feature-flags.types";
+import { useFeatureFlagsContext } from "./provider";
+import { batchUpdateFeatureFlagsAction } from "./actions";
+import type { FeatureFlag, FeatureFlagBatchUpdate } from "./types";
 
 // 🎯 Hook principal - acceso completo al contexto
 export function useFeatureFlags() {

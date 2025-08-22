@@ -11,15 +11,12 @@
  */
 
 import { revalidateTag, revalidatePath } from "next/cache";
-import { createUserService } from "../services/user.service";
-import * as schemas from "../../schemas";
-import * as validators from "../validators/user.validators";
-import {
-  usersServerActionLogger,
-  usersSecurityLogger,
-} from "../../utils/logger";
-import { USERS_CACHE_TAGS } from "../../constants";
-import type { ActionResult, UserListResponse, User } from "../../types";
+import { createUserService } from "./service";
+import * as schemas from "../schemas";
+import * as validators from "./validators";
+import { usersServerActionLogger, usersSecurityLogger } from "../utils/logger";
+import { USERS_CACHE_TAGS } from "../constants";
+import type { ActionResult, UserListResponse, User } from "../types";
 
 // 📊 GET ALL USERS (Enterprise Server Action)
 export async function getAllUsersAction(

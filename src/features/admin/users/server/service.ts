@@ -1,10 +1,10 @@
 import { auth } from "@/core/auth/server";
 import { headers } from "next/headers";
-import * as userQueries from "../queries/user.queries";
-import * as userValidators from "../validators/user.validators";
-import { ValidationError } from "../validators/user.validators";
-import * as userMappers from "../mappers";
-import type { User } from "../../types";
+import * as userQueries from "./queries";
+import * as userValidators from "./validators";
+import { ValidationError } from "./validators";
+import * as userMappers from "./mappers";
+import type { User } from "../types";
 
 // 🏢 USER SERVICE
 // ===============

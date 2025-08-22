@@ -1,4 +1,4 @@
-import type { User, UserListResponse } from "../../types";
+import type { User, UserListResponse } from "../types";
 
 // 🔄 USER MAPPERS
 // ===============
@@ -213,7 +213,7 @@ export const mapRecentUsers = (
     sessions: Array<{ createdAt: Date }>;
   }>
 ): User[] => {
-  return users.map(user => ({
+  return users.map((user) => ({
     id: user.id,
     name: user.name,
     email: user.email,

@@ -6,13 +6,13 @@
 export * from "./actions";
 
 // 🏢 Services
-export * from "./services/user.service";
+export * from "./service";
 
 // 🗃️ Queries
-export * from "./queries/user.queries";
+export * from "./queries";
 
 // 🛡️ Validators
-export * from "./validators/user.validators";
+export * from "./validators";
 
 // 🔄 Mappers
 export * from "./mappers";

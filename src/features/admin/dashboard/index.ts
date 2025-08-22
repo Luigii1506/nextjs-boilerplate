@@ -6,16 +6,16 @@
  */
 
 // 🏠 Página principal (screen)
-export { default } from "./dashboard.screen";
+export { default } from "./screen";
 
 // 🧩 Componentes
 export * from "./components";
 
 // 🎯 Hooks
-export * from "./dashboard.hooks";
+export * from "./hooks";
 
 // 🔧 Server Actions
-export * from "./dashboard.actions";
+export * from "./actions";
 
 // 📝 Tipos
-export * from "./dashboard.types";
+export * from "./types";

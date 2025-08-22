@@ -17,20 +17,20 @@ import {
   useTransition,
   useEffect,
 } from "react";
-import { USERS_ACTIONS } from "../constants";
-import { usersHookLogger, usersSecurityLogger } from "../utils/logger";
+import { USERS_ACTIONS } from "./constants";
+import { usersHookLogger, usersSecurityLogger } from "./utils/logger";
 import {
   usersConfig,
   adaptConfigForHook,
   type UsersModuleConfig,
-} from "../config";
+} from "./config";
 import {
   usersOptimisticReducer,
   createInitialUsersOptimisticState,
   usersOptimisticSelectors,
   type UsersOptimisticState,
-} from "../reducers";
-import * as serverActions from "../server/actions";
+} from "./reducers";
+import * as serverActions from "./server/actions";
 import type {
   User,
   CreateUserForm,
@@ -39,8 +39,8 @@ import type {
   UserListResponse,
   ActionResult,
   BulkUpdateData,
-} from "../types";
-import { generateTempUserId } from "../utils";
+} from "./types";
+import { generateTempUserId } from "./utils";
 
 // 🎯 Hook Configuration Interface
 interface UseUsersConfig extends Partial<UsersModuleConfig> {
@@ -738,7 +738,7 @@ export const useUsers = (userConfig?: UseUsersConfig): UseUsersReturn => {
       configSummary: usersConfig.getSummary(),
 
       // 📊 Debug Info (Development only)
-      ...(process.env.NODE_ENV === 'development' && {
+      ...(process.env.NODE_ENV === "development" && {
         debug: {
           hasInitialized: hasInitialized.current,
           optimisticState,

@@ -1,6 +1,6 @@
 export const runtime = "nodejs";
 
-import FeatureFlagsAdmin from "@/features/admin/feature-flags/feature-flags.screen";
+import FeatureFlagsAdmin from "@/features/feature-flags/screen";
 // Si quieres un gate adicional por rol en esta página (además del layout):
 // import { requireAuth } from "@/core/auth/server";
 // import { ROLE_HIERARCHY } from "@/core/auth/config/permissions";

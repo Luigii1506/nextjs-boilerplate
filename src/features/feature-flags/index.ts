@@ -6,7 +6,7 @@
  */
 
 // 🏠 Página principal
-export { default } from "./feature-flags.screen";
+export { default } from "./screen";
 
 // 🧩 Componentes
 export * from "./components";
@@ -29,7 +29,7 @@ export {
   isFeatureEnabled,
   getEnabledFeatures,
   getFeaturesByCategory,
-} from "./feature-flags.config";
+} from "./config";
 
 // 🎯 Types
 export type {
@@ -43,13 +43,10 @@ export type {
   FeatureFlagBroadcastData,
   FeatureFlagsContextType,
   FeatureFlagFilters,
-} from "./feature-flags.types";
+} from "./types";
 
 // 🪝 Provider
-export {
-  FeatureFlagsProvider,
-  useFeatureFlagsContext,
-} from "./feature-flags.provider";
+export { FeatureFlagsProvider, useFeatureFlagsContext } from "./provider";
 
 // 🪝 Client hooks (from hooks folder)
 export {
@@ -60,7 +57,7 @@ export {
   useFeatureFlagsData,
   useFeatureFlagsByCategory,
   useBatchFeatureFlags,
-} from "./feature-flags.hooks";
+} from "./hooks";
 
 // 🏢 Server utilities
 export {
@@ -70,7 +67,7 @@ export {
   getFeatureFlagsWithMetadata,
   invalidateFeatureFlagsCache,
   FeatureFlagsDebug,
-} from "./feature-flags.server";
+} from "./server";
 
 // 🚀 Server actions
 export {
@@ -80,4 +77,4 @@ export {
   batchUpdateFeatureFlagsAction,
   deleteFeatureFlagAction,
   refreshFeatureFlagsCacheAction,
-} from "./feature-flags.actions";
+} from "./actions";

@@ -20,18 +20,18 @@ import React, {
   useMemo,
 } from "react";
 import { useFeatureFlagsBroadcast } from "@/shared/hooks/useBroadcast";
-import { FEATURE_FLAGS } from "./feature-flags.config";
+import { FEATURE_FLAGS } from "./config";
 import {
   getFeatureFlagsAction,
   toggleFeatureFlagAction,
   batchUpdateFeatureFlagsAction,
-} from "./feature-flags.actions";
+} from "./actions";
 import type {
   FeatureFlag,
   FeatureFlagData,
   FeatureFlagsContextType,
   FeatureFlagBatchUpdate,
-} from "./feature-flags.types";
+} from "./types";
 
 // 🎯 Context
 const FeatureFlagsContext = createContext<FeatureFlagsContextType | null>(null);
