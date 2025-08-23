@@ -139,7 +139,11 @@ export function useAuditQuery(
   } = {}
 ): UseAuditQueryReturn {
   const queryClient = useQueryClient();
-  const { notify } = useNotifications();
+  const {
+    notify,
+    error: notifyError,
+    success: notifySuccess,
+  } = useNotifications();
 
   // ⚡ TanStack Query for audit events
   const {
@@ -193,13 +197,12 @@ export function useAuditQuery(
       return result.data;
     },
     onSuccess: (data, variables) => {
-      notify(
-        `Audit events exported successfully as ${variables.options.format.toUpperCase()}`,
-        "success"
+      notifySuccess(
+        `Audit events exported successfully as ${variables.options.format.toUpperCase()}`
       );
     },
     onError: (error: Error) => {
-      notify(`Export failed: ${error.message}`, "error");
+      notifyError(`Export failed: ${error.message}`);
     },
   });
 
@@ -225,10 +228,10 @@ export function useAuditQuery(
           };
         }
       );
-      notify("Audit event created successfully", "success");
+      notifySuccess("Audit event created successfully");
     },
     onError: (error: Error) => {
-      notify(`Failed to create audit event: ${error.message}`, "error");
+      notifyError(`Failed to create audit event: ${error.message}`);
     },
     onSettled: () => {
       // 🔄 Always refetch to ensure consistency

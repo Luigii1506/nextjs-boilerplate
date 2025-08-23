@@ -21,6 +21,7 @@ import {
   getFileStatsServerAction,
   getCategoriesServerAction,
 } from "../server/actions";
+import { generateTempId } from "../utils";
 import type {
   UploadFile,
   FileStatsData,
@@ -95,13 +96,17 @@ async function fetchCategories(): Promise<FileCategory[]> {
  * Incluye queries, mutations, cache inteligente y optimistic updates.
  */
 export function useFileUploadQuery(config?: UploadConfig) {
-  const { notify } = useNotifications();
+  const {
+    notify,
+    error: notifyError,
+    success: notifySuccess,
+  } = useNotifications();
   const queryClient = useQueryClient();
 
   // 🔧 Configuration (default values)
   const {
     autoFetch = true,
-    enableOptimistic = true,
+    enableOptimistic = false, // 🚫 Disabled to prevent flickering during upload
     cacheTime = 10 * 60 * 1000, // 10 min
     staleTime = 30 * 1000, // 30s
     retry = 2,
@@ -193,17 +198,14 @@ export function useFileUploadQuery(config?: UploadConfig) {
             originalName: file.name,
             mimeType: file.type,
             size: file.size,
-            url: URL.createObjectURL(file), // Temporary URL
+            url: "", // Empty until upload completes
             isPublic: false,
             provider: "local",
-            uploaderId: "current",
+            userId: "uploading...", // Temporary placeholder
             categoryId: null,
             tags: [],
-            createdAt: new Date(Date.now()).toISOString(),
-            updatedAt: new Date(Date.now()).toISOString(),
-            // UI specific
-            uploadStatus: "uploading" as const,
-            uploadProgress: 0,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
           };
 
           queryClient.setQueryData<UploadFile[]>(
@@ -230,7 +232,7 @@ export function useFileUploadQuery(config?: UploadConfig) {
         queryKey: FILE_UPLOAD_QUERY_KEYS.stats(),
       });
 
-      notify(`Archivo "${file.name}" subido exitosamente`, "success");
+      notifySuccess(`Archivo "${file.name}" subido exitosamente`);
     },
     onError: (error, file, context) => {
       // ❌ Rollback optimistic update
@@ -241,7 +243,7 @@ export function useFileUploadQuery(config?: UploadConfig) {
         );
       }
 
-      notify(`Error subiendo "${file.name}": ${error.message}`, "error");
+      notifyError(`Error subiendo "${file.name}": ${error.message}`);
     },
     onSettled: () => {
       // 🔄 Always refetch to ensure consistency
@@ -286,7 +288,7 @@ export function useFileUploadQuery(config?: UploadConfig) {
       queryClient.invalidateQueries({
         queryKey: FILE_UPLOAD_QUERY_KEYS.stats(),
       });
-      notify("Archivo eliminado exitosamente", "success");
+      notifySuccess("Archivo eliminado exitosamente");
     },
     onError: (error, _, context) => {
       // ❌ Rollback optimistic update
@@ -297,7 +299,7 @@ export function useFileUploadQuery(config?: UploadConfig) {
         );
       }
 
-      notify(`Error eliminando archivo: ${error.message}`, "error");
+      notifyError(`Error eliminando archivo: ${error.message}`);
     },
     onSettled: () => {
       queryClient.invalidateQueries({
@@ -362,7 +364,7 @@ export function useFileUploadQuery(config?: UploadConfig) {
         }
       : undefined,
     onSuccess: () => {
-      notify("Archivo actualizado exitosamente", "success");
+      notifySuccess("Archivo actualizado exitosamente");
     },
     onError: (error, variables, context) => {
       // ❌ Rollback optimistic update
@@ -373,7 +375,7 @@ export function useFileUploadQuery(config?: UploadConfig) {
         );
       }
 
-      notify(`Error actualizando archivo: ${error.message}`, "error");
+      notifyError(`Error actualizando archivo: ${error.message}`);
     },
     onSettled: () => {
       queryClient.invalidateQueries({
@@ -388,8 +390,8 @@ export function useFileUploadQuery(config?: UploadConfig) {
       queryKey: FILE_UPLOAD_QUERY_KEYS.all,
       type: "active",
     });
-    notify("Datos actualizados", "success");
-  }, [queryClient, notify]);
+    notifySuccess("Datos actualizados");
+  }, [queryClient, notifySuccess]);
 
   // 🔍 Filter files
   const filteredFiles = useMemo(() => {

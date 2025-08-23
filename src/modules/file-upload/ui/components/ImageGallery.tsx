@@ -102,13 +102,15 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
   if (images.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <ZoomIn className="w-8 h-8 text-slate-400" />
+        <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
+          <ZoomIn className="w-8 h-8 text-slate-400 dark:text-slate-500" />
         </div>
-        <h3 className="text-lg font-semibold text-slate-900 mb-2">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
           No hay imágenes
         </h3>
-        <p className="text-slate-600">Sube algunas imágenes para verlas aquí</p>
+        <p className="text-slate-600 dark:text-slate-400">
+          Sube algunas imágenes para verlas aquí
+        </p>
       </div>
     );
   }
@@ -120,7 +122,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
         {images.map((image, index) => (
           <div
             key={image.id}
-            className="group relative aspect-square bg-slate-100 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300"
+            className="group relative aspect-square bg-slate-100 dark:bg-slate-700 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300"
             onClick={() => openLightbox(image, index)}
           >
             <Image
@@ -140,27 +142,36 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
                     e.stopPropagation();
                     onImageDownload?.(image);
                   }}
-                  className="p-2 bg-white/90 hover:bg-white rounded-lg transition-colors"
+                  className="p-2 bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"
                 >
-                  <Download size={16} className="text-slate-700" />
+                  <Download
+                    size={16}
+                    className="text-slate-700 dark:text-slate-300"
+                  />
                 </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     openLightbox(image, index);
                   }}
-                  className="p-2 bg-white/90 hover:bg-white rounded-lg transition-colors"
+                  className="p-2 bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"
                 >
-                  <ZoomIn size={16} className="text-slate-700" />
+                  <ZoomIn
+                    size={16}
+                    className="text-slate-700 dark:text-slate-300"
+                  />
                 </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     onImageDelete?.(image);
                   }}
-                  className="p-2 bg-white/90 hover:bg-white rounded-lg transition-colors"
+                  className="p-2 bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"
                 >
-                  <Trash2 size={16} className="text-red-600" />
+                  <Trash2
+                    size={16}
+                    className="text-red-600 dark:text-red-400"
+                  />
                 </button>
               </div>
             </div>
@@ -201,7 +212,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
                   e.stopPropagation();
                   navigateImage("prev");
                 }}
-                className="absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/10 dark:bg-black/20 hover:bg-white/20 dark:hover:bg-black/40 rounded-full transition-colors z-10"
               >
                 <ChevronLeft size={24} className="text-white" />
               </button>
@@ -210,7 +221,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
                   e.stopPropagation();
                   navigateImage("next");
                 }}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/10 dark:bg-black/20 hover:bg-white/20 dark:hover:bg-black/40 rounded-full transition-colors z-10"
               >
                 <ChevronRight size={24} className="text-white" />
               </button>
@@ -220,14 +231,14 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
           {/* Close Button */}
           <button
             onClick={closeLightbox}
-            className="absolute top-4 right-4 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
+            className="absolute top-4 right-4 p-3 bg-white/10 dark:bg-black/20 hover:bg-white/20 dark:hover:bg-black/40 rounded-full transition-colors z-10"
           >
             <X size={24} className="text-white" />
           </button>
 
           {/* Image Counter */}
           {images.length > 1 && (
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 bg-white/10 rounded-full backdrop-blur-sm z-10">
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 bg-white/10 dark:bg-black/20 rounded-full backdrop-blur-sm z-10">
               <span className="text-white text-sm">
                 {currentIndex + 1} de {images.length}
               </span>
@@ -248,7 +259,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
           </div>
 
           {/* Image Info Panel */}
-          <div className="absolute bottom-4 left-4 right-4 bg-white/10 backdrop-blur-sm rounded-2xl p-6 max-w-md mx-auto">
+          <div className="absolute bottom-4 left-4 right-4 bg-white/10 dark:bg-black/20 backdrop-blur-sm rounded-2xl p-6 max-w-md mx-auto border border-white/20 dark:border-black/30">
             <div className="flex items-start justify-between mb-4">
               <div className="min-w-0 flex-1">
                 <h3 className="text-white font-semibold text-lg truncate">
@@ -281,7 +292,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
                     e.stopPropagation();
                     onImageDownload?.(selectedImage);
                   }}
-                  className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
+                  className="p-2 bg-white/20 dark:bg-black/30 hover:bg-white/30 dark:hover:bg-black/50 rounded-lg transition-colors"
                 >
                   <Download size={16} className="text-white" />
                 </button>
@@ -290,7 +301,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
                     e.stopPropagation();
                     navigator.clipboard.writeText(selectedImage.url);
                   }}
-                  className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
+                  className="p-2 bg-white/20 dark:bg-black/30 hover:bg-white/30 dark:hover:bg-black/50 rounded-lg transition-colors"
                 >
                   <Share size={16} className="text-white" />
                 </button>
@@ -300,9 +311,12 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
                     onImageDelete?.(selectedImage);
                     closeLightbox();
                   }}
-                  className="p-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-colors"
+                  className="p-2 bg-red-500/20 dark:bg-red-500/30 hover:bg-red-500/30 dark:hover:bg-red-500/50 rounded-lg transition-colors"
                 >
-                  <Trash2 size={16} className="text-red-300" />
+                  <Trash2
+                    size={16}
+                    className="text-red-300 dark:text-red-400"
+                  />
                 </button>
               </div>
             </div>

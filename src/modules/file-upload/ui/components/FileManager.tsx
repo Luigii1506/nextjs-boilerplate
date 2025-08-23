@@ -160,9 +160,9 @@ const FileManager: React.FC<FileManagerProps> = React.memo(
 
     if (viewMode === "list") {
       return (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <div className="px-6 py-4 bg-slate-50 border-b border-slate-200">
-            <div className="grid grid-cols-12 gap-4 text-sm font-medium text-slate-600">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div className="px-6 py-4 bg-slate-50 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600">
+            <div className="grid grid-cols-12 gap-4 text-sm font-medium text-slate-600 dark:text-slate-300">
               <div className="col-span-5">Nombre</div>
               <div className="col-span-2">Tamaño</div>
               <div className="col-span-2">Tipo</div>
@@ -171,13 +171,13 @@ const FileManager: React.FC<FileManagerProps> = React.memo(
             </div>
           </div>
 
-          <div className="divide-y divide-slate-200">
+          <div className="divide-y divide-slate-200 dark:divide-slate-600">
             {displayFiles.map((file) => (
               <div
                 key={file.id}
-                className={`px-6 py-4 hover:bg-slate-50 transition-colors cursor-pointer ${
+                className={`px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer ${
                   selectedFiles.has(file.id)
-                    ? "bg-blue-50 border-l-4 border-blue-500"
+                    ? "bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500"
                     : ""
                 }`}
                 onClick={() => handleFileClick(file)}
@@ -186,13 +186,13 @@ const FileManager: React.FC<FileManagerProps> = React.memo(
                   <div className="col-span-5 flex items-center gap-3 min-w-0">
                     <FileIcon mimeType={file.mimeType} size={20} />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-slate-900 truncate">
+                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
                         {file.originalName}
                       </p>
                       {file.metadata &&
                         typeof file.metadata.width === "number" &&
                         typeof file.metadata.height === "number" && (
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
                             {file.metadata.width} × {file.metadata.height}
                           </p>
                         )}
@@ -204,7 +204,7 @@ const FileManager: React.FC<FileManagerProps> = React.memo(
                   </div>
 
                   <div className="col-span-2">
-                    <span className="text-sm text-slate-600 capitalize">
+                    <span className="text-sm text-slate-600 dark:text-slate-400 capitalize">
                       {file.mimeType.split("/")[0]}
                     </span>
                   </div>
@@ -220,9 +220,12 @@ const FileManager: React.FC<FileManagerProps> = React.memo(
                           e.stopPropagation();
                           setShowMenu(showMenu === file.id ? null : file.id);
                         }}
-                        className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                        className="p-2 hover:bg-slate-100 dark:hover:bg-slate-600 rounded-lg transition-colors"
                       >
-                        <MoreVertical size={16} className="text-slate-400" />
+                        <MoreVertical
+                          size={16}
+                          className="text-slate-400 dark:text-slate-500"
+                        />
                       </button>
 
                       {showMenu === file.id && (
@@ -231,32 +234,32 @@ const FileManager: React.FC<FileManagerProps> = React.memo(
                             className="fixed inset-0 z-10"
                             onClick={() => setShowMenu(null)}
                           />
-                          <div className="absolute right-0 top-10 bg-white border border-slate-200 rounded-xl shadow-xl py-2 w-48 z-20">
+                          <div className="absolute right-0 top-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-2 w-48 z-20">
                             <button
                               onClick={() => handleMenuAction("view", file)}
-                              className="w-full px-4 py-2.5 text-left hover:bg-slate-50 flex items-center gap-3 text-slate-700"
+                              className="w-full px-4 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 text-slate-700 dark:text-slate-300"
                             >
                               <Eye size={16} />
                               Ver archivo
                             </button>
                             <button
                               onClick={() => handleMenuAction("download", file)}
-                              className="w-full px-4 py-2.5 text-left hover:bg-slate-50 flex items-center gap-3 text-slate-700"
+                              className="w-full px-4 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 text-slate-700 dark:text-slate-300"
                             >
                               <Download size={16} />
                               Descargar
                             </button>
                             <button
                               onClick={() => handleMenuAction("copy", file)}
-                              className="w-full px-4 py-2.5 text-left hover:bg-slate-50 flex items-center gap-3 text-slate-700"
+                              className="w-full px-4 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 text-slate-700 dark:text-slate-300"
                             >
                               <Copy size={16} />
                               Copiar URL
                             </button>
-                            <div className="border-t border-slate-100 my-2" />
+                            <div className="border-t border-slate-100 dark:border-slate-600 my-2" />
                             <button
                               onClick={() => handleMenuAction("delete", file)}
-                              className="w-full px-4 py-2.5 text-left hover:bg-red-50 flex items-center gap-3 text-red-600"
+                              className="w-full px-4 py-2.5 text-left hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-3 text-red-600 dark:text-red-400"
                             >
                               <Trash2 size={16} />
                               Eliminar
@@ -278,7 +281,7 @@ const FileManager: React.FC<FileManagerProps> = React.memo(
       <div
         className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 ${
           dragActive
-            ? "border-2 border-dashed border-blue-500 bg-blue-50/50 rounded-lg p-4"
+            ? "border-2 border-dashed border-blue-500 dark:border-blue-400 bg-blue-50/50 dark:bg-blue-900/20 rounded-lg p-4"
             : ""
         }`}
         onDragEnter={handleDragEnter}
@@ -290,22 +293,29 @@ const FileManager: React.FC<FileManagerProps> = React.memo(
         {uploadProgress?.map((progress) => (
           <div
             key={progress.fileId}
-            className="bg-white rounded-2xl border border-slate-200 p-4"
+            className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4"
           >
             <div className="flex items-center gap-3 mb-2">
               <div className="animate-spin">
-                <Loader2 size={20} className="text-blue-500" />
+                <Loader2
+                  size={20}
+                  className="text-blue-500 dark:text-blue-400"
+                />
               </div>
-              <span className="text-sm font-medium">{progress.filename}</span>
+              <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                {progress.filename}
+              </span>
             </div>
-            <div className="w-full bg-slate-200 rounded-full h-2">
+            <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
               <div
-                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                className="bg-blue-500 dark:bg-blue-400 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${progress.progress}%` }}
               />
             </div>
             {progress.status === "error" && (
-              <p className="text-red-500 text-xs mt-1">{progress.error}</p>
+              <p className="text-red-500 dark:text-red-400 text-xs mt-1">
+                {progress.error}
+              </p>
             )}
           </div>
         )) || null}
@@ -314,15 +324,15 @@ const FileManager: React.FC<FileManagerProps> = React.memo(
         {(displayFiles || files || []).map((file) => (
           <div
             key={file.id}
-            className={`group bg-white rounded-2xl border border-slate-200 hover:border-slate-300 hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer ${
+            className={`group bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer ${
               selectedFiles.has(file.id)
-                ? "ring-2 ring-blue-500 border-blue-500"
+                ? "ring-2 ring-blue-500 dark:ring-blue-400 border-blue-500 dark:border-blue-400"
                 : ""
             }`}
             onClick={() => handleFileClick(file)}
           >
             {/* Preview */}
-            <div className="aspect-square bg-slate-50 flex items-center justify-center relative overflow-hidden">
+            <div className="aspect-square bg-slate-50 dark:bg-slate-700 flex items-center justify-center relative overflow-hidden">
               {file.mimeType.startsWith("image/") ? (
                 <Image
                   src={file.url}
@@ -333,7 +343,7 @@ const FileManager: React.FC<FileManagerProps> = React.memo(
                   loading="lazy"
                 />
               ) : (
-                <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center">
+                <div className="w-16 h-16 bg-white dark:bg-slate-600 rounded-2xl shadow-sm flex items-center justify-center">
                   <FileIcon mimeType={file.mimeType} size={32} />
                 </div>
               )}
@@ -345,18 +355,24 @@ const FileManager: React.FC<FileManagerProps> = React.memo(
                     e.stopPropagation();
                     handleMenuAction("view", file);
                   }}
-                  className="p-2 bg-white/90 hover:bg-white rounded-lg transition-colors"
+                  className="p-2 bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"
                 >
-                  <Eye size={16} className="text-slate-700" />
+                  <Eye
+                    size={16}
+                    className="text-slate-700 dark:text-slate-300"
+                  />
                 </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleMenuAction("download", file);
                   }}
-                  className="p-2 bg-white/90 hover:bg-white rounded-lg transition-colors"
+                  className="p-2 bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"
                 >
-                  <Download size={16} className="text-slate-700" />
+                  <Download
+                    size={16}
+                    className="text-slate-700 dark:text-slate-300"
+                  />
                 </button>
               </div>
 
@@ -374,7 +390,7 @@ const FileManager: React.FC<FileManagerProps> = React.memo(
                     e.stopPropagation();
                     setShowMenu(showMenu === file.id ? null : file.id);
                   }}
-                  className="p-2 bg-black/70 hover:bg-black/80 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                  className="p-2 bg-black/70 dark:bg-black/80 hover:bg-black/80 dark:hover:bg-black/90 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
                 >
                   <MoreVertical size={16} className="text-white" />
                 </button>
@@ -385,39 +401,39 @@ const FileManager: React.FC<FileManagerProps> = React.memo(
                       className="fixed inset-0 z-10"
                       onClick={() => setShowMenu(null)}
                     />
-                    <div className="absolute right-0 top-12 bg-white border border-slate-200 rounded-xl shadow-xl py-2 w-48 z-20">
+                    <div className="absolute right-0 top-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-2 w-48 z-20">
                       <button
                         onClick={() => handleMenuAction("view", file)}
-                        className="w-full px-4 py-2.5 text-left hover:bg-slate-50 flex items-center gap-3 text-slate-700"
+                        className="w-full px-4 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 text-slate-700 dark:text-slate-300"
                       >
                         <Eye size={16} />
                         Ver archivo
                       </button>
                       <button
                         onClick={() => handleMenuAction("download", file)}
-                        className="w-full px-4 py-2.5 text-left hover:bg-slate-50 flex items-center gap-3 text-slate-700"
+                        className="w-full px-4 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 text-slate-700 dark:text-slate-300"
                       >
                         <Download size={16} />
                         Descargar
                       </button>
                       <button
                         onClick={() => handleMenuAction("copy", file)}
-                        className="w-full px-4 py-2.5 text-left hover:bg-slate-50 flex items-center gap-3 text-slate-700"
+                        className="w-full px-4 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 text-slate-700 dark:text-slate-300"
                       >
                         <Copy size={16} />
                         Copiar URL
                       </button>
                       <button
                         onClick={() => handleMenuAction("share", file)}
-                        className="w-full px-4 py-2.5 text-left hover:bg-slate-50 flex items-center gap-3 text-slate-700"
+                        className="w-full px-4 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 text-slate-700 dark:text-slate-300"
                       >
                         <Share size={16} />
                         Compartir
                       </button>
-                      <div className="border-t border-slate-100 my-2" />
+                      <div className="border-t border-slate-100 dark:border-slate-600 my-2" />
                       <button
                         onClick={() => handleMenuAction("delete", file)}
-                        className="w-full px-4 py-2.5 text-left hover:bg-red-50 flex items-center gap-3 text-red-600"
+                        className="w-full px-4 py-2.5 text-left hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-3 text-red-600 dark:text-red-400"
                       >
                         <Trash2 size={16} />
                         Eliminar
@@ -429,26 +445,26 @@ const FileManager: React.FC<FileManagerProps> = React.memo(
             </div>
 
             {/* File Info */}
-            <div className="p-4">
-              <h3 className="font-medium text-slate-900 truncate mb-1">
+            <div className="p-4 bg-white dark:bg-slate-800">
+              <h3 className="font-medium text-slate-900 dark:text-slate-100 truncate mb-1">
                 {file.originalName}
               </h3>
-              <div className="flex items-center justify-between text-sm text-slate-500">
+              <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
                 <FileSize
                   bytes={file.size}
-                  className="text-sm text-slate-500"
+                  className="text-sm text-slate-500 dark:text-slate-400"
                 />
                 <FileDate
                   dateString={file.createdAt}
                   showIcon={true}
                   iconSize={12}
-                  className="text-sm text-slate-500"
+                  className="text-sm text-slate-500 dark:text-slate-400"
                 />
               </div>
               {file.metadata &&
               typeof file.metadata.width === "number" &&
               typeof file.metadata.height === "number" ? (
-                <div className="mt-2 text-xs text-slate-500">
+                <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                   {file.metadata.width} × {file.metadata.height} px
                 </div>
               ) : null}

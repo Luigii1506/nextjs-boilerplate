@@ -72,24 +72,26 @@ const FileStats: React.FC<FileStatsProps> = React.memo(
     return (
       <div className="space-y-6">
         {/* Storage Overview */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
-                <HardDrive className="w-6 h-6 text-slate-600" />
+              <div className="w-12 h-12 bg-slate-100 dark:bg-slate-700 rounded-xl flex items-center justify-center">
+                <HardDrive className="w-6 h-6 text-slate-600 dark:text-slate-300" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-slate-900">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                   Almacenamiento
                 </h3>
-                <p className="text-sm text-slate-600">Uso actual del espacio</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Uso actual del espacio
+                </p>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-2xl font-bold text-slate-900">
+              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                 {formatFileSize(stats.storageUsed)}
               </div>
-              <div className="text-sm text-slate-500">
+              <div className="text-sm text-slate-500 dark:text-slate-400">
                 de {formatFileSize(stats.storageLimit)}
               </div>
             </div>
@@ -98,19 +100,21 @@ const FileStats: React.FC<FileStatsProps> = React.memo(
           {/* Storage Bar */}
           <div className="space-y-3">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-600">Espacio utilizado</span>
-              <span className="font-medium text-slate-900">
+              <span className="text-slate-600 dark:text-slate-400">
+                Espacio utilizado
+              </span>
+              <span className="font-medium text-slate-900 dark:text-slate-100">
                 {storagePercentage}%
               </span>
             </div>
-            <div className="w-full bg-slate-200 rounded-full h-3">
+            <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3">
               <div
                 className={`h-3 rounded-full transition-all duration-500 ${storageColorClass}`}
                 style={{ width: `${storagePercentage}%` }}
               />
             </div>
             {storagePercentage >= 90 && (
-              <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+              <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
                 <TrendingUp size={16} />
                 <span>
                   Almacenamiento casi lleno. Considera eliminar archivos
@@ -128,7 +132,7 @@ const FileStats: React.FC<FileStatsProps> = React.memo(
             return (
               <div
                 key={stat.label}
-                className="bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-md transition-shadow duration-300"
+                className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 hover:shadow-md transition-shadow duration-300"
               >
                 <div className="flex items-center gap-4">
                   <div
@@ -137,10 +141,12 @@ const FileStats: React.FC<FileStatsProps> = React.memo(
                     <Icon className={`w-6 h-6 ${stat.iconColor}`} />
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-slate-900">
+                    <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                       {stat.count}
                     </div>
-                    <div className="text-sm text-slate-600">{stat.label}</div>
+                    <div className="text-sm text-slate-600 dark:text-slate-400">
+                      {stat.label}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -152,37 +158,41 @@ const FileStats: React.FC<FileStatsProps> = React.memo(
         {showDetails && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Total Files */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-6">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
-                  <Database className="w-5 h-5 text-emerald-600" />
+                <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center">
+                  <Database className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-slate-900">
+                  <h4 className="font-semibold text-slate-900 dark:text-slate-100">
                     Total de Archivos
                   </h4>
-                  <p className="text-2xl font-bold text-slate-900">
+                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                     {stats.totalFiles}
                   </p>
                 </div>
               </div>
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
                 Archivos almacenados en tu cuenta
               </p>
             </div>
 
             {/* Storage Provider */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-6">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                  <Cloud className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+                  <Cloud className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-slate-900">Proveedor</h4>
-                  <p className="text-2xl font-bold text-slate-900">Amazon S3</p>
+                  <h4 className="font-semibold text-slate-900 dark:text-slate-100">
+                    Proveedor
+                  </h4>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                    Amazon S3
+                  </p>
                 </div>
               </div>
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
                 Almacenamiento en la nube seguro
               </p>
             </div>
@@ -191,36 +201,42 @@ const FileStats: React.FC<FileStatsProps> = React.memo(
 
         {/* Usage Trends */}
         {showDetails && (
-          <div className="bg-white rounded-2xl border border-slate-200 p-6">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-semibold text-slate-900">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                   Tendencias de Uso
                 </h3>
-                <p className="text-sm text-slate-600">Últimos 30 días</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Últimos 30 días
+                </p>
               </div>
-              <TrendingUp className="w-5 h-5 text-slate-400" />
+              <TrendingUp className="w-5 h-5 text-slate-400 dark:text-slate-500" />
             </div>
 
             {/* Simple Usage Chart */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-600">Archivos subidos</span>
-                <span className="text-sm font-medium text-slate-900">
+                <span className="text-sm text-slate-600 dark:text-slate-400">
+                  Archivos subidos
+                </span>
+                <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
                   +{stats.totalFiles}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-600">
+                <span className="text-sm text-slate-600 dark:text-slate-400">
                   Espacio utilizado
                 </span>
-                <span className="text-sm font-medium text-slate-900">
+                <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
                   +{formatFileSize(stats.storageUsed)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-600">Tipo más común</span>
-                <span className="text-sm font-medium text-slate-900">
+                <span className="text-sm text-slate-600 dark:text-slate-400">
+                  Tipo más común
+                </span>
+                <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
                   {stats.imageCount >= stats.documentCount
                     ? "Imágenes"
                     : "Documentos"}

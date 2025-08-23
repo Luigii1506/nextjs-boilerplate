@@ -257,8 +257,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       <div
         className={`border-2 border-dashed rounded-2xl p-8 text-center transition-colors ${
           isDragging
-            ? "border-blue-400 bg-blue-50"
-            : "border-slate-300 hover:border-slate-400"
+            ? "border-blue-400 bg-blue-50 dark:border-blue-500 dark:bg-blue-900/20"
+            : "border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500 bg-white dark:bg-slate-800"
         }`}
         onDragEnter={handleDragEnter}
         onDragOver={handleDragOver}
@@ -266,21 +266,21 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         onDrop={handleDrop}
       >
         <div className="flex flex-col items-center">
-          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-            <Upload className="w-8 h-8 text-slate-600" />
+          <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mb-4">
+            <Upload className="w-8 h-8 text-slate-600 dark:text-slate-300" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-900 mb-2">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
             Arrastra archivos aquí o haz clic para seleccionar
           </h3>
-          <p className="text-slate-600 mb-4">
+          <p className="text-slate-600 dark:text-slate-400 mb-4">
             Formatos soportados: {config.allowedTypes.join(", ")}
           </p>
-          <p className="text-sm text-slate-500 mb-6">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
             Tamaño máximo: {formatFileSize(config.maxFileSize)}
           </p>
 
           <label htmlFor="file-upload" className="cursor-pointer">
-            <span className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-2">
+            <span className="px-6 py-3 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors inline-flex items-center gap-2">
               <Plus size={18} />
               Seleccionar archivos
             </span>
@@ -298,14 +298,14 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
       {/* Selected Files List */}
       {selectedFiles.length > 0 && (
-        <div className="bg-slate-50 rounded-2xl p-6">
+        <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-slate-900">
+            <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
               📁 Archivos Seleccionados ({selectedFiles.length})
             </h4>
             <button
               onClick={clearSelectedFiles}
-              className="text-sm text-slate-500 hover:text-slate-700 transition-colors"
+              className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
             >
               Limpiar todo
             </button>
@@ -315,22 +315,22 @@ const FileUploader: React.FC<FileUploaderProps> = ({
             {selectedFiles.map((file, index) => (
               <div
                 key={`${file.name}-${index}`}
-                className="flex items-center justify-between bg-white rounded-lg p-4 border border-slate-200"
+                className="flex items-center justify-between bg-white dark:bg-slate-700 rounded-lg p-4 border border-slate-200 dark:border-slate-600"
               >
                 <div className="flex items-center gap-3">
                   {getFileIcon(file.type)}
                   <div>
-                    <div className="font-medium text-slate-900">
+                    <div className="font-medium text-slate-900 dark:text-slate-100">
                       {file.name}
                     </div>
-                    <div className="text-sm text-slate-500">
+                    <div className="text-sm text-slate-500 dark:text-slate-400">
                       {formatFileSize(file.size)}
                     </div>
                   </div>
                 </div>
                 <button
                   onClick={() => removeSelectedFile(file)}
-                  className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                  className="p-2 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                   title="Remover archivo"
                 >
                   <X size={18} />
@@ -341,7 +341,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
           {/* Upload Button */}
           <div className="flex items-center justify-between">
-            <div className="text-sm text-slate-600">
+            <div className="text-sm text-slate-600 dark:text-slate-300">
               Total: {selectedFiles.length} archivo(s) -{" "}
               {formatFileSize(
                 selectedFiles.reduce((sum, file) => sum + file.size, 0)
@@ -352,8 +352,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({
               disabled={isUploading || selectedFiles.length === 0}
               className={`px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 ${
                 isUploading || selectedFiles.length === 0
-                  ? "bg-slate-300 text-slate-500 cursor-not-allowed"
-                  : "bg-green-600 text-white hover:bg-green-700"
+                  ? "bg-slate-300 dark:bg-slate-600 text-slate-500 dark:text-slate-400 cursor-not-allowed"
+                  : "bg-green-600 dark:bg-green-700 text-white hover:bg-green-700 dark:hover:bg-green-600"
               }`}
             >
               <Upload size={18} />
@@ -367,8 +367,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
       {/* Upload Progress */}
       {uploadProgress.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-6">
-          <h4 className="text-lg font-semibold text-slate-900 mb-4">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+          <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
             🚀 Progreso de Subida
           </h4>
           <div className="space-y-4">
@@ -384,7 +384,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       {getFileIcon(file.type)}
-                      <span className="font-medium text-slate-900">
+                      <span className="font-medium text-slate-900 dark:text-slate-100">
                         {file.name}
                       </span>
                     </div>
@@ -395,7 +395,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                       {progressItem.status === "error" && (
                         <AlertCircle className="w-5 h-5 text-red-500" />
                       )}
-                      <span className="text-sm text-slate-600">
+                      <span className="text-sm text-slate-600 dark:text-slate-300">
                         {progressItem.status === "pending"
                           ? "0%"
                           : progressItem.status === "uploading"
@@ -408,7 +408,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <div className="flex-1 bg-slate-200 rounded-full h-2">
+                    <div className="flex-1 bg-slate-200 dark:bg-slate-700 rounded-full h-2">
                       <div
                         className={`h-2 rounded-full transition-all duration-300 ${
                           progressItem.status === "completed"
@@ -433,7 +433,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                   </div>
 
                   {progressItem.error && (
-                    <div className="text-sm text-red-600 mt-1">
+                    <div className="text-sm text-red-600 dark:text-red-400 mt-1">
                       {progressItem.error}
                     </div>
                   )}

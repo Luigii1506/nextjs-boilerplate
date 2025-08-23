@@ -152,8 +152,8 @@ export default function AuditDashboard({ onViewChange }: AuditDashboardProps) {
               : "Actualizar"}
           </Button>
 
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => onViewChange?.("settings")}
             className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50"
           >
@@ -197,8 +197,8 @@ export default function AuditDashboard({ onViewChange }: AuditDashboardProps) {
             onClick={() => handleTabChange("overview")}
             disabled={isStatsLoading}
             className={`flex items-center gap-2 ${
-              activeTab === "overview" 
-                ? "bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600" 
+              activeTab === "overview"
+                ? "bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600"
                 : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50"
             }`}
           >
@@ -213,8 +213,8 @@ export default function AuditDashboard({ onViewChange }: AuditDashboardProps) {
             onClick={() => handleTabChange("events")}
             disabled={isEventsLoading}
             className={`flex items-center gap-2 ${
-              activeTab === "events" 
-                ? "bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600" 
+              activeTab === "events"
+                ? "bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600"
                 : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50"
             }`}
           >

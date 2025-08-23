@@ -69,7 +69,11 @@ export const AdminFilesScreen: React.FC<AdminFilesScreenProps> = () => {
     cacheTime: 10 * 60 * 1000, // 10 min
   });
 
-  const { notify } = useNotifications();
+  const {
+    notify,
+    error: notifyError,
+    success: notifySuccess,
+  } = useNotifications();
 
   // 🔧 Default upload config
   const uploadConfig = {
@@ -170,9 +174,9 @@ export const AdminFilesScreen: React.FC<AdminFilesScreenProps> = () => {
       for (const file of newFiles) {
         await uploadFile(file);
       }
-      notify(`${newFiles.length} archivo(s) subido(s) exitosamente`, "success");
+      notifySuccess(`${newFiles.length} archivo(s) subido(s) exitosamente`);
     } catch {
-      notify("Error en la subida de archivos", "error");
+      notifyError("Error en la subida de archivos");
     }
   };
 
@@ -181,7 +185,7 @@ export const AdminFilesScreen: React.FC<AdminFilesScreenProps> = () => {
     try {
       await deleteFile(fileId);
     } catch {
-      notify("Error eliminando archivo", "error");
+      notifyError("Error eliminando archivo");
     }
   };
 
@@ -193,7 +197,7 @@ export const AdminFilesScreen: React.FC<AdminFilesScreenProps> = () => {
     try {
       await updateFile({ fileId, ...updates });
     } catch {
-      notify("Error actualizando archivo", "error");
+      notifyError("Error actualizando archivo");
     }
   };
 
@@ -360,9 +364,9 @@ export const AdminFilesScreen: React.FC<AdminFilesScreenProps> = () => {
               <FileUploader
                 config={uploadConfig}
                 onUploadComplete={(files) =>
-                  notify(`${files.length} archivos subidos`, "success")
+                  notifySuccess(`${files.length} archivos subidos exitosamente`)
                 }
-                onUploadError={(error) => notify(error, "error")}
+                onUploadError={(error) => notifyError(error)}
                 selectedCategory={selectedUploadCategory}
                 isUploading={isUploading}
                 uploadProgress={[]}
@@ -414,8 +418,7 @@ export const AdminFilesScreen: React.FC<AdminFilesScreenProps> = () => {
                 images={filteredFiles.filter((f) =>
                   f.mimeType.startsWith("image/")
                 )}
-                onDelete={handleFileDelete}
-                isDeleting={isDeleting}
+                onImageDelete={(image) => handleFileDelete(image.id)}
               />
             )}
           </>
@@ -424,7 +427,10 @@ export const AdminFilesScreen: React.FC<AdminFilesScreenProps> = () => {
 
       {/* Loading Overlay for Mutations */}
       {(isUploading || isDeleting || isUpdating) && (
-        <div className="fixed inset-0 bg-black bg-opacity-25 dark:bg-black dark:bg-opacity-50 flex items-center justify-center z-50">
+        <div
+          className="fixed inset-0 flex items-center justify-center z-50"
+          style={{ backgroundColor: "rgba(0, 0, 0, 0.25)" }}
+        >
           <div className="bg-white dark:bg-slate-800 rounded-lg p-6 shadow-xl border border-slate-200 dark:border-slate-700">
             <div className="flex items-center gap-3">
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500 dark:border-blue-400"></div>

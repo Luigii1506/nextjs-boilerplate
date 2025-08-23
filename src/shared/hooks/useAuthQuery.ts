@@ -109,7 +109,11 @@ export function useAuthQuery(
 
   const queryClient = useQueryClient();
   const router = useRouter();
-  const { notify } = useNotifications();
+  const {
+    notify,
+    error: notifyError,
+    success: notifySuccess,
+  } = useNotifications();
 
   // 📊 SESSION QUERY
   const {
@@ -144,11 +148,11 @@ export function useAuthQuery(
       // Clear any other user-specific cache
       queryClient.clear();
 
-      notify("Sesión cerrada exitosamente", "success");
+      notifySuccess("Sesión cerrada exitosamente");
       router.push("/login");
     },
     onError: (error) => {
-      notify(`Error cerrando sesión: ${error.message}`, "error");
+      notifyError(`Error cerrando sesión: ${error.message}`);
     },
   });
 
