@@ -400,17 +400,7 @@ export default function AdminLayout({
                 "mx-auto h-full"
               )}
             >
-              <Suspense
-                fallback={
-                  <div className="h-64 bg-slate-200 dark:bg-slate-700 rounded-lg animate-pulse flex items-center justify-center transition-colors duration-300">
-                    <span className="text-slate-500 dark:text-slate-400">
-                      Cargando contenido...
-                    </span>
-                  </div>
-                }
-              >
-                {children}
-              </Suspense>
+              <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
             </div>
           </div>
         </main>

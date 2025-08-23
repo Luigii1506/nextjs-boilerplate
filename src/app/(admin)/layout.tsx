@@ -4,7 +4,6 @@ import { requireAuth } from "@/core/auth/server";
 import { ROLE_INFO } from "@/core/auth/permissions";
 import type { SessionUser } from "@/shared/types/user";
 import AdminLayout from "@/shared/ui/layouts/AdminLayout";
-import { FeatureFlagsProvider } from "@/features/feature-flags";
 
 export const runtime = "nodejs";
 
@@ -38,11 +37,10 @@ export default async function AdminRootLayout({
   if (!isAdmin) redirect("/unauthorized");
 
   // ✅ Direct to AdminLayout (handles its own client state)
+  // 🚀 TanStack Query handles feature flags automatically - no provider needed
   return (
-    <FeatureFlagsProvider>
-      <AdminLayout user={user} isAdmin={isAdmin} isSuperAdmin={isSuperAdmin}>
-        {children}
-      </AdminLayout>
-    </FeatureFlagsProvider>
+    <AdminLayout user={user} isAdmin={isAdmin} isSuperAdmin={isSuperAdmin}>
+      {children}
+    </AdminLayout>
   );
 }

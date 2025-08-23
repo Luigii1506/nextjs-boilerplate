@@ -1,260 +1,225 @@
 /**
- * 🎛️ FEATURE FLAGS ADMIN PAGE
- * ===========================
+ * ⚡ FEATURE FLAGS ADMIN PAGE - TANSTACK OPTIMIZED
+ * ===============================================
  *
- * Simplified admin interface for managing feature flags.
- * Uses the new simplified architecture.
+ * Vista súper optimizada usando TanStack Query.
+ * Performance enterprise, battle-tested, cero parpadeos.
  *
- * Simple: 2025-01-17 - Admin UI
+ * Enterprise: 2025-01-17 - TanStack Query integration
  */
 
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { RefreshCw, Flag, Search, BarChart3, Zap, Package } from "lucide-react";
 
-// 🧠 Simplified hooks
-import { useNotifications } from "@/shared/hooks/useNotifications";
+// ⚡ TANSTACK QUERY HOOK - Enterprise optimized
+import { useFeatureFlagsQuery } from "./hooks/useFeatureFlagsQuery";
+
+// 🧠 Shared hooks
 import { useI18n } from "@/shared/hooks/useI18n";
-import {
-  useFeatureFlags,
-  FEATURE_CATEGORIES,
-  type FeatureFlagData,
-  type FeatureCategory,
-} from "@/features/feature-flags";
 
 // 🎨 Components
 import FeatureFlagCard from "./components/FeatureFlagCard";
+import {
+  SkeletonFeatureFlagCard,
+  SkeletonStatsCard,
+} from "@/shared/ui/components";
 
-// 🎯 Main component
+// 🎯 Types
+import type {
+  FeatureFlagData,
+  FeatureCategory,
+  FeatureFlagFilters,
+} from "./types";
+import { FEATURE_CATEGORIES } from "./config";
+
+/**
+ * ⚡ OPTIMIZED FEATURE FLAGS VIEW - TANSTACK QUERY
+ * ==============================================
+ *
+ * Vista súper optimizada usando TanStack Query.
+ * Performance enterprise, cero parpadeos, optimistic updates.
+ */
 export default function FeatureFlagsAdminPage() {
-  // 🧠 Notifications
-  const { notify } = useNotifications();
-
   // 🌍 Internationalization
   const { t } = useI18n();
 
-  // 🎛️ Feature flags data - Hook nuevo
-  const { flags, isLoading, error, toggleFlag } = useFeatureFlags();
-
   // 🔍 Local state for filters
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<FeatureFlagFilters>({
     search: "",
-    category: "all" as FeatureCategory | "all",
-    status: "all" as "enabled" | "disabled" | "all",
+    category: "all",
+    status: "all",
   });
 
-  // 🔄 Estado local para loading individual por flag - ANTI-PARPADEO
-  const [loadingFlags, setLoadingFlags] = useState<Set<string>>(new Set());
+  // ⚡ TANSTACK QUERY HOOK - Enterprise optimized
+  const {
+    stats,
+    isLoading,
+    isFetching,
+    isValidating,
+    error,
+    hasError,
+    filterFlags,
+    toggleFlag,
+    refresh,
+    isToggling,
+    getIsToggling,
+  } = useFeatureFlagsQuery();
 
-  // 🔄 Handle toggle with notifications - SIN PARPADEO GLOBAL
+  // 🔍 Smart filtering with optimized data
+  const filteredFlags = React.useMemo(() => {
+    return filterFlags(filters);
+  }, [filterFlags, filters]);
+
+  // 🧠 Flag operations - Optimistic by default
   const handleToggle = async (flagKey: string) => {
-    // Marcar solo este flag como loading
-    setLoadingFlags((prev) => new Set([...prev, flagKey]));
-
-    try {
-      await notify(
-        async () => {
-          await toggleFlag(flagKey);
-        },
-        `Cambiando estado de '${flagKey}'...`,
-        `Feature flag '${flagKey}' actualizado correctamente`
-      );
-    } finally {
-      // Quitar el flag del loading cuando termine
-      setLoadingFlags((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(flagKey);
-        return newSet;
-      });
-    }
+    await toggleFlag(flagKey);
   };
 
-  // 🔄 Handle refresh - Ya no necesario, el contexto se actualiza automáticamente
   const handleRefresh = async () => {
-    await notify(
-      async () => {
-        // El contexto se actualiza automáticamente via broadcast
-        console.log("Feature flags se actualizan automáticamente");
-      },
-      "Actualizando feature flags...",
-      "Feature flags actualizados"
-    );
+    refresh();
   };
 
-  // 🔍 Filtered flags - Solo mostrar categorías "module" y "ui"
-  const filteredFlags = useMemo(() => {
-    return flags.filter((flag: FeatureFlagData) => {
-      // 🎯 FILTRO PRINCIPAL: Solo mostrar flags de categorías "module" y "ui"
-      if (
-        flag.category !== "module" &&
-        flag.category !== "ui" &&
-        flag.category !== "admin"
-      ) {
-        return false;
-      }
-
-      // Search filter
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        if (
-          !flag.name.toLowerCase().includes(searchLower) &&
-          !flag.key.toLowerCase().includes(searchLower) &&
-          !flag.description.toLowerCase().includes(searchLower)
-        ) {
-          return false;
-        }
-      }
-
-      // Category filter
-      if (filters.category !== "all" && flag.category !== filters.category) {
-        return false;
-      }
-
-      // Status filter
-      if (filters.status !== "all") {
-        const isEnabled = flag.enabled;
-        if (
-          (filters.status === "enabled" && !isEnabled) ||
-          (filters.status === "disabled" && isEnabled)
-        ) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }, [flags, filters]);
-
-  // 🎨 Flags organizados por categoría (para uso futuro)
-  // const flagsByCategory = useMemo(() => {
-  //   const categorized: Record<string, typeof filteredFlags> = {};
-  //
-  //   // Inicializar todas las categorías
-  //   Object.keys(FEATURE_CATEGORIES).forEach(category => {
-  //     categorized[category] = [];
-  //   });
-  //
-  //   // Agrupar flags por categoría
-  //   filteredFlags.forEach(flag => {
-  //     if (categorized[flag.category]) {
-  //       categorized[flag.category].push(flag);
-  //     }
-  //   });
-  //
-  //   // Solo devolver categorías que tienen flags
-  //   return Object.entries(categorized).filter(([, flags]) => flags.length > 0);
-  // }, [filteredFlags]);
-
-  // 📊 Statistics - Para categorías "module" y "ui"
-  const stats = useMemo(() => {
-    const total = filteredFlags.length;
-    const enabled = filteredFlags.filter(
-      (f: FeatureFlagData) => f.enabled
-    ).length;
-    const disabled = total - enabled;
-    const byCategory = {
-      module: flags.filter((f: FeatureFlagData) => f.category === "module")
-        .length,
-      ui: flags.filter((f: FeatureFlagData) => f.category === "ui").length,
-      admin: flags.filter((f: FeatureFlagData) => f.category === "admin")
-        .length,
-    };
-
-    return { total, enabled, disabled, byCategory };
-  }, [flags, filteredFlags]);
-
-  // 🎨 Render
   return (
     <div className="space-y-6">
-      {/* 📊 Header */}
+      {/* 🏠 Header - SIEMPRE VISIBLE */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-            {t.featureFlags.title}
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400">
-            Gestiona módulos y funcionalidades de interfaz que se pueden
-            activar/desactivar
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+              {t.featureFlags.title}
+            </h1>
+            {/* ⚡ Performance indicators */}
+            {isValidating && (
+              <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-xs rounded-full">
+                <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <span>Actualizando</span>
+              </div>
+            )}
+            {isToggling && (
+              <div className="flex items-center gap-1 px-2 py-1 bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 text-xs rounded-full">
+                <div className="w-3 h-3 border-2 border-amber-600 border-t-transparent rounded-full animate-spin"></div>
+                <span>Guardando</span>
+              </div>
+            )}
+          </div>
+          <p className="text-slate-600 dark:text-slate-400 mt-1">
+            Gestiona módulos y funcionalidades - Sistema súper optimizado con
+            TanStack Query
           </p>
         </div>
 
-        <button
-          onClick={handleRefresh}
-          disabled={isLoading}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors dark:bg-blue-700 dark:hover:bg-blue-600"
-        >
-          <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
-          {t.featureFlags.refresh}
-        </button>
-      </div>
-
-      {/* 📊 Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-              <Flag className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                {t.featureFlags.total}
-              </p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {stats.total}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-              <Zap className="w-5 h-5 text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                {t.featureFlags.active}
-              </p>
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {stats.enabled}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg">
-              <BarChart3 className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-            </div>
-            <div>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                {t.featureFlags.inactive}
-              </p>
-              <p className="text-2xl font-bold text-slate-600 dark:text-slate-400">
-                {stats.disabled}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-              <Package className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-            </div>
-            <div>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                {t.featureFlags.modules}
-              </p>
-              <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                {stats.byCategory.module || 0}
-              </p>
-            </div>
-          </div>
+        <div className="flex items-center gap-3">
+          {/* 🔄 Refresh button */}
+          <button
+            onClick={handleRefresh}
+            disabled={isFetching}
+            className={`flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed dark:bg-blue-700 dark:hover:bg-blue-600 ${
+              isFetching ? "animate-pulse" : ""
+            }`}
+          >
+            <RefreshCw size={16} className={isFetching ? "animate-spin" : ""} />
+            {isFetching ? "Actualizando..." : t.featureFlags.refresh}
+          </button>
         </div>
       </div>
+
+      {/* 📊 STATS - OPTIMIZED CON CACHE */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <SkeletonStatsCard key={i} />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                <Flag className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  {t.featureFlags.total}
+                </p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                  {stats.total}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                <Zap className="w-5 h-5 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  {t.featureFlags.active}
+                </p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {stats.enabled}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg">
+                <BarChart3 className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  {t.featureFlags.inactive}
+                </p>
+                <p className="text-2xl font-bold text-slate-600 dark:text-slate-400">
+                  {stats.disabled}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                <Package className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  {t.featureFlags.modules}
+                </p>
+                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                  {stats.byCategory.module || 0}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ❌ Error handling */}
+      {hasError && error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 text-red-600 dark:text-red-400">⚠️</div>
+              <p className="text-red-800 dark:text-red-200 font-medium">
+                {t.featureFlags.errorLoading}
+              </p>
+            </div>
+            <button
+              onClick={handleRefresh}
+              className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200 text-sm underline"
+            >
+              Reintentar
+            </button>
+          </div>
+          <p className="text-red-600 dark:text-red-400 text-sm mt-1">{error}</p>
+        </div>
+      )}
 
       {/* 🔍 Filters */}
       <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
@@ -316,33 +281,14 @@ export default function FeatureFlagsAdminPage() {
         </div>
       </div>
 
-      {/* 🚨 Error State */}
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 text-red-600 dark:text-red-400">⚠️</div>
-            <p className="text-red-800 dark:text-red-200 font-medium">
-              {t.featureFlags.errorLoading}
-            </p>
-          </div>
-          <p className="text-red-600 dark:text-red-400 text-sm mt-1">{error}</p>
+      {/* 🎛️ Feature Flags Grid - TANSTACK QUERY OPTIMIZED */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <SkeletonFeatureFlagCard key={i} />
+          ))}
         </div>
-      )}
-
-      {/* 🎛️ Feature Flags Grid - LOADING INDIVIDUAL */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredFlags.map((flag: FeatureFlagData) => (
-          <FeatureFlagCard
-            key={flag.key}
-            flag={flag}
-            onToggle={handleToggle}
-            isLoading={loadingFlags.has(flag.key)}
-          />
-        ))}
-      </div>
-
-      {/* 📭 Empty State */}
-      {filteredFlags.length === 0 && !isLoading && !error && (
+      ) : filteredFlags.length === 0 ? (
         <div className="text-center py-12">
           <Package className="w-12 h-12 text-slate-400 dark:text-slate-500 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
@@ -352,15 +298,16 @@ export default function FeatureFlagsAdminPage() {
             {t.featureFlags.adjustFilters}
           </p>
         </div>
-      )}
-
-      {/* 🔄 Loading State */}
-      {isLoading && flags.length === 0 && (
-        <div className="text-center py-12">
-          <RefreshCw className="w-8 h-8 text-blue-600 dark:text-blue-400 animate-spin mx-auto mb-4" />
-          <p className="text-slate-600 dark:text-slate-400">
-            {t.featureFlags.loading}
-          </p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredFlags.map((flag: FeatureFlagData) => (
+            <FeatureFlagCard
+              key={flag.key}
+              flag={flag}
+              onToggle={handleToggle}
+              isLoading={getIsToggling(flag.key)}
+            />
+          ))}
         </div>
       )}
     </div>

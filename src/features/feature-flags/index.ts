@@ -1,8 +1,11 @@
 /**
- * 🎛️ FEATURE FLAGS MODULE BARREL
+ * ⚡ FEATURE FLAGS MODULE - TANSTACK OPTIMIZED
+ * ===========================================
  *
- * Módulo simple para la gestión de feature flags.
- * Sigue el patrón estándar para módulos simples.
+ * Módulo optimizado con TanStack Query.
+ * Performance enterprise, cero parpadeos.
+ *
+ * Enterprise: 2025-01-17 - TanStack Query optimization
  */
 
 // 🏠 Página principal
@@ -10,16 +13,6 @@ export { default } from "./screen";
 
 // 🧩 Componentes
 export * from "./components";
-
-/**
- * 🎛️ FEATURE FLAGS - BARREL EXPORTS
- * =================================
- *
- * Centralized exports for the simplified feature flags system.
- * Clean API for consuming components.
- *
- * Simple: 2025-01-17 - Barrel exports
- */
 
 // 🎯 Configuration
 export {
@@ -40,15 +33,10 @@ export type {
   FeatureFlagActionResult,
   FeatureFlagBatchUpdate,
   FeatureFlagBatchResult,
-  FeatureFlagBroadcastData,
-  FeatureFlagsContextType,
   FeatureFlagFilters,
 } from "./types";
 
-// 🪝 Provider
-export { FeatureFlagsProvider, useFeatureFlagsContext } from "./provider";
-
-// 🪝 Client hooks (from hooks folder)
+// ⚡ Optimized hooks (TanStack Query)
 export {
   useFeatureFlags,
   useIsEnabled,
@@ -59,7 +47,7 @@ export {
   useBatchFeatureFlags,
 } from "./hooks";
 
-// 🏢 Server utilities
+// 🏢 Server utilities (still needed for SSR)
 export {
   getServerFeatureFlags,
   isServerFeatureEnabled,
@@ -69,7 +57,7 @@ export {
   FeatureFlagsDebug,
 } from "./server";
 
-// 🚀 Server actions
+// 🚀 Server actions (used by TanStack Query)
 export {
   getFeatureFlagsAction,
   toggleFeatureFlagAction,

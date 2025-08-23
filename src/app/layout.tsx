@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "../styles/globals.css";
 import { NotificationProvider } from "@/shared/providers/NotificationProvider";
 import { ThemeProvider } from "@/shared/providers/ThemeProvider";
+import QueryProvider from "@/lib/providers/QueryProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,21 +31,23 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
       >
-        <ThemeProvider>
-          <NotificationProvider
-            theme="system"
-            visibleToasts={5}
-            config={{
-              position: "top-right",
-              richColors: true,
-              closeButton: true,
-              dismissible: true,
-              pauseWhenPageIsHidden: true,
-            }}
-          >
-            {children}
-          </NotificationProvider>
-        </ThemeProvider>
+        <QueryProvider>
+          <ThemeProvider>
+            <NotificationProvider
+              theme="system"
+              visibleToasts={5}
+              config={{
+                position: "top-right",
+                richColors: true,
+                closeButton: true,
+                dismissible: true,
+                pauseWhenPageIsHidden: true,
+              }}
+            >
+              {children}
+            </NotificationProvider>
+          </ThemeProvider>
+        </QueryProvider>
       </body>
     </html>
   );
