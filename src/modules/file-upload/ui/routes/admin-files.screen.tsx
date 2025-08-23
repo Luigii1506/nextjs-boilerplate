@@ -22,12 +22,12 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useFileUploadQuery } from "../../hooks/useFileUploadQuery";
-import { useNotifications } from "@/shared/hooks/useNotifications";
+// Notifications now handled by useFileUploadQuery
 import FileUploader from "../components/FileUploader";
 import FileManager from "../components/FileManager";
 import FileStats from "../components/FileStats";
 import ImageGallery from "../components/ImageGallery";
-import type {} from "../../types";
+import type { UploadFile, UploadCardData } from "../../types";
 
 // Component props
 type AdminFilesScreenProps = Record<string, never>;
@@ -39,10 +39,7 @@ export const AdminFilesScreen: React.FC<AdminFilesScreenProps> = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [uploadProvider, setUploadProvider] = useState<"local" | "s3">("local");
-  const [selectedUploadCategory, setSelectedUploadCategory] = useState<
-    string | null
-  >(null);
+  // Removed unused upload provider and category state
   const [activeTab, setActiveTab] = useState<
     "upload" | "manager" | "stats" | "gallery"
   >("manager");
@@ -57,26 +54,18 @@ export const AdminFilesScreen: React.FC<AdminFilesScreenProps> = () => {
     error,
     uploadFile,
     deleteFile,
-    updateFile,
+    // updateFile, // Removed - not used in this screen
     refresh,
     isUploading,
     isDeleting,
     isUpdating,
-  } = useFileUploadQuery({
-    autoFetch: true,
-    enableOptimistic: true,
-    staleTime: 30 * 1000, // 30s
-    cacheTime: 10 * 60 * 1000, // 10 min
-  });
+  } = useFileUploadQuery();
 
-  const {
-    notify,
-    error: notifyError,
-    success: notifySuccess,
-  } = useNotifications();
+  // Notifications now handled by useFileUploadQuery hook
 
   // 🔧 Default upload config
   const uploadConfig = {
+    provider: "local" as const,
     maxFileSize: 10 * 1024 * 1024, // 10MB
     allowedTypes: [
       "image/*",
@@ -87,7 +76,7 @@ export const AdminFilesScreen: React.FC<AdminFilesScreenProps> = () => {
       "video/*",
       "audio/*",
     ],
-    maxFiles: 5,
+    multiple: true,
   };
 
   // 🔍 Filter files based on UI state
@@ -168,38 +157,43 @@ export const AdminFilesScreen: React.FC<AdminFilesScreenProps> = () => {
     return stats;
   }, [files]);
 
-  // 📤 Handle file upload
-  const handleFileUpload = async (newFiles: File[]) => {
-    try {
-      for (const file of newFiles) {
-        await uploadFile(file);
+  // Removed unused handler
+
+  // Upload files handler for FileManager
+  const handleUploadForManager = async (files: File[]) => {
+    const results = [];
+    for (const file of files) {
+      try {
+        const result = await uploadFile(file);
+        results.push({ success: true, file: transformToCardData(result) });
+      } catch (error) {
+        results.push({
+          success: false,
+          error: error instanceof Error ? error.message : "Upload failed",
+        });
       }
-      notifySuccess(`${newFiles.length} archivo(s) subido(s) exitosamente`);
-    } catch {
-      notifyError("Error en la subida de archivos");
     }
+    return results;
   };
 
-  // 🗑️ Handle file delete
+  // 🗑️ Handle file delete (notifications handled by useFileUploadQuery)
   const handleFileDelete = async (fileId: string) => {
-    try {
-      await deleteFile(fileId);
-    } catch {
-      notifyError("Error eliminando archivo");
-    }
+    await deleteFile(fileId); // useFileUploadQuery handles success/error notifications
   };
 
-  // ✏️ Handle file update
-  const handleFileUpdate = async (
-    fileId: string,
-    updates: { filename?: string; isPublic?: boolean; tags?: string[] }
-  ) => {
-    try {
-      await updateFile({ fileId, ...updates });
-    } catch {
-      notifyError("Error actualizando archivo");
-    }
-  };
+  // File transformations for compatibility
+  const transformToCardData = (file: UploadFile): UploadCardData => ({
+    ...file,
+    fileType: file.mimeType.split("/")[0] as
+      | "image"
+      | "video"
+      | "audio"
+      | "document"
+      | "other",
+    sizeFormatted: (file.size / 1024 / 1024).toFixed(2) + " MB",
+    isImage: file.mimeType.startsWith("image/"),
+    extension: file.originalName.split(".").pop()?.toLowerCase() || "",
+  });
 
   // Images are filtered inline in the gallery tab
 
@@ -363,20 +357,21 @@ export const AdminFilesScreen: React.FC<AdminFilesScreenProps> = () => {
             {activeTab === "upload" && (
               <FileUploader
                 config={uploadConfig}
-                onUploadComplete={(files) =>
-                  notifySuccess(`${files.length} archivos subidos exitosamente`)
-                }
-                onUploadError={(error) => notifyError(error)}
-                selectedCategory={selectedUploadCategory}
+                onUploadComplete={() => {}} // Notifications handled by useFileUploadQuery
+                onUploadError={() => {}}
                 isUploading={isUploading}
                 uploadProgress={[]}
                 uploadError={null}
                 uploadFiles={async (files) => {
+                  // Simple delegation to uploadFile - let useFileUploadQuery handle everything
                   const results = [];
                   for (const file of files) {
                     try {
                       const result = await uploadFile(file);
-                      results.push({ success: true, file: result });
+                      results.push({
+                        success: true,
+                        file: transformToCardData(result),
+                      });
                     } catch (error) {
                       results.push({
                         success: false,
@@ -395,29 +390,24 @@ export const AdminFilesScreen: React.FC<AdminFilesScreenProps> = () => {
 
             {activeTab === "manager" && (
               <FileManager
-                files={filteredFiles}
-                uploadProgress={[]} // Add required prop with default value
-                uploadFiles={handleFileUpload} // Add required prop
-                deleteFile={handleFileDelete} // Use correct prop name
+                files={filteredFiles.map(transformToCardData)}
+                uploadProgress={[]}
+                uploadFiles={handleUploadForManager}
+                deleteFile={handleFileDelete}
                 viewMode={viewMode}
-                selectable={true}
+                selectable={false}
               />
             )}
 
-            {activeTab === "stats" && (
-              <FileStats
-                stats={stats}
-                isLoading={false}
-                fileTypeStats={fileTypeStats}
-                totalFiles={files.length}
-              />
+            {activeTab === "stats" && stats && (
+              <FileStats stats={stats} showDetails={true} />
             )}
 
             {activeTab === "gallery" && (
               <ImageGallery
-                images={filteredFiles.filter((f) =>
-                  f.mimeType.startsWith("image/")
-                )}
+                images={filteredFiles
+                  .filter((f) => f.mimeType.startsWith("image/"))
+                  .map(transformToCardData)}
                 onImageDelete={(image) => handleFileDelete(image.id)}
               />
             )}

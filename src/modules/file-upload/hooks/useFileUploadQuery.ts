@@ -217,17 +217,10 @@ export function useFileUploadQuery(config?: UploadConfig) {
         }
       : undefined,
     onSuccess: (data: UploadFile, file: File) => {
-      // ✅ Update files list with real data
-      queryClient.setQueryData<UploadFile[]>(
-        FILE_UPLOAD_QUERY_KEYS.filesList({}),
-        (old) => {
-          if (!old) return [data];
-          // Replace optimistic file with real data
-          return old.map((f) => (f.id.startsWith("temp-") ? data : f));
-        }
-      );
-
-      // 📊 Invalidate stats to refresh after upload
+      // 🔄 Simply invalidate and refetch for clean state
+      queryClient.invalidateQueries({
+        queryKey: FILE_UPLOAD_QUERY_KEYS.files(),
+      });
       queryClient.invalidateQueries({
         queryKey: FILE_UPLOAD_QUERY_KEYS.stats(),
       });
@@ -428,9 +421,9 @@ export function useFileUploadQuery(config?: UploadConfig) {
     categoriesError,
 
     // 🚀 Actions
-    uploadFile: uploadFileMutation.mutate,
-    deleteFile: deleteFileMutation.mutate,
-    updateFile: updateFileMutation.mutate,
+    uploadFile: uploadFileMutation.mutateAsync,
+    deleteFile: deleteFileMutation.mutateAsync,
+    updateFile: updateFileMutation.mutateAsync,
     refresh: refreshAll,
     refetchFiles,
     refetchStats,
