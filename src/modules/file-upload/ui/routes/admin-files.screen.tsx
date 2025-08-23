@@ -28,6 +28,168 @@ import FileManager from "../components/FileManager";
 import FileStats from "../components/FileStats";
 import ImageGallery from "../components/ImageGallery";
 import type { UploadFile, UploadCardData } from "../../types";
+import {
+  SkeletonStatsCard,
+  SkeletonCard,
+  SkeletonList,
+  Skeleton,
+} from "@/shared/ui/components";
+
+// 💀 Files Loading Skeleton Component
+const FilesSkeleton: React.FC<{
+  activeTab: "upload" | "manager" | "gallery" | "stats";
+  viewMode: "list" | "grid";
+}> = ({ activeTab, viewMode }) => {
+  switch (activeTab) {
+    case "upload":
+      return (
+        <div className="space-y-6">
+          {/* Upload Area Skeleton */}
+          <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl p-8">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <Skeleton width="4rem" height="4rem" rounded="full" />
+              <Skeleton height="1.5rem" width="16rem" />
+              <Skeleton height="1rem" width="12rem" />
+              <Skeleton height="1rem" width="8rem" />
+              <Skeleton height="2.5rem" width="10rem" rounded="lg" />
+            </div>
+          </div>
+          {/* Selected Files Area */}
+          <div className="space-y-3">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <SkeletonCard key={i} showAvatar={false} lines={2} />
+            ))}
+          </div>
+        </div>
+      );
+
+    case "manager":
+      return viewMode === "grid" ? (
+        // Grid View Skeleton
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div
+              key={i}
+              className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
+            >
+              <Skeleton height="12rem" rounded="none" />
+              <div className="p-4">
+                <Skeleton height="1rem" width="80%" className="mb-2" />
+                <div className="flex justify-between">
+                  <Skeleton height="0.75rem" width="3rem" />
+                  <Skeleton height="0.75rem" width="4rem" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        // List View Skeleton
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <div className="grid grid-cols-12 gap-4">
+              <div className="col-span-5">
+                <Skeleton height="1rem" width="6rem" />
+              </div>
+              <div className="col-span-2">
+                <Skeleton height="1rem" width="4rem" />
+              </div>
+              <div className="col-span-2">
+                <Skeleton height="1rem" width="5rem" />
+              </div>
+              <div className="col-span-2">
+                <Skeleton height="1rem" width="6rem" />
+              </div>
+            </div>
+          </div>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 last:border-b-0"
+            >
+              <div className="grid grid-cols-12 gap-4 items-center">
+                <div className="col-span-5 flex items-center gap-3">
+                  <Skeleton width="1.25rem" height="1.25rem" />
+                  <Skeleton height="0.875rem" width="8rem" />
+                </div>
+                <div className="col-span-2">
+                  <Skeleton height="0.875rem" width="3rem" />
+                </div>
+                <div className="col-span-2">
+                  <Skeleton height="0.875rem" width="4rem" />
+                </div>
+                <div className="col-span-2">
+                  <Skeleton height="0.875rem" width="5rem" />
+                </div>
+                <div className="col-span-1">
+                  <Skeleton width="1.5rem" height="1.5rem" rounded="sm" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+
+    case "gallery":
+      return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div
+              key={i}
+              className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
+            >
+              <Skeleton height="12rem" rounded="none" />
+            </div>
+          ))}
+        </div>
+      );
+
+    case "stats":
+      return (
+        <div className="space-y-6">
+          {/* Storage Overview */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <Skeleton width="3rem" height="3rem" rounded="lg" />
+                <div>
+                  <Skeleton height="1.5rem" width="8rem" className="mb-1" />
+                  <Skeleton height="0.875rem" width="10rem" />
+                </div>
+              </div>
+              <div className="text-right">
+                <Skeleton height="2rem" width="6rem" className="mb-1" />
+                <Skeleton height="0.875rem" width="4rem" />
+              </div>
+            </div>
+            <Skeleton
+              height="0.5rem"
+              width="100%"
+              rounded="full"
+              className="mb-2"
+            />
+            <Skeleton height="0.875rem" width="12rem" />
+          </div>
+
+          {/* File Type Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <SkeletonStatsCard key={i} />
+            ))}
+          </div>
+
+          {/* Detailed Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <SkeletonCard lines={4} />
+            <SkeletonCard lines={4} />
+          </div>
+        </div>
+      );
+
+    default:
+      return <SkeletonList items={6} showAvatar={false} />;
+  }
+};
 
 // Component props
 type AdminFilesScreenProps = Record<string, never>;
@@ -344,14 +506,7 @@ export const AdminFilesScreen: React.FC<AdminFilesScreenProps> = () => {
       {/* Content */}
       <div className="min-h-[400px]">
         {isLoading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-              <div className="text-gray-600 dark:text-slate-400">
-                Cargando archivos...
-              </div>
-            </div>
-          </div>
+          <FilesSkeleton activeTab={activeTab} viewMode={viewMode} />
         ) : (
           <>
             {activeTab === "upload" && (
