@@ -26,6 +26,7 @@ export const USERS_CACHE_TAGS = {
   USERS: "users",
   USER_DETAILS: "user-details",
   USER_STATS: "user-stats",
+  USER_PERMISSIONS: "user-permissions",
 } as const;
 
 // ⚙️ Basic config for TanStack Query

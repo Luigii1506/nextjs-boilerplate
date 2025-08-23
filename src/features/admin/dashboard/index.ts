@@ -1,8 +1,10 @@
 /**
- * 📊 DASHBOARD MODULE BARREL
+ * 📊 DASHBOARD MODULE BARREL - TANSTACK QUERY OPTIMIZED
  *
  * Módulo simple para el dashboard administrativo.
- * Sigue el patrón estándar para módulos simples.
+ * Totalmente optimizado con TanStack Query enterprise.
+ *
+ * Enterprise: 2025-01-17 - Zero legacy code
  */
 
 // 🏠 Página principal (screen)
@@ -11,7 +13,7 @@ export { default } from "./screen";
 // 🧩 Componentes
 export * from "./components";
 
-// 🎯 Hooks
+// 🎯 Hooks (TanStack Query optimized)
 export * from "./hooks";
 
 // 🔧 Server Actions
@@ -19,3 +21,6 @@ export * from "./actions";
 
 // 📝 Tipos
 export * from "./types";
+
+// ⚙️ Constants
+export * from "./constants";

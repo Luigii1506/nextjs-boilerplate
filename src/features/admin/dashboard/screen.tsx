@@ -14,7 +14,7 @@ import {
   XCircle,
   RefreshCw,
 } from "lucide-react";
-import { useDashboard } from "./hooks";
+import { useDashboardQuery } from "./hooks/useDashboardQuery";
 import { useIsEnabled } from "@/features/feature-flags";
 import { useHydration } from "@/shared/hooks/useHydration";
 import { SkeletonStatsCard, SkeletonCard } from "@/shared/ui/components";
@@ -24,13 +24,13 @@ interface DashboardPageProps {
 }
 
 export default function DashboardPage({ onViewChange }: DashboardPageProps) {
-  // 🪝 Usar el hook personalizado del dashboard
+  // 🪝 Usar el hook optimizado con TanStack Query
   const {
     stats,
     isLoading,
     isRefreshing,
     refresh: handleRefresh,
-  } = useDashboard();
+  } = useDashboardQuery();
 
   // 🎛️ Feature Flags
   const isHydrated = useHydration();
