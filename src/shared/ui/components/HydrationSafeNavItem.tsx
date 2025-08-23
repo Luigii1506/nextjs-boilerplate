@@ -47,9 +47,9 @@ function NavItemSkeleton({ navBase }: { navBase: string }) {
   return (
     <div className={`${navBase} animate-pulse`}>
       {/* Placeholder para el icono */}
-      <div className="w-4 h-4 bg-slate-200 rounded"></div>
+      <div className="w-4 h-4 bg-slate-200 dark:bg-slate-600 rounded"></div>
       {/* Placeholder para el texto */}
-      <div className="h-4 bg-slate-200 rounded flex-1"></div>
+      <div className="h-4 bg-slate-200 dark:bg-slate-600 rounded flex-1"></div>
     </div>
   );
 }

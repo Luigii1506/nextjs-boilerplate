@@ -175,7 +175,7 @@ export default function Navigation({ userRole }: NavigationProps) {
 
       {/* 📊 Debug info (only in development) */}
       {process.env.NODE_ENV === "development" && (
-        <div className="px-3 py-2 mt-6 bg-slate-50 dark:bg-slate-800 rounded-lg">
+        <div className="px-3 py-2 mt-6 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
           <p className="text-xs text-slate-500 dark:text-slate-400">
             ⚡ TanStack Query | {navigationItems.length} items cached
           </p>

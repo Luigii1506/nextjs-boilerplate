@@ -287,7 +287,7 @@ const FileManager: React.FC<FileManagerProps> = React.memo(
         onDrop={handleDrop}
       >
         {/* Upload Progress Indicators */}
-        {uploadProgress.map((progress) => (
+        {uploadProgress?.map((progress) => (
           <div
             key={progress.fileId}
             className="bg-white rounded-2xl border border-slate-200 p-4"
@@ -308,10 +308,10 @@ const FileManager: React.FC<FileManagerProps> = React.memo(
               <p className="text-red-500 text-xs mt-1">{progress.error}</p>
             )}
           </div>
-        ))}
+        )) || null}
 
         {/* Files Grid */}
-        {displayFiles.map((file) => (
+        {(displayFiles || files || []).map((file) => (
           <div
             key={file.id}
             className={`group bg-white rounded-2xl border border-slate-200 hover:border-slate-300 hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer ${

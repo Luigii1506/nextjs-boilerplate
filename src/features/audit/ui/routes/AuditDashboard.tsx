@@ -100,7 +100,7 @@ export default function AuditDashboard({ onViewChange }: AuditDashboardProps) {
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               Audit Trail
             </h1>
             {/* 🚀 Performance indicators (development only) */}
@@ -116,7 +116,7 @@ export default function AuditDashboard({ onViewChange }: AuditDashboardProps) {
               </div>
             )}
           </div>
-          <p className="text-slate-600 dark:text-slate-400 mt-1">
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             Seguimiento y auditoría de actividades del sistema - Sistema
             optimizado con TanStack Query
           </p>
@@ -139,7 +139,7 @@ export default function AuditDashboard({ onViewChange }: AuditDashboardProps) {
             variant="outline"
             onClick={handleRefresh}
             disabled={isEventsLoading || isStatsLoading}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50"
           >
             <RefreshCw
               className={cn(
@@ -152,7 +152,11 @@ export default function AuditDashboard({ onViewChange }: AuditDashboardProps) {
               : "Actualizar"}
           </Button>
 
-          <Button variant="outline" onClick={() => onViewChange?.("settings")}>
+          <Button 
+            variant="outline" 
+            onClick={() => onViewChange?.("settings")}
+            className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+          >
             <Settings className="h-4 w-4 mr-2" />
             Configuración
           </Button>
@@ -186,25 +190,33 @@ export default function AuditDashboard({ onViewChange }: AuditDashboardProps) {
       )}
 
       {/* ⚡ Enhanced Tabs with Loading States */}
-      <Card className="p-1">
+      <Card className="p-1 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-1">
           <Button
             variant={activeTab === "overview" ? "default" : "ghost"}
             onClick={() => handleTabChange("overview")}
             disabled={isStatsLoading}
-            className="flex items-center gap-2"
+            className={`flex items-center gap-2 ${
+              activeTab === "overview" 
+                ? "bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600" 
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50"
+            }`}
           >
             <BarChart3 className="h-4 w-4" />
             Resumen
             {isStatsLoading && (
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+              <div className="w-2 h-2 bg-blue-500 dark:bg-blue-400 rounded-full animate-pulse" />
             )}
           </Button>
           <Button
             variant={activeTab === "events" ? "default" : "ghost"}
             onClick={() => handleTabChange("events")}
             disabled={isEventsLoading}
-            className="flex items-center gap-2"
+            className={`flex items-center gap-2 ${
+              activeTab === "events" 
+                ? "bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600" 
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50"
+            }`}
           >
             <Activity className="h-4 w-4" />
             Eventos
@@ -214,7 +226,7 @@ export default function AuditDashboard({ onViewChange }: AuditDashboardProps) {
               </span>
             )}
             {isEventsLoading && (
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+              <div className="w-2 h-2 bg-blue-500 dark:bg-blue-400 rounded-full animate-pulse" />
             )}
           </Button>
         </div>

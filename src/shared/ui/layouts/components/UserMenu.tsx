@@ -298,12 +298,12 @@ export const UserMenu = React.memo<UserMenuProps>(
       return (
         <div className={cn("flex items-center", compact ? "gap-2" : "gap-3")}>
           <div className="text-right animate-pulse">
-            <div className="h-4 w-24 bg-slate-200 rounded mb-1"></div>
-            <div className="h-3 w-16 bg-slate-200 rounded"></div>
+            <div className="h-4 w-24 bg-slate-200 dark:bg-slate-600 rounded mb-1"></div>
+            <div className="h-3 w-16 bg-slate-200 dark:bg-slate-600 rounded"></div>
           </div>
           <div
             className={cn(
-              "rounded-full bg-slate-200 animate-pulse",
+              "rounded-full bg-slate-200 dark:bg-slate-600 animate-pulse",
               avatarConfig.className
             )}
           ></div>
@@ -321,7 +321,7 @@ export const UserMenu = React.memo<UserMenuProps>(
             compact ? "gap-2" : "gap-3",
             showDropdown &&
               !isLoading &&
-              "hover:bg-slate-50 rounded-lg p-2 -m-2",
+              "hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg p-2 -m-2",
             ENTERPRISE_CONFIG.animation.duration,
             ENTERPRISE_CONFIG.animation.easing
           )}
@@ -334,7 +334,7 @@ export const UserMenu = React.memo<UserMenuProps>(
           <div className="text-right">
             <p
               className={cn(
-                "font-medium text-slate-700",
+                "font-medium text-slate-700 dark:text-slate-300",
                 compact ? "text-xs" : "text-sm"
               )}
             >
@@ -342,7 +342,7 @@ export const UserMenu = React.memo<UserMenuProps>(
             </p>
             <div className="flex items-center gap-2">
               {!compact && (
-                <span className="text-xs text-slate-500 truncate max-w-32">
+                <span className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-32">
                   {user.email}
                 </span>
               )}
@@ -371,7 +371,7 @@ export const UserMenu = React.memo<UserMenuProps>(
               width={avatarConfig.width}
               height={avatarConfig.height}
               className={cn(
-                "rounded-full border-2 border-slate-200",
+                "rounded-full border-2 border-slate-200 dark:border-slate-600",
                 avatarConfig.className
               )}
               unoptimized={user.image.startsWith("data:")}
@@ -379,11 +379,11 @@ export const UserMenu = React.memo<UserMenuProps>(
           ) : (
             <div
               className={cn(
-                "rounded-full bg-slate-200 flex items-center justify-center border-2 border-slate-300",
+                "rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center border-2 border-slate-300 dark:border-slate-600",
                 avatarConfig.className
               )}
             >
-              <span className="text-slate-600 font-medium text-sm">
+              <span className="text-slate-600 dark:text-slate-300 font-medium text-sm">
                 {userInitials}
               </span>
             </div>
@@ -393,9 +393,9 @@ export const UserMenu = React.memo<UserMenuProps>(
           {showDropdown && !isLoading && (
             <div className="ml-1">
               {isOpen ? (
-                <ChevronUp className="w-4 h-4 text-slate-400" />
+                <ChevronUp className="w-4 h-4 text-slate-400 dark:text-slate-500" />
               ) : (
-                <ChevronDown className="w-4 h-4 text-slate-400" />
+                <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-500" />
               )}
             </div>
           )}
@@ -406,7 +406,7 @@ export const UserMenu = React.memo<UserMenuProps>(
           <div
             ref={menuRef}
             className={cn(
-              "absolute right-0 mt-2 w-56 rounded-lg bg-white shadow-lg border border-slate-200 py-1 z-50",
+              "absolute right-0 mt-2 w-56 rounded-lg bg-white dark:bg-slate-800 shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-50",
               "animate-in fade-in slide-in-from-top-2",
               ENTERPRISE_CONFIG.animation.duration
             )}
@@ -421,10 +421,10 @@ export const UserMenu = React.memo<UserMenuProps>(
                 className={cn(
                   "w-full text-left px-4 py-2 text-sm transition-colors flex items-center gap-3",
                   action.disabled
-                    ? "text-slate-400 cursor-not-allowed"
+                    ? "text-slate-400 dark:text-slate-500 cursor-not-allowed"
                     : action.variant === "danger"
-                    ? "text-red-600 hover:bg-red-50"
-                    : "text-slate-700 hover:bg-slate-50",
+                    ? "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700",
                   index === 0 && "rounded-t-lg",
                   index === menuActions.length - 1 && "rounded-b-lg"
                 )}
