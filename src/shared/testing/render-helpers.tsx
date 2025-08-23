@@ -1,6 +1,6 @@
-// 🎭 RENDER HELPERS
-// ================
-// Utilidades para renderizar componentes con providers y contextos
+// ⚡ RENDER HELPERS - TANSTACK OPTIMIZED
+// =====================================
+// Utilidades optimizadas para testing con TanStack Query
 
 import React, { ReactElement } from "react";
 import { render, RenderOptions } from "@testing-library/react";
@@ -11,27 +11,18 @@ const MockAuthProvider = ({ children }: { children: React.ReactNode }) => {
   return <div data-testid="mock-auth-provider">{children}</div>;
 };
 
-// 🎛️ Mock del provider de feature flags
-const MockFeatureFlagsProvider = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
-  return <div data-testid="mock-feature-flags-provider">{children}</div>;
-};
-
-// 🧩 Provider completo para testing
+// 🧩 Provider completo para testing (TanStack Query handles feature flags)
 interface TestProvidersProps {
   children: React.ReactNode;
-  // These props are available for future use:
-  // initialFeatureFlags?: Record<string, boolean>;
+  // TanStack Query eliminates the need for feature flags provider
   // mockUser?: { id: string; name: string; email: string; role: string; } | null;
 }
 
 const TestProviders: React.FC<TestProvidersProps> = ({ children }) => {
   return (
     <MockAuthProvider>
-      <MockFeatureFlagsProvider>{children}</MockFeatureFlagsProvider>
+      {/* ⚡ No feature flags provider needed - TanStack Query handles everything */}
+      {children}
     </MockAuthProvider>
   );
 };
@@ -121,12 +112,14 @@ export const renderAsGuest = (
   });
 };
 
-// 🎛️ Render con feature flags específicos
+// ⚡ Render con feature flags específicos (TanStack Query optimized)
+// Note: With TanStack Query, feature flags are handled automatically
 export const renderWithFeatureFlags = (
   ui: ReactElement,
   featureFlags: Record<string, boolean>,
   options: CustomRenderOptions = {}
 ) => {
+  // For testing, you might want to mock TanStack Query responses instead
   return renderWithProviders(ui, {
     ...options,
     initialFeatureFlags: featureFlags,

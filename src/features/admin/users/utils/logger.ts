@@ -8,7 +8,10 @@
  * Updated: 2025-01-17 - Enterprise patterns v2.0 (Simplified)
  */
 
-import { USERS_CORE_CONFIG } from "../constants";
+// Basic config for logger
+const LOGGER_CONFIG = {
+  advancedLogging: process.env.NODE_ENV === "development",
+} as const;
 
 export type LogContext = Record<string, unknown>;
 
@@ -39,7 +42,7 @@ class UsersLiteLogger {
 
   private shouldLog(): boolean {
     return (
-      USERS_CORE_CONFIG.advancedLogging || process.env.NODE_ENV === "production"
+      LOGGER_CONFIG.advancedLogging || process.env.NODE_ENV === "production"
     );
   }
 

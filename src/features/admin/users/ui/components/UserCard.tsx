@@ -20,7 +20,9 @@ interface UserCardProps {
   user: User;
   onEdit: (user: User) => void;
   onDelete: (userId: string) => void;
-  onToggleBan: (userId: string) => void;
+  onBan: (userId: string) => void;
+  onUnban: (userId: string) => void;
+  onToggleBan: (userId: string) => void; // Backward compatibility
   onChangeRole: (userId: string, role: User["role"]) => void;
 }
 
@@ -28,7 +30,9 @@ const UserCard: React.FC<UserCardProps> = ({
   user,
   onEdit,
   onDelete,
-  onToggleBan,
+  onBan,
+  onUnban,
+  onToggleBan: _, // Backward compatibility (unused)
   onChangeRole,
 }) => {
   const [showMenu, setShowMenu] = useState(false);
@@ -51,15 +55,10 @@ const UserCard: React.FC<UserCardProps> = ({
     }
   };
 
-  const getStatusColor = (status: User["status"]) => {
-    switch (status) {
-      case "active":
-        return "bg-emerald-50 text-emerald-700 border-emerald-200";
-      case "banned":
-        return "bg-red-50 text-red-700 border-red-200";
-      default:
-        return "bg-yellow-50 text-yellow-700 border-yellow-200";
-    }
+  const getStatusColor = (banned: boolean) => {
+    return banned
+      ? "bg-red-50 text-red-700 border-red-200"
+      : "bg-emerald-50 text-emerald-700 border-emerald-200";
   };
 
   const getInitials = (name: string) => {
@@ -164,21 +163,23 @@ const UserCard: React.FC<UserCardProps> = ({
 
                 <button
                   onClick={() => {
-                    onToggleBan(user.id);
+                    if (user.banned) {
+                      onUnban(user.id);
+                    } else {
+                      onBan(user.id);
+                    }
                     setShowMenu(false);
                   }}
                   className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-slate-50 ${
-                    user.status === "banned"
-                      ? "text-green-600"
-                      : "text-yellow-600"
+                    user.banned ? "text-green-600" : "text-amber-600"
                   }`}
                 >
-                  {user.status === "banned" ? (
+                  {user.banned ? (
                     <UserCheck className="w-4 h-4" />
                   ) : (
                     <Ban className="w-4 h-4" />
                   )}
-                  {user.status === "banned" ? "Desbanear" : "Banear"}
+                  {user.banned ? "✅ Desbanear" : "🚫 Banear (con razón)"}
                 </button>
 
                 <button
@@ -210,10 +211,10 @@ const UserCard: React.FC<UserCardProps> = ({
 
         <span
           className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-            user.status
+            user.banned
           )}`}
         >
-          {user.status === "active" ? "Activo" : "Baneado"}
+          {user.banned ? "Baneado" : "Activo"}
         </span>
 
         {user.emailVerified && (
@@ -240,7 +241,7 @@ const UserCard: React.FC<UserCardProps> = ({
       </div>
 
       {/* Ban Reason */}
-      {user.status === "banned" && user.banReason && (
+      {user.banned && user.banReason && (
         <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-xs text-red-700 font-medium">Motivo del baneo:</p>
           <p className="text-xs text-red-600 mt-1">{user.banReason}</p>

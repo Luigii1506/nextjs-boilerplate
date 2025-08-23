@@ -1,112 +1,30 @@
 /**
- * 👥 USERS CORE MODULE - ENTERPRISE
- * =================================
+ * 👥 USERS MODULE - CLEAN & OPTIMIZED
+ * ===================================
  *
- * Main barrel export for users core module following Enterprise patterns v2.0
- * Hexagonal Architecture + React 19 + Enterprise patterns
+ * Main barrel export for users module.
+ * Only TanStack Query optimized exports.
  *
- * Updated: 2025-01-17 - Enterprise patterns v2.0
+ * Enterprise: 2025-01-17 - Clean architecture
  */
 
-// 🏗️ Core Hooks (Enterprise Enhanced)
-export { useUsers } from "./useUsers";
-export type { UseUsersReturn } from "./useUsers";
+// 🎯 Core TanStack Query Hooks
+export * from "./hooks";
 
-// 📝 Types & Interfaces (Enhanced)
+// 📋 Types & Interfaces
 export * from "./types";
 
-// 📋 Validation Schemas
+// 📝 Validation Schemas
 export * from "./schemas";
 
-// 🏗️ Enterprise Configuration System
-export {
-  type UsersModuleConfig,
-  UsersConfigManager,
-  usersConfig,
-  adaptConfigForHook,
-  quickConfig,
-  SORT_OPTIONS,
-} from "./config";
+// 📊 Clean Constants
+export * from "./constants";
 
-// 📊 Enterprise Constants
-export {
-  USERS_ACTIONS,
-  USERS_STATUS,
-  USERS_ROLES,
-  ROLE_HIERARCHY,
-  USERS_CACHE_TAGS,
-  LOG_LEVELS,
-  SEARCH_CONFIG,
-  FILTER_OPTIONS,
-  UI_CONFIG,
-  USERS_ERROR_CODES,
-  ANALYTICS_EVENTS,
-  PERMISSIONS,
-  ROLE_PERMISSIONS,
-  PAGINATION,
-} from "./constants";
-
-// 📝 Enterprise Logging System
-export {
-  createUsersLogger,
-  usersHookLogger,
-  usersServerActionLogger,
-  usersOptimisticLogger,
-  usersServiceLogger,
-  usersUILogger,
-  usersSecurityLogger,
-  usersAnalyticsLogger,
-} from "./utils/logger";
-
-// 🔄 State Management (Optimistic Updates)
-export {
-  usersOptimisticReducer,
-  createInitialUsersOptimisticState,
-  usersOptimisticSelectors,
-  type UsersOptimisticState,
-  type UsersOptimisticAction,
-} from "./reducers";
-
-// 🎯 Server Layer (Enhanced with Logging)
+// 🎯 Server Actions & Services
 export * from "./server";
 
-// 🧩 UI Components (Enterprise Ready)
+// 🎨 UI Components
 export * from "./ui";
 
-// 🧩 Shared Components (Reusable)
-export {
-  UserAvatar,
-  UserRoleBadge,
-  UserStatusBadge,
-  UserInfo,
-} from "./ui/components/shared";
-
-// 🔧 Utilities (Enhanced)
-export {
-  getRoleHierarchy,
-  canManageUser,
-  getRoleLabel,
-  getRoleColor,
-  getUserInitials,
-  getUserDisplayName,
-  formatUserRole,
-  formatLastLogin,
-  formatUserDate,
-  validateEmail,
-  validatePassword,
-  validateUserName,
-  getUserStatusColor,
-  getUserStatusLabel,
-  normalizeSearchTerm,
-  matchesSearchTerm,
-  calculateUserStats,
-  hasPermission,
-  canDeleteUser,
-  canChangeBanStatus,
-  canChangeRole,
-  filterUsersByRole,
-  filterUsersByStatus,
-  sortUsers,
-  sanitizeUserInput,
-  generateTempUserId,
-} from "./utils";
+// 🔧 Essential Utilities
+export * from "./utils";

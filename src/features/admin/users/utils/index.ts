@@ -7,7 +7,14 @@
  * Updated: 2025-01-17 - Enterprise patterns v2.0
  */
 
-import { USERS_ROLES, ROLE_HIERARCHY, UI_CONFIG } from "../constants";
+import { USER_ROLES, ROLE_COLORS } from "../constants";
+
+// 🏷️ Role hierarchy for permissions (simplified)
+const ROLE_HIERARCHY = {
+  [USER_ROLES.USER]: 0,
+  [USER_ROLES.ADMIN]: 1,
+  [USER_ROLES.SUPER_ADMIN]: 2,
+} as const;
 
 // 🎭 Role utilities
 export function getRoleHierarchy(role: string): number {
@@ -25,11 +32,11 @@ export function canManageUser(
 
 export function getRoleLabel(role: string): string {
   switch (role) {
-    case USERS_ROLES.USER:
+    case USER_ROLES.USER:
       return "Usuario";
-    case USERS_ROLES.ADMIN:
+    case USER_ROLES.ADMIN:
       return "Administrador";
-    case USERS_ROLES.SUPER_ADMIN:
+    case USER_ROLES.SUPER_ADMIN:
       return "Super Admin";
     default:
       return role;
@@ -37,16 +44,10 @@ export function getRoleLabel(role: string): string {
 }
 
 export function getRoleColor(role: string) {
-  switch (role) {
-    case USERS_ROLES.USER:
-      return UI_CONFIG.COLORS.USER;
-    case USERS_ROLES.ADMIN:
-      return UI_CONFIG.COLORS.ADMIN;
-    case USERS_ROLES.SUPER_ADMIN:
-      return UI_CONFIG.COLORS.SUPER_ADMIN;
-    default:
-      return UI_CONFIG.COLORS.USER;
-  }
+  return (
+    ROLE_COLORS[role as keyof typeof ROLE_COLORS] ||
+    ROLE_COLORS[USER_ROLES.USER]
+  );
 }
 
 // 👤 User utilities
@@ -111,7 +112,7 @@ export function validateUserName(name: string): boolean {
 
 // 🎨 Status utilities
 export function getUserStatusColor(banned: boolean) {
-  return banned ? UI_CONFIG.COLORS.BANNED : UI_CONFIG.COLORS.USER;
+  return banned ? "text-red-600 bg-red-50" : "text-green-600 bg-green-50";
 }
 
 export function getUserStatusLabel(banned: boolean): string {
@@ -153,7 +154,7 @@ export function calculateUserStats(
   const active = users.filter((u) => !u.banned).length;
   const banned = users.filter((u) => u.banned).length;
   const admins = users.filter(
-    (u) => u.role === USERS_ROLES.ADMIN || u.role === USERS_ROLES.SUPER_ADMIN
+    (u) => u.role === USER_ROLES.ADMIN || u.role === USER_ROLES.SUPER_ADMIN
   ).length;
 
   return {
@@ -179,8 +180,8 @@ export function canDeleteUser(
 ): boolean {
   // Solo super admin puede eliminar usuarios
   return (
-    currentUserRole === USERS_ROLES.SUPER_ADMIN &&
-    targetUserRole !== USERS_ROLES.SUPER_ADMIN
+    currentUserRole === USER_ROLES.SUPER_ADMIN &&
+    targetUserRole !== USER_ROLES.SUPER_ADMIN
   );
 }
 

@@ -1,11 +1,11 @@
 /**
- * 🎯 FEATURE FLAGS TYPES
- * ======================
+ * ⚡ FEATURE FLAGS TYPES - TANSTACK OPTIMIZED
+ * ==========================================
  *
- * Shared types between client and server.
- * TypeScript safety for feature flags system.
+ * Types optimizados para TanStack Query.
+ * Eliminados tipos obsoletos de context y broadcast.
  *
- * Simple: 2025-01-17 - Unified types
+ * Enterprise: 2025-01-17 - TanStack Query types
  */
 
 import { FEATURE_FLAGS, FEATURE_CATEGORIES } from "./config";
@@ -54,14 +54,14 @@ export interface FeatureFlagBatchResult {
   errors?: string[];
 }
 
-// 📡 Broadcast message types
+// 📡 Broadcast types (deprecated - TanStack Query handles sync)
 export interface FeatureFlagBroadcastData {
   flagKey: string;
   enabled?: boolean;
   timestamp?: number;
 }
 
-// 🎯 Context types
+// 🎯 Context types (deprecated - TanStack Query replaces context)
 export interface FeatureFlagsContextType {
   flags: FeatureFlagData[];
   flagsMap: Record<string, boolean>;

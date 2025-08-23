@@ -1,9 +1,11 @@
 /**
- * 📊 AUDIT TRAIL MODULE INDEX
- * ===========================
+ * ⚡ AUDIT TRAIL MODULE - TANSTACK OPTIMIZED
+ * =========================================
  *
- * Barrel export para el módulo completo de audit trail
- * Siguiendo el patrón de módulos complejos
+ * Módulo completo de audit trail súper optimizado con TanStack Query.
+ * Performance enterprise, cache inteligente, backward compatibility.
+ *
+ * Enterprise: 2025-01-17 - TanStack Query optimization
  */
 
 // 🎯 Types
@@ -15,16 +17,16 @@ export * from "./constants";
 // 🔧 Utils
 export * from "./utils";
 
-// 🪝 Hooks
+// ⚡ Optimized Hooks (TanStack Query)
 export * from "./hooks";
 
 // 🎨 UI Components
 export { AuditEventCard, AuditStats, AuditEventsList } from "./ui/components";
 
-// 🖥️ UI Routes
-export { AuditDashboard } from "./ui/routes";
+// 🖥️ UI Routes (TanStack Query Optimized)
+export { AuditDashboard, AuditDashboardLegacy } from "./ui/routes";
 
-// 🚀 Server Actions (for external use)
+// 🚀 Server Actions (used by TanStack Query)
 export {
   getAuditEventsAction,
   getAuditStatsAction,

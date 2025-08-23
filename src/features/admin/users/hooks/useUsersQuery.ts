@@ -17,6 +17,8 @@ import {
   createUserAction,
   updateUserAction,
   deleteUserAction,
+  banUserAction,
+  unbanUserAction,
 } from "../server/actions";
 import type { User, CreateUserForm } from "../types";
 import { useNotifications } from "@/shared/hooks/useNotifications";
@@ -208,9 +210,9 @@ export function useUsersQuery() {
   // 🗑️ Delete user mutation
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
-      // Create FormData with userId
+      // Create FormData with correct field name
       const formData = new FormData();
-      formData.append("id", userId);
+      formData.append("userId", userId); // ✅ Fixed: Use 'userId' instead of 'id'
 
       const result = await deleteUserAction(formData);
       if (!result.success) throw new Error(result.error);
@@ -227,6 +229,99 @@ export function useUsersQuery() {
       queryClient.setQueryData<User[]>(
         USERS_QUERY_KEYS.lists(),
         (old) => old?.filter((user) => user.id !== userId) || []
+      );
+
+      return { previousUsers };
+    },
+    onError: (err, userId, context) => {
+      if (context?.previousUsers) {
+        queryClient.setQueryData(
+          USERS_QUERY_KEYS.lists(),
+          context.previousUsers
+        );
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: USERS_QUERY_KEYS.lists() });
+    },
+  });
+
+  // 🚫 Ban user mutation
+  const banUserMutation = useMutation({
+    mutationFn: async ({
+      userId,
+      reason,
+    }: {
+      userId: string;
+      reason: string;
+    }) => {
+      const formData = new FormData();
+      formData.append("id", userId);
+      formData.append("reason", reason);
+
+      const result = await banUserAction(formData);
+      if (!result.success) throw new Error(result.error);
+      return result.data;
+    },
+    onMutate: async ({ userId, reason }) => {
+      await queryClient.cancelQueries({ queryKey: USERS_QUERY_KEYS.lists() });
+
+      const previousUsers = queryClient.getQueryData<User[]>(
+        USERS_QUERY_KEYS.lists()
+      );
+
+      // 🎯 Optimistic ban
+      queryClient.setQueryData<User[]>(
+        USERS_QUERY_KEYS.lists(),
+        (old) =>
+          old?.map((user) =>
+            user.id === userId
+              ? { ...user, banned: true, banReason: reason, banExpires: null }
+              : user
+          ) || []
+      );
+
+      return { previousUsers };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousUsers) {
+        queryClient.setQueryData(
+          USERS_QUERY_KEYS.lists(),
+          context.previousUsers
+        );
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: USERS_QUERY_KEYS.lists() });
+    },
+  });
+
+  // ✅ Unban user mutation
+  const unbanUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const formData = new FormData();
+      formData.append("id", userId);
+
+      const result = await unbanUserAction(formData);
+      if (!result.success) throw new Error(result.error);
+      return result.data;
+    },
+    onMutate: async (userId) => {
+      await queryClient.cancelQueries({ queryKey: USERS_QUERY_KEYS.lists() });
+
+      const previousUsers = queryClient.getQueryData<User[]>(
+        USERS_QUERY_KEYS.lists()
+      );
+
+      // 🎯 Optimistic unban
+      queryClient.setQueryData<User[]>(
+        USERS_QUERY_KEYS.lists(),
+        (old) =>
+          old?.map((user) =>
+            user.id === userId
+              ? { ...user, banned: false, banReason: null, banExpires: null }
+              : user
+          ) || []
       );
 
       return { previousUsers };
@@ -308,21 +403,57 @@ export function useUsersQuery() {
     [deleteUserMutation, notify]
   );
 
+  const banUser = useCallback(
+    async (userId: string, reason?: string) => {
+      const user = users.find((u) => u.id === userId);
+      if (!user) return;
+
+      // 🚫 Pedir razón si no se proporciona
+      const banReason =
+        reason ||
+        prompt("🚫 Razón del baneo:", "Violación de términos de servicio");
+
+      if (!banReason || banReason.trim() === "") {
+        // Usuario canceló o no proporcionó razón
+        return;
+      }
+
+      await notify(
+        () => banUserMutation.mutateAsync({ userId, reason: banReason.trim() }),
+        "Baneando usuario...",
+        `Usuario baneado exitosamente: ${banReason.trim()}`
+      );
+    },
+    [users, banUserMutation, notify]
+  );
+
+  const unbanUser = useCallback(
+    async (userId: string) => {
+      const user = users.find((u) => u.id === userId);
+      if (!user) return;
+
+      await notify(
+        () => unbanUserMutation.mutateAsync(userId),
+        "Desbaneando usuario...",
+        "Usuario desbaneado exitosamente"
+      );
+    },
+    [users, unbanUserMutation, notify]
+  );
+
+  // 🔄 Toggle ban (backward compatibility)
   const toggleBanUser = useCallback(
     async (userId: string) => {
       const user = users.find((u) => u.id === userId);
       if (!user) return;
 
-      const updates = { banned: !user.banned };
-      const message = user.banned ? "Desbanear usuario" : "Banear usuario";
-
-      await notify(
-        () => updateUserMutation.mutateAsync({ userId, ...updates }),
-        `${message}...`,
-        `Usuario ${user.banned ? "desbaneado" : "baneado"} exitosamente`
-      );
+      if (user.banned) {
+        await unbanUser(userId);
+      } else {
+        await banUser(userId);
+      }
     },
-    [users, updateUserMutation, notify]
+    [users, banUser, unbanUser]
   );
 
   return {
@@ -346,12 +477,16 @@ export function useUsersQuery() {
     createUser,
     updateUser,
     deleteUser,
-    toggleBanUser,
+    banUser,
+    unbanUser,
+    toggleBanUser, // Backward compatibility
     refresh: refetch,
 
     // 🔄 Mutation states
     isCreating: createUserMutation.isPending,
     isUpdating: updateUserMutation.isPending,
     isDeleting: deleteUserMutation.isPending,
+    isBanning: banUserMutation.isPending,
+    isUnbanning: unbanUserMutation.isPending,
   };
 }

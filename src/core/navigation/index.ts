@@ -1,15 +1,21 @@
 /**
- * 📄 CORE NAVIGATION - SIMPLIFIED EXPORTS
- * ========================================
+ * ⚡ CORE NAVIGATION - TANSTACK OPTIMIZED EXPORTS
+ * ==============================================
  *
- * Sistema de navegación súper simplificado.
- * Una sola función que hace todo lo necesario.
+ * Sistema de navegación súper optimizado con TanStack Query.
+ * Performance enterprise, cache inteligente, backward compatibility.
  *
- * Simplified: 2025-01-17 - Removed all unnecessary complexity
+ * Enterprise: 2025-01-17 - TanStack Query optimization
  */
 
-// 🎯 Main Navigation Hook (Only what you need)
-export { useNavigation, navigationUtils } from "./useNavigation";
+// ⚡ Main Navigation Hooks (TanStack Query optimized)
+export {
+  useNavigation,
+  navigationUtils,
+  useNavigationQuery,
+  useNavigationPrefetch,
+  navigationQueryUtils,
+} from "./useNavigation";
 
 // 📝 Core Types & Interfaces
 export type {

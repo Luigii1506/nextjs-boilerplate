@@ -1,13 +1,23 @@
 /**
- * 🪝 AUDIT TRAIL HOOKS - BARREL EXPORT
- * ====================================
+ * ⚡ AUDIT TRAIL HOOKS - TANSTACK OPTIMIZED EXPORTS
+ * ================================================
  *
- * Barrel export para todos los hooks de audit trail.
- * Incluye hooks principales y especializados.
+ * Hooks optimizados con TanStack Query para performance enterprise.
+ * Incluye backward compatibility y hooks avanzados.
+ *
+ * Enterprise: 2025-01-17 - TanStack Query optimization
  */
 
-// 🎯 Main Hooks
-export { useAuditTrail } from "./useAuditTrail";
-export { useAuditFilters } from "./useAuditFilters";
+// ⚡ TanStack Query Optimized Hooks
+export { useAuditQuery, auditQueryUtils } from "./useAuditQuery";
+export { useAuditDashboard } from "./useAuditDashboard";
+
+// 🔄 Compatibility Hooks (maintains original API with TanStack Query internally)
+export {
+  useAuditTrail,
+  useAuditStats,
+  useAuditFilters,
+} from "./useAuditCompatibility";
+
+// 🎯 Legacy/Specialized Hooks (still available)
 export { useAuditCapture } from "./useAuditCapture";
-export { useAuditStats } from "./useAuditStats";

@@ -11,9 +11,9 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useUsersQuery } from "../../hooks/useUsersQuery";
-import { CreateUserForm, User } from "../../types";
+import { User } from "../../types";
 import UserCard from "@/features/admin/users/ui/components/UserCard";
-import UserModal from "@/features/admin/users/ui/components/UserModal";
+import UserModalOptimized from "@/features/admin/users/ui/components/UserModal.optimized";
 import { SkeletonList, SkeletonStatsCard } from "@/shared/ui/components";
 
 /**
@@ -46,14 +46,17 @@ const OptimizedUsersView: React.FC = () => {
     searchUsers,
     filterUsersByRole,
     filterUsersByStatus,
-    createUser,
     updateUser,
     deleteUser,
+    banUser,
+    unbanUser,
     toggleBanUser,
     refresh,
     isCreating,
     isUpdating,
     isDeleting,
+    isBanning,
+    isUnbanning,
   } = useUsersQuery();
 
   // 🔍 Smart filtering with optimized data
@@ -80,25 +83,22 @@ const OptimizedUsersView: React.FC = () => {
 
   const filteredUsers = getFilteredUsers();
 
-  // 🧠 User operations - Optimistic by default
-  const handleCreateUser = async (userData: CreateUserForm) => {
-    await createUser(userData);
-    setIsModalOpen(false);
-  };
-
-  const handleEditUser = async (userData: CreateUserForm) => {
-    if (!editingUser) return;
-
-    await updateUser(editingUser.id, userData);
-    setEditingUser(null);
-    setIsModalOpen(false);
-  };
+  // 🧠 User operations - Modal handles its own TanStack Query logic internally
 
   const handleDeleteUser = async (userId: string) => {
     if (!confirm("¿Estás seguro de que quieres eliminar este usuario?")) return;
     await deleteUser(userId);
   };
 
+  const handleBanUser = async (userId: string) => {
+    await banUser(userId);
+  };
+
+  const handleUnbanUser = async (userId: string) => {
+    await unbanUser(userId);
+  };
+
+  // 🔄 Backward compatibility
   const handleToggleBan = async (userId: string) => {
     await toggleBanUser(userId);
   };
@@ -123,7 +123,11 @@ const OptimizedUsersView: React.FC = () => {
                 <span>Actualizando</span>
               </div>
             )}
-            {(isCreating || isUpdating || isDeleting) && (
+            {(isCreating ||
+              isUpdating ||
+              isDeleting ||
+              isBanning ||
+              isUnbanning) && (
               <div className="flex items-center gap-1 px-2 py-1 bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 text-xs rounded-full">
                 <div className="w-3 h-3 border-2 border-amber-600 border-t-transparent rounded-full animate-spin"></div>
                 <span>Guardando</span>
@@ -324,6 +328,8 @@ const OptimizedUsersView: React.FC = () => {
                 setIsModalOpen(true);
               }}
               onDelete={handleDeleteUser}
+              onBan={handleBanUser}
+              onUnban={handleUnbanUser}
               onToggleBan={handleToggleBan}
               onChangeRole={handleChangeRole}
             />
@@ -331,15 +337,16 @@ const OptimizedUsersView: React.FC = () => {
         </div>
       )}
 
-      {/* User Modal */}
-      <UserModal
+      {/* ⚡ Optimized User Modal - TanStack Query */}
+      <UserModalOptimized
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
           setEditingUser(null);
         }}
-        onSave={editingUser ? handleEditUser : handleCreateUser}
         user={editingUser}
+        mode={editingUser ? "edit" : "create"}
+        title={editingUser ? "Editar Usuario" : "Crear Nuevo Usuario"}
       />
     </div>
   );
