@@ -1,22 +1,23 @@
-// 🏆 ENTERPRISE FILE UPLOAD MODULE - BARREL EXPORTS
-// ==================================================
-// Central export file for entire enterprise module
+// 🏆 FILE UPLOAD MODULE - TANSTACK QUERY OPTIMIZED
+// ================================================
+// Módulo completo migrado a TanStack Query
+// Performance enterprise, zero legacy code
+//
+// Enterprise: 2025-01-17 - Complete TanStack Query migration
 
-// 🎯 Core Hooks (Enterprise Enhanced)
-export { useFileUpload } from "./hooks/useFileUpload";
-// useFileNotifications eliminado - usar useSmartNotifications del sistema principal
+// 🎯 Core Hooks (TanStack Query Optimized)
+export {
+  useFileUploadQuery,
+  // Specialized hooks consolidated into useFileUploadQuery
+  // useFileStats, useFileCategories, useFileUploader, useFileManager, useFileSearch
+  FILE_UPLOAD_QUERY_KEYS,
+} from "./hooks";
+// Zero legacy code - solo TanStack Query optimizado
 
 // 📝 Types & Interfaces
 export * from "./types";
 
-// 🏗️ Enterprise Configuration System
-export {
-  type EnterpriseFileUploadConfig,
-  FileUploadConfigManager,
-  fileUploadConfig,
-  adaptConfigForHook,
-  configUtils,
-} from "./config";
+// 🏗️ Configuration migrated to utils - no separate config module needed
 
 // 📊 Enterprise Constants
 export {
@@ -41,12 +42,8 @@ export {
   optimisticLogger, // Para compatibilidad
 } from "./utils/logger";
 
-// 🔄 State Management (Optimistic Updates)
-export {
-  optimisticReducer,
-  createInitialOptimisticState,
-  optimisticSelectors,
-} from "./reducers";
+// 🔄 State Management (TanStack Query handles this automatically)
+// Legacy reducers eliminated - TanStack Query provides optimistic updates
 
 // 🎯 Server Layer
 export * from "./server";
@@ -58,7 +55,7 @@ export * from "./schemas";
 // 🔧 Utilities
 export * from "./utils";
 
-// 🎨 UI Components (Enterprise Ready)
+// 🎨 UI Components (TanStack Query Optimized)
 export * from "./ui";
 
 // 🎯 Main services for convenience

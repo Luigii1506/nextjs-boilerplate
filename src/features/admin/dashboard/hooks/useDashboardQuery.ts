@@ -139,10 +139,20 @@ export const useDashboardQuery = () => {
         }),
       ]);
 
-      notify("Dashboard actualizado exitosamente", "success");
+      notify(
+        async () => Promise.resolve(),
+        "Dashboard actualizado exitosamente"
+      );
     } catch (error) {
       console.error("Error refreshing dashboard:", error);
-      notify("Error al actualizar dashboard", "error");
+      console.error("Error refreshing dashboard:", error);
+      notify(
+        async () => {
+          throw error;
+        },
+        "Actualizando dashboard...",
+        "Dashboard actualizado"
+      ).catch(() => {}); // Handle error internally
     }
   };
 
@@ -158,6 +168,8 @@ export const useDashboardQuery = () => {
     active: 0,
     banned: 0,
     admins: 0,
+    activePercentage: 0,
+    adminPercentage: 0,
   };
 
   // Extract users with defaults
@@ -236,7 +248,14 @@ export const useDashboardOverview = () => {
   const [statsQuery, usersQuery, activityQuery] = results;
 
   return {
-    stats: statsQuery.data || { total: 0, active: 0, banned: 0, admins: 0 },
+    stats: statsQuery.data || {
+      total: 0,
+      active: 0,
+      banned: 0,
+      admins: 0,
+      activePercentage: 0,
+      adminPercentage: 0,
+    },
     recentUsers: usersQuery.data || [],
     activityData: activityQuery.data || null,
     isLoading: results.some((query) => query.isLoading),
@@ -244,7 +263,7 @@ export const useDashboardOverview = () => {
     error: results.find((query) => query.error)?.error?.message || null,
     refresh: () => {
       results.forEach((query) => query.refetch());
-      notify("Dashboard actualizado", "success");
+      notify(async () => Promise.resolve(), "Dashboard actualizado");
     },
   };
 };

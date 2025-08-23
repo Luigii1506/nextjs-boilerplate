@@ -1,11 +1,11 @@
 /**
- * ⚡ FEATURE FLAGS MODULE - TANSTACK OPTIMIZED
- * ===========================================
+ * ⚡ FEATURE FLAGS MODULE - TANSTACK QUERY OPTIMIZED
+ * ==================================================
  *
- * Módulo optimizado con TanStack Query.
- * Performance enterprise, cero parpadeos.
+ * Módulo completamente optimizado con TanStack Query.
+ * Performance enterprise, zero legacy code.
  *
- * Enterprise: 2025-01-17 - TanStack Query optimization
+ * Enterprise: 2025-01-17 - Zero legacy code, TanStack Query only
  */
 
 // 🏠 Página principal
@@ -36,7 +36,7 @@ export type {
   FeatureFlagFilters,
 } from "./types";
 
-// ⚡ Optimized hooks (TanStack Query)
+// ⚡ Optimized hooks (TanStack Query only)
 export {
   useFeatureFlags,
   useIsEnabled,
@@ -45,6 +45,8 @@ export {
   useFeatureFlagsData,
   useFeatureFlagsByCategory,
   useBatchFeatureFlags,
+  useFeatureFlagsQuery,
+  FEATURE_FLAGS_QUERY_KEYS,
 } from "./hooks";
 
 // 🏢 Server utilities (still needed for SSR)

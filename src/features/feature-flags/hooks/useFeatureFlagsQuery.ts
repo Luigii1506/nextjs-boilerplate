@@ -21,7 +21,7 @@ import type {
 import { useNotifications } from "@/shared/hooks/useNotifications";
 
 // 🎯 Query keys
-const FEATURE_FLAGS_QUERY_KEYS = {
+export const FEATURE_FLAGS_QUERY_KEYS = {
   all: ["feature-flags"] as const,
   lists: () => [...FEATURE_FLAGS_QUERY_KEYS.all, "list"] as const,
   list: (filters: Record<string, unknown>) =>

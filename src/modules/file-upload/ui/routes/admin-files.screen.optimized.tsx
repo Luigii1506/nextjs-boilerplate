@@ -77,22 +77,25 @@ export const AdminFilesScreen: React.FC<AdminFilesScreenProps> = () => {
 
     // Filter by search term
     if (searchTerm) {
-      result = result.filter(file => 
-        file.filename.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        file.originalName.toLowerCase().includes(searchTerm.toLowerCase())
+      result = result.filter(
+        (file) =>
+          file.filename.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          file.originalName.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     // Filter by type
     if (filterType !== "all") {
-      result = result.filter(file => {
+      result = result.filter((file) => {
         switch (filterType) {
           case "images":
             return file.mimeType.startsWith("image/");
           case "documents":
-            return file.mimeType.includes("pdf") || 
-                   file.mimeType.includes("document") || 
-                   file.mimeType.includes("text");
+            return (
+              file.mimeType.includes("pdf") ||
+              file.mimeType.includes("document") ||
+              file.mimeType.includes("text")
+            );
           case "videos":
             return file.mimeType.startsWith("video/");
           case "audio":
@@ -105,12 +108,12 @@ export const AdminFilesScreen: React.FC<AdminFilesScreenProps> = () => {
 
     // Filter by category
     if (selectedCategory) {
-      result = result.filter(file => file.categoryId === selectedCategory);
+      result = result.filter((file) => file.categoryId === selectedCategory);
     }
 
     // Filter by provider
     if (selectedProvider) {
-      result = result.filter(file => file.provider === selectedProvider);
+      result = result.filter((file) => file.provider === selectedProvider);
     }
 
     return result;
@@ -126,10 +129,13 @@ export const AdminFilesScreen: React.FC<AdminFilesScreenProps> = () => {
       other: 0,
     };
 
-    files.forEach(file => {
+    files.forEach((file) => {
       if (file.mimeType.startsWith("image/")) {
         stats.images++;
-      } else if (file.mimeType.includes("pdf") || file.mimeType.includes("document")) {
+      } else if (
+        file.mimeType.includes("pdf") ||
+        file.mimeType.includes("document")
+      ) {
         stats.documents++;
       } else if (file.mimeType.startsWith("video/")) {
         stats.videos++;
@@ -166,7 +172,7 @@ export const AdminFilesScreen: React.FC<AdminFilesScreenProps> = () => {
 
   // ✏️ Handle file update
   const handleFileUpdate = async (
-    fileId: string, 
+    fileId: string,
     updates: { filename?: string; isPublic?: boolean; tags?: string[] }
   ) => {
     try {
@@ -207,23 +213,25 @@ export const AdminFilesScreen: React.FC<AdminFilesScreenProps> = () => {
             {files.length} archivo(s) • TanStack Query Optimized
           </p>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <button
             onClick={refresh}
             disabled={isRefreshing}
             className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
           >
-            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
+            />
             Actualizar
           </button>
-          
+
           <div className="flex border border-gray-300 rounded-md">
             <button
               onClick={() => setViewMode("grid")}
               className={`p-2 ${
-                viewMode === "grid" 
-                  ? "bg-blue-50 text-blue-600" 
+                viewMode === "grid"
+                  ? "bg-blue-50 text-blue-600"
                   : "text-gray-500 hover:text-gray-700"
               }`}
             >
@@ -232,8 +240,8 @@ export const AdminFilesScreen: React.FC<AdminFilesScreenProps> = () => {
             <button
               onClick={() => setViewMode("list")}
               className={`p-2 ${
-                viewMode === "list" 
-                  ? "bg-blue-50 text-blue-600" 
+                viewMode === "list"
+                  ? "bg-blue-50 text-blue-600"
                   : "text-gray-500 hover:text-gray-700"
               }`}
             >
@@ -254,7 +262,9 @@ export const AdminFilesScreen: React.FC<AdminFilesScreenProps> = () => {
           ].map(({ key, label, icon: Icon }) => (
             <button
               key={key}
-              onClick={() => setActiveTab(key as "upload" | "manager" | "stats" | "gallery")}
+              onClick={() =>
+                setActiveTab(key as "upload" | "manager" | "stats" | "gallery")
+              }
               className={`flex items-center gap-2 py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === key
                   ? "border-blue-500 text-blue-600"
@@ -291,7 +301,9 @@ export const AdminFilesScreen: React.FC<AdminFilesScreenProps> = () => {
           >
             <option value="all">Todos los tipos</option>
             <option value="images">Imágenes ({fileTypeStats.images})</option>
-            <option value="documents">Documentos ({fileTypeStats.documents})</option>
+            <option value="documents">
+              Documentos ({fileTypeStats.documents})
+            </option>
             <option value="videos">Videos ({fileTypeStats.videos})</option>
             <option value="audio">Audio ({fileTypeStats.audio})</option>
           </select>
@@ -358,7 +370,9 @@ export const AdminFilesScreen: React.FC<AdminFilesScreenProps> = () => {
 
             {activeTab === "gallery" && (
               <ImageGallery
-                images={filteredFiles.filter(f => f.mimeType.startsWith("image/"))}
+                images={filteredFiles.filter((f) =>
+                  f.mimeType.startsWith("image/")
+                )}
                 onDelete={handleFileDelete}
                 isDeleting={isDeleting}
               />

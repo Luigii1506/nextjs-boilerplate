@@ -15,6 +15,9 @@ export {
   DASHBOARD_QUERY_KEYS,
 } from "./useDashboardQuery";
 
+// Import hooks for presets
+import { useDashboardQuery, useDashboardOverview } from "./useDashboardQuery";
+
 // 🎛️ Hook presets for different scenarios
 export const DashboardHookPresets = {
   // 💻 Standard dashboard view

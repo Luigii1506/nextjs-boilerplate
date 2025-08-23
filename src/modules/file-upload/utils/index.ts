@@ -192,23 +192,32 @@ export const getFileExtension = (filename: string): string => {
 };
 
 /**
- * Genera un ID temporal para optimistic UI
+ * Genera un ID temporal para optimistic UI (SSR-safe)
  * @returns ID temporal único
+ * @deprecated Use useIsomorphicId from @/shared/hooks/useHydrationSafe instead
  */
 export const generateTempId = (): string => {
-  return `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  // Use crypto for better randomness and avoid hydration issues
+  if (typeof window !== "undefined" && window.crypto?.randomUUID) {
+    return `temp-${window.crypto.randomUUID()}`;
+  }
+  // Fallback for server or older browsers - use static counter to avoid hydration mismatch
+  return `temp-${++tempIdCounter}`;
 };
+
+// Static counter to avoid hydration mismatches
+let tempIdCounter = 0;
 
 // 🎯 ENTERPRISE CONSTANTS
 export const FILE_UPLOAD_CONSTANTS = {
   // Límites por defecto
   DEFAULT_MAX_SIZE: 10 * 1024 * 1024, // 10MB
   DEFAULT_ALLOWED_TYPES: ["image/*", "application/pdf", "text/*"],
-  
+
   // Configuraciones de UI
   DEFAULT_GRID_COLUMNS: 3,
   UPLOAD_PROGRESS_UPDATE_INTERVAL: 100,
-  
+
   // Colores para tipos de archivo
   FILE_TYPE_COLORS: {
     image: "text-blue-500",
@@ -217,7 +226,7 @@ export const FILE_UPLOAD_CONSTANTS = {
     document: "text-red-500",
     default: "text-slate-500",
   },
-  
+
   // Mensajes por defecto
   MESSAGES: {
     NO_FILES: "No hay archivos",
@@ -227,3 +236,78 @@ export const FILE_UPLOAD_CONSTANTS = {
     DELETE_CONFIRM: "¿Estás seguro de que quieres eliminar este archivo?",
   },
 } as const;
+
+// 🎯 File Upload Utilities - Clean Integration
+// Integrated from legacy config for clean architecture
+
+// 📁 Upload path generation (SSR-safe)
+export function generateUploadPath(fileName: string, userId?: string): string {
+  // Use a more deterministic approach for server-side rendering
+  const timestamp = typeof window !== "undefined" ? Date.now() : 0;
+  const randomId =
+    typeof window !== "undefined"
+      ? Math.random().toString(36).substr(2, 9)
+      : "server-gen";
+  const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, "_");
+
+  if (userId) {
+    return `uploads/${userId}/${timestamp}_${randomId}_${sanitizedFileName}`;
+  }
+
+  return `uploads/anonymous/${timestamp}_${randomId}_${sanitizedFileName}`;
+}
+
+// ☁️ Provider Configuration Helpers
+export function getS3Config() {
+  return {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
+    region: process.env.AWS_REGION || "us-east-1",
+    bucket: process.env.AWS_S3_BUCKET || "",
+  };
+}
+
+export function getCloudinaryConfig() {
+  return {
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME || "",
+    apiKey: process.env.CLOUDINARY_API_KEY || "",
+    apiSecret: process.env.CLOUDINARY_API_SECRET || "",
+  };
+}
+
+// ✅ File Validation Utilities
+export function validateFileType(
+  mimeType: string,
+  allowedTypes: string[]
+): boolean {
+  return allowedTypes.some((type) => {
+    if (type.endsWith("*")) {
+      const baseType = type.slice(0, -1);
+      return mimeType.startsWith(baseType);
+    }
+    return mimeType === type;
+  });
+}
+
+export function validateFileSize(fileSize: number, maxSize: number): boolean {
+  return fileSize <= maxSize;
+}
+
+export function getFileCategory(mimeType: string): string {
+  if (mimeType.startsWith("image/")) return "image";
+  if (mimeType.startsWith("video/")) return "video";
+  if (mimeType.startsWith("audio/")) return "audio";
+  if (mimeType.includes("pdf")) return "document";
+  if (mimeType.startsWith("text/")) return "document";
+  return "other";
+}
+
+export function parseUploadFilters(filters?: Record<string, unknown>) {
+  return {
+    limit: 50,
+    offset: 0,
+    sortBy: "createdAt" as const,
+    sortOrder: "desc" as const,
+    ...filters,
+  };
+}

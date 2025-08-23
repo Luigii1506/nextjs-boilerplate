@@ -1,21 +1,21 @@
 /**
- * ⚡ CORE NAVIGATION - TANSTACK OPTIMIZED EXPORTS
- * ==============================================
+ * ⚡ CORE NAVIGATION - TANSTACK QUERY OPTIMIZED
+ * ============================================
  *
  * Sistema de navegación súper optimizado con TanStack Query.
- * Performance enterprise, cache inteligente, backward compatibility.
+ * Performance enterprise, cache inteligente, zero legacy code.
  *
- * Enterprise: 2025-01-17 - TanStack Query optimization
+ * Enterprise: 2025-01-17 - Zero legacy code, TanStack Query only
  */
 
-// ⚡ Main Navigation Hooks (TanStack Query optimized)
+// ⚡ Main Navigation Hooks (TanStack Query optimized only)
 export {
   useNavigation,
-  navigationUtils,
   useNavigationQuery,
   useNavigationPrefetch,
   navigationQueryUtils,
-} from "./useNavigation";
+  NAVIGATION_QUERY_KEYS,
+} from "./hooks";
 
 // 📝 Core Types & Interfaces
 export type {

@@ -14,7 +14,7 @@ import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { getAllUsersAction } from "../server/actions";
 import type { User, UserListResponse } from "../types";
-import { useUserPrefetch } from "./useUserDetails";
+// Removed useUserPrefetch - unnecessary complexity
 
 // 🎯 Infinite Query keys
 export const USERS_INFINITE_QUERY_KEYS = {

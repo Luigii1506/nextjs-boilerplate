@@ -1,11 +1,11 @@
 /**
- * ⚡ AUDIT TRAIL MODULE - TANSTACK OPTIMIZED
- * =========================================
+ * ⚡ AUDIT TRAIL MODULE - TANSTACK QUERY OPTIMIZED
+ * ===============================================
  *
  * Módulo completo de audit trail súper optimizado con TanStack Query.
- * Performance enterprise, cache inteligente, backward compatibility.
+ * Performance enterprise, cache inteligente, zero legacy code.
  *
- * Enterprise: 2025-01-17 - TanStack Query optimization
+ * Enterprise: 2025-01-17 - Zero legacy code, TanStack Query only
  */
 
 // 🎯 Types
@@ -23,8 +23,8 @@ export * from "./hooks";
 // 🎨 UI Components
 export { AuditEventCard, AuditStats, AuditEventsList } from "./ui/components";
 
-// 🖥️ UI Routes (TanStack Query Optimized)
-export { AuditDashboard, AuditDashboardLegacy } from "./ui/routes";
+// 🖥️ UI Routes (TanStack Query Optimized only)
+export { AuditDashboard } from "./ui/routes";
 
 // 🚀 Server Actions (used by TanStack Query)
 export {

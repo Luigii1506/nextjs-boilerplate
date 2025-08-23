@@ -6,4 +6,5 @@
 export * from "./components";
 
 // Routes/Screens
-export { default as AdminFilesScreen } from "./routes/admin-files.screen";
+// ⚡ TanStack Query Optimized Screen
+export { AdminFilesScreen } from "./routes/admin-files.screen";

@@ -12,7 +12,7 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { useAuditQuery } from "./useAuditQuery";
-import { useAuditFilters } from "./useAuditCompatibility";
+import { useAuditFilters } from "./useAuditFilters";
 import type { AuditFilters, AuditEvent, AuditStats } from "../types";
 import { DEFAULT_AUDIT_FILTERS } from "../constants";
 

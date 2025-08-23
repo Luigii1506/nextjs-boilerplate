@@ -10,11 +10,7 @@
 
 // 🎯 Core TanStack Query hooks
 export { useUsersQuery } from "./useUsersQuery";
-export {
-  useUserDetails,
-  useUserPrefetch,
-  useUserDetailsUtils,
-} from "./useUserDetails";
+// 🔍 User details now handled directly by useUsersQuery - no separate hook needed
 export { useUserModal } from "./useUserModal";
 
 // 🔍 Search and filtering
@@ -40,11 +36,7 @@ export {
 } from "./useUsersBulk";
 
 // 🗄️ Advanced cache management
-export {
-  useUsersCacheManager,
-  useSmartPrefetch,
-  type CacheStrategy,
-} from "./useUsersCacheManager";
+// 🗄️ Cache management now handled by TanStack Query automatically
 
 // 🎯 Centralized query keys
 export const USER_QUERY_KEYS = {
@@ -119,11 +111,11 @@ export const UserHookConfigs = {
 export const UserHookUtils = {
   // 🎯 Available hooks registry
   HOOKS_REGISTRY: {
-    core: ["useUsersQuery", "useUserDetails", "useUserModal"],
+    core: ["useUsersQuery", "useUserModal"],
     search: ["useUsersSearch", "useQuickSearch", "useSearchFilters"],
     infinite: ["useUsersInfinite", "useVirtualUsersList"],
     bulk: ["useUsersBulk", "useBulkSelection"],
-    cache: ["useUsersCacheManager", "useSmartPrefetch"],
+    cache: [], // TanStack Query handles caching automatically
   } as const,
 
   // 📊 Performance profiles
@@ -132,7 +124,7 @@ export const UserHookUtils = {
     useUsersInfinite: { memory: "high", cpu: "medium", network: "low" },
     useUsersSearch: { memory: "low", cpu: "medium", network: "high" },
     useUsersBulk: { memory: "medium", cpu: "high", network: "high" },
-    useUsersCacheManager: { memory: "high", cpu: "low", network: "low" },
+    // Cache management moved to TanStack Query configuration
   } as const,
 
   // 🎯 Get performance profile helper

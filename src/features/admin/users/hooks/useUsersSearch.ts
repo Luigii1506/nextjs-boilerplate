@@ -14,7 +14,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { getAllUsersAction } from "../server/actions";
 import type { User, UserSearchParams } from "../types";
-import { useUserPrefetch } from "./useUserDetails";
+// Removed useUserPrefetch - unnecessary complexity
 
 // 🎯 Search Query keys
 export const USERS_SEARCH_QUERY_KEYS = {

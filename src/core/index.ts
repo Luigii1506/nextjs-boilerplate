@@ -7,10 +7,13 @@
 // 🔧 Configuration (feature flags, environment, modules)
 export * from "./config";
 
-// 🧭 Navigation (simplified core)
+// 🧭 Navigation (TanStack Query optimized)
 export {
   useNavigation,
-  navigationUtils,
+  useNavigationQuery,
+  useNavigationPrefetch,
+  navigationQueryUtils,
+  NAVIGATION_QUERY_KEYS,
   NAVIGATION_CORE_CONFIG,
   NAVIGATION_REGISTRY,
   NAVIGATION_CATEGORIES,

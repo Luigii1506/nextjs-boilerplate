@@ -30,6 +30,7 @@ export function ThemeProvider({
       themes={["light", "dark"]}
       enableSystem={true}
       disableTransitionOnChange={false}
+      suppressHydrationWarning={true}
     >
       {children}
     </NextThemesProvider>

@@ -1,15 +1,11 @@
-// 🪝 FILE UPLOAD HOOKS - ENTERPRISE GRADE
-// ========================================
-// React 19 + Next.js 15 Optimized Hooks
+// 🪝 FILE UPLOAD HOOKS - TANSTACK QUERY OPTIMIZED
+// ==============================================
+// TanStack Query + Next.js 15 + Performance Enterprise
 
-// 🚀 PRIMARY ENTERPRISE HOOK
-export { useFileUpload, default } from "./useFileUpload";
+// 🚀 Pure TanStack Query Implementation - Zero Legacy
 
-// 🎯 Single File Upload Alias (Enterprise pattern)
-export { useFileUpload as useSingleFileUpload } from "./useFileUpload";
-
-// 🛠️ Additional Hooks
-// useFileNotifications eliminado - usar useSmartNotifications del sistema principal
+// 🎯 Core TanStack Query hook
+export * from "./useFileUploadQuery";
 
 // Re-exports de tipos para conveniencia
 export type {
@@ -20,4 +16,4 @@ export type {
 
 // 🎯 RECOMMENDED USAGE:
 // import { useFileUpload } from "@/modules/file-upload/hooks";
-// This provides: Optimistic UI + React 19 features + Enterprise performance
+// This provides: TanStack Query + Optimistic UI + Enterprise performance

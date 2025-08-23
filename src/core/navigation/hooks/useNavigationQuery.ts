@@ -21,7 +21,7 @@ import {
 } from "../constants";
 
 // 🎯 Query keys for navigation
-const NAVIGATION_QUERY_KEYS = {
+export const NAVIGATION_QUERY_KEYS = {
   all: ["navigation"] as const,
   items: () => [...NAVIGATION_QUERY_KEYS.all, "items"] as const,
   filtered: (params: NavigationFilterParams) =>

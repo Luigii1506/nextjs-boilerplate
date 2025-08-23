@@ -255,6 +255,19 @@ export async function updateUserRoleAction(
     revalidateTag(USERS_CACHE_TAGS.USER_PERMISSIONS);
     revalidatePath("/users");
 
+    // 🔔 CRÍTICO: Invalidar cache de auth para permisos reactivos
+    // El usuario cuyo rol cambió debe ver sus nuevos permisos instantáneamente
+    const { triggerAuthCacheInvalidation, logAuthInvalidation } = await import(
+      "@/shared/utils/auth-invalidation"
+    );
+    triggerAuthCacheInvalidation();
+    logAuthInvalidation({
+      action: "role_change",
+      userId: roleData.userId,
+      triggeredBy: session.user.id,
+      reason: `Role changed from ${previousRole} to ${roleData.role}`,
+    });
+
     usersServerActionLogger.info("User role updated successfully", {
       requestId,
       userId: roleData.userId,
@@ -358,6 +371,22 @@ export async function banUserAction(
     revalidateTag(USERS_CACHE_TAGS.USER_STATS);
     revalidatePath("/users");
 
+    // 🔔 Auth invalidation para ban (afecta acceso del usuario baneado)
+    const {
+      triggerAuthCacheInvalidation,
+      shouldInvalidateAuthCache,
+      logAuthInvalidation,
+    } = await import("@/shared/utils/auth-invalidation");
+    if (shouldInvalidateAuthCache("ban")) {
+      triggerAuthCacheInvalidation();
+      logAuthInvalidation({
+        action: "user_ban",
+        userId: banData.id,
+        triggeredBy: session.user.id,
+        reason: `User banned: ${banData.reason}`,
+      });
+    }
+
     usersServerActionLogger.info("User banned successfully", {
       requestId,
       userId: banData.id,
@@ -407,7 +436,26 @@ export async function unbanUserAction(
     const unbannedUser = await userService.unbanUser(unbanData.id);
 
     // 🔄 Cache invalidation
-    revalidateTag("users");
+    revalidateTag(USERS_CACHE_TAGS.USERS);
+    revalidateTag(USERS_CACHE_TAGS.USER_STATS);
+    revalidatePath("/users");
+
+    // 🔔 Auth invalidation para unban (restaura acceso del usuario)
+    const session = await validators.getValidatedSession();
+    const {
+      triggerAuthCacheInvalidation,
+      shouldInvalidateAuthCache,
+      logAuthInvalidation,
+    } = await import("@/shared/utils/auth-invalidation");
+    if (shouldInvalidateAuthCache("unban")) {
+      triggerAuthCacheInvalidation();
+      logAuthInvalidation({
+        action: "user_unban",
+        userId: unbanData.id,
+        triggeredBy: session.user.id,
+        reason: "User unbanned - access restored",
+      });
+    }
 
     return {
       success: true,
@@ -442,7 +490,22 @@ export async function bulkUpdateUsersAction(
     );
 
     // 🔄 Cache invalidation
-    revalidateTag("users");
+    revalidateTag(USERS_CACHE_TAGS.USERS);
+    revalidateTag(USERS_CACHE_TAGS.USER_STATS);
+    revalidatePath("/users");
+
+    // 🔔 CRÍTICO: Bulk update invalida auth cache (múltiples usuarios afectados)
+    const session = await validators.getValidatedSession();
+    const { triggerAuthCacheInvalidation, logAuthInvalidation } = await import(
+      "@/shared/utils/auth-invalidation"
+    );
+    triggerAuthCacheInvalidation();
+    logAuthInvalidation({
+      action: "bulk_role_change",
+      userId: "multiple",
+      triggeredBy: session.user.id,
+      reason: `Bulk update: ${result.updatedCount} users changed to ${bulkData.newRole}`,
+    });
 
     return {
       success: true,

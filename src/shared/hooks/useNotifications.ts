@@ -115,36 +115,7 @@ const formatSmartError = (baseMessage: string, error: unknown): string => {
   return baseMessage;
 };
 
-// 🎯 Configuración inteligente basada en severidad (para futuras mejoras)
-const getSmartConfig = (severity: "low" | "medium" | "high" | "critical") => {
-  const configs = {
-    low: {
-      duration: 4000,
-    },
-    medium: {
-      duration: 6000,
-    },
-    high: {
-      duration: 8000,
-      action: {
-        label: "Reintentar",
-        onClick: () => window.location.reload(),
-      },
-    },
-    critical: {
-      duration: 12000,
-      action: {
-        label: "Reportar",
-        onClick: () => {
-          console.error("Critical error reported:", new Date().toISOString());
-          // Aquí podrías enviar a un servicio de logging
-        },
-      },
-    },
-  };
-
-  return configs[severity];
-};
+// Removed getSmartConfig - not used anywhere
 
 // 🎯 Emojis automáticos por tipo de acción
 const getActionEmoji = (actionType: string): string => {

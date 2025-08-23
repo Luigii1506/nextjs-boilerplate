@@ -1,137 +1,51 @@
 /**
- * 🔐 HOOK DE AUTENTICACIÓN SIMPLIFICADO
+ * 🔐 USE AUTH - TANSTACK QUERY OPTIMIZED
+ * =====================================
  *
- * Hook principal para manejar autenticación con Better Auth.
- * Versión limpia y directa sin complejidad innecesaria.
+ * Hook de autenticación completamente migrado a TanStack Query.
+ * Performance empresarial, cache inteligente, session management reactivo.
  *
- * Simple: 2025-01-17 - Versión simplificada
+ * Enterprise: 2025-01-17 - Complete TanStack Query migration
  */
 
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { authClient } from "@/core/auth/auth-client";
-import type { User } from "@/shared/types/user";
+// Re-export everything from the optimized TanStack Query version
+export {
+  useAuth,
+  useAuthQuery,
+  useProtectedPage,
+  useAdminPage,
+  usePublicPage,
+  useRefreshAuth,
+  useLogout,
+  useAuthRoles,
+  AUTH_QUERY_KEYS,
+  type AuthState,
+  type AuthActions,
+  type AuthHookReturn,
+} from "./useAuthQuery";
 
-interface AuthState {
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  user: User | null;
-  isAdmin: boolean;
-}
+// Auth invalidation utilities
+export {
+  useAuthInvalidation,
+  useAuthInvalidationListener,
+  createAuthInvalidationTrigger,
+} from "./useAuthInvalidation";
 
-export function useAuth(requireAuth: boolean = false): AuthState {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const router = useRouter();
+// 🔐 Reactive permissions system
+export {
+  usePermissions,
+  useResourcePermissions,
+  usePermissionGuard,
+  useUserPermissions,
+  useFilePermissions,
+  useSessionPermissions,
+  useFeatureFlagPermissions,
+  usePermissionDebugger,
+} from "./usePermissions";
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const session = await authClient.getSession();
+// 🎯 Legacy compatibility - all hooks now use TanStack Query internally
 
-        if (session.data?.user) {
-          setIsAuthenticated(true);
-          const userData = session.data.user as User;
-          setUser(userData);
-          setIsAdmin(
-            userData.role === "admin" || userData.role === "super_admin"
-          );
-
-          // Si está en una página de auth y ya está logueado, redirigir
-          const authPages = ["/login", "/register", "/forgot-password"];
-          if (authPages.includes(window.location.pathname)) {
-            const urlParams = new URLSearchParams(window.location.search);
-            const callbackUrl = urlParams.get("callbackUrl") || "/";
-            router.replace(callbackUrl);
-          }
-        } else {
-          setIsAuthenticated(false);
-          setUser(null);
-          setIsAdmin(false);
-
-          // Si requiere auth y no está logueado, redirigir a login
-          if (requireAuth) {
-            const currentPath = window.location.pathname;
-            router.replace(
-              `/login?callbackUrl=${encodeURIComponent(currentPath)}`
-            );
-          }
-        }
-      } catch (error) {
-        console.error("Error checking auth:", error);
-        setIsAuthenticated(false);
-        setUser(null);
-        setIsAdmin(false);
-
-        if (requireAuth) {
-          router.replace("/login");
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, [requireAuth, router]);
-
-  return { isLoading, isAuthenticated, user, isAdmin };
-}
-
-// Hook específico para páginas protegidas
-export function useProtectedPage(): AuthState {
-  return useAuth(true);
-}
-
-// Hook específico para páginas de admin
-export function useAdminPage(): AuthState {
-  const authState = useAuth(true);
-  const router = useRouter();
-
-  useEffect(() => {
-    if (
-      !authState.isLoading &&
-      authState.isAuthenticated &&
-      !authState.isAdmin
-    ) {
-      // Si no es admin, redirigir a página de usuario
-      router.replace("/");
-    }
-  }, [
-    authState.isLoading,
-    authState.isAuthenticated,
-    authState.isAdmin,
-    router,
-  ]);
-
-  return authState;
-}
-
-// Hook específico para páginas públicas
-export function usePublicPage(): AuthState {
-  return useAuth(false);
-}
-
-// Hook para refrescar el estado de autenticación
-export function useRefreshAuth() {
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  const refreshAuth = async () => {
-    setIsRefreshing(true);
-    try {
-      // Forzar una nueva verificación de sesión
-      const session = await authClient.getSession();
-      return !!session.data?.user;
-    } catch (error) {
-      console.error("Error refreshing auth:", error);
-      return false;
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
-  return { refreshAuth, isRefreshing };
-}
+// 🎯 All hooks are now exported from useAuthQuery.ts
+// This ensures 100% compatibility while using TanStack Query internally

@@ -61,6 +61,10 @@ export interface DashboardHookState {
   isRefreshing: boolean;
   error: string | null;
   refresh: () => void;
+  // Individual refetch functions for granular control (optional)
+  refetchStats?: () => void;
+  refetchUsers?: () => void;
+  refetchActivity?: () => void;
 }
 
 // 🎯 Acción rápida del dashboard

@@ -13,7 +13,7 @@ import {
 import { useUsersQuery } from "../../hooks/useUsersQuery";
 import { User } from "../../types";
 import UserCard from "@/features/admin/users/ui/components/UserCard";
-import UserModalOptimized from "@/features/admin/users/ui/components/UserModal.optimized";
+import UserModalMain from "@/features/admin/users/ui/components/UserModal.main";
 import { SkeletonList, SkeletonStatsCard } from "@/shared/ui/components";
 
 /**
@@ -338,7 +338,7 @@ const OptimizedUsersView: React.FC = () => {
       )}
 
       {/* ⚡ Optimized User Modal - TanStack Query */}
-      <UserModalOptimized
+      <UserModalMain
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);

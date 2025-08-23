@@ -1,12 +1,12 @@
 /**
- * 🎯 AUDIT UI ROUTES INDEX
- * =========================
+ * 🎯 AUDIT UI ROUTES INDEX - TANSTACK OPTIMIZED
+ * =============================================
  *
- * Barrel export para todas las pantallas del módulo de audit
+ * Solo exports optimizados con TanStack Query.
+ * Zero legacy code, máxima performance empresarial.
+ *
+ * Enterprise: 2025-01-17 - TanStack Query only
  */
 
 // ⚡ TanStack Query Optimized Dashboard
-export { default as AuditDashboard } from "./AuditDashboard.optimized";
-
-// 🔄 Legacy Dashboard (still available)
-export { default as AuditDashboardLegacy } from "./AuditDashboard";
+export { default as AuditDashboard } from "./AuditDashboard";

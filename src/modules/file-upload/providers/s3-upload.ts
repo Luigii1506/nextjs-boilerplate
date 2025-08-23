@@ -10,7 +10,7 @@ import {
   HeadObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { generateUploadPath, getS3Config } from "../config/legacy";
+import { generateUploadPath, getS3Config } from "../utils";
 import type { UploadResult, S3Config } from "../types";
 import type { UploadProvider } from "./local-upload";
 

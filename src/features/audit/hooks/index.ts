@@ -1,23 +1,19 @@
 /**
- * ⚡ AUDIT TRAIL HOOKS - TANSTACK OPTIMIZED EXPORTS
- * ================================================
+ * ⚡ AUDIT TRAIL HOOKS - TANSTACK QUERY OPTIMIZED
+ * ==============================================
  *
- * Hooks optimizados con TanStack Query para performance enterprise.
- * Incluye backward compatibility y hooks avanzados.
+ * Solo hooks optimizados con TanStack Query.
+ * Zero legacy code, máxima performance empresarial.
  *
- * Enterprise: 2025-01-17 - TanStack Query optimization
+ * Enterprise: 2025-01-17 - TanStack Query only
  */
 
-// ⚡ TanStack Query Optimized Hooks
+// 🎯 Core TanStack Query Hooks
 export { useAuditQuery, auditQueryUtils } from "./useAuditQuery";
 export { useAuditDashboard } from "./useAuditDashboard";
 
-// 🔄 Compatibility Hooks (maintains original API with TanStack Query internally)
-export {
-  useAuditTrail,
-  useAuditStats,
-  useAuditFilters,
-} from "./useAuditCompatibility";
-
-// 🎯 Legacy/Specialized Hooks (still available)
+// 🎯 Specialized TanStack Query Hooks
+export { useAuditTrail } from "./useAuditTrail";
+export { useAuditStats } from "./useAuditStats";
+export { useAuditFilters } from "./useAuditFilters";
 export { useAuditCapture } from "./useAuditCapture";
