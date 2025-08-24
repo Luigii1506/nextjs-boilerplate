@@ -8,16 +8,17 @@ import AdminLayout from "@/shared/ui/layouts/AdminLayout";
 export const runtime = "nodejs";
 
 /**
- * 🏛️ OPTIMIZED ADMIN LAYOUT
- * ==========================
+ * 🏛️ SELF-CONTAINED ADMIN LAYOUT 
+ * ===============================
  *
- * Arquitectura simple y robusta (2 capas):
- * 1. Server: Auth verification + Role gate
- * 2. Client: Reactive UI (AdminLayout maneja su propio estado)
+ * Arquitectura ultra-simple (2 capas):
+ * 1. Server: Auth verification + Role gate (THIS FILE)
+ * 2. Client: Self-contained reactive UI (AdminLayout)
  *
- * ✅ 80% menos código que la versión híbrida
- * ✅ Server-side security + Client-side reactivity
- * ✅ Sin capas innecesarias
+ * ✅ Server solo maneja seguridad y autorización  
+ * ✅ AdminLayout maneja TODO su estado interno
+ * ✅ useAdminLayoutNavigation integrado automáticamente
+ * ✅ Sin props innecesarios - solo user data
  */
 export default async function AdminRootLayout({
   children,
@@ -36,8 +37,11 @@ export default async function AdminRootLayout({
   // Hard gate - no access if not admin
   if (!isAdmin) redirect("/unauthorized");
 
-  // ✅ Direct to AdminLayout (handles its own client state)
-  // 🚀 TanStack Query handles feature flags automatically - no provider needed
+  // ✅ AdminLayout is fully self-contained:
+  // - Manages sidebar state internally
+  // - Handles dark mode detection
+  // - Uses useAdminLayoutNavigation for all header functions
+  // - Auto-setup event listeners
   return (
     <AdminLayout user={user} isAdmin={isAdmin} isSuperAdmin={isSuperAdmin}>
       {children}

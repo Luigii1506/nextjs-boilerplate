@@ -4,3 +4,10 @@
 
 export { cn } from "./cn";
 export { formatDate, formatDateLong, getRelativeTime } from "./date";
+export {
+  setupAllEventListeners,
+  setupSearchListener,
+  setupNotificationsListener,
+  setupProfileListener,
+  setupAuditEventListener,
+} from "./eventListeners";

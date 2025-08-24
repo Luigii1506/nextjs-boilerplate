@@ -238,10 +238,10 @@ function UserDashboard() {
 | Escenario                        | Tiempo Actualización | Método     |
 | -------------------------------- | -------------------- | ---------- |
 | **Background refresh**           | 30 segundos          | Automático |
-| **Window focus**                 | <500ms               | Automático |
-| **Manual invalidation**          | <100ms               | Inmediato  |
-| **Network reconnect**            | <1 segundo           | Automático |
-| **Server action + invalidation** | <200ms               | Inmediato  |
+| **Window focus**                 | 500ms                | Automático |
+| **Manual invalidation**          | 100ms                | Inmediato  |
+| **Network reconnect**            | 1 segundo            | Automático |
+| **Server action + invalidation** | 200ms                | Inmediato  |
 
 ---
 

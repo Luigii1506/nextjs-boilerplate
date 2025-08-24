@@ -9,6 +9,8 @@ export * from "./useHydration";
 export * from "./useHydrationSafe";
 export * from "./usePermissions";
 export * from "./useNotifications";
+export * from "./useNotificationsBadge"; // ✅ NEW - TODO completado
 export * from "./useBroadcast";
+export * from "./useSwipeGestures"; // ✅ NEW - Mobile UX enhancement
 
 export * from "./useI18n";

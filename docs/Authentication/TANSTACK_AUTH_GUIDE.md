@@ -457,7 +457,7 @@ const { user, isLoading } = useAuth();
 | Métrica                | Legacy      | TanStack Query | Mejora             |
 | ---------------------- | ----------- | -------------- | ------------------ |
 | **Primera carga**      | ~500ms      | ~200ms         | 60% más rápido     |
-| **Cache hit**          | N/A         | <10ms          | Instantáneo        |
+| **Cache hit**          | N/A         | 10ms           | Instantáneo        |
 | **Multiple useAuth()** | N requests  | 1 request      | 90% menos requests |
 | **Background sync**    | Manual      | Automático     | UX superior        |
 | **Memory usage**       | Acumulativo | GC inteligente | Optimizado         |

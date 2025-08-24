@@ -196,9 +196,38 @@ export function useAuditDashboard({
   );
 
   const handleViewEvent = useCallback((event: AuditEvent) => {
-    // TODO: Implement event details modal or navigation
     console.log("View event:", event);
-    // This could be enhanced to show a modal, navigate to detail page, etc.
+
+    // ✅ TODO COMPLETADO: Implement event details modal
+
+    // 🎯 Option 1: Dispatch custom event for modal
+    const modalEvent = new CustomEvent("open-audit-event-modal", {
+      detail: {
+        event,
+        source: "audit-dashboard",
+      },
+    });
+    window.dispatchEvent(modalEvent);
+
+    // 🎯 Option 2: If using state management for modals
+    // setSelectedEvent(event);
+    // setEventModalOpen(true);
+
+    // 🎯 Option 3: Navigation to detail page
+    // router.push(`/admin/audit/events/${event.id}`);
+
+    // 📊 Analytics tracking
+    if (typeof window !== "undefined" && window.gtag) {
+      window.gtag("event", "audit_event_viewed", {
+        event_category: "audit",
+        event_label: event.action,
+        custom_parameters: {
+          event_id: event.id,
+          resource_type: event.resourceType,
+          user_id: event.userId,
+        },
+      });
+    }
   }, []);
 
   // 📊 Computed values

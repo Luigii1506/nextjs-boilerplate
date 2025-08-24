@@ -852,8 +852,8 @@ function FeatureButton({
 ### **📊 Métricas esperadas:**
 
 - **Background update:** 30 segundos
-- **Window focus:** <500ms
-- **Manual refresh:** <200ms
-- **Cache invalidation:** <100ms
+- **Window focus:** 500ms
+- **Manual refresh:** 200ms
+- **Cache invalidation:** 100ms
 
 **¡Tu sistema de permisos es ahora 100% reactivo! 🎉**

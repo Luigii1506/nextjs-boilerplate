@@ -340,9 +340,9 @@ function DebugPanel() {
 
 | Método                 | Tiempo | Alcance            | Confiabilidad |
 | ---------------------- | ------ | ------------------ | ------------- |
-| **BroadcastChannel**   | <50ms  | Múltiples pestañas | 99.9%         |
-| **localStorage**       | <100ms | Fallback           | 100%          |
-| **CustomEvent**        | <10ms  | Misma pestaña      | 100%          |
+| **BroadcastChannel**   | 50ms   | Múltiples pestañas | 99.9%         |
+| **localStorage**       | 100ms  | Fallback           | 100%          |
+| **CustomEvent**        | 10ms   | Misma pestaña      | 100%          |
 | **Background Refresh** | 30s    | Automático         | 100%          |
 
 ---

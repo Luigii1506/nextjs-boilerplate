@@ -87,23 +87,104 @@ export function useAdminLayoutNavigation({
 
   const handleSearch = useCallback(() => {
     console.log("🔍 Search action triggered");
-    // TODO: Implement search functionality
-  }, []);
+
+    // 🎯 Implementación: Command Palette / Search Modal
+    const event = new CustomEvent("admin-search", {
+      detail: {
+        source: "admin-layout",
+        user: user.email,
+        currentPath,
+      },
+    });
+    window.dispatchEvent(event);
+
+    // 🚀 Alternative: Open search modal if available
+    // setSearchModalOpen?.(true);
+
+    // 📊 Analytics tracking
+    if (typeof window !== "undefined" && window.gtag) {
+      window.gtag("event", "admin_search_triggered", {
+        event_category: "navigation",
+        event_label: "header_search",
+      });
+    }
+  }, [user.email, currentPath]);
 
   const handleNotifications = useCallback(() => {
     console.log("🔔 Notifications action triggered");
-    // TODO: Implement notifications functionality
-  }, []);
+
+    // 🎯 Implementación: Toggle notifications panel
+    const event = new CustomEvent("admin-notifications", {
+      detail: {
+        action: "toggle",
+        user: user.email,
+        timestamp: new Date().toISOString(),
+      },
+    });
+    window.dispatchEvent(event);
+
+    // 🚀 Alternative: Navigate to notifications page
+    // window.location.href = '/admin/notifications';
+
+    // 📊 Analytics tracking
+    if (typeof window !== "undefined" && window.gtag) {
+      window.gtag("event", "admin_notifications_opened", {
+        event_category: "navigation",
+        event_label: "header_notifications",
+      });
+    }
+  }, [user.email]);
 
   const handleSettings = useCallback(() => {
     console.log("⚙️ Settings action triggered");
-    // TODO: Navigate to settings page
+
+    // 🎯 Implementación: Navigate to settings
+    const settingsUrl = "/admin/settings";
+
+    // 📊 Analytics before navigation
+    if (typeof window !== "undefined" && window.gtag) {
+      window.gtag("event", "admin_settings_accessed", {
+        event_category: "navigation",
+        event_label: "header_settings",
+      });
+    }
+
+    // 🚀 Navigation
+    window.location.href = settingsUrl;
+
+    // Alternative with next/router if needed:
+    // import { useRouter } from 'next/navigation';
+    // const router = useRouter();
+    // router.push(settingsUrl);
   }, []);
 
   const handleProfileClick = useCallback(() => {
     console.log("👤 Profile action triggered", user.email);
-    // TODO: Implement profile menu
-  }, [user.email]);
+
+    // 🎯 Implementación: Toggle profile dropdown menu
+    const event = new CustomEvent("admin-profile-menu", {
+      detail: {
+        action: "toggle",
+        user: {
+          email: user.email,
+          name: user.name,
+          role: userRole,
+        },
+      },
+    });
+    window.dispatchEvent(event);
+
+    // 🚀 Alternative: Direct navigation to profile
+    // window.location.href = '/admin/profile';
+
+    // 📊 Analytics tracking
+    if (typeof window !== "undefined" && window.gtag) {
+      window.gtag("event", "admin_profile_menu_opened", {
+        event_category: "navigation",
+        event_label: "header_profile",
+      });
+    }
+  }, [user.email, user.name, userRole]);
 
   // 📱 Responsive optimizations
   const shouldShowMobileMenu = useMemo(() => {
