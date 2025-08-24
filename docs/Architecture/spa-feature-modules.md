@@ -26,6 +26,7 @@ Esta arquitectura está diseñada para **módulos complejos** que requieren múl
 ### **¿Cuándo usar esta arquitectura?**
 
 ✅ **Usar para módulos grandes:**
+
 - Inventario Management
 - E-commerce Dashboard
 - CRM Completo
@@ -33,6 +34,7 @@ Esta arquitectura está diseñada para **módulos complejos** que requieren múl
 - User Management Avanzado
 
 ❌ **No usar para módulos simples:**
+
 - Feature Flags
 - Settings básicos
 - Audit logs simples
@@ -89,8 +91,10 @@ El componente principal que orquesta toda la aplicación SPA:
 const InventoryScreen: React.FC<InventoryScreenProps> = ({ className }) => {
   return (
     <div className={cn("w-full", className)}>
-      <InventoryProvider>           {/* Context Provider */}
-        <InventorySPAContent />     {/* SPA Content */}
+      <InventoryProvider>
+        {" "}
+        {/* Context Provider */}
+        <InventorySPAContent /> {/* SPA Content */}
       </InventoryProvider>
     </div>
   );
@@ -100,9 +104,9 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ className }) => {
 const InventorySPAContent: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <TabNavigation />    {/* Smart Header + Tabs */}
+      <TabNavigation /> {/* Smart Header + Tabs */}
       <main className="flex-1 relative">
-        <TabContent />     {/* Dynamic Content */}
+        <TabContent /> {/* Dynamic Content */}
       </main>
     </div>
   );
@@ -115,23 +119,29 @@ Header inteligente con scroll behavior y navegación por tabs:
 
 ```typescript
 const TabNavigation: React.FC = () => {
-  const { activeTab, setActiveTab, inventory, isTabChanging } = useInventoryContext();
-  
+  const { activeTab, setActiveTab, inventory, isTabChanging } =
+    useInventoryContext();
+
   // 🚀 Smart scroll header hook
   const { isHeaderVisible, isPastThreshold, scrollY } = useTabScrollHeader();
 
   return (
-    <div className={cn(
-      "border-b sticky top-0 z-50 transform-gpu transition-all duration-300",
-      isPastThreshold ? "header-backdrop scrolled" : "header-backdrop"
-    )}>
+    <div
+      className={cn(
+        "border-b sticky top-0 z-50 transform-gpu transition-all duration-300",
+        isPastThreshold ? "header-backdrop scrolled" : "header-backdrop"
+      )}
+    >
       {/* Smart Header - Hides on scroll down, shows on scroll up */}
-      <div id="header-tabs" className={cn(
-        "transform-gpu transition-all duration-500 ease-out",
-        isHeaderVisible 
-          ? "header-visible opacity-100 translate-y-0" 
-          : "header-hidden opacity-0 -translate-y-full"
-      )}>
+      <div
+        id="header-tabs"
+        className={cn(
+          "transform-gpu transition-all duration-500 ease-out",
+          isHeaderVisible
+            ? "header-visible opacity-100 translate-y-0"
+            : "header-hidden opacity-0 -translate-y-full"
+        )}
+      >
         <h1>Inventory Management</h1>
         <p>Sistema completo de gestión</p>
       </div>
@@ -190,19 +200,19 @@ export const INVENTORY_TABS = [
     label: "Dashboard",
     icon: "BarChart3",
     color: "blue",
-    path: "/inventory"  // Virtual path for SPA
+    path: "/inventory", // Virtual path for SPA
   },
   {
     id: "products" as const,
     label: "Productos",
     icon: "Package",
     color: "green",
-    path: "/inventory/products"
+    path: "/inventory/products",
   },
   // ... more tabs
 ] as const;
 
-export type TabId = typeof INVENTORY_TABS[number]["id"];
+export type TabId = (typeof INVENTORY_TABS)[number]["id"];
 ```
 
 ### **Componente TabBadge**
@@ -224,7 +234,7 @@ export const TabBadge: React.FC<TabBadgeProps> = ({
   icon,
   onClick,
   hasNotification,
-  notificationCount
+  notificationCount,
 }) => {
   return (
     <button
@@ -238,10 +248,12 @@ export const TabBadge: React.FC<TabBadgeProps> = ({
       )}
     >
       {/* Icon with animation */}
-      <span className={cn(
-        "flex-shrink-0 transition-transform duration-300",
-        isActive && "scale-110"
-      )}>
+      <span
+        className={cn(
+          "flex-shrink-0 transition-transform duration-300",
+          isActive && "scale-110"
+        )}
+      >
         {icon}
       </span>
 
@@ -301,12 +313,12 @@ interface InventoryContextType {
 }
 
 // 🎯 Context Provider
-export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ 
-  children 
+export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
 }) => {
   const [activeTab, setActiveTabState] = useState<TabId>("overview");
   const [isTabChanging, setIsTabChanging] = useState(false);
-  
+
   // 🚀 TanStack Query - Persistent data across tabs
   const inventory = useInventoryQuery({
     productsPagination: { page: 1, limit: 20 },
@@ -315,18 +327,21 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
   });
 
   // ⚡ Instant Tab Change for True SPA Experience
-  const setActiveTab = useCallback((tab: TabId) => {
-    if (tab === activeTab) return;
-    
-    // Instant change - no artificial delays
-    setActiveTabState(tab);
-    
-    // Brief visual transition only for smooth UX
-    setIsTabChanging(true);
-    requestAnimationFrame(() => {
-      setIsTabChanging(false);
-    });
-  }, [activeTab]);
+  const setActiveTab = useCallback(
+    (tab: TabId) => {
+      if (tab === activeTab) return;
+
+      // Instant change - no artificial delays
+      setActiveTabState(tab);
+
+      // Brief visual transition only for smooth UX
+      setIsTabChanging(true);
+      requestAnimationFrame(() => {
+        setIsTabChanging(false);
+      });
+    },
+    [activeTab]
+  );
 
   // ... rest of context logic
 
@@ -344,7 +359,9 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
 export const useInventoryContext = () => {
   const context = useContext(InventoryContext);
   if (!context) {
-    throw new Error("useInventoryContext must be used within InventoryProvider");
+    throw new Error(
+      "useInventoryContext must be used within InventoryProvider"
+    );
   }
   return context;
 };
@@ -404,14 +421,26 @@ export const useInventoryContext = () => {
 }
 
 /* 🌊 Utility Classes */
-.animate-fadeInUp { animation: fadeInUp 0.6s ease-out; }
-.animate-slideInLeft { animation: slideInLeft 0.5s ease-out; }
-.animate-scaleIn { animation: scaleIn 0.4s ease-out; }
+.animate-fadeInUp {
+  animation: fadeInUp 0.6s ease-out;
+}
+.animate-slideInLeft {
+  animation: slideInLeft 0.5s ease-out;
+}
+.animate-scaleIn {
+  animation: scaleIn 0.4s ease-out;
+}
 
 /* 🎯 Staggered Animations */
-.stagger-1 { animation-delay: 0.1s; }
-.stagger-2 { animation-delay: 0.2s; }
-.stagger-3 { animation-delay: 0.3s; }
+.stagger-1 {
+  animation-delay: 0.1s;
+}
+.stagger-2 {
+  animation-delay: 0.2s;
+}
+.stagger-3 {
+  animation-delay: 0.3s;
+}
 ```
 
 ### **Componente TabTransition**
@@ -431,17 +460,22 @@ export const TabTransition: React.FC<TabTransitionProps> = ({
 
   const getTransitionClass = () => {
     switch (transitionType) {
-      case "fade": return "animate-fadeInScale";
-      case "slide": return "animate-slideInLeft";
-      case "scale": return "animate-scaleIn";
-      case "slideUp": default: return "animate-fadeInUp";
+      case "fade":
+        return "animate-fadeInScale";
+      case "slide":
+        return "animate-slideInLeft";
+      case "scale":
+        return "animate-scaleIn";
+      case "slideUp":
+      default:
+        return "animate-fadeInUp";
     }
   };
 
   return (
     <div
       className={cn(
-        "transform-gpu opacity-100 translate-y-0", 
+        "transform-gpu opacity-100 translate-y-0",
         getTransitionClass(),
         "backface-hidden",
         className
@@ -490,7 +524,7 @@ export const useScrollHeader = ({
     } else if (scrollDirection) {
       setIsHeaderVisible(false); // Scrolling down
     } else {
-      setIsHeaderVisible(true);  // Scrolling up
+      setIsHeaderVisible(true); // Scrolling up
     }
 
     lastScrollY.current = currentScrollY;
@@ -506,8 +540,8 @@ export const useScrollHeader = ({
   }, [handleScroll]);
 
   useEffect(() => {
-    window.addEventListener('scroll', requestTick, { passive: true });
-    return () => window.removeEventListener('scroll', requestTick);
+    window.addEventListener("scroll", requestTick, { passive: true });
+    return () => window.removeEventListener("scroll", requestTick);
   }, [requestTick]);
 
   return { isHeaderVisible, scrollY, isPastThreshold };
@@ -520,9 +554,12 @@ export const useScrollHeader = ({
 export const useTabTransition = () => {
   const { activeTab, setActiveTab, isTabChanging } = useInventoryContext();
 
-  const switchTab = useCallback((tab: TabId) => {
-    setActiveTab(tab);
-  }, [setActiveTab]);
+  const switchTab = useCallback(
+    (tab: TabId) => {
+      setActiveTab(tab);
+    },
+    [setActiveTab]
+  );
 
   return {
     activeTab,
@@ -543,7 +580,7 @@ export const useTabTransition = () => {
 // 🎯 Memoized tab components to prevent unnecessary re-renders
 const OverviewTab: React.FC = React.memo(function OverviewTab() {
   const { inventory, setActiveTab } = useInventoryContext();
-  
+
   // Tab content...
   return (
     <TabTransition isActive={true} transitionType="slideUp">
@@ -565,11 +602,11 @@ export const useInventoryQuery = (config: InventoryQueryConfig = {}) => {
   return useQuery({
     queryKey: ["inventory", config],
     queryFn: () => getInventoryDataAction(config),
-    staleTime: 5 * 60 * 1000,        // 5 minutes - data stays fresh
-    gcTime: 10 * 60 * 1000,          // 10 minutes - cache cleanup
-    refetchOnWindowFocus: false,      // No refetch on tab focus
-    refetchOnMount: false,            // No refetch on component mount
-    refetchOnReconnect: "always",     // Refetch on reconnect
+    staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh
+    gcTime: 10 * 60 * 1000, // 10 minutes - cache cleanup
+    refetchOnWindowFocus: false, // No refetch on tab focus
+    refetchOnMount: false, // No refetch on component mount
+    refetchOnReconnect: "always", // Refetch on reconnect
   });
 };
 ```
@@ -646,8 +683,8 @@ interface YourModuleContextType {
 }
 
 // 3. Implement context provider
-export const YourModuleProvider: React.FC<{ children: React.ReactNode }> = ({ 
-  children 
+export const YourModuleProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
 }) => {
   // Context implementation...
 };
@@ -684,9 +721,7 @@ const YourModuleSPAContent: React.FC = () => {
 const DashboardTab: React.FC = React.memo(function DashboardTab() {
   return (
     <TabTransition isActive={true} transitionType="slideUp">
-      <div className="p-6">
-        {/* Your tab content */}
-      </div>
+      <div className="p-6">{/* Your tab content */}</div>
     </TabTransition>
   );
 });
@@ -696,7 +731,7 @@ const DashboardTab: React.FC = React.memo(function DashboardTab() {
 
 ```css
 /* Add to your module's animations.css */
-@import '../shared/styles/animations.css';
+@import "../shared/styles/animations.css";
 
 /* Custom animations for your module */
 @keyframes yourCustomAnimation {
@@ -720,7 +755,7 @@ const ECOMMERCE_TABS = [
 export const EcommerceProvider: React.FC = ({ children }) => {
   const [activeTab, setActiveTab] = useState<TabId>("dashboard");
   const ecommerce = useEcommerceQuery();
-  
+
   return (
     <EcommerceContext.Provider value={{ activeTab, setActiveTab, ecommerce }}>
       {children}
@@ -747,24 +782,28 @@ const EcommerceScreen: React.FC = () => {
 ## 🎉 **Beneficios de esta Arquitectura**
 
 ### **🚀 Performance**
+
 - **Instant tab switching** (0ms loading)
 - **Persistent data** across tabs
 - **Optimized re-renders** with memoization
 - **GPU-accelerated animations**
 
 ### **🎨 User Experience**
+
 - **Smooth transitions** entre secciones
 - **Smart scroll header** que se adapta
 - **Visual feedback** con notificaciones
 - **Responsive design** en todos los dispositivos
 
 ### **🔧 Developer Experience**
+
 - **Type-safe** con TypeScript estricto
 - **Modular** y fácil de extender
 - **Consistent patterns** entre módulos
 - **Easy testing** con componentes aislados
 
 ### **📈 Scalability**
+
 - **Feature-first** organization
 - **Shared components** reutilizables
 - **Context isolation** por módulo
@@ -783,4 +822,4 @@ const EcommerceScreen: React.FC = () => {
 
 **🎯 Esta arquitectura SPA Feature-First es ideal para módulos complejos que requieren múltiples vistas, estado compartido y una experiencia de usuario premium.**
 
-*Creado: 2025-01-17 - Inventory Management SPA Implementation*
+_Creado: 2025-01-17 - Inventory Management SPA Implementation_

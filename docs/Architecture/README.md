@@ -7,6 +7,7 @@
 ## 📚 **Documentación Disponible**
 
 ### 🚀 **[SPA Feature-First Architecture](./spa-feature-modules.md)**
+
 **Arquitectura principal para módulos complejos como Single Page Applications**
 
 - ✅ **Cuándo usar**: Módulos grandes como Inventory, E-commerce, CRM
@@ -14,6 +15,7 @@
 - 🎯 **Beneficios**: Experiencia instantánea, datos persistentes, UX premium
 
 ### 🧩 **[SPA Components & Implementation Guide](./spa-components-guide.md)**
+
 **Guía detallada de componentes y patrones de implementación**
 
 - 🎭 **Componentes Core**: TabTransition, TabBadge, TabLoadingSkeleton
@@ -26,6 +28,7 @@
 ## 🎯 **Quick Start Guide**
 
 ### **Para Módulos Simples** (Settings, Feature Flags, Audit)
+
 ```typescript
 // Estructura tradicional feature-first
 src/features/simple-module/
@@ -39,6 +42,7 @@ src/features/simple-module/
 ```
 
 ### **Para Módulos Complejos** (Inventory, E-commerce, CRM)
+
 ```typescript
 // Arquitectura SPA Feature-First
 src/features/complex-module/
@@ -62,12 +66,14 @@ src/features/complex-module/
 ### **De Módulo Simple a SPA Complex**
 
 1. **Preparar estructura**:
+
    ```bash
    mkdir -p ui/{context,tabs,styles}
    mv ui/routes/module.screen.tsx ui/routes/module.screen.tsx.backup
    ```
 
 2. **Crear Context Provider**:
+
    ```typescript
    // ui/context/ModuleContext.tsx
    export const ModuleProvider = ({ children }) => {
@@ -81,6 +87,7 @@ src/features/complex-module/
    ```
 
 3. **Convertir a SPA Container**:
+
    ```typescript
    // ui/routes/module.screen.tsx
    const ModuleScreen = () => (
@@ -106,24 +113,28 @@ src/features/complex-module/
 ## 🎨 **Design Patterns Implementados**
 
 ### **1. 🏗️ SPA Architecture Pattern**
+
 - **Single URL** con navegación interna
 - **Estado compartido** entre tabs
 - **Datos persistentes** con TanStack Query
 - **Performance optimizado** con React.memo
 
 ### **2. 🎭 Smart Header Pattern**
+
 - **Scroll-aware** header que se oculta/muestra
 - **Backdrop blur** effects
 - **Progress indicator** visual
 - **Responsive** en todos los dispositivos
 
 ### **3. 🌊 Transition System Pattern**
+
 - **CSS-only** animations (no JavaScript delays)
 - **GPU accelerated** transforms
 - **Accessibility** compliant (reduced-motion)
 - **Staggered animations** para elementos múltiples
 
 ### **4. 🎣 Hook Composition Pattern**
+
 - **Specialized hooks** para diferentes behaviors
 - **Context + Hook** communication pattern
 - **Event-based** loose coupling
@@ -134,16 +145,19 @@ src/features/complex-module/
 ## 📊 **Performance Benchmarks**
 
 ### **Antes (Traditional Navigation)**
+
 - ❌ **Tab Switch**: 300ms loading + network request
 - ❌ **Data Loss**: Re-fetch en cada cambio
 - ❌ **UX**: Interruption y flickering
 
 ### **Después (SPA Architecture)**
+
 - ✅ **Tab Switch**: 0ms (instantáneo)
 - ✅ **Data Persistence**: Cache inteligente
 - ✅ **UX**: Smooth y premium experience
 
 ### **Métricas del Módulo Inventory**
+
 - 🚀 **FCP (First Contentful Paint)**: < 200ms
 - ⚡ **Tab Switching**: 0ms (instant)
 - 💾 **Memory Usage**: Optimizado con memoization
@@ -154,11 +168,12 @@ src/features/complex-module/
 ## 🧪 **Testing Strategy**
 
 ### **Unit Tests**
+
 ```bash
 # Context testing
 src/features/module/__tests__/ModuleContext.test.tsx
 
-# Component testing  
+# Component testing
 src/features/module/__tests__/components/TabTransition.test.tsx
 
 # Hook testing
@@ -166,6 +181,7 @@ src/features/module/__tests__/hooks/useScrollHeader.test.tsx
 ```
 
 ### **Integration Tests**
+
 ```bash
 # Tab navigation
 src/features/module/__tests__/integration/tab-navigation.test.tsx
@@ -175,6 +191,7 @@ src/features/module/__tests__/integration/state-management.test.tsx
 ```
 
 ### **E2E Tests**
+
 ```bash
 # Full SPA workflow
 cypress/e2e/inventory-spa-workflow.cy.ts
@@ -188,12 +205,14 @@ cypress/e2e/performance/tab-switching.cy.ts
 ## 📋 **Implementation Checklist**
 
 ### **Planning Phase**
+
 - [ ] Definir si el módulo requiere arquitectura SPA
 - [ ] Identificar tabs/secciones necesarias
 - [ ] Diseñar estructura de estado compartido
 - [ ] Planificar integraciones con otros módulos
 
 ### **Development Phase**
+
 - [ ] Crear estructura de carpetas SPA
 - [ ] Implementar Context Provider
 - [ ] Crear Tab Navigation system
@@ -203,6 +222,7 @@ cypress/e2e/performance/tab-switching.cy.ts
 - [ ] Optimizar performance (React.memo)
 
 ### **Testing Phase**
+
 - [ ] Unit tests para Context y Hooks
 - [ ] Component testing para Tabs
 - [ ] Integration tests para navigation
@@ -210,6 +230,7 @@ cypress/e2e/performance/tab-switching.cy.ts
 - [ ] Performance testing
 
 ### **Launch Phase**
+
 - [ ] Documentar module-specific patterns
 - [ ] Crear migration guide (si aplica)
 - [ ] Monitor performance metrics
@@ -220,12 +241,14 @@ cypress/e2e/performance/tab-switching.cy.ts
 ## 🔧 **Troubleshooting Common Issues**
 
 ### **❌ "isTabChanging is not defined"**
+
 ```typescript
 // ✅ Fix: Import from context
 const { activeTab, setActiveTab, isTabChanging } = useInventoryContext();
 ```
 
 ### **❌ Loading shown between tabs**
+
 ```typescript
 // ❌ Problem: Artificial delays
 setTimeout(() => setIsTabChanging(false), 300);
@@ -236,6 +259,7 @@ requestAnimationFrame(() => setIsTabChanging(false));
 ```
 
 ### **❌ Poor animation performance**
+
 ```css
 /* ✅ Solution: GPU acceleration */
 .transform-gpu {
@@ -246,12 +270,13 @@ requestAnimationFrame(() => setIsTabChanging(false));
 ```
 
 ### **❌ State loss between tabs**
+
 ```typescript
 // ✅ Solution: TanStack Query persistence
 const inventory = useInventoryQuery({
-  staleTime: 5 * 60 * 1000,      // 5 minutes
-  gcTime: 10 * 60 * 1000,        // 10 minutes  
-  refetchOnMount: false,         // Don't refetch
+  staleTime: 5 * 60 * 1000, // 5 minutes
+  gcTime: 10 * 60 * 1000, // 10 minutes
+  refetchOnMount: false, // Don't refetch
 });
 ```
 
@@ -260,6 +285,7 @@ const inventory = useInventoryQuery({
 ## 🎯 **Best Practices Summary**
 
 ### **✅ DO's**
+
 - Use SPA pattern for complex modules (5+ sections)
 - Implement instant tab switching (no artificial delays)
 - Persist data with TanStack Query
@@ -270,6 +296,7 @@ const inventory = useInventoryQuery({
 - Test all interaction patterns thoroughly
 
 ### **❌ DON'Ts**
+
 - Don't use SPA pattern for simple modules (< 3 sections)
 - Don't add loading states between cached tabs
 - Don't use multiple contexts per module
@@ -284,6 +311,7 @@ const inventory = useInventoryQuery({
 ## 📈 **Future Enhancements**
 
 ### **Planned Features**
+
 - [ ] **Route Sync**: URL params sync with active tabs
 - [ ] **Deep Linking**: Direct links to specific tabs
 - [ ] **Lazy Loading**: Code splitting for heavy tabs
@@ -294,6 +322,7 @@ const inventory = useInventoryQuery({
 - [ ] **Customizable Layouts**: User preference system
 
 ### **Architecture Evolution**
+
 - [ ] **Micro-frontends**: Independent module deployment
 - [ ] **SSR/SSG Support**: Server-side rendering
 - [ ] **Edge Caching**: CDN-optimized assets
@@ -304,12 +333,14 @@ const inventory = useInventoryQuery({
 ## 📞 **Support & Resources**
 
 ### **Internal Resources**
+
 - 🏗️ [Architecture Decisions](./architecture-decisions.md)
 - 🧩 [Component Library](../components/README.md)
 - 🎨 [Design System](../design-system/README.md)
 - 🧪 [Testing Guidelines](../testing/README.md)
 
 ### **External Resources**
+
 - [React 19 Documentation](https://react.dev)
 - [TanStack Query Guide](https://tanstack.com/query)
 - [Next.js Best Practices](https://nextjs.org/docs)
@@ -319,5 +350,5 @@ const inventory = useInventoryQuery({
 
 **🚀 Esta documentación te proporciona todo lo necesario para implementar y mantener módulos SPA Feature-First de nivel enterprise en tu aplicación.**
 
-*Creado: 2025-01-17 - Comprehensive Architecture Documentation*
-*Módulo de referencia: Inventory Management SPA*
+_Creado: 2025-01-17 - Comprehensive Architecture Documentation_
+_Módulo de referencia: Inventory Management SPA_

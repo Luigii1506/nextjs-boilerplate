@@ -7,7 +7,7 @@
 ## 📋 **Tabla de Contenido**
 
 1. [Componentes Core del Sistema](#-componentes-core-del-sistema)
-2. [Animaciones y Transiciones](#-animaciones-y-transiciones) 
+2. [Animaciones y Transiciones](#-animaciones-y-transiciones)
 3. [Hooks Especializados](#-hooks-especializados)
 4. [Patrones de Comunicación](#-patrones-de-comunicación)
 5. [Gestión de Estado Avanzada](#-gestión-de-estado-avanzada)
@@ -63,7 +63,7 @@ export const TabTransition: React.FC<TabTransitionProps> = ({
     <div
       className={cn(
         // Base classes for smooth rendering
-        "transform-gpu opacity-100 translate-y-0", 
+        "transform-gpu opacity-100 translate-y-0",
         // Animation class
         getTransitionClass(),
         // Performance optimizations
@@ -134,15 +134,17 @@ export const TabBadge: React.FC<TabBadgeProps> = ({
         "transition-all duration-300 transform-gpu",
         "hover:scale-[1.02] active:scale-[0.98]",
         "focus:outline-none focus:ring-2 focus:ring-blue-500/20",
-        
+
         // Active/inactive states
         isActive
-          ? `${colorClasses[color as keyof typeof colorClasses]} shadow-lg scale-[1.01]`
+          ? `${
+              colorClasses[color as keyof typeof colorClasses]
+            } shadow-lg scale-[1.01]`
           : "border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 hover:shadow-md",
-        
+
         // Disabled state
         disabled && "opacity-50 cursor-not-allowed",
-        
+
         className
       )}
     >
@@ -181,7 +183,7 @@ export const TabBadge: React.FC<TabBadgeProps> = ({
         <>
           {/* Bottom border indicator */}
           <div className="absolute bottom-0 left-2 right-2 h-0.5 bg-current rounded-full transition-all duration-300" />
-          
+
           {/* Subtle glow effect */}
           <div className="absolute inset-0 rounded-lg bg-current opacity-5 transition-opacity duration-300" />
         </>
@@ -207,14 +209,14 @@ interface TabLoadingSkeletonProps {
   variant?: "overview" | "products" | "grid" | "list";
 }
 
-export const TabLoadingSkeleton: React.FC<TabLoadingSkeletonProps> = ({ 
-  variant = "grid" 
+export const TabLoadingSkeleton: React.FC<TabLoadingSkeletonProps> = ({
+  variant = "grid",
 }) => {
   if (variant === "overview") {
     return (
       <div className="space-y-6 p-6">
         {/* Header Skeleton */}
-        <div 
+        <div
           className="flex justify-between items-center animate-fadeInUp"
           style={{ animationDelay: "0ms" }}
         >
@@ -246,11 +248,11 @@ export const TabLoadingSkeleton: React.FC<TabLoadingSkeletonProps> = ({
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div 
+          <div
             className="h-96 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-xl shimmer animate-slideInLeft"
             style={{ animationDelay: "500ms" }}
           />
-          <div 
+          <div
             className="lg:col-span-2 h-96 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-xl shimmer animate-slideInRight"
             style={{ animationDelay: "600ms" }}
           />
@@ -263,7 +265,7 @@ export const TabLoadingSkeleton: React.FC<TabLoadingSkeletonProps> = ({
     return (
       <div className="space-y-6 p-6">
         {/* Filters Bar Skeleton */}
-        <div 
+        <div
           className="h-20 bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-xl shimmer animate-slideInDown"
           style={{ animationDelay: "200ms" }}
         />
@@ -406,39 +408,49 @@ export const TabLoadingSkeleton: React.FC<TabLoadingSkeletonProps> = ({
    🎭 UTILITY CLASSES
    ======================================== */
 
-.animate-fadeInUp { 
-  animation: fadeInUp 0.6s ease-out; 
+.animate-fadeInUp {
+  animation: fadeInUp 0.6s ease-out;
 }
 
-.animate-slideInLeft { 
-  animation: slideInLeft 0.5s ease-out; 
+.animate-slideInLeft {
+  animation: slideInLeft 0.5s ease-out;
 }
 
-.animate-slideInRight { 
-  animation: slideInRight 0.5s ease-out; 
+.animate-slideInRight {
+  animation: slideInRight 0.5s ease-out;
 }
 
-.animate-slideInDown { 
-  animation: slideInDown 0.4s ease-out; 
+.animate-slideInDown {
+  animation: slideInDown 0.4s ease-out;
 }
 
-.animate-scaleIn { 
-  animation: scaleIn 0.4s ease-out; 
+.animate-scaleIn {
+  animation: scaleIn 0.4s ease-out;
 }
 
-.animate-fadeInScale { 
-  animation: fadeInScale 0.5s ease-out; 
+.animate-fadeInScale {
+  animation: fadeInScale 0.5s ease-out;
 }
 
 /* ========================================
    ⏰ STAGGERED ANIMATIONS
    ======================================== */
 
-.stagger-1 { animation-delay: 0.1s; }
-.stagger-2 { animation-delay: 0.2s; }
-.stagger-3 { animation-delay: 0.3s; }
-.stagger-4 { animation-delay: 0.4s; }
-.stagger-5 { animation-delay: 0.5s; }
+.stagger-1 {
+  animation-delay: 0.1s;
+}
+.stagger-2 {
+  animation-delay: 0.2s;
+}
+.stagger-3 {
+  animation-delay: 0.3s;
+}
+.stagger-4 {
+  animation-delay: 0.4s;
+}
+.stagger-5 {
+  animation-delay: 0.5s;
+}
 
 /* ========================================
    ⚡ PERFORMANCE OPTIMIZATIONS
@@ -469,23 +481,13 @@ export const TabLoadingSkeleton: React.FC<TabLoadingSkeletonProps> = ({
 }
 
 .shimmer {
-  background: linear-gradient(
-    90deg,
-    #f0f0f0 0px,
-    #e0e0e0 40px,
-    #f0f0f0 80px
-  );
+  background: linear-gradient(90deg, #f0f0f0 0px, #e0e0e0 40px, #f0f0f0 80px);
   background-size: 200px;
   animation: shimmer 1.5s infinite;
 }
 
 .dark .shimmer {
-  background: linear-gradient(
-    90deg,
-    #374151 0px,
-    #4b5563 40px,
-    #374151 80px
-  );
+  background: linear-gradient(90deg, #374151 0px, #4b5563 40px, #374151 80px);
   background-size: 200px;
 }
 
@@ -550,7 +552,7 @@ export const TabLoadingSkeleton: React.FC<TabLoadingSkeletonProps> = ({
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  
+
   .shimmer,
   .animate-fadeInUp,
   .animate-slideInLeft,
@@ -560,7 +562,7 @@ export const TabLoadingSkeleton: React.FC<TabLoadingSkeletonProps> = ({
   .animate-fadeInScale {
     animation: none !important;
   }
-  
+
   .header-visible,
   .header-hidden {
     transition: none !important;
@@ -574,7 +576,7 @@ export const TabLoadingSkeleton: React.FC<TabLoadingSkeletonProps> = ({
   .animate-slideInRight {
     animation-duration: 0.4s;
   }
-  
+
   .stagger-1,
   .stagger-2,
   .stagger-3 {
@@ -593,9 +595,9 @@ export const TabLoadingSkeleton: React.FC<TabLoadingSkeletonProps> = ({
 // 📁 src/features/inventory/ui/hooks/useScrollHeader.ts
 
 interface UseScrollHeaderOptions {
-  threshold?: number;       // Scroll threshold to trigger hide/show
-  debounceDelay?: number;   // Debounce delay for optimization
-  scrollDelta?: number;     // Minimum scroll distance to detect direction
+  threshold?: number; // Scroll threshold to trigger hide/show
+  debounceDelay?: number; // Debounce delay for optimization
+  scrollDelta?: number; // Minimum scroll distance to detect direction
 }
 
 interface UseScrollHeaderReturn {
@@ -636,11 +638,11 @@ export const useScrollHeader = ({
 
     // Header visibility logic
     if (currentScrollY <= threshold) {
-      setIsHeaderVisible(true);  // Always show near top
+      setIsHeaderVisible(true); // Always show near top
     } else if (scrollDirection && currentScrollY > lastScrollY.current) {
       setIsHeaderVisible(false); // Hide when scrolling down
     } else if (!scrollDirection && lastScrollY.current > currentScrollY) {
-      setIsHeaderVisible(true);  // Show when scrolling up
+      setIsHeaderVisible(true); // Show when scrolling up
     }
 
     lastScrollY.current = currentScrollY;
@@ -660,7 +662,7 @@ export const useScrollHeader = ({
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-    
+
     timeoutRef.current = setTimeout(() => {
       requestTick();
     }, debounceDelay);
@@ -684,15 +686,15 @@ export const useScrollHeader = ({
       }
     };
 
-    window.addEventListener('scroll', scrollHandler, { passive: true });
-    window.addEventListener('resize', handleResize, { passive: true });
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener("scroll", scrollHandler, { passive: true });
+    window.addEventListener("resize", handleResize, { passive: true });
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      window.removeEventListener('scroll', scrollHandler);
-      window.removeEventListener('resize', handleResize);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      
+      window.removeEventListener("scroll", scrollHandler);
+      window.removeEventListener("resize", handleResize);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
@@ -712,9 +714,9 @@ export const useScrollHeader = ({
 // 🎯 Specialized hook for tab headers
 export const useTabScrollHeader = () => {
   return useScrollHeader({
-    threshold: 120,    // More sensitive for tabs
-    debounceDelay: 8,  // More responsive
-    scrollDelta: 3,    // More precise
+    threshold: 120, // More sensitive for tabs
+    debounceDelay: 8, // More responsive
+    scrollDelta: 3, // More precise
   });
 };
 ```
@@ -726,7 +728,7 @@ export const useTabScrollHeader = () => {
 
 interface TabTransitionConfig {
   defaultTab?: string;
-  persistTab?: boolean;      // Persist active tab in localStorage
+  persistTab?: boolean; // Persist active tab in localStorage
   onTabChange?: (tab: string) => void;
 }
 
@@ -736,18 +738,18 @@ export const useTabTransition = (
 ) => {
   const { defaultTab, persistTab = false, onTabChange } = config;
   const contextValue = useInventoryContext();
-  
+
   const [transitionState, setTransitionState] = useState<
-    'idle' | 'changing' | 'loading'
-  >('idle');
+    "idle" | "changing" | "loading"
+  >("idle");
 
   // Get persisted tab from localStorage if enabled
   const getPersistedTab = useCallback(() => {
     if (!persistTab) return defaultTab || tabs[0]?.id;
-    
+
     try {
-      const saved = localStorage.getItem('activeTab');
-      const validTab = tabs.find(t => t.id === saved);
+      const saved = localStorage.getItem("activeTab");
+      const validTab = tabs.find((t) => t.id === saved);
       return validTab?.id || defaultTab || tabs[0]?.id;
     } catch {
       return defaultTab || tabs[0]?.id;
@@ -758,46 +760,49 @@ export const useTabTransition = (
   const [activeTab, setActiveTabState] = useState(() => getPersistedTab());
 
   // Enhanced tab switching with lifecycle
-  const switchTab = useCallback((newTab: string) => {
-    if (newTab === activeTab) return;
-    
-    setTransitionState('changing');
-    
-    // Persist tab if enabled
-    if (persistTab) {
-      try {
-        localStorage.setItem('activeTab', newTab);
-      } catch {
-        // Ignore localStorage errors
+  const switchTab = useCallback(
+    (newTab: string) => {
+      if (newTab === activeTab) return;
+
+      setTransitionState("changing");
+
+      // Persist tab if enabled
+      if (persistTab) {
+        try {
+          localStorage.setItem("activeTab", newTab);
+        } catch {
+          // Ignore localStorage errors
+        }
       }
-    }
-    
-    // Call lifecycle hook
-    onTabChange?.(newTab);
-    
-    // Update active tab
-    setActiveTabState(newTab);
-    
-    // Reset transition state
-    requestAnimationFrame(() => {
-      setTransitionState('idle');
-    });
-  }, [activeTab, persistTab, onTabChange]);
+
+      // Call lifecycle hook
+      onTabChange?.(newTab);
+
+      // Update active tab
+      setActiveTabState(newTab);
+
+      // Reset transition state
+      requestAnimationFrame(() => {
+        setTransitionState("idle");
+      });
+    },
+    [activeTab, persistTab, onTabChange]
+  );
 
   // Get current tab configuration
   const currentTabConfig = useMemo(() => {
-    return tabs.find(tab => tab.id === activeTab) || tabs[0];
+    return tabs.find((tab) => tab.id === activeTab) || tabs[0];
   }, [tabs, activeTab]);
 
   // Tab navigation helpers
   const goToNextTab = useCallback(() => {
-    const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
+    const currentIndex = tabs.findIndex((tab) => tab.id === activeTab);
     const nextIndex = (currentIndex + 1) % tabs.length;
     switchTab(tabs[nextIndex].id);
   }, [tabs, activeTab, switchTab]);
 
   const goToPreviousTab = useCallback(() => {
-    const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
+    const currentIndex = tabs.findIndex((tab) => tab.id === activeTab);
     const prevIndex = currentIndex === 0 ? tabs.length - 1 : currentIndex - 1;
     switchTab(tabs[prevIndex].id);
   }, [tabs, activeTab, switchTab]);
@@ -809,7 +814,7 @@ export const useTabTransition = (
     goToPreviousTab,
     currentTabConfig,
     transitionState,
-    isTabChanging: transitionState === 'changing',
+    isTabChanging: transitionState === "changing",
     // Include context values
     ...contextValue,
   };
@@ -829,7 +834,7 @@ export const useTabTransition = (
 export const InventoryProvider = ({ children }) => {
   const inventory = useInventoryQuery();
   const [activeTab, setActiveTab] = useState("overview");
-  
+
   return (
     <InventoryContext.Provider value={{ inventory, activeTab, setActiveTab }}>
       {children}
@@ -840,13 +845,18 @@ export const InventoryProvider = ({ children }) => {
 // Specialized Hook (Behavior Provider)
 export const useInventoryStats = () => {
   const { inventory } = useInventoryContext();
-  
-  return useMemo(() => ({
-    totalProducts: inventory.data?.products.length ?? 0,
-    lowStockCount: inventory.data?.alerts.filter(a => a.type === 'LOW_STOCK').length ?? 0,
-    totalValue: inventory.data?.stats.totalInventoryValue ?? 0,
-    // Computed values...
-  }), [inventory.data]);
+
+  return useMemo(
+    () => ({
+      totalProducts: inventory.data?.products.length ?? 0,
+      lowStockCount:
+        inventory.data?.alerts.filter((a) => a.type === "LOW_STOCK").length ??
+        0,
+      totalValue: inventory.data?.stats.totalInventoryValue ?? 0,
+      // Computed values...
+    }),
+    [inventory.data]
+  );
 };
 
 // Component Usage
@@ -866,16 +876,18 @@ export const InventoryProvider = ({ children }) => {
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [globalSearchTerm, setGlobalSearchTerm] = useState("");
   const [bulkActionMode, setBulkActionMode] = useState(false);
-  
+
   return (
-    <InventoryContext.Provider value={{
-      selectedProductIds,
-      setSelectedProductIds,
-      globalSearchTerm,
-      setGlobalSearchTerm,
-      bulkActionMode,
-      setBulkActionMode,
-    }}>
+    <InventoryContext.Provider
+      value={{
+        selectedProductIds,
+        setSelectedProductIds,
+        globalSearchTerm,
+        setGlobalSearchTerm,
+        bulkActionMode,
+        setBulkActionMode,
+      }}
+    >
       {children}
     </InventoryContext.Provider>
   );
@@ -884,31 +896,23 @@ export const InventoryProvider = ({ children }) => {
 // Products Tab (Selection)
 const ProductsTab = () => {
   const { selectedProductIds, setSelectedProductIds } = useInventoryContext();
-  
+
   const handleProductSelect = (productId: string) => {
-    setSelectedProductIds(prev => 
-      prev.includes(productId) 
-        ? prev.filter(id => id !== productId)
+    setSelectedProductIds((prev) =>
+      prev.includes(productId)
+        ? prev.filter((id) => id !== productId)
         : [...prev, productId]
     );
   };
-  
-  return (
-    <div>
-      {/* Product list with selection */}
-    </div>
-  );
+
+  return <div>{/* Product list with selection */}</div>;
 };
 
 // Overview Tab (Display selected count)
 const OverviewTab = () => {
   const { selectedProductIds } = useInventoryContext();
-  
-  return (
-    <div>
-      Selected Products: {selectedProductIds.length}
-    </div>
-  );
+
+  return <div>Selected Products: {selectedProductIds.length}</div>;
 };
 ```
 
@@ -920,20 +924,22 @@ const OverviewTab = () => {
 // Custom hook for event management
 export const useTabEvents = () => {
   const emitTabEvent = useCallback((eventType: string, data: any) => {
-    window.dispatchEvent(new CustomEvent(`inventory:${eventType}`, { 
-      detail: data 
-    }));
+    window.dispatchEvent(
+      new CustomEvent(`inventory:${eventType}`, {
+        detail: data,
+      })
+    );
   }, []);
 
-  const subscribeToTabEvent = useCallback((
-    eventType: string, 
-    handler: (event: CustomEvent) => void
-  ) => {
-    const eventName = `inventory:${eventType}`;
-    window.addEventListener(eventName, handler);
-    
-    return () => window.removeEventListener(eventName, handler);
-  }, []);
+  const subscribeToTabEvent = useCallback(
+    (eventType: string, handler: (event: CustomEvent) => void) => {
+      const eventName = `inventory:${eventType}`;
+      window.addEventListener(eventName, handler);
+
+      return () => window.removeEventListener(eventName, handler);
+    },
+    []
+  );
 
   return { emitTabEvent, subscribeToTabEvent };
 };
@@ -941,29 +947,25 @@ export const useTabEvents = () => {
 // Usage in tabs
 const ProductsTab = () => {
   const { emitTabEvent } = useTabEvents();
-  
+
   const handleProductCreated = (product: Product) => {
-    emitTabEvent('product:created', { product });
+    emitTabEvent("product:created", { product });
   };
-  
+
   return <ProductForm onSubmit={handleProductCreated} />;
 };
 
 const OverviewTab = () => {
   const { subscribeToTabEvent } = useTabEvents();
   const [recentlyCreated, setRecentlyCreated] = useState<Product[]>([]);
-  
+
   useEffect(() => {
-    return subscribeToTabEvent('product:created', (event) => {
-      setRecentlyCreated(prev => [event.detail.product, ...prev.slice(0, 4)]);
+    return subscribeToTabEvent("product:created", (event) => {
+      setRecentlyCreated((prev) => [event.detail.product, ...prev.slice(0, 4)]);
     });
   }, [subscribeToTabEvent]);
-  
-  return (
-    <div>
-      Recently Created: {recentlyCreated.length}
-    </div>
-  );
+
+  return <div>Recently Created: {recentlyCreated.length}</div>;
 };
 ```
 
@@ -992,13 +994,13 @@ export const usePersistentState = <T>(
   const setPersistentState = useCallback((value: T | ((prev: T) => T)) => {
     setState(prev => {
       const newValue = typeof value === 'function' ? (value as (prev: T) => T)(prev) : value;
-      
+
       try {
         localStorage.setItem(key, JSON.stringify(newValue));
       } catch {
         // Handle localStorage errors
       }
-      
+
       return newValue;
     });
   }, [key]);
@@ -1013,7 +1015,7 @@ export const InventoryProvider = ({ children }) => {
     field: 'name',
     direction: 'asc'
   });
-  
+
   return (
     <InventoryContext.Provider value={{
       viewMode,
@@ -1046,29 +1048,29 @@ export const useOptimisticState = <T>(
   const [isOptimistic, setIsOptimistic] = useState(false);
   const rollbackRef = useRef<T>(initialState);
 
-  const updateOptimistic = useCallback(async (
-    newState: T,
-    asyncAction: () => Promise<T>
-  ) => {
-    // Store rollback data
-    rollbackRef.current = state;
-    
-    // Apply optimistic update
-    setState(newState);
-    setIsOptimistic(true);
-    
-    try {
-      const result = await asyncAction();
-      setState(result);
-      config.onSuccess?.(result);
-    } catch (error) {
-      // Rollback on error
-      setState(rollbackRef.current);
-      config.onError?.(error as Error, rollbackRef.current);
-    } finally {
-      setIsOptimistic(false);
-    }
-  }, [state, config]);
+  const updateOptimistic = useCallback(
+    async (newState: T, asyncAction: () => Promise<T>) => {
+      // Store rollback data
+      rollbackRef.current = state;
+
+      // Apply optimistic update
+      setState(newState);
+      setIsOptimistic(true);
+
+      try {
+        const result = await asyncAction();
+        setState(result);
+        config.onSuccess?.(result);
+      } catch (error) {
+        // Rollback on error
+        setState(rollbackRef.current);
+        config.onError?.(error as Error, rollbackRef.current);
+      } finally {
+        setIsOptimistic(false);
+      }
+    },
+    [state, config]
+  );
 
   const rollback = useCallback(() => {
     setState(rollbackRef.current);
@@ -1102,28 +1104,28 @@ export const InventoryProvider = ({ children }) => {
   });
 
   const openModal = useCallback((modalName: string, data: any = null) => {
-    setModals(prev => ({
+    setModals((prev) => ({
       ...prev,
-      [modalName]: { open: true, data }
+      [modalName]: { open: true, data },
     }));
   }, []);
 
   const closeModal = useCallback((modalName: string) => {
-    setModals(prev => ({
+    setModals((prev) => ({
       ...prev,
-      [modalName]: { open: false, data: null }
+      [modalName]: { open: false, data: null },
     }));
   }, []);
 
   return (
     <InventoryContext.Provider value={{ modals, openModal, closeModal }}>
       {children}
-      
+
       {/* Global modals */}
-      <ProductModal 
+      <ProductModal
         open={modals.productModal.open}
         product={modals.productModal.data}
-        onClose={() => closeModal('productModal')}
+        onClose={() => closeModal("productModal")}
       />
     </InventoryContext.Provider>
   );
@@ -1137,7 +1139,7 @@ export const InventoryProvider = ({ children }) => {
 
 export const useGlobalSearch = () => {
   const { globalSearchTerm, activeTab } = useInventoryContext();
-  
+
   return useMemo(() => {
     const searchFilters = {
       overview: () => ({
@@ -1164,10 +1166,10 @@ export const useGlobalSearch = () => {
 const ProductsTab = () => {
   const searchFilters = useGlobalSearch();
   const { data: products } = useProductsQuery({ filters: searchFilters });
-  
+
   return (
     <div>
-      {products?.map(product => (
+      {products?.map((product) => (
         <ProductCard key={product.id} product={product} />
       ))}
     </div>
@@ -1184,35 +1186,35 @@ const ProductsTab = () => {
 ```typescript
 // 📁 src/features/inventory/__tests__/InventoryContext.test.tsx
 
-import { renderHook, act } from '@testing-library/react';
-import { InventoryProvider, useInventoryContext } from '../ui/context';
+import { renderHook, act } from "@testing-library/react";
+import { InventoryProvider, useInventoryContext } from "../ui/context";
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
   <InventoryProvider>{children}</InventoryProvider>
 );
 
-describe('InventoryContext', () => {
-  it('should switch tabs correctly', () => {
+describe("InventoryContext", () => {
+  it("should switch tabs correctly", () => {
     const { result } = renderHook(() => useInventoryContext(), { wrapper });
-    
-    expect(result.current.activeTab).toBe('overview');
-    
+
+    expect(result.current.activeTab).toBe("overview");
+
     act(() => {
-      result.current.setActiveTab('products');
+      result.current.setActiveTab("products");
     });
-    
-    expect(result.current.activeTab).toBe('products');
+
+    expect(result.current.activeTab).toBe("products");
   });
 
-  it('should maintain state during tab switches', () => {
+  it("should maintain state during tab switches", () => {
     const { result } = renderHook(() => useInventoryContext(), { wrapper });
-    
+
     act(() => {
-      result.current.setGlobalSearchTerm('test search');
-      result.current.setActiveTab('products');
+      result.current.setGlobalSearchTerm("test search");
+      result.current.setActiveTab("products");
     });
-    
-    expect(result.current.globalSearchTerm).toBe('test search');
+
+    expect(result.current.globalSearchTerm).toBe("test search");
   });
 });
 ```
@@ -1222,26 +1224,22 @@ describe('InventoryContext', () => {
 ```typescript
 // 📁 src/features/inventory/__tests__/tabs/ProductsTab.test.tsx
 
-import { render, screen } from '@testing-library/react';
-import { ProductsTab } from '../ui/tabs/ProductsTab';
-import { InventoryProvider } from '../ui/context';
+import { render, screen } from "@testing-library/react";
+import { ProductsTab } from "../ui/tabs/ProductsTab";
+import { InventoryProvider } from "../ui/context";
 
 const renderWithProvider = (component: React.ReactElement) => {
-  return render(
-    <InventoryProvider>
-      {component}
-    </InventoryProvider>
-  );
+  return render(<InventoryProvider>{component}</InventoryProvider>);
 };
 
-describe('ProductsTab', () => {
-  it('should render products list', () => {
+describe("ProductsTab", () => {
+  it("should render products list", () => {
     renderWithProvider(<ProductsTab />);
-    
-    expect(screen.getByText('📦 Gestión de Productos')).toBeInTheDocument();
+
+    expect(screen.getByText("📦 Gestión de Productos")).toBeInTheDocument();
   });
 
-  it('should apply search filters', () => {
+  it("should apply search filters", () => {
     // Test search functionality
   });
 });
@@ -1252,27 +1250,27 @@ describe('ProductsTab', () => {
 ```typescript
 // 📁 src/features/inventory/__tests__/components/TabTransition.test.tsx
 
-import { render } from '@testing-library/react';
-import { TabTransition } from '../ui/components/shared/TabTransition';
+import { render } from "@testing-library/react";
+import { TabTransition } from "../ui/components/shared/TabTransition";
 
-describe('TabTransition', () => {
-  it('should render active tab content', () => {
+describe("TabTransition", () => {
+  it("should render active tab content", () => {
     const { container } = render(
       <TabTransition isActive={true} transitionType="fade">
         <div>Test Content</div>
       </TabTransition>
     );
-    
-    expect(container.firstChild).toHaveClass('animate-fadeInScale');
+
+    expect(container.firstChild).toHaveClass("animate-fadeInScale");
   });
 
-  it('should not render inactive tab content', () => {
+  it("should not render inactive tab content", () => {
     const { container } = render(
       <TabTransition isActive={false}>
         <div>Test Content</div>
       </TabTransition>
     );
-    
+
     expect(container.firstChild).toBeNull();
   });
 });
@@ -1315,4 +1313,4 @@ describe('TabTransition', () => {
 
 **🎉 Esta guía te proporciona todos los componentes, patrones y ejemplos necesarios para implementar módulos SPA Feature-First de nivel enterprise en tu aplicación.**
 
-*Actualizado: 2025-01-17 - Inventory Management Implementation Guide*
+_Actualizado: 2025-01-17 - Inventory Management Implementation Guide_
