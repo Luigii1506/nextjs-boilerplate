@@ -190,7 +190,7 @@ export function useAuditQuery(
       filters: AuditFilters;
       options: AuditExportOptions;
     }) => {
-      const result = await exportAuditEventsAction(filters, options);
+      const result = await exportAuditEventsAction(filters, options.format);
       if (!result.success) {
         throw new Error(result.error || "Error exporting audit events");
       }

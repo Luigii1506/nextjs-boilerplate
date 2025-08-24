@@ -24,156 +24,13 @@ import {
   Palette,
 } from "lucide-react";
 import { cn } from "@/shared/utils";
+import { useSettingsQuery, SETTINGS_CATEGORIES } from "../../hooks";
+import { SettingsForm } from "../components";
 import type {
   SettingCategory,
   SettingsDashboardProps,
   SettingsGroup,
 } from "../../types";
-
-// Settings categories configuration
-const SETTINGS_CATEGORIES: SettingsGroup[] = [
-  {
-    category: "app",
-    label: "Application",
-    description: "General app configuration and branding",
-    icon: "Settings",
-    order: 1,
-    permissions: ["settings.view", "settings.edit.app"],
-    sections: [
-      {
-        id: "general",
-        name: "general",
-        label: "General Settings",
-        description: "Basic application configuration",
-        settings: ["app.name", "app.description", "app.version"],
-        permissions: ["settings.edit.app"],
-        order: 1,
-      },
-      {
-        id: "branding",
-        name: "branding",
-        label: "Branding & UI",
-        description: "Visual appearance and branding",
-        settings: ["app.primaryColor", "app.logoUrl"],
-        permissions: ["settings.edit.app"],
-        order: 2,
-      },
-      {
-        id: "features",
-        name: "features",
-        label: "Feature Flags",
-        description: "Enable or disable application features",
-        settings: ["app.userRegistration", "app.darkMode"],
-        permissions: ["settings.edit.app"],
-        order: 3,
-      },
-    ],
-  },
-  {
-    category: "auth",
-    label: "Authentication",
-    description: "User authentication and security settings",
-    icon: "Shield",
-    order: 2,
-    permissions: ["settings.view", "settings.edit.auth"],
-    sections: [
-      {
-        id: "providers",
-        name: "providers",
-        label: "OAuth Providers",
-        description: "Configure social login providers",
-        settings: ["auth.google", "auth.github"],
-        permissions: ["settings.edit.auth"],
-        order: 1,
-      },
-      {
-        id: "security",
-        name: "security",
-        label: "Security Policies",
-        description: "Password policies and security settings",
-        settings: ["auth.passwordPolicy", "auth.lockoutPolicy"],
-        permissions: ["settings.edit.auth"],
-        order: 2,
-      },
-    ],
-  },
-  {
-    category: "database",
-    label: "Database",
-    description: "Database connections and optimization",
-    icon: "Database",
-    order: 3,
-    permissions: ["settings.view", "settings.edit.database"],
-    sections: [
-      {
-        id: "connection",
-        name: "connection",
-        label: "Database Connections",
-        description: "Configure database connections and pooling",
-        settings: ["db.primaryConnection"],
-        permissions: ["settings.edit.database"],
-        order: 1,
-      },
-    ],
-  },
-  {
-    category: "communications",
-    label: "Communications",
-    description: "Email, SMS and notification settings",
-    icon: "Mail",
-    order: 4,
-    permissions: ["settings.view", "settings.edit.communications"],
-    sections: [
-      {
-        id: "email",
-        name: "email",
-        label: "Email Configuration",
-        description: "Configure email providers and settings",
-        settings: ["email.provider", "email.fromEmail"],
-        permissions: ["settings.edit.communications"],
-        order: 1,
-      },
-    ],
-  },
-  {
-    category: "deployment",
-    label: "Deployment",
-    description: "Deployment and infrastructure settings",
-    icon: "Rocket",
-    order: 5,
-    permissions: ["settings.view", "settings.edit.deployment"],
-    sections: [
-      {
-        id: "vercel",
-        name: "vercel",
-        label: "Vercel",
-        description: "Vercel deployment configuration",
-        settings: ["vercel.projectId", "vercel.accessToken"],
-        permissions: ["settings.edit.deployment"],
-        order: 1,
-      },
-    ],
-  },
-  {
-    category: "integrations",
-    label: "Integrations",
-    description: "Third-party service integrations",
-    icon: "Plug",
-    order: 6,
-    permissions: ["settings.view", "settings.edit.integrations"],
-    sections: [
-      {
-        id: "analytics",
-        name: "analytics",
-        label: "Analytics",
-        description: "Web analytics and tracking services",
-        settings: ["analytics.googleAnalytics"],
-        permissions: ["settings.edit.integrations"],
-        order: 1,
-      },
-    ],
-  },
-];
 
 // Icon mapping
 const ICON_MAP = {
@@ -284,12 +141,32 @@ function SettingsNavigation({
 interface SettingsContentProps {
   category: SettingCategory;
   userRole: string;
+  userPermissions: string[];
 }
 
-function SettingsContent({ category, userRole }: SettingsContentProps) {
-  const categoryConfig = SETTINGS_CATEGORIES.find(
-    (c) => c.category === category
-  );
+function SettingsContent({
+  category,
+  userRole: _userRole, // eslint-disable-line @typescript-eslint/no-unused-vars -- For future role-based features
+  userPermissions,
+}: SettingsContentProps) {
+  // 🎯 Use settings query hook
+  const { settings, categories, isLoading, updateSetting, refreshSettings } =
+    useSettingsQuery(category, { userPermissions });
+
+  const categoryConfig = categories.find((c) => c.category === category);
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 p-8">
+        <div className="flex items-center justify-center h-64">
+          <Clock className="w-8 h-8 text-slate-400 animate-spin" />
+          <span className="ml-2 text-slate-600 dark:text-slate-400">
+            Loading settings...
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   if (!categoryConfig) {
     return (
@@ -340,29 +217,36 @@ function SettingsContent({ category, userRole }: SettingsContentProps) {
                 key={section.id}
                 className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700"
               >
-                <div className="p-6 border-b border-slate-200 dark:border-slate-700">
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                    {section.label}
-                  </h3>
-                  <p className="text-slate-600 dark:text-slate-400 mt-1">
-                    {section.description}
-                  </p>
-                </div>
-
                 <div className="p-6">
-                  {/* Settings Form Component will go here */}
-                  <div className="space-y-4">
-                    <div className="text-center py-8">
-                      <Clock className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                      <p className="text-slate-500 dark:text-slate-400">
-                        Settings form for {section.label} coming soon...
-                      </p>
-                    </div>
-                  </div>
+                  {/* Real Settings Form */}
+                  <SettingsForm
+                    section={section}
+                    settings={settings}
+                    onUpdateSetting={updateSetting}
+                    onReset={async () => {
+                      refreshSettings();
+                    }}
+                  />
                 </div>
               </div>
             ))}
         </div>
+
+        {/* No settings message */}
+        {settings.length === 0 && (
+          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-8">
+            <div className="text-center">
+              <Settings className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
+                No settings available
+              </h3>
+              <p className="text-slate-600 dark:text-slate-400">
+                No settings are configured for the {categoryConfig.label}{" "}
+                category yet.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -441,7 +325,7 @@ function SettingsStats({ stats }: SettingsStatsProps) {
 
 export default function SettingsScreen({
   initialCategory = "app",
-  userId,
+  userId: _userId, // eslint-disable-line @typescript-eslint/no-unused-vars -- For future user-specific settings
   userRole,
 }: SettingsDashboardProps) {
   const [activeCategory, setActiveCategory] =
@@ -512,7 +396,11 @@ export default function SettingsScreen({
                 </div>
               }
             >
-              <SettingsContent category={activeCategory} userRole={userRole} />
+              <SettingsContent
+                category={activeCategory}
+                userRole={userRole}
+                userPermissions={userPermissions}
+              />
             </Suspense>
           </div>
         </div>
@@ -520,4 +408,3 @@ export default function SettingsScreen({
     </div>
   );
 }
-
