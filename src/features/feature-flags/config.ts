@@ -21,9 +21,16 @@ export const FEATURE_FLAGS = {
   fileUpload: process.env.FEATURE_FILE_UPLOAD !== "false", // Default true
   payments: process.env.FEATURE_PAYMENTS === "true",
   inventory: process.env.FEATURE_INVENTORY === "true",
+  pos: process.env.FEATURE_POS === "true",
   ecommerce: process.env.FEATURE_ECOMMERCE === "true",
+  suppliers: process.env.FEATURE_SUPPLIERS === "true",
   aiIntegration: process.env.FEATURE_AI === "true",
   analytics: process.env.FEATURE_ANALYTICS === "true",
+
+  // 🔗 INTEGRATIONS
+  paymentGateways: process.env.FEATURE_PAYMENT_GATEWAYS === "true",
+  shippingIntegration: process.env.FEATURE_SHIPPING === "true",
+  emailNotifications: process.env.FEATURE_EMAIL_NOTIFICATIONS === "true",
 
   // 🎨 UI FEATURES
   darkMode: process.env.FEATURE_DARK_MODE === "true",
@@ -65,9 +72,14 @@ export const FEATURE_CATEGORIES = {
       "fileUpload",
       "payments",
       "inventory",
+      "pos",
       "ecommerce",
+      "suppliers",
       "aiIntegration",
       "analytics",
+      "paymentGateways",
+      "shippingIntegration",
+      "emailNotifications",
     ],
   },
   experimental: {
@@ -128,3 +140,44 @@ export const getFeaturesByCategory = (
     (flag) => FEATURE_FLAGS[flag as keyof typeof FEATURE_FLAGS]
   );
 };
+
+// 🔗 FEATURE DEPENDENCIES SYSTEM
+export const FEATURE_DEPENDENCIES = {
+  pos: ["inventory"],                           // POS requiere Inventory
+  ecommerce: ["inventory", "payments"],         // E-commerce requiere Inventory + Payments  
+  suppliers: ["inventory"],                     // Suppliers requiere Inventory
+  shippingIntegration: ["ecommerce"],          // Shipping requiere E-commerce
+  emailNotifications: ["ecommerce", "pos"],   // Emails requiere ventas
+  paymentGateways: ["payments"],               // Gateways requiere payments base
+} as const;
+
+// 🔍 Validation utilities
+export function validateFeatureDependencies(
+  feature: keyof typeof FEATURE_DEPENDENCIES,
+  enabledFeatures: readonly string[]
+): boolean {
+  const dependencies = FEATURE_DEPENDENCIES[feature] || [];
+  return dependencies.every(dep => enabledFeatures.includes(dep));
+}
+
+export function getFeatureDependencies(
+  feature: keyof typeof FEATURE_DEPENDENCIES
+): readonly string[] {
+  return FEATURE_DEPENDENCIES[feature] || [];
+}
+
+export function getDependentFeatures(
+  feature: string
+): Array<keyof typeof FEATURE_DEPENDENCIES> {
+  const result: Array<keyof typeof FEATURE_DEPENDENCIES> = [];
+  
+  // Check each dependency manually to avoid type issues
+  if (FEATURE_DEPENDENCIES.pos.includes(feature as any)) result.push('pos');
+  if (FEATURE_DEPENDENCIES.ecommerce.includes(feature as any)) result.push('ecommerce');
+  if (FEATURE_DEPENDENCIES.suppliers.includes(feature as any)) result.push('suppliers');
+  if (FEATURE_DEPENDENCIES.shippingIntegration.includes(feature as any)) result.push('shippingIntegration');
+  if (FEATURE_DEPENDENCIES.emailNotifications.includes(feature as any)) result.push('emailNotifications');
+  if (FEATURE_DEPENDENCIES.paymentGateways.includes(feature as any)) result.push('paymentGateways');
+  
+  return result;
+}

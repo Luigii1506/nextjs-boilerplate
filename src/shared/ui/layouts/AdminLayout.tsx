@@ -27,6 +27,7 @@ import { AdminHeader, AdminSidebar, MobileSidebar } from "./components";
 import { ROLE_CONFIGS } from "./components/UserMenu";
 import { useNotificationsBadge, useSwipeGestures } from "@/shared/hooks";
 import type { SessionUser } from "@/shared/types/user";
+import { Skeleton } from "@/shared/ui/components";
 
 // 🎯 Enterprise Configuration
 const ENTERPRISE_SHELL_CONFIG = {
@@ -338,16 +339,12 @@ export default function AdminLayout({
             >
               <Suspense
                 fallback={
-                  <div
-                    className="flex items-center justify-center h-64"
-                    role="status"
-                    aria-label="Cargando contenido principal"
-                  >
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                    <span className="ml-2 text-slate-600 dark:text-slate-400">
-                      Cargando...
-                    </span>
-                  </div>
+                  <Skeleton
+                    className="h-full w-full"
+                    variant="pulse"
+                    width="100%"
+                    height="100%"
+                  />
                 }
               >
                 {children}

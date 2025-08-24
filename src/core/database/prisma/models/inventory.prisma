@@ -1,0 +1,157 @@
+// 📦 INVENTORY MANAGEMENT MODELS
+// ===============================
+// E-commerce inventory system - products, categories, suppliers, stock movements
+// Feature flag: inventory
+
+model Product {
+  id          String   @id @default(cuid())
+  sku         String   @unique // SKU único
+  name        String
+  description String?
+  categoryId  String
+  price       Decimal  @db.Decimal(10, 2) // Precio de venta
+  cost        Decimal  @db.Decimal(10, 2) // Costo de adquisición
+  stock       Int      @default(0)
+  minStock    Int      @default(0)        // Stock mínimo
+  maxStock    Int?                        // Stock máximo (opcional)
+  unit        String   @default("piece")  // unidad, kg, litro, etc.
+  barcode     String?  @unique           // Código de barras opcional
+  images      String[] @default([])       // Array de URLs de imágenes
+  isActive    Boolean  @default(true)
+  supplierId  String?                     // Proveedor opcional
+  tags        String[] @default([])       // Tags para filtrado
+  metadata    Json?                       // Metadata adicional flexible
+
+  // 📅 Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 🔗 Relations
+  category      Category        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  supplier      Supplier?       @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  stockMovements StockMovement[] 
+
+  // 🧩 FUTURE: E-commerce relations (uncomment when modules are active)  
+  // cartItems     CartItem[]     // MODULE: ecommerce
+  // orderItems    OrderItem[]    // MODULE: ecommerce  
+  // saleItems     SaleItem[]     // MODULE: pos
+
+  @@index([categoryId])
+  @@index([supplierId])
+  @@index([sku])
+  @@index([isActive])
+  @@index([stock])
+  @@map("products")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  parentId    String?                     // Para categorías anidadas
+  color       String?  @default("#6B7280") // Color hex para UI
+  icon        String?                      // Icono (lucide name o URL)
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)        // Para ordenamiento custom
+
+  // 📅 Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 🔗 Relations
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryHierarchy")
+  products Product[]
+
+  @@index([parentId])
+  @@index([isActive])
+  @@index([sortOrder])
+  @@map("categories")
+}
+
+model Supplier {
+  id             String   @id @default(cuid())
+  name           String   @unique
+  contactPerson  String?
+  email          String?  @unique
+  phone          String?
+  website        String?
+  taxId          String?  @unique         // RFC, NIT, etc.
+  paymentTerms   Int      @default(30)    // días de crédito
+  isActive       Boolean  @default(true)
+  rating         Decimal? @db.Decimal(2, 1) // 1.0-5.0 estrellas
+  notes          String?
+
+  // 📍 Address (embedded)
+  addressLine1   String?
+  addressLine2   String?
+  city           String?
+  state          String?
+  postalCode     String?
+  country        String?  @default("MX")
+
+  // 📅 Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 🔗 Relations
+  products Product[]
+
+  @@index([isActive])
+  @@index([email])
+  @@map("suppliers")
+}
+
+model StockMovement {
+  id            String              @id @default(cuid())
+  productId     String
+  type          StockMovementType
+  quantity      Int                 // Can be positive or negative
+  previousStock Int                 // Stock antes del movimiento
+  newStock      Int                 // Stock después del movimiento
+  reason        String
+  reference     String?             // Referencia externa (compra, venta, etc.)
+  userId        String              // Usuario que realizó el movimiento
+  
+  // 📅 Timestamps
+  createdAt DateTime @default(now())
+
+  // 🔗 Relations
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+
+  // 🧩 FUTURE: Relations to other modules
+  // sale    Sale?   @relation(fields: [reference], references: [id]) // MODULE: pos
+  // order   Order?  @relation(fields: [reference], references: [id]) // MODULE: ecommerce
+
+  @@index([productId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([userId])
+  @@map("stock_movements")
+}
+
+// 📊 Enums
+enum StockMovementType {
+  IN          // Entrada de stock (compras, devoluciones)
+  OUT         // Salida de stock (ventas, pérdidas)
+  ADJUSTMENT  // Ajustes manuales de inventario
+  TRANSFER    // Transferencias entre ubicaciones (futuro)
+}
+
+// 🧩 FUTURE: Additional models for advanced inventory features
+// 
+// model Location {
+//   id       String @id @default(cuid())
+//   name     String @unique
+//   address  String?
+//   isActive Boolean @default(true)
+//   ...
+// }
+//
+// model ProductLocation {
+//   productId  String
+//   locationId String
+//   stock      Int @default(0)
+//   ...
+// }

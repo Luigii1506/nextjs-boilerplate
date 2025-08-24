@@ -8,7 +8,7 @@
  * Created: 2025-01-17 - Core navigation system
  */
 
-import { Home, Users, Upload, Sliders, Shield } from "lucide-react";
+import { Home, Users, Upload, Sliders, Shield, Settings, Package, CreditCard, ShoppingBag, Truck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 // 🏗️ CORE CONFIG (siempre activo - infraestructura base)
@@ -123,6 +123,73 @@ export const NAVIGATION_REGISTRY: NavigationItem[] = [
     isCore: false, // Es un módulo con feature flag
     category: "admin",
     order: 91,
+  },
+  {
+    id: "settings",
+    href: "/settings",
+    icon: Settings,
+    label: "⚙️ Configuración",
+    description: "Configuración del sistema y aplicación",
+    requiresAuth: true,
+    requiredRole: "admin",
+    requiredFeature: "settings",
+    isCore: false, // Es un módulo con feature flag
+    category: "admin",
+    order: 92,
+  },
+
+  // 🛍️ E-COMMERCE MODULES
+  {
+    id: "inventory",
+    href: "/inventory",
+    icon: Package,
+    label: "📦 Inventario",
+    description: "Gestión de productos y stock",
+    requiresAuth: true,
+    requiredRole: null,
+    requiredFeature: "inventory",
+    isCore: false,
+    category: "feature",
+    order: 20,
+  },
+  {
+    id: "pos",
+    href: "/pos", 
+    icon: CreditCard,
+    label: "🛒 Punto de Venta",
+    description: "Terminal de ventas",
+    requiresAuth: true,
+    requiredRole: null,
+    requiredFeature: "pos",
+    isCore: false,
+    category: "feature", 
+    order: 21,
+  },
+  {
+    id: "ecommerce",
+    href: "/store",
+    icon: ShoppingBag,
+    label: "🌐 Tienda Online",
+    description: "E-commerce y órdenes",
+    requiresAuth: true,
+    requiredRole: null,
+    requiredFeature: "ecommerce", 
+    isCore: false,
+    category: "feature",
+    order: 22,
+  },
+  {
+    id: "suppliers",
+    href: "/suppliers",
+    icon: Truck,
+    label: "🚛 Proveedores", 
+    description: "Gestión de proveedores",
+    requiresAuth: true,
+    requiredRole: "admin",
+    requiredFeature: "suppliers",
+    isCore: false,
+    category: "admin",
+    order: 23,
   },
 ];
 

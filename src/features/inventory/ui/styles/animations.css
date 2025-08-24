@@ -1,0 +1,421 @@
+/**
+ * 🎭 INVENTORY SPA ANIMATIONS
+ * ===========================
+ * 
+ * Animaciones CSS personalizadas para transiciones fluidas
+ * Optimizado para performance y accesibilidad
+ * 
+ * Created: 2025-01-17 - Enhanced Smooth Transitions
+ */
+
+/* 🌊 Shimmer Effect for Loading States */
+@keyframes shimmer {
+  0% {
+    background-position: -468px 0;
+  }
+  100% {
+    background-position: 468px 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
+  background-size: 468px 100%;
+  animation: shimmer 2s infinite ease-in-out;
+}
+
+.dark .shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%);
+  background-size: 468px 100%;
+}
+
+/* 🎯 Fade Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.4s ease-out;
+  animation-fill-mode: both;
+}
+
+.animate-fadeInScale {
+  animation: fadeInScale 0.5s ease-out;
+  animation-fill-mode: both;
+}
+
+/* 🏃 Slide Animations */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 30px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translate3d(-30px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translate3d(30px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -30px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-slideInUp {
+  animation: slideInUp 0.5s ease-out;
+  animation-fill-mode: both;
+}
+
+.animate-slideInLeft {
+  animation: slideInLeft 0.6s ease-out;
+  animation-fill-mode: both;
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.6s ease-out;
+  animation-fill-mode: both;
+}
+
+.animate-slideInDown {
+  animation: slideInDown 0.4s ease-out;
+  animation-fill-mode: both;
+}
+
+/* 📏 Scale Animations */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale3d(0.8, 0.8, 1);
+  }
+  to {
+    opacity: 1;
+    transform: scale3d(1, 1, 1);
+  }
+}
+
+@keyframes scaleInBounce {
+  0% {
+    opacity: 0;
+    transform: scale3d(0.3, 0.3, 1);
+  }
+  20% {
+    transform: scale3d(1.1, 1.1, 1);
+  }
+  40% {
+    transform: scale3d(0.9, 0.9, 1);
+  }
+  60% {
+    opacity: 1;
+    transform: scale3d(1.03, 1.03, 1);
+  }
+  80% {
+    transform: scale3d(0.97, 0.97, 1);
+  }
+  to {
+    opacity: 1;
+    transform: scale3d(1, 1, 1);
+  }
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.4s ease-out;
+  animation-fill-mode: both;
+}
+
+.animate-scaleInBounce {
+  animation: scaleInBounce 0.8s ease-out;
+  animation-fill-mode: both;
+}
+
+/* 🔄 Rotation Animations */
+@keyframes rotateIn {
+  from {
+    opacity: 0;
+    transform: rotate3d(0, 0, 1, -200deg);
+    transform-origin: center;
+  }
+  to {
+    opacity: 1;
+    transform: rotate3d(0, 0, 1, 0deg);
+    transform-origin: center;
+  }
+}
+
+.animate-rotateIn {
+  animation: rotateIn 0.6s ease-out;
+  animation-fill-mode: both;
+}
+
+/* 🌟 Glow Effects */
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.8), 0 0 30px rgba(59, 130, 246, 0.4);
+  }
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+/* 🎨 Stagger Utilities */
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+.stagger-6 { animation-delay: 0.6s; }
+
+/* 🎯 Performance Optimizations */
+.smooth-transform {
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* 🎯 Header Scroll Animations */
+@keyframes slideUpFade {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(0, -100%, 0);
+  }
+}
+
+@keyframes slideDownFade {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -100%, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes headerCollapse {
+  from {
+    max-height: 200px;
+    opacity: 1;
+    transform: scaleY(1);
+  }
+  to {
+    max-height: 0;
+    opacity: 0;
+    transform: scaleY(0);
+  }
+}
+
+@keyframes headerExpand {
+  from {
+    max-height: 0;
+    opacity: 0;
+    transform: scaleY(0);
+  }
+  to {
+    max-height: 200px;
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+/* 🎭 Header Animation Classes */
+.header-hide {
+  animation: slideUpFade 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  transform-origin: top;
+}
+
+.header-show {
+  animation: slideDownFade 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  transform-origin: top;
+}
+
+.header-collapse {
+  animation: headerCollapse 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  transform-origin: top;
+  overflow: hidden;
+}
+
+.header-expand {
+  animation: headerExpand 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  transform-origin: top;
+  overflow: hidden;
+}
+
+/* 🌊 Smooth Header Transition States */
+.header-visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  max-height: 200px;
+}
+
+.header-hidden {
+  opacity: 0;
+  transform: translate3d(0, -100%, 0);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  max-height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* 🎯 Backdrop Blur Effect for Sticky Header */
+.header-backdrop {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.85);
+  transition: all 0.3s ease-out;
+}
+
+.dark .header-backdrop {
+  background: rgba(17, 24, 39, 0.85);
+}
+
+.header-backdrop.scrolled {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .header-backdrop.scrolled {
+  background: rgba(17, 24, 39, 0.95);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 🎨 Elastic Bounce Effect */
+@keyframes elasticSlideUp {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  20% {
+    transform: translate3d(0, -10%, 0) scale(0.98);
+  }
+  40% {
+    transform: translate3d(0, -60%, 0) scale(0.95);
+  }
+  60% {
+    transform: translate3d(0, -85%, 0) scale(0.96);
+  }
+  80% {
+    opacity: 0.3;
+    transform: translate3d(0, -95%, 0) scale(0.98);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, -100%, 0) scale(1);
+  }
+}
+
+@keyframes elasticSlideDown {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -100%, 0) scale(1);
+  }
+  20% {
+    opacity: 0.3;
+    transform: translate3d(0, -80%, 0) scale(0.98);
+  }
+  40% {
+    transform: translate3d(0, -30%, 0) scale(0.96);
+  }
+  60% {
+    transform: translate3d(0, -5%, 0) scale(0.98);
+  }
+  80% {
+    opacity: 0.9;
+    transform: translate3d(0, 2%, 0) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.header-elastic-hide {
+  animation: elasticSlideUp 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.header-elastic-show {
+  animation: elasticSlideDown 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+/* 📱 Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .shimmer,
+  .header-hide,
+  .header-show,
+  .header-collapse,
+  .header-expand,
+  .header-elastic-hide,
+  .header-elastic-show {
+    animation: none !important;
+  }
+  
+  .header-visible,
+  .header-hidden {
+    transition: none !important;
+  }
+}

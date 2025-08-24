@@ -24,9 +24,10 @@ model User {
   accounts   Account[]
 
   // 🧩 FUTURE: Modular relations (uncomment when modules are active)
-  uploads      Upload[]      // MODULE: file-upload
-  // orders       Order[]       // MODULE: ecommerce  
-  // payments     Payment[]     // MODULE: stripe-payments
+  uploads       Upload[]        // MODULE: file-upload
+  stockMovements StockMovement[] // MODULE: inventory
+  // orders       Order[]        // MODULE: ecommerce  
+  // payments     Payment[]      // MODULE: stripe-payments
 
   @@map("user")
 }
