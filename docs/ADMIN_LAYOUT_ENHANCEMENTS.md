@@ -43,10 +43,11 @@ const MemoizedNavigation = React.memo(Navigation);
 // Uso optimizado
 <Suspense fallback={<NavigationSkeleton />}>
   <MemoizedNavigation userRole={userRole} />
-</Suspense>
+</Suspense>;
 ```
 
 **📊 Impacto:**
+
 - **50% reducción** en re-renders de Navigation
 - **Mejor responsividad** al cambiar pestañas
 - **Menor uso de CPU** durante interacciones
@@ -70,6 +71,7 @@ const roleInfo = ROLE_CONFIGS[currentUser.role || "user"];
 ```
 
 **📊 Impacto:**
+
 - **Evita recálculos** innecesarios de role info
 - **Consistencia** en computed values
 - **Mejor performance** con roles complejos
@@ -92,6 +94,7 @@ const handleKeyboardShortcuts = useCallback(
 ```
 
 **📊 Impacto:**
+
 - **Evita re-renders** en child components
 - **Estabilidad** de referencias de funciones
 - **Mejor performance** en listas y forms
@@ -119,7 +122,7 @@ const handleKeyboardShortcuts = useCallback(
           break;
       }
     }
-    
+
     // Escape key handling
     if (e.key === "Escape" && sidebarOpen) {
       setSidebarOpen(false); // ❌ Close sidebar
@@ -131,11 +134,11 @@ const handleKeyboardShortcuts = useCallback(
 
 ### **⌨️ Shortcuts Disponibles:**
 
-| **Combinación** | **Acción** | **Contexto** |
-|-----------------|------------|--------------|
-| `Cmd/Ctrl + K` | Abrir búsqueda | Global |
-| `Cmd/Ctrl + /` | Toggle sidebar | Global |
-| `Escape` | Cerrar sidebar/modals | Contextual |
+| **Combinación** | **Acción**            | **Contexto** |
+| --------------- | --------------------- | ------------ |
+| `Cmd/Ctrl + K`  | Abrir búsqueda        | Global       |
+| `Cmd/Ctrl + /`  | Toggle sidebar        | Global       |
+| `Escape`        | Cerrar sidebar/modals | Contextual   |
 
 ### **🎯 User Experience Benefits:**
 
@@ -159,12 +162,12 @@ const handleKeyboardShortcuts = useCallback(
   role="complementary"
 >
   <div id="sidebar-description" className="sr-only">
-    Navegación principal del panel administrativo. Use Tab para navegar 
+    Navegación principal del panel administrativo. Use Tab para navegar
     entre elementos o presione Cmd+/ para alternar la barra lateral.
   </div>
 </aside>
 
-// ✅ Mobile Sidebar  
+// ✅ Mobile Sidebar
 <aside
   aria-label="Navegación principal móvil"
   aria-controls="mobile-nav-content"
@@ -184,15 +187,15 @@ const handleKeyboardShortcuts = useCallback(
 // ✅ Screen reader friendly loading states
 <Suspense
   fallback={
-    <div 
-      className="animate-pulse space-y-3" 
-      role="status" 
+    <div
+      className="animate-pulse space-y-3"
+      role="status"
       aria-label="Cargando navegación"
     >
       {Array.from({ length: 6 }).map((_, i) => (
-        <div 
-          key={i} 
-          className="h-10 bg-slate-200 dark:bg-slate-600 rounded-lg animate-pulse" 
+        <div
+          key={i}
+          className="h-10 bg-slate-200 dark:bg-slate-600 rounded-lg animate-pulse"
         />
       ))}
     </div>
@@ -206,7 +209,7 @@ const handleKeyboardShortcuts = useCallback(
 
 ```typescript
 // ✅ Main content con focus management
-<main 
+<main
   id="main-content"
   className="flex-1 overflow-auto"
   role="main"
@@ -247,20 +250,20 @@ export default function AdminLayout({
   compact,
   sidebarOpen,
   setSidebarOpen,
-  // ... 12+ props más
-}: AdminLayoutProps) {
+}: // ... 12+ props más
+AdminLayoutProps) {
   // 450+ líneas de JSX mezclado
   return (
     <div>
       {/* Desktop sidebar - 150 líneas de JSX */}
       <aside>...</aside>
-      
+
       {/* Mobile sidebar - 120 líneas de JSX */}
       <aside>...</aside>
-      
+
       {/* Header - 100 líneas de JSX */}
       <header>...</header>
-      
+
       {/* Main content */}
       <main>{children}</main>
     </div>
@@ -273,22 +276,21 @@ export default function AdminLayout({
 ```typescript
 // ✅ DESPUÉS: AdminLayout.tsx - LIMPIO Y MODULAR
 export default function AdminLayout({
-  user,      // 👈 Solo props esenciales
+  user, // 👈 Solo props esenciales
   children,
   isAdmin,
   isSuperAdmin,
 }: AdminLayoutProps) {
-  
   // Logic concisa y enfocada
   const userRole = useMemo(/* ... */);
   const { handleSearch, handleNotifications } = useAdminLayoutNavigation();
   const { handlers: swipeHandlers } = useSwipeGestures(/* ... */);
-  
+
   return (
     <div className="..." {...swipeHandlers}>
       {/* 🎯 Subcomponentes extraídos */}
       <AdminSidebar userRole={userRole} className="..." />
-      <MobileSidebar 
+      <MobileSidebar
         isOpen={sidebarOpen}
         onClose={onSidebarToggle}
         currentUser={currentUser}
@@ -297,7 +299,7 @@ export default function AdminLayout({
         handleProfileClick={handleProfileClick}
       />
       <div className="flex-1 flex flex-col">
-        <AdminHeader 
+        <AdminHeader
           currentUser={currentUser}
           roleInfo={roleInfo}
           compact={compact}
@@ -320,7 +322,7 @@ export default function AdminLayout({
 src/shared/ui/layouts/
 ├── AdminLayout.tsx              # 100 líneas - Main component
 ├── components/
-│   ├── AdminHeader.tsx          # 150 líneas - Header logic  
+│   ├── AdminHeader.tsx          # 150 líneas - Header logic
 │   ├── AdminSidebar.tsx         # 100 líneas - Desktop sidebar
 │   ├── MobileSidebar.tsx        # 120 líneas - Mobile sidebar
 │   ├── Navigation.tsx           # (Existente)
@@ -334,14 +336,14 @@ src/shared/ui/layouts/
 
 ### **🎯 Benefits de la Refactorización:**
 
-| **Aspecto** | **Antes** | **Después** |
-|-------------|-----------|-------------|
-| **📏 Líneas de código** | 450+ líneas | 100 líneas |
-| **🔧 Props surface** | 12+ props | 4 props |
-| **🧪 Testability** | Difícil | Fácil (componentes separados) |
-| **🔄 Reusability** | Monolito | Componentes reutilizables |
-| **🐛 Debugging** | Complejo | Simple (aislamiento) |
-| **👥 Team work** | Conflictos | Archivos separados |
+| **Aspecto**             | **Antes**   | **Después**                   |
+| ----------------------- | ----------- | ----------------------------- |
+| **📏 Líneas de código** | 450+ líneas | 100 líneas                    |
+| **🔧 Props surface**    | 12+ props   | 4 props                       |
+| **🧪 Testability**      | Difícil     | Fácil (componentes separados) |
+| **🔄 Reusability**      | Monolito    | Componentes reutilizables     |
+| **🐛 Debugging**        | Complejo    | Simple (aislamiento)          |
+| **👥 Team work**        | Conflictos  | Archivos separados            |
 
 ---
 
@@ -355,22 +357,24 @@ export function useSwipeGestures(
   callbacks: SwipeGestureCallbacks,
   config: SwipeGestureConfig = {}
 ): SwipeGestureReturn {
-  
-  const handleTouch = useCallback((e: React.TouchEvent) => {
-    // Touch handling logic con velocity y distance calculations
-    const velocity = distance / totalTime;
-    
-    if (velocity >= threshold && distance >= minDistance) {
-      if (isHorizontalSwipe) {
-        if (deltaX > 0) callbacks.onSwipeRight?.();
-        else callbacks.onSwipeLeft?.();
+  const handleTouch = useCallback(
+    (e: React.TouchEvent) => {
+      // Touch handling logic con velocity y distance calculations
+      const velocity = distance / totalTime;
+
+      if (velocity >= threshold && distance >= minDistance) {
+        if (isHorizontalSwipe) {
+          if (deltaX > 0) callbacks.onSwipeRight?.();
+          else callbacks.onSwipeLeft?.();
+        }
       }
-    }
-  }, [callbacks]);
+    },
+    [callbacks]
+  );
 
   return {
     handlers: { onTouchStart, onTouchMove, onTouchEnd },
-    state: { isSwipingHorizontal, isSwipingVertical }
+    state: { isSwipingHorizontal, isSwipingVertical },
   };
 }
 ```
@@ -416,15 +420,15 @@ const { handlers: swipeHandlers } = useSwipeGestures(
 // ✅ DESPUÉS: Dynamic skeleton basado en contexto
 <Suspense
   fallback={
-    <div 
-      className="animate-pulse space-y-3" 
-      role="status" 
+    <div
+      className="animate-pulse space-y-3"
+      role="status"
       aria-label="Cargando navegación"
     >
       {Array.from({ length: 6 }).map((_, i) => (
-        <div 
-          key={i} 
-          className="h-10 bg-slate-200 dark:bg-slate-600 rounded-lg animate-pulse" 
+        <div
+          key={i}
+          className="h-10 bg-slate-200 dark:bg-slate-600 rounded-lg animate-pulse"
         />
       ))}
     </div>
@@ -441,11 +445,11 @@ const { handlers: swipeHandlers } = useSwipeGestures(
 
 ```typescript
 // ✅ Professional loading state
-<Suspense 
+<Suspense
   fallback={
-    <div 
+    <div
       className="flex items-center justify-center h-64"
-      role="status" 
+      role="status"
       aria-label="Cargando contenido principal"
     >
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -463,15 +467,15 @@ const { handlers: swipeHandlers } = useSwipeGestures(
 
 ```typescript
 // ✅ Mobile-specific skeleton
-<div 
-  className="animate-pulse space-y-2" 
-  role="status" 
+<div
+  className="animate-pulse space-y-2"
+  role="status"
   aria-label="Cargando navegación móvil"
 >
   {Array.from({ length: 5 }).map((_, i) => (
-    <div 
-      key={i} 
-      className="h-8 bg-slate-200 dark:bg-slate-600 rounded-md animate-pulse" 
+    <div
+      key={i}
+      className="h-8 bg-slate-200 dark:bg-slate-600 rounded-md animate-pulse"
     />
   ))}
 </div>
@@ -486,10 +490,10 @@ const { handlers: swipeHandlers } = useSwipeGestures(
 ```typescript
 // ✅ DESPUÉS: Props mínimos y enfocados
 interface AdminLayoutProps {
-  user: SessionUser;           // 👈 Usuario del servidor
-  children: React.ReactNode;   // 👈 Contenido principal
-  isAdmin: boolean;           // 👈 Autorización básica  
-  isSuperAdmin?: boolean;     // 👈 Autorización avanzada (opcional)
+  user: SessionUser; // 👈 Usuario del servidor
+  children: React.ReactNode; // 👈 Contenido principal
+  isAdmin: boolean; // 👈 Autorización básica
+  isSuperAdmin?: boolean; // 👈 Autorización avanzada (opcional)
 }
 
 // ❌ ANTES: Props excesivos con handlers externos
@@ -567,8 +571,8 @@ interface SwipeGestureState {
 
 // ✅ Proper generic constraints
 interface SwipeGestureReturn {
-  handlers: SwipeGestureHandlers;  // Para DOM elements
-  state: SwipeGestureState;        // Para lógica interna
+  handlers: SwipeGestureHandlers; // Para DOM elements
+  state: SwipeGestureState; // Para lógica interna
 }
 ```
 
@@ -578,15 +582,15 @@ interface SwipeGestureReturn {
 
 ### **📈 Metrics Comparison:**
 
-| **Métrica** | **Antes** | **Después** | **Mejora** |
-|-------------|-----------|-------------|------------|
-| **📏 Lines of Code** | 450+ | 100 | **-78%** |
-| **🔧 Props Count** | 12+ | 4 | **-67%** |
-| **⚡ Component Re-renders** | Alto | Bajo | **-50%** |
-| **🧪 Test Complexity** | Alto | Bajo | **-60%** |
-| **🎯 Maintainability** | Difícil | Fácil | **+300%** |
-| **♿ Accessibility Score** | 65/100 | 95/100 | **+46%** |
-| **📱 Mobile Experience** | Básico | Avanzado | **+200%** |
+| **Métrica**                 | **Antes** | **Después** | **Mejora** |
+| --------------------------- | --------- | ----------- | ---------- |
+| **📏 Lines of Code**        | 450+      | 100         | **-78%**   |
+| **🔧 Props Count**          | 12+       | 4           | **-67%**   |
+| **⚡ Component Re-renders** | Alto      | Bajo        | **-50%**   |
+| **🧪 Test Complexity**      | Alto      | Bajo        | **-60%**   |
+| **🎯 Maintainability**      | Difícil   | Fácil       | **+300%**  |
+| **♿ Accessibility Score**  | 65/100    | 95/100      | **+46%**   |
+| **📱 Mobile Experience**    | Básico    | Avanzado    | **+200%**  |
 
 ### **🎯 Code Metrics:**
 
@@ -597,7 +601,7 @@ Code Duplication: 30%
 Test Coverage: 45%
 Bundle Size Impact: +15KB
 
-// ✅ DESPUÉS: Optimized Metrics  
+// ✅ DESPUÉS: Optimized Metrics
 Cyclomatic Complexity: 8
 Code Duplication: 5%
 Test Coverage: 85%
@@ -606,13 +610,13 @@ Bundle Size Impact: +8KB
 
 ### **🚀 Performance Metrics:**
 
-| **Operación** | **Antes** | **Después** | **Mejora** |
-|---------------|-----------|-------------|------------|
-| **Initial Render** | 45ms | 28ms | **-38%** |
-| **Sidebar Toggle** | 12ms | 6ms | **-50%** |
-| **Search Modal** | 25ms | 15ms | **-40%** |
-| **Theme Switch** | 35ms | 20ms | **-43%** |
-| **Mobile Swipe** | N/A | 8ms | **+∞** |
+| **Operación**      | **Antes** | **Después** | **Mejora** |
+| ------------------ | --------- | ----------- | ---------- |
+| **Initial Render** | 45ms      | 28ms        | **-38%**   |
+| **Sidebar Toggle** | 12ms      | 6ms         | **-50%**   |
+| **Search Modal**   | 25ms      | 15ms        | **-40%**   |
+| **Theme Switch**   | 35ms      | 20ms        | **-43%**   |
+| **Mobile Swipe**   | N/A       | 8ms         | **+∞**     |
 
 ---
 
@@ -621,6 +625,7 @@ Bundle Size Impact: +8KB
 ### **🎯 Manual Testing Checklist**
 
 #### **⌨️ Keyboard Shortcuts:**
+
 - [ ] `Cmd/Ctrl + K` → Abre search modal
 - [ ] `Cmd/Ctrl + /` → Toggle desktop sidebar
 - [ ] `Escape` → Cierra sidebar si está abierto
@@ -628,19 +633,22 @@ Bundle Size Impact: +8KB
 - [ ] Focus indicators son visibles
 
 #### **📱 Mobile Gestures:**
+
 - [ ] **Swipe right** (desde borde izquierdo) → Abre sidebar
 - [ ] **Swipe left** (con sidebar abierto) → Cierra sidebar
 - [ ] Touch targets son ≥44px
 - [ ] Responsive breakpoints funcionan
 
 #### **♿ Accessibility:**
+
 - [ ] Screen reader navega correctamente
-- [ ] ARIA labels son descriptivos  
+- [ ] ARIA labels son descriptivos
 - [ ] Color contrast pasa WCAG AA
 - [ ] Keyboard-only navigation completa
 - [ ] Loading states son anunciados
 
 #### **🎨 Visual Testing:**
+
 - [ ] Dark mode transitions suaves
 - [ ] Loading skeletons realistas
 - [ ] Animations no causan motion sickness
@@ -653,7 +661,7 @@ Bundle Size Impact: +8KB
 describe("AdminLayout Enhanced", () => {
   it("should handle keyboard shortcuts", async () => {
     render(<AdminLayout user={mockUser} />);
-    
+
     // Test Cmd+K shortcut
     fireEvent.keyDown(window, { key: "k", metaKey: true });
     expect(screen.getByRole("dialog")).toBeInTheDocument();
@@ -661,11 +669,11 @@ describe("AdminLayout Enhanced", () => {
 
   it("should handle swipe gestures on mobile", async () => {
     render(<AdminLayout user={mockUser} />);
-    
+
     const container = screen.getByTestId("admin-layout-container");
     fireEvent.touchStart(container, { touches: [{ clientX: 0 }] });
     fireEvent.touchEnd(container, { changedTouches: [{ clientX: 100 }] });
-    
+
     expect(screen.getByTestId("mobile-sidebar")).toHaveClass("translate-x-0");
   });
 
@@ -686,18 +694,16 @@ describe("AdminLayout Performance", () => {
     const startTime = performance.now();
     render(<AdminLayout user={mockUser} />);
     const endTime = performance.now();
-    
+
     expect(endTime - startTime).toBeLessThan(50); // < 50ms
   });
 
   it("should not cause excessive re-renders", () => {
     const renderSpy = jest.fn();
     const MemoizedAdminLayout = React.memo(AdminLayout);
-    
-    const { rerender } = render(
-      <MemoizedAdminLayout user={mockUser} />
-    );
-    
+
+    const { rerender } = render(<MemoizedAdminLayout user={mockUser} />);
+
     rerender(<MemoizedAdminLayout user={mockUser} />);
     expect(renderSpy).toHaveBeenCalledTimes(1); // Should not re-render
   });
@@ -711,7 +717,7 @@ describe("AdminLayout Performance", () => {
 ### **✅ Objetivos Completados:**
 
 1. **⚡ Performance** → Memoization + optimized re-renders
-2. **⌨️ UX** → Keyboard shortcuts + intuitive interactions  
+2. **⌨️ UX** → Keyboard shortcuts + intuitive interactions
 3. **♿ Accessibility** → WCAG compliant + screen reader support
 4. **🏗️ Architecture** → Modular components + clean separation
 5. **📱 Mobile** → Swipe gestures + responsive design
@@ -723,7 +729,7 @@ describe("AdminLayout Performance", () => {
 El AdminLayout optimizado está **listo para producción** con:
 
 - ✅ **Enterprise-grade** performance y quality
-- ✅ **Accessibility completa** para todos los usuarios  
+- ✅ **Accessibility completa** para todos los usuarios
 - ✅ **Mobile experience** de primera clase
 - ✅ **Developer experience** optimizada
 - ✅ **Future-proof** architecture escalable
@@ -731,7 +737,7 @@ El AdminLayout optimizado está **listo para producción** con:
 ### **📅 Next Steps:**
 
 1. **🧪 Monitoring** → Implementar performance monitoring
-2. **📊 Analytics** → Track keyboard shortcuts usage  
+2. **📊 Analytics** → Track keyboard shortcuts usage
 3. **🔄 Iteration** → User feedback y mejoras incrementales
 4. **📚 Training** → Documentar shortcuts para usuarios
 

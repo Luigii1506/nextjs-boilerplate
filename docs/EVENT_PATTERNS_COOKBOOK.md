@@ -21,7 +21,7 @@
 ```
 ¿Qué necesitas hacer?
 ├─ 🎨 UI Interaction → CustomEvent
-├─ 📊 Analytics → CustomEvent  
+├─ 📊 Analytics → CustomEvent
 ├─ 🎮 Game Events → CustomEvent
 ├─ 🔐 Auth Sync → BroadcastChannel
 ├─ 🛒 Cart Sync → BroadcastChannel
@@ -39,7 +39,9 @@ window.addEventListener("my-event", handler);
 // 📻 BroadcastChannel - Cross tabs
 const { send, listen } = useBroadcast("my-channel");
 send("MESSAGE_TYPE", data);
-listen((type, data) => { /* handle */ });
+listen((type, data) => {
+  /* handle */
+});
 ```
 
 ---
@@ -54,15 +56,19 @@ listen((type, data) => { /* handle */ });
 // 1. Modal Hook
 export const useModalSystem = () => {
   const openModal = useCallback((modalId: string, data?: any) => {
-    window.dispatchEvent(new CustomEvent("modal-open", {
-      detail: { modalId, data, timestamp: Date.now() }
-    }));
+    window.dispatchEvent(
+      new CustomEvent("modal-open", {
+        detail: { modalId, data, timestamp: Date.now() },
+      })
+    );
   }, []);
 
   const closeModal = useCallback((modalId: string, result?: any) => {
-    window.dispatchEvent(new CustomEvent("modal-close", {
-      detail: { modalId, result, timestamp: Date.now() }
-    }));
+    window.dispatchEvent(
+      new CustomEvent("modal-close", {
+        detail: { modalId, result, timestamp: Date.now() },
+      })
+    );
   }, []);
 
   return { openModal, closeModal };
@@ -75,21 +81,23 @@ export const ModalManager = () => {
   useEffect(() => {
     const handleModalOpen = (e: CustomEvent) => {
       const { modalId, data } = e.detail;
-      setModals(prev => new Map(prev).set(modalId, { data, isOpen: true }));
+      setModals((prev) => new Map(prev).set(modalId, { data, isOpen: true }));
     };
 
     const handleModalClose = (e: CustomEvent) => {
       const { modalId, result } = e.detail;
-      setModals(prev => {
+      setModals((prev) => {
         const newMap = new Map(prev);
         newMap.delete(modalId);
         return newMap;
       });
-      
+
       // Dispatch result for other listeners
-      window.dispatchEvent(new CustomEvent(`modal-result-${modalId}`, {
-        detail: { result }
-      }));
+      window.dispatchEvent(
+        new CustomEvent(`modal-result-${modalId}`, {
+          detail: { result },
+        })
+      );
     };
 
     window.addEventListener("modal-open", handleModalOpen);
@@ -130,7 +138,10 @@ const UserProfile = () => {
 
     window.addEventListener("modal-result-edit-profile", handleProfileUpdated);
     return () => {
-      window.removeEventListener("modal-result-edit-profile", handleProfileUpdated);
+      window.removeEventListener(
+        "modal-result-edit-profile",
+        handleProfileUpdated
+      );
     };
   }, []);
 
@@ -149,15 +160,19 @@ export const useGlobalSearch = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const triggerSearch = useCallback((query: string, filters?: any) => {
-    window.dispatchEvent(new CustomEvent("global-search", {
-      detail: { query, filters, timestamp: Date.now() }
-    }));
+    window.dispatchEvent(
+      new CustomEvent("global-search", {
+        detail: { query, filters, timestamp: Date.now() },
+      })
+    );
   }, []);
 
   const selectResult = useCallback((result: any, source: string) => {
-    window.dispatchEvent(new CustomEvent("search-result-selected", {
-      detail: { result, source, timestamp: Date.now() }
-    }));
+    window.dispatchEvent(
+      new CustomEvent("search-result-selected", {
+        detail: { result, source, timestamp: Date.now() },
+      })
+    );
   }, []);
 
   // Listen to search events
@@ -165,31 +180,33 @@ export const useGlobalSearch = () => {
     const handleSearch = async (e: CustomEvent) => {
       const { query, filters } = e.detail;
       setIsLoading(true);
-      
+
       try {
         // Parallel search across multiple sources
         const [users, documents, settings] = await Promise.all([
           searchUsers(query, filters),
           searchDocuments(query, filters),
-          searchSettings(query, filters)
+          searchSettings(query, filters),
         ]);
 
         const results = [
-          ...users.map(u => ({ ...u, type: 'user' })),
-          ...documents.map(d => ({ ...d, type: 'document' })),
-          ...settings.map(s => ({ ...s, type: 'setting' }))
+          ...users.map((u) => ({ ...u, type: "user" })),
+          ...documents.map((d) => ({ ...d, type: "document" })),
+          ...settings.map((s) => ({ ...s, type: "setting" })),
         ];
 
         setSearchResults(results);
-        
+
         // Analytics tracking
-        window.dispatchEvent(new CustomEvent("analytics-track", {
-          detail: { 
-            event: "search_performed", 
-            query, 
-            resultCount: results.length 
-          }
-        }));
+        window.dispatchEvent(
+          new CustomEvent("analytics-track", {
+            detail: {
+              event: "search_performed",
+              query,
+              resultCount: results.length,
+            },
+          })
+        );
       } catch (error) {
         console.error("Search failed:", error);
       } finally {
@@ -208,7 +225,8 @@ export const useGlobalSearch = () => {
 export const GlobalSearchModal = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const { triggerSearch, selectResult, searchResults, isLoading } = useGlobalSearch();
+  const { triggerSearch, selectResult, searchResults, isLoading } =
+    useGlobalSearch();
 
   // Open with Cmd+K (like our AdminLayout)
   useEffect(() => {
@@ -237,7 +255,7 @@ export const GlobalSearchModal = () => {
   const handleResultClick = (result: any) => {
     selectResult(result, "modal");
     setIsOpen(false);
-    
+
     // Navigate based on result type
     switch (result.type) {
       case "user":
@@ -265,13 +283,13 @@ export const GlobalSearchModal = () => {
           className="w-full p-4 border-0 rounded-t-xl"
           autoFocus
         />
-        
+
         <div className="max-h-96 overflow-y-auto">
           {isLoading ? (
             <div className="p-4 text-center">Searching...</div>
           ) : (
-            searchResults.map(result => (
-              <div 
+            searchResults.map((result) => (
+              <div
                 key={`${result.type}-${result.id}`}
                 onClick={() => handleResultClick(result)}
                 className="p-3 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
@@ -406,67 +424,75 @@ export const useShoppingCart = () => {
   const { send, listen } = useBroadcast("shopping-cart");
 
   // Cart operations
-  const addToCart = useCallback(async (product: Product, quantity = 1) => {
-    setIsLoading(true);
-    try {
-      const newItem = { id: product.id, product, quantity };
-      const updatedCart = [...cart, newItem];
-      
-      // Update local state
+  const addToCart = useCallback(
+    async (product: Product, quantity = 1) => {
+      setIsLoading(true);
+      try {
+        const newItem = { id: product.id, product, quantity };
+        const updatedCart = [...cart, newItem];
+
+        // Update local state
+        setCart(updatedCart);
+
+        // Sync to server
+        await updateCartOnServer(updatedCart);
+
+        // Broadcast to other tabs
+        send("CART_UPDATED", {
+          action: "add",
+          item: newItem,
+          cart: updatedCart,
+          timestamp: Date.now(),
+        });
+
+        // Track analytics
+        window.dispatchEvent(
+          new CustomEvent("analytics-track", {
+            detail: { event: "add_to_cart", product_id: product.id, quantity },
+          })
+        );
+      } catch (error) {
+        console.error("Failed to add to cart:", error);
+        // Revert optimistic update
+        setCart(cart);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [cart, send]
+  );
+
+  const removeFromCart = useCallback(
+    async (itemId: string) => {
+      const updatedCart = cart.filter((item) => item.id !== itemId);
       setCart(updatedCart);
-      
-      // Sync to server
-      await updateCartOnServer(updatedCart);
-      
-      // Broadcast to other tabs
-      send("CART_UPDATED", {
-        action: "add",
-        item: newItem,
-        cart: updatedCart,
-        timestamp: Date.now()
-      });
 
-      // Track analytics
-      window.dispatchEvent(new CustomEvent("analytics-track", {
-        detail: { event: "add_to_cart", product_id: product.id, quantity }
-      }));
-    } catch (error) {
-      console.error("Failed to add to cart:", error);
-      // Revert optimistic update
-      setCart(cart);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [cart, send]);
-
-  const removeFromCart = useCallback(async (itemId: string) => {
-    const updatedCart = cart.filter(item => item.id !== itemId);
-    setCart(updatedCart);
-    
-    try {
-      await updateCartOnServer(updatedCart);
-      send("CART_UPDATED", {
-        action: "remove",
-        itemId,
-        cart: updatedCart,
-        timestamp: Date.now()
-      });
-    } catch (error) {
-      // Revert on failure
-      setCart(cart);
-    }
-  }, [cart, send]);
+      try {
+        await updateCartOnServer(updatedCart);
+        send("CART_UPDATED", {
+          action: "remove",
+          itemId,
+          cart: updatedCart,
+          timestamp: Date.now(),
+        });
+      } catch (error) {
+        // Revert on failure
+        setCart(cart);
+      }
+    },
+    [cart, send]
+  );
 
   const clearCart = useCallback(async () => {
     const emptyCart: CartItem[] = [];
     setCart(emptyCart);
-    
+
     try {
       await updateCartOnServer(emptyCart);
       send("CART_UPDATED", {
         action: "clear",
         cart: emptyCart,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     } catch (error) {
       setCart(cart);
@@ -482,13 +508,15 @@ export const useShoppingCart = () => {
 
         // Show notification for changes from other tabs
         if (action === "add" && item) {
-          window.dispatchEvent(new CustomEvent("toast-show", {
-            detail: {
-              type: "info",
-              message: `${item.product.name} added to cart in another tab`,
-              duration: 3000
-            }
-          }));
+          window.dispatchEvent(
+            new CustomEvent("toast-show", {
+              detail: {
+                type: "info",
+                message: `${item.product.name} added to cart in another tab`,
+                duration: 3000,
+              },
+            })
+          );
         }
       }
     });
@@ -496,7 +524,10 @@ export const useShoppingCart = () => {
 
   // Calculate totals
   const cartTotal = useMemo(() => {
-    return cart.reduce((total, item) => total + item.product.price * item.quantity, 0);
+    return cart.reduce(
+      (total, item) => total + item.product.price * item.quantity,
+      0
+    );
   }, [cart]);
 
   const itemCount = useMemo(() => {
@@ -510,7 +541,7 @@ export const useShoppingCart = () => {
     isLoading,
     addToCart,
     removeFromCart,
-    clearCart
+    clearCart,
   };
 };
 
@@ -539,7 +570,7 @@ export const CartPage = () => {
     <div className="max-w-4xl mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <h1>Shopping Cart</h1>
-        <button 
+        <button
           onClick={clearCart}
           disabled={cart.length === 0 || isLoading}
           className="btn btn-outline"
@@ -547,19 +578,15 @@ export const CartPage = () => {
           Clear Cart
         </button>
       </div>
-      
+
       {cart.length === 0 ? (
         <div className="text-center py-12">
           <p>Your cart is empty</p>
         </div>
       ) : (
         <div className="space-y-4">
-          {cart.map(item => (
-            <CartItem 
-              key={item.id} 
-              item={item} 
-              onRemove={removeFromCart}
-            />
+          {cart.map((item) => (
+            <CartItem key={item.id} item={item} onRemove={removeFromCart} />
           ))}
         </div>
       )}
@@ -580,54 +607,60 @@ export const useNotificationSystem = () => {
   const { send, listen } = useBroadcast("notifications");
 
   // Send notification to all tabs
-  const broadcastNotification = useCallback((notification: Omit<Notification, 'id'>) => {
-    const notificationWithId = {
-      ...notification,
-      id: generateId(),
-      timestamp: Date.now(),
-      read: false
-    };
+  const broadcastNotification = useCallback(
+    (notification: Omit<Notification, "id">) => {
+      const notificationWithId = {
+        ...notification,
+        id: generateId(),
+        timestamp: Date.now(),
+        read: false,
+      };
 
-    // Add to local state
-    setNotifications(prev => [notificationWithId, ...prev]);
-    setUnreadCount(prev => prev + 1);
+      // Add to local state
+      setNotifications((prev) => [notificationWithId, ...prev]);
+      setUnreadCount((prev) => prev + 1);
 
-    // Broadcast to other tabs
-    send("NEW_NOTIFICATION", notificationWithId);
+      // Broadcast to other tabs
+      send("NEW_NOTIFICATION", notificationWithId);
 
-    // Store in localStorage for persistence
-    const stored = JSON.parse(localStorage.getItem("notifications") || "[]");
-    const updated = [notificationWithId, ...stored].slice(0, 100); // Keep last 100
-    localStorage.setItem("notifications", JSON.stringify(updated));
+      // Store in localStorage for persistence
+      const stored = JSON.parse(localStorage.getItem("notifications") || "[]");
+      const updated = [notificationWithId, ...stored].slice(0, 100); // Keep last 100
+      localStorage.setItem("notifications", JSON.stringify(updated));
 
-    return notificationWithId.id;
-  }, [send]);
+      return notificationWithId.id;
+    },
+    [send]
+  );
 
   // Mark notification as read
-  const markAsRead = useCallback((id: string) => {
-    setNotifications(prev => 
-      prev.map(n => n.id === id ? { ...n, read: true } : n)
-    );
-    setUnreadCount(prev => Math.max(0, prev - 1));
+  const markAsRead = useCallback(
+    (id: string) => {
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
 
-    // Sync to other tabs
-    send("NOTIFICATION_READ", { id });
+      // Sync to other tabs
+      send("NOTIFICATION_READ", { id });
 
-    // Update localStorage
-    const stored = JSON.parse(localStorage.getItem("notifications") || "[]");
-    const updated = stored.map((n: Notification) => 
-      n.id === id ? { ...n, read: true } : n
-    );
-    localStorage.setItem("notifications", JSON.stringify(updated));
-  }, [send]);
+      // Update localStorage
+      const stored = JSON.parse(localStorage.getItem("notifications") || "[]");
+      const updated = stored.map((n: Notification) =>
+        n.id === id ? { ...n, read: true } : n
+      );
+      localStorage.setItem("notifications", JSON.stringify(updated));
+    },
+    [send]
+  );
 
   // Mark all as read
   const markAllAsRead = useCallback(() => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     setUnreadCount(0);
-    
+
     send("ALL_NOTIFICATIONS_READ", {});
-    
+
     const stored = JSON.parse(localStorage.getItem("notifications") || "[]");
     const updated = stored.map((n: Notification) => ({ ...n, read: true }));
     localStorage.setItem("notifications", JSON.stringify(updated));
@@ -637,7 +670,7 @@ export const useNotificationSystem = () => {
   const clearAll = useCallback(() => {
     setNotifications([]);
     setUnreadCount(0);
-    
+
     send("NOTIFICATIONS_CLEARED", {});
     localStorage.removeItem("notifications");
   }, [send]);
@@ -647,30 +680,32 @@ export const useNotificationSystem = () => {
     return listen((type, data) => {
       switch (type) {
         case "NEW_NOTIFICATION":
-          setNotifications(prev => [data, ...prev]);
-          setUnreadCount(prev => prev + 1);
-          
+          setNotifications((prev) => [data, ...prev]);
+          setUnreadCount((prev) => prev + 1);
+
           // Show toast only if this tab is active
           if (document.visibilityState === "visible") {
-            window.dispatchEvent(new CustomEvent("toast-show", {
-              detail: {
-                type: data.type || "info",
-                message: data.message,
-                duration: 5000
-              }
-            }));
+            window.dispatchEvent(
+              new CustomEvent("toast-show", {
+                detail: {
+                  type: data.type || "info",
+                  message: data.message,
+                  duration: 5000,
+                },
+              })
+            );
           }
           break;
 
         case "NOTIFICATION_READ":
-          setNotifications(prev => 
-            prev.map(n => n.id === data.id ? { ...n, read: true } : n)
+          setNotifications((prev) =>
+            prev.map((n) => (n.id === data.id ? { ...n, read: true } : n))
           );
-          setUnreadCount(prev => Math.max(0, prev - 1));
+          setUnreadCount((prev) => Math.max(0, prev - 1));
           break;
 
         case "ALL_NOTIFICATIONS_READ":
-          setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+          setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
           setUnreadCount(0);
           break;
 
@@ -713,7 +748,7 @@ export const useNotificationSystem = () => {
     broadcastNotification,
     markAsRead,
     markAllAsRead,
-    clearAll
+    clearAll,
   };
 };
 
@@ -735,10 +770,11 @@ export const NotificationBadge = () => {
 
 // 3. Notification Panel
 export const NotificationPanel = ({ isOpen, onClose }: Props) => {
-  const { notifications, markAsRead, markAllAsRead, clearAll } = useNotificationSystem();
+  const { notifications, markAsRead, markAllAsRead, clearAll } =
+    useNotificationSystem();
 
   return (
-    <div className={`notification-panel ${isOpen ? 'open' : ''}`}>
+    <div className={`notification-panel ${isOpen ? "open" : ""}`}>
       <div className="flex justify-between items-center p-4 border-b">
         <h3>Notifications</h3>
         <div className="space-x-2">
@@ -750,23 +786,23 @@ export const NotificationPanel = ({ isOpen, onClose }: Props) => {
           </button>
         </div>
       </div>
-      
+
       <div className="max-h-96 overflow-y-auto">
         {notifications.length === 0 ? (
-          <div className="p-6 text-center text-gray-500">
-            No notifications
-          </div>
+          <div className="p-6 text-center text-gray-500">No notifications</div>
         ) : (
-          notifications.map(notification => (
+          notifications.map((notification) => (
             <div
               key={notification.id}
               onClick={() => markAsRead(notification.id)}
               className={`p-4 border-b cursor-pointer hover:bg-gray-50 ${
-                !notification.read ? 'bg-blue-50' : ''
+                !notification.read ? "bg-blue-50" : ""
               }`}
             >
               <div className="font-medium">{notification.title}</div>
-              <div className="text-sm text-gray-600">{notification.message}</div>
+              <div className="text-sm text-gray-600">
+                {notification.message}
+              </div>
               <div className="text-xs text-gray-400 mt-1">
                 {formatDistanceToNow(notification.timestamp)} ago
               </div>
@@ -795,10 +831,10 @@ export const useProgressiveSync = <T>(key: string, initialData: T) => {
 
   const updateData = useCallback(async (newData: T | ((prev: T) => T)) => {
     // 1. Update local state immediately (optimistic)
-    const updatedData = typeof newData === 'function' 
+    const updatedData = typeof newData === 'function'
       ? (newData as (prev: T) => T)(data)
       : newData;
-    
+
     setData(updatedData);
     setSyncStatus('local');
 
@@ -809,13 +845,13 @@ export const useProgressiveSync = <T>(key: string, initialData: T) => {
 
     // 3. BroadcastChannel for cross-tab sync
     send("DATA_UPDATED", { data: updatedData, timestamp: Date.now() });
-    
+
     // 4. Debounced server sync
     setSyncStatus('syncing');
     try {
       await debouncedServerSync(key, updatedData);
       setSyncStatus('synced');
-      
+
       // Confirm sync across tabs
       send("DATA_SYNCED", { data: updatedData, timestamp: Date.now() });
     } catch (error) {
@@ -830,7 +866,7 @@ export const useProgressiveSync = <T>(key: string, initialData: T) => {
       if (type === "DATA_UPDATED") {
         setData(payload.data);
         setSyncStatus('local');
-        
+
         // Local CustomEvent for UI updates
         window.dispatchEvent(new CustomEvent(`data-updated-${key}`, {
           detail: { data: payload.data, source: 'remote' }
@@ -853,9 +889,9 @@ const UserPreferences = () => {
   });
 
   const toggleTheme = () => {
-    updateData(prev => ({ 
-      ...prev, 
-      theme: prev.theme === 'light' ? 'dark' : 'light' 
+    updateData(prev => ({
+      ...prev,
+      theme: prev.theme === 'light' ? 'dark' : 'light'
     }));
   };
 
@@ -892,71 +928,109 @@ const UserPreferences = () => {
 export const useEventOrchestrator = () => {
   const { send: broadcast } = useBroadcast("orchestration");
 
-  const orchestrateUserAction = useCallback(async (action: string, data: any) => {
-    const orchestrationId = generateId();
-    const steps = getWorkflowSteps(action);
+  const orchestrateUserAction = useCallback(
+    async (action: string, data: any) => {
+      const orchestrationId = generateId();
+      const steps = getWorkflowSteps(action);
 
-    // 1. Announce workflow start
-    window.dispatchEvent(new CustomEvent("workflow-started", {
-      detail: { orchestrationId, action, steps: steps.length }
-    }));
+      // 1. Announce workflow start
+      window.dispatchEvent(
+        new CustomEvent("workflow-started", {
+          detail: { orchestrationId, action, steps: steps.length },
+        })
+      );
 
-    broadcast("WORKFLOW_STARTED", { orchestrationId, action, userId: data.userId });
+      broadcast("WORKFLOW_STARTED", {
+        orchestrationId,
+        action,
+        userId: data.userId,
+      });
 
-    // 2. Execute steps sequentially
-    for (let i = 0; i < steps.length; i++) {
-      const step = steps[i];
-      
-      try {
-        // Local step start
-        window.dispatchEvent(new CustomEvent("workflow-step", {
-          detail: { orchestrationId, step: i + 1, name: step.name, status: 'started' }
-        }));
+      // 2. Execute steps sequentially
+      for (let i = 0; i < steps.length; i++) {
+        const step = steps[i];
 
-        // Execute step
-        const result = await step.execute(data);
+        try {
+          // Local step start
+          window.dispatchEvent(
+            new CustomEvent("workflow-step", {
+              detail: {
+                orchestrationId,
+                step: i + 1,
+                name: step.name,
+                status: "started",
+              },
+            })
+          );
 
-        // Step completed
-        window.dispatchEvent(new CustomEvent("workflow-step", {
-          detail: { orchestrationId, step: i + 1, name: step.name, status: 'completed', result }
-        }));
+          // Execute step
+          const result = await step.execute(data);
 
-        // Broadcast step completion for monitoring
-        if (step.broadcastCompletion) {
-          broadcast("WORKFLOW_STEP_COMPLETED", {
+          // Step completed
+          window.dispatchEvent(
+            new CustomEvent("workflow-step", {
+              detail: {
+                orchestrationId,
+                step: i + 1,
+                name: step.name,
+                status: "completed",
+                result,
+              },
+            })
+          );
+
+          // Broadcast step completion for monitoring
+          if (step.broadcastCompletion) {
+            broadcast("WORKFLOW_STEP_COMPLETED", {
+              orchestrationId,
+              step: i + 1,
+              name: step.name,
+              result,
+            });
+          }
+
+          data = { ...data, ...result }; // Pass result to next step
+        } catch (error) {
+          // Step failed
+          window.dispatchEvent(
+            new CustomEvent("workflow-step", {
+              detail: {
+                orchestrationId,
+                step: i + 1,
+                name: step.name,
+                status: "failed",
+                error,
+              },
+            })
+          );
+
+          broadcast("WORKFLOW_FAILED", {
             orchestrationId,
-            step: i + 1,
-            name: step.name,
-            result
+            failedStep: i + 1,
+            error: error.message,
           });
+
+          throw error;
         }
-
-        data = { ...data, ...result }; // Pass result to next step
-      } catch (error) {
-        // Step failed
-        window.dispatchEvent(new CustomEvent("workflow-step", {
-          detail: { orchestrationId, step: i + 1, name: step.name, status: 'failed', error }
-        }));
-
-        broadcast("WORKFLOW_FAILED", {
-          orchestrationId,
-          failedStep: i + 1,
-          error: error.message
-        });
-
-        throw error;
       }
-    }
 
-    // 3. Workflow completed
-    window.dispatchEvent(new CustomEvent("workflow-completed", {
-      detail: { orchestrationId, action, data }
-    }));
+      // 3. Workflow completed
+      window.dispatchEvent(
+        new CustomEvent("workflow-completed", {
+          detail: { orchestrationId, action, data },
+        })
+      );
 
-    broadcast("WORKFLOW_COMPLETED", { orchestrationId, action, finalData: data });
+      broadcast("WORKFLOW_COMPLETED", {
+        orchestrationId,
+        action,
+        finalData: data,
+      });
 
-    return data;
-  }, [broadcast]);
+      return data;
+    },
+    [broadcast]
+  );
 
   return { orchestrateUserAction };
 };
@@ -969,23 +1043,23 @@ const getWorkflowSteps = (action: string) => {
         {
           name: "validate-email",
           execute: async (data) => await validateEmail(data.email),
-          broadcastCompletion: false
+          broadcastCompletion: false,
         },
         {
           name: "create-user",
           execute: async (data) => await createUser(data),
-          broadcastCompletion: true
+          broadcastCompletion: true,
         },
         {
           name: "send-welcome-email",
           execute: async (data) => await sendWelcomeEmail(data.user),
-          broadcastCompletion: false
+          broadcastCompletion: false,
         },
         {
           name: "setup-default-preferences",
           execute: async (data) => await setupUserPreferences(data.user.id),
-          broadcastCompletion: true
-        }
+          broadcastCompletion: true,
+        },
       ];
     default:
       return [];
@@ -994,28 +1068,32 @@ const getWorkflowSteps = (action: string) => {
 
 // Workflow Monitor Component
 export const WorkflowMonitor = () => {
-  const [activeWorkflows, setActiveWorkflows] = useState<Map<string, any>>(new Map());
+  const [activeWorkflows, setActiveWorkflows] = useState<Map<string, any>>(
+    new Map()
+  );
 
   useEffect(() => {
     const handleWorkflowStart = (e: CustomEvent) => {
       const { orchestrationId, action, steps } = e.detail;
-      setActiveWorkflows(prev => new Map(prev).set(orchestrationId, {
-        action,
-        totalSteps: steps,
-        currentStep: 0,
-        status: 'running'
-      }));
+      setActiveWorkflows((prev) =>
+        new Map(prev).set(orchestrationId, {
+          action,
+          totalSteps: steps,
+          currentStep: 0,
+          status: "running",
+        })
+      );
     };
 
     const handleWorkflowStep = (e: CustomEvent) => {
       const { orchestrationId, step, status } = e.detail;
-      setActiveWorkflows(prev => {
+      setActiveWorkflows((prev) => {
         const workflow = prev.get(orchestrationId);
         if (workflow) {
           return new Map(prev).set(orchestrationId, {
             ...workflow,
             currentStep: step,
-            lastStepStatus: status
+            lastStepStatus: status,
           });
         }
         return prev;
@@ -1025,7 +1103,7 @@ export const WorkflowMonitor = () => {
     const handleWorkflowComplete = (e: CustomEvent) => {
       const { orchestrationId } = e.detail;
       setTimeout(() => {
-        setActiveWorkflows(prev => {
+        setActiveWorkflows((prev) => {
           const newMap = new Map(prev);
           newMap.delete(orchestrationId);
           return newMap;
@@ -1050,12 +1128,16 @@ export const WorkflowMonitor = () => {
         <div key={id} className="workflow-item">
           <div>{workflow.action}</div>
           <div className="progress-bar">
-            <div 
+            <div
               className="progress-fill"
-              style={{ width: `${(workflow.currentStep / workflow.totalSteps) * 100}%` }}
+              style={{
+                width: `${(workflow.currentStep / workflow.totalSteps) * 100}%`,
+              }}
             />
           </div>
-          <div>{workflow.currentStep}/{workflow.totalSteps}</div>
+          <div>
+            {workflow.currentStep}/{workflow.totalSteps}
+          </div>
         </div>
       ))}
     </div>
@@ -1121,7 +1203,7 @@ export const useTypedEventListener = <K extends keyof CustomEventMap>(
 const LoginComponent = () => {
   const handleLogin = async (credentials: LoginCredentials) => {
     const user = await loginUser(credentials);
-    
+
     // Type-safe event dispatch
     dispatchTypedEvent("user-login", {
       userId: user.id,
@@ -1157,16 +1239,20 @@ export const createEventLogger = (prefix = "EVENT") => {
     source: "CustomEvent" | "BroadcastChannel";
   }> = [];
 
-  const log = (type: string, detail: any, source: "CustomEvent" | "BroadcastChannel") => {
+  const log = (
+    type: string,
+    detail: any,
+    source: "CustomEvent" | "BroadcastChannel"
+  ) => {
     const entry = {
       timestamp: Date.now(),
       type,
       detail,
-      source
+      source,
     };
-    
+
     eventHistory.push(entry);
-    
+
     // Keep only last 100 events
     if (eventHistory.length > 100) {
       eventHistory.shift();
@@ -1193,7 +1279,7 @@ export const createEventLogger = (prefix = "EVENT") => {
         return acc;
       }, {} as Record<string, number>);
       console.table(stats);
-    }
+    },
   };
 
   return { log, clear, getHistory };
@@ -1205,7 +1291,7 @@ export const attachEventLogger = () => {
 
   // Intercept CustomEvent dispatches
   const originalDispatchEvent = window.dispatchEvent;
-  window.dispatchEvent = function(event: Event) {
+  window.dispatchEvent = function (event: Event) {
     if (event instanceof CustomEvent) {
       logger.log(event.type, event.detail, "CustomEvent");
     }
@@ -1217,15 +1303,23 @@ export const attachEventLogger = () => {
   window.BroadcastChannel = class extends originalBroadcastChannel {
     constructor(name: string) {
       super(name);
-      
+
       const originalPostMessage = this.postMessage;
-      this.postMessage = function(message: any) {
-        logger.log(`[${name}] ${message.type}`, message.data, "BroadcastChannel");
+      this.postMessage = function (message: any) {
+        logger.log(
+          `[${name}] ${message.type}`,
+          message.data,
+          "BroadcastChannel"
+        );
         return originalPostMessage.call(this, message);
       };
 
       this.addEventListener("message", (event) => {
-        logger.log(`[${name}] RECEIVED ${event.data.type}`, event.data.data, "BroadcastChannel");
+        logger.log(
+          `[${name}] RECEIVED ${event.data.type}`,
+          event.data.data,
+          "BroadcastChannel"
+        );
       });
     }
   };
@@ -1235,13 +1329,16 @@ export const attachEventLogger = () => {
 
 // Performance monitor
 export const createPerformanceMonitor = () => {
-  const metrics = new Map<string, {
-    count: number;
-    totalTime: number;
-    avgTime: number;
-    maxTime: number;
-    minTime: number;
-  }>();
+  const metrics = new Map<
+    string,
+    {
+      count: number;
+      totalTime: number;
+      avgTime: number;
+      maxTime: number;
+      minTime: number;
+    }
+  >();
 
   const measureEvent = <T>(eventType: string, fn: () => T): T => {
     const start = performance.now();
@@ -1254,7 +1351,7 @@ export const createPerformanceMonitor = () => {
       totalTime: 0,
       avgTime: 0,
       maxTime: 0,
-      minTime: Infinity
+      minTime: Infinity,
     };
 
     const updated = {
@@ -1262,13 +1359,16 @@ export const createPerformanceMonitor = () => {
       totalTime: current.totalTime + duration,
       avgTime: (current.totalTime + duration) / (current.count + 1),
       maxTime: Math.max(current.maxTime, duration),
-      minTime: Math.min(current.minTime, duration)
+      minTime: Math.min(current.minTime, duration),
     };
 
     metrics.set(eventType, updated);
-    
-    if (duration > 16) { // Flag slow events (> 16ms = 1 frame)
-      console.warn(`Slow event detected: ${eventType} took ${duration.toFixed(2)}ms`);
+
+    if (duration > 16) {
+      // Flag slow events (> 16ms = 1 frame)
+      console.warn(
+        `Slow event detected: ${eventType} took ${duration.toFixed(2)}ms`
+      );
     }
 
     return result;
@@ -1311,7 +1411,7 @@ const useNotifications = () => {
 // ✅ GOOD: Proper cleanup
 const useNotifications = () => {
   const channelRef = useRef<BroadcastChannel | null>(null);
-  
+
   useEffect(() => {
     channelRef.current = new BroadcastChannel("notifications");
     return () => channelRef.current?.close();
@@ -1324,16 +1424,20 @@ const useNotifications = () => {
 ```typescript
 // ❌ BAD: Rapid fire events
 const handleMouseMove = (e: MouseEvent) => {
-  window.dispatchEvent(new CustomEvent("mouse-moved", {
-    detail: { x: e.clientX, y: e.clientY }
-  }));
+  window.dispatchEvent(
+    new CustomEvent("mouse-moved", {
+      detail: { x: e.clientX, y: e.clientY },
+    })
+  );
 }; // This will fire hundreds of times per second!
 
 // ✅ GOOD: Throttled events
 const handleMouseMove = throttle((e: MouseEvent) => {
-  window.dispatchEvent(new CustomEvent("mouse-moved", {
-    detail: { x: e.clientX, y: e.clientY }
-  }));
+  window.dispatchEvent(
+    new CustomEvent("mouse-moved", {
+      detail: { x: e.clientX, y: e.clientY },
+    })
+  );
 }, 16); // Max 60fps
 
 // ❌ BAD: Nested event triggering
@@ -1356,7 +1460,7 @@ window.addEventListener("user-action", () => {
 const handleSave = async () => {
   const data = getCurrentData();
   await saveToServer(data);
-  
+
   // Data might have changed while saving!
   window.dispatchEvent(new CustomEvent("data-saved", { detail: data }));
 };
@@ -1365,10 +1469,12 @@ const handleSave = async () => {
 const handleSave = async () => {
   const capturedData = getCurrentData();
   const result = await saveToServer(capturedData);
-  
-  window.dispatchEvent(new CustomEvent("data-saved", { 
-    detail: { original: capturedData, saved: result }
-  }));
+
+  window.dispatchEvent(
+    new CustomEvent("data-saved", {
+      detail: { original: capturedData, saved: result },
+    })
+  );
 };
 ```
 
@@ -1380,17 +1486,17 @@ const handleSave = async () => {
 
 ```typescript
 // ✅ GOOD: Descriptive, hierarchical names
-"user-profile-updated"
-"shopping-cart-item-added"
-"modal-confirmation-closed"
-"search-results-filtered"
-"admin-user-role-changed"
+"user-profile-updated";
+"shopping-cart-item-added";
+"modal-confirmation-closed";
+"search-results-filtered";
+"admin-user-role-changed";
 
 // ❌ BAD: Generic, unclear names
-"update"
-"change"
-"click"
-"action"
+"update";
+"change";
+"click";
+"action";
 ```
 
 ### **🎯 Event Data Structure**
@@ -1401,17 +1507,17 @@ interface EventDetail {
   // Who triggered it
   source: string;
   userId?: string;
-  
-  // What happened  
+
+  // What happened
   action: string;
   target: string;
-  
+
   // When it happened
   timestamp: number;
-  
+
   // Context data
   data: any;
-  
+
   // For debugging
   version: string;
 }
@@ -1424,8 +1530,8 @@ const createStandardEvent = (type: string, detail: Partial<EventDetail>) => {
       target: "window",
       timestamp: Date.now(),
       version: "1.0",
-      ...detail
-    }
+      ...detail,
+    },
   });
 };
 ```
@@ -1436,17 +1542,23 @@ const createStandardEvent = (type: string, detail: Partial<EventDetail>) => {
 // ✅ GOOD: Always check for feature support
 const useBroadcastSafe = (channelName: string) => {
   const isSupported = "BroadcastChannel" in window;
-  
-  const send = useCallback((type: string, data: any) => {
-    if (!isSupported) {
-      // Fallback to localStorage events
-      localStorage.setItem(`fallback-${channelName}`, JSON.stringify({ type, data }));
-      return;
-    }
-    
-    // Normal BroadcastChannel logic
-  }, [isSupported, channelName]);
-  
+
+  const send = useCallback(
+    (type: string, data: any) => {
+      if (!isSupported) {
+        // Fallback to localStorage events
+        localStorage.setItem(
+          `fallback-${channelName}`,
+          JSON.stringify({ type, data })
+        );
+        return;
+      }
+
+      // Normal BroadcastChannel logic
+    },
+    [isSupported, channelName]
+  );
+
   return { send, isSupported };
 };
 ```
@@ -1457,7 +1569,7 @@ const useBroadcastSafe = (channelName: string) => {
 // ✅ GOOD: Different behavior for dev/prod
 const createEventSystem = () => {
   const isDev = process.env.NODE_ENV === "development";
-  
+
   const dispatchEvent = (type: string, detail: any) => {
     if (isDev) {
       // Extra logging, validation, performance monitoring
@@ -1465,16 +1577,19 @@ const createEventSystem = () => {
       console.log("Detail:", detail);
       console.log("Stack:", new Error().stack);
       console.groupEnd();
-      
+
       // Validate event structure
       if (!detail || typeof detail !== "object") {
-        console.warn(`Event ${type} should have object detail, got:`, typeof detail);
+        console.warn(
+          `Event ${type} should have object detail, got:`,
+          typeof detail
+        );
       }
     }
-    
+
     return window.dispatchEvent(new CustomEvent(type, { detail }));
   };
-  
+
   return { dispatchEvent };
 };
 ```
