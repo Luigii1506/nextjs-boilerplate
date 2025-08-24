@@ -47,8 +47,8 @@ const event = new CustomEvent("evento-personalizado", {
   detail: {
     usuario: "juan@ejemplo.com",
     timestamp: Date.now(),
-    data: { cualquierDato: "aquí" }
-  }
+    data: { cualquierDato: "aquí" },
+  },
 });
 window.dispatchEvent(event);
 
@@ -61,7 +61,9 @@ window.addEventListener("evento-personalizado", (e) => {
 });
 
 // 🧹 Cleanup (importante)
-const handler = (e) => { /* manejar evento */ };
+const handler = (e) => {
+  /* manejar evento */
+};
 window.addEventListener("mi-evento", handler);
 // Al desmontar componente:
 window.removeEventListener("mi-evento", handler);
@@ -70,6 +72,7 @@ window.removeEventListener("mi-evento", handler);
 ### **🎯 Casos de Uso Perfectos:**
 
 #### **1. UI Interactions (Nuestro uso actual)**
+
 ```typescript
 // AdminLayout - Header actions
 const handleSearch = useCallback(() => {
@@ -90,15 +93,18 @@ window.addEventListener("admin-search", (e) => {
 ```
 
 #### **2. Component Decoupling**
+
 ```typescript
 // Componente dispara evento sin conocer quién escucha
 const Modal = () => {
   const handleClose = () => {
-    window.dispatchEvent(new CustomEvent("modal-closed", {
-      detail: { modalId: "user-profile", timestamp: Date.now() }
-    }));
+    window.dispatchEvent(
+      new CustomEvent("modal-closed", {
+        detail: { modalId: "user-profile", timestamp: Date.now() },
+      })
+    );
   };
-  
+
   return <button onClick={handleClose}>Cerrar</button>;
 };
 
@@ -109,12 +115,15 @@ window.addEventListener("modal-closed", cleanupResources);
 ```
 
 #### **3. Event-Driven Analytics**
+
 ```typescript
 // Un evento → múltiples trackers
 const trackUserAction = (action: string, data: any) => {
-  window.dispatchEvent(new CustomEvent("user-action", {
-    detail: { action, data, timestamp: Date.now() }
-  }));
+  window.dispatchEvent(
+    new CustomEvent("user-action", {
+      detail: { action, data, timestamp: Date.now() },
+    })
+  );
 };
 
 // Diferentes servicios de analytics escuchan
@@ -149,7 +158,7 @@ const channel = new BroadcastChannel("mi-canal");
 // ✅ Enviar mensaje
 channel.postMessage({
   type: "USER_LOGIN",
-  data: { userId: "12345", timestamp: Date.now() }
+  data: { userId: "12345", timestamp: Date.now() },
 });
 
 // ✅ Escuchar mensajes
@@ -217,14 +226,18 @@ export function useBroadcast(channelName: string) {
 ### **🎯 Casos de Uso Perfectos:**
 
 #### **1. Authentication Sync**
+
 ```typescript
 // Hook especializado para Auth
 export function useAuthBroadcast() {
   const { send, listen } = useBroadcast("auth-sync");
 
-  const notifyLogin = useCallback((userId: string) => {
-    send("LOGIN", { userId });
-  }, [send]);
+  const notifyLogin = useCallback(
+    (userId: string) => {
+      send("LOGIN", { userId });
+    },
+    [send]
+  );
 
   const notifyLogout = useCallback(() => {
     send("LOGOUT");
@@ -267,6 +280,7 @@ useEffect(() => {
 ```
 
 #### **2. Shopping Cart Synchronization**
+
 ```typescript
 // E-commerce - Cart sync entre pestañas
 const useCartBroadcast = () => {
@@ -311,6 +325,7 @@ const ShoppingCart = () => {
 ```
 
 #### **3. Real-time Notifications**
+
 ```typescript
 // Sistema de notificaciones cross-tab
 const useNotificationsBroadcast = () => {
@@ -344,7 +359,7 @@ const NotificationSystem = () => {
   useEffect(() => {
     return onNewNotification((notification) => {
       toast.show(notification.message, { type: notification.type });
-      
+
       // Solo la pestaña activa reproduce sonido
       if (document.visibilityState === "visible") {
         playNotificationSound();
@@ -360,18 +375,18 @@ const NotificationSystem = () => {
 
 ## ⚖️ **Comparación Técnica**
 
-| **Aspecto** | **CustomEvent** | **BroadcastChannel** |
-|-------------|------------------|---------------------|
-| **🌍 Alcance** | **Mismo contexto** (1 pestaña) | **Múltiples contextos** (N pestañas) |
-| **⚡ Velocidad** | **Inmediato** (síncrono) | **Ligeramente más lento** (asíncrono) |
-| **💾 Persistencia** | **No persiste** (evento único) | **Persiste** mientras haya listeners |
-| **🔄 Sincronización** | No aplica | **Sincroniza estado** automáticamente |
-| **📱 Soporte móvil** | ✅ **Universal** | ⚠️ **Limitado** en iOS Safari |
-| **🧠 Uso de memoria** | **Mínimo** (evento temporal) | **Moderado** (mantiene canal abierto) |
-| **🎯 Propósito** | **UI interactions** | **Estado compartido** |
-| **🔧 Complexity** | **Simple** | **Medio** (requiere cleanup) |
-| **👥 Listeners** | **Múltiples** por evento | **Múltiples** por canal |
-| **📊 Debugging** | **DevTools Events** | **Network/Application tab** |
+| **Aspecto**           | **CustomEvent**                | **BroadcastChannel**                  |
+| --------------------- | ------------------------------ | ------------------------------------- |
+| **🌍 Alcance**        | **Mismo contexto** (1 pestaña) | **Múltiples contextos** (N pestañas)  |
+| **⚡ Velocidad**      | **Inmediato** (síncrono)       | **Ligeramente más lento** (asíncrono) |
+| **💾 Persistencia**   | **No persiste** (evento único) | **Persiste** mientras haya listeners  |
+| **🔄 Sincronización** | No aplica                      | **Sincroniza estado** automáticamente |
+| **📱 Soporte móvil**  | ✅ **Universal**               | ⚠️ **Limitado** en iOS Safari         |
+| **🧠 Uso de memoria** | **Mínimo** (evento temporal)   | **Moderado** (mantiene canal abierto) |
+| **🎯 Propósito**      | **UI interactions**            | **Estado compartido**                 |
+| **🔧 Complexity**     | **Simple**                     | **Medio** (requiere cleanup)          |
+| **👥 Listeners**      | **Múltiples** por evento       | **Múltiples** por canal               |
+| **📊 Debugging**      | **DevTools Events**            | **Network/Application tab**           |
 
 ---
 
@@ -379,24 +394,24 @@ const NotificationSystem = () => {
 
 ### **✅ Usa CustomEvent para:**
 
-| **Caso de Uso** | **Razón** | **Ejemplo** |
-|-----------------|-----------|-------------|
-| 🎨 **UI Interactions** | Reacción inmediata, mismo contexto | Header clicks → Modal show |
-| 🎮 **Gaming Events** | Performance crítico | Player scored → Update UI |
-| 📊 **Analytics Tracking** | Múltiples trackers, evento único | User action → Track everywhere |
-| 🔄 **Component Events** | Desacoplamiento interno | Modal close → Update parent |
-| ⚡ **Performance Critical** | Latencia mínima requerida | Real-time game updates |
+| **Caso de Uso**             | **Razón**                          | **Ejemplo**                    |
+| --------------------------- | ---------------------------------- | ------------------------------ |
+| 🎨 **UI Interactions**      | Reacción inmediata, mismo contexto | Header clicks → Modal show     |
+| 🎮 **Gaming Events**        | Performance crítico                | Player scored → Update UI      |
+| 📊 **Analytics Tracking**   | Múltiples trackers, evento único   | User action → Track everywhere |
+| 🔄 **Component Events**     | Desacoplamiento interno            | Modal close → Update parent    |
+| ⚡ **Performance Critical** | Latencia mínima requerida          | Real-time game updates         |
 
 ### **✅ Usa BroadcastChannel para:**
 
-| **Caso de Uso** | **Razón** | **Ejemplo** |
-|-----------------|-----------|-------------|
-| 🔐 **Authentication** | Estado compartido crítico | Login/logout sync |
-| 🛒 **Shopping Cart** | Datos compartidos | Cart updates cross-tab |
-| 🎵 **Media Players** | Control centralizado | Play/pause desde cualquier pestaña |
-| 📝 **Collaborative Editing** | Sincronización de datos | Document changes sync |
-| 🔔 **Notifications** | Comunicación global | Alerts cross-tab |
-| ⚙️ **User Preferences** | Settings synchronization | Theme, language changes |
+| **Caso de Uso**              | **Razón**                 | **Ejemplo**                        |
+| ---------------------------- | ------------------------- | ---------------------------------- |
+| 🔐 **Authentication**        | Estado compartido crítico | Login/logout sync                  |
+| 🛒 **Shopping Cart**         | Datos compartidos         | Cart updates cross-tab             |
+| 🎵 **Media Players**         | Control centralizado      | Play/pause desde cualquier pestaña |
+| 📝 **Collaborative Editing** | Sincronización de datos   | Document changes sync              |
+| 🔔 **Notifications**         | Comunicación global       | Alerts cross-tab                   |
+| ⚙️ **User Preferences**      | Settings synchronization  | Theme, language changes            |
 
 ---
 
@@ -407,7 +422,7 @@ const NotificationSystem = () => {
 ```typescript
 // src/shared/ui/layouts/hooks/useAdminLayoutNavigation.ts
 export function useAdminLayoutNavigation({ user, userRole, isAuthenticated }) {
-  
+
   // 📡 CustomEvent - UI interactions
   const handleSearch = useCallback(() => {
     console.log("🔍 Search action triggered");
@@ -461,7 +476,7 @@ export const setupAllEventListeners = () => {
     document.body.appendChild(modal);
   };
 
-  // 🔔 Notifications panel  
+  // 🔔 Notifications panel
   const handleNotificationsEvent = (e) => {
     const { user, action } = e.detail;
     const panel = createNotificationsPanel(user);
@@ -505,27 +520,27 @@ const useAdminLayoutEnhanced = () => {
   const handleSearchEnhanced = useCallback(() => {
     // 🎨 Evento local para UI
     handleSearch();
-    
+
     // 🚀 Sync actividad a otras pestañas
-    sendActivity("SEARCH_PERFORMED", { 
+    sendActivity("SEARCH_PERFORMED", {
       timestamp: Date.now(),
-      userId: user.id 
+      userId: user.id,
     });
   }, [handleSearch, sendActivity, user.id]);
 
   const handleSidebarToggle = useCallback(() => {
     setSidebarOpen(!sidebarOpen);
-    
+
     // 🚀 Sincronizar preferencia
-    sendPreferences("SIDEBAR_TOGGLED", { 
+    sendPreferences("SIDEBAR_TOGGLED", {
       collapsed: !sidebarOpen,
-      userId: user.id 
+      userId: user.id,
     });
   }, [sidebarOpen, sendPreferences, user.id]);
 
   // 🎯 Listen to preferences from other tabs
   const { listen: listenPreferences } = useBroadcast("user-preferences");
-  
+
   useEffect(() => {
     return listenPreferences((type, data) => {
       if (type === "SIDEBAR_TOGGLED" && data.userId === user.id) {
@@ -534,10 +549,10 @@ const useAdminLayoutEnhanced = () => {
     });
   }, [listenPreferences, user.id]);
 
-  return { 
-    handleSearchEnhanced, 
-    handleNotifications, 
-    handleSidebarToggle 
+  return {
+    handleSearchEnhanced,
+    handleNotifications,
+    handleSidebarToggle,
   };
 };
 ```
@@ -575,13 +590,15 @@ const useAdminLayoutEnhanced = () => {
 ### **📋 Checklist de Decisión:**
 
 **Usa CustomEvent si:**
+
 - [ ] Necesitas **reacción inmediata** (< 1ms)
 - [ ] Es **comunicación interna** (misma pestaña)
 - [ ] Requieres **múltiples listeners** para un evento
-- [ ] Es **crítico para performance** 
+- [ ] Es **crítico para performance**
 - [ ] Necesitas **desacoplamiento** sin overhead
 
 **Usa BroadcastChannel si:**
+
 - [ ] Necesitas **sincronización** entre pestañas
 - [ ] Es **estado compartido** importante
 - [ ] Los usuarios tienen **múltiples pestañas** abiertas
@@ -599,14 +616,14 @@ const useAdminLayoutEnhanced = () => {
 ```typescript
 // ✅ Nombres descriptivos con namespacing
 const event = new CustomEvent("admin-search-modal-open", {
-  detail: { source: "header", user: user.email }
+  detail: { source: "header", user: user.email },
 });
 
 // ✅ Siempre incluir cleanup
 useEffect(() => {
   const handler = (e) => handleEvent(e.detail);
   window.addEventListener("my-event", handler);
-  
+
   return () => {
     window.removeEventListener("my-event", handler); // 👈 CRÍTICO
   };
@@ -620,7 +637,7 @@ interface SearchEventDetail {
 }
 
 const event: CustomEvent<SearchEventDetail> = new CustomEvent("admin-search", {
-  detail: { source: "header", user: user.email, currentPath }
+  detail: { source: "header", user: user.email, currentPath },
 });
 
 // ✅ Error handling
@@ -647,7 +664,7 @@ useEffect(() => {
 
 // ❌ Datos sensibles en detail
 new CustomEvent("user-action", {
-  detail: { password: "123456", token: "secret" } // 👈 NUNCA
+  detail: { password: "123456", token: "secret" }, // 👈 NUNCA
 });
 
 // ❌ Eventos excesivos
@@ -682,18 +699,18 @@ const sendMessage = (type: string, data: any) => {
     data,
     timestamp: Date.now(),
     source: "admin-panel",
-    version: "1.0"
+    version: "1.0",
   });
 };
 
 // ✅ Feature detection
 const useBroadcastSafe = (channelName: string) => {
   const isSupported = "BroadcastChannel" in window;
-  
+
   return {
     send: isSupported ? send : () => {}, // Fallback
     listen: isSupported ? listen : () => () => {}, // Fallback
-    isSupported
+    isSupported,
   };
 };
 ```
@@ -715,7 +732,7 @@ setInterval(() => {
 
 // ❌ Datos grandes
 channel.postMessage({
-  largeData: new Array(1000000).fill("data") // 👈 Puede causar lag
+  largeData: new Array(1000000).fill("data"), // 👈 Puede causar lag
 });
 ```
 
@@ -753,19 +770,22 @@ const sanitizeData = (data: any) => {
 ## 🔗 **Referencias**
 
 ### **📚 Documentación Oficial:**
+
 - [CustomEvent - MDN](https://developer.mozilla.org/en-US/docs/Web/API/CustomEvent)
 - [BroadcastChannel - MDN](https://developer.mozilla.org/en-US/docs/Web/API/BroadcastChannel)
 - [Event Handling - React Docs](https://react.dev/learn/responding-to-events)
 
 ### **🛠️ Archivos del Proyecto:**
+
 - `src/shared/ui/layouts/hooks/useAdminLayoutNavigation.ts` - CustomEvent implementation
 - `src/shared/hooks/useBroadcast.ts` - BroadcastChannel hook
 - `src/shared/utils/eventListeners.ts` - Event listeners setup
 - `src/shared/ui/layouts/AdminLayout.tsx` - Usage example
 
 ### **🎯 Patrones Relacionados:**
+
 - Observer Pattern
-- Event-Driven Architecture  
+- Event-Driven Architecture
 - Pub/Sub Pattern
 - Cross-Tab Communication
 
@@ -775,12 +795,12 @@ const sanitizeData = (data: any) => {
 
 ### **📊 Performance Metrics:**
 
-| **Operación** | **CustomEvent** | **BroadcastChannel** |
-|---------------|-----------------|---------------------|
-| **Setup Time** | ~0.1ms | ~1-2ms |
-| **Message Send** | ~0.05ms | ~0.5-1ms |
-| **Memory Usage** | ~50 bytes/event | ~1KB/channel |
-| **Browser Support** | 99%+ | 95%+ (sin iOS Safari) |
+| **Operación**       | **CustomEvent** | **BroadcastChannel**  |
+| ------------------- | --------------- | --------------------- |
+| **Setup Time**      | ~0.1ms          | ~1-2ms                |
+| **Message Send**    | ~0.05ms         | ~0.5-1ms              |
+| **Memory Usage**    | ~50 bytes/event | ~1KB/channel          |
+| **Browser Support** | 99%+            | 95%+ (sin iOS Safari) |
 
 ### **🔄 Migration Path:**
 
@@ -792,15 +812,15 @@ const { handleSearch } = useAdminLayoutNavigation();
 const useAdminLayoutV2 = () => {
   // Keep existing CustomEvent for UI
   const { handleSearch } = useAdminLayoutNavigation();
-  
+
   // Add BroadcastChannel for cross-tab
   const { send } = useBroadcast("admin-sync");
-  
+
   const handleSearchEnhanced = () => {
     handleSearch(); // UI reaction
     send("SEARCH", { query, timestamp: Date.now() }); // Cross-tab sync
   };
-  
+
   return { handleSearchEnhanced };
 };
 ```
