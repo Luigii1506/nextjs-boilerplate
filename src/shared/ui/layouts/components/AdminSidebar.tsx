@@ -14,13 +14,14 @@
  * - ✅ Accessibility compliant
  *
  * Created: 2025-01-18 - Extracted from AdminLayout
+ * Updated: 2025-01-18 - Fixed hydration issue
  */
 
 "use client";
 
 import React, { Suspense } from "react";
+import dynamic from "next/dynamic";
 import { cn } from "@/shared/utils";
-import Navigation from "./Navigation";
 import { LogoutButton } from "./LogoutButton";
 import type { UserRole } from "@/core/navigation";
 
@@ -32,8 +33,26 @@ interface AdminSidebarProps {
   ariaControls?: string;
 }
 
-// 🎯 Memoized Navigation for performance
-const MemoizedNavigation = React.memo(Navigation);
+// 🚀 Dynamic import to prevent hydration issues
+const Navigation = dynamic(() => import("./Navigation"), {
+  ssr: false, // Disable SSR for this component to prevent hydration mismatch
+  loading: () => (
+    <nav className="mt-8 space-y-6" suppressHydrationWarning>
+      <div
+        className="animate-pulse space-y-3"
+        role="status"
+        aria-label="Cargando navegación"
+      >
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div
+            key={i}
+            className="h-10 bg-slate-200 dark:bg-slate-600 rounded-lg animate-pulse"
+          />
+        ))}
+      </div>
+    </nav>
+  ),
+});
 
 /**
  * 🎯 AdminSidebar Component
@@ -53,6 +72,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       aria-label={ariaLabel}
       aria-controls={ariaControls}
       role="complementary"
+      suppressHydrationWarning // Suppress hydration warnings for this component
     >
       {/* Screen reader description */}
       <div id="sidebar-description" className="sr-only">
@@ -82,24 +102,26 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           </div>
         </div>
 
-        {/* ⚡ Memoized Navigation for Performance */}
+        {/* ⚡ Dynamic Navigation to Prevent Hydration Issues */}
         <Suspense
           fallback={
-            <div
-              className="animate-pulse space-y-3"
-              role="status"
-              aria-label="Cargando navegación"
-            >
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="h-10 bg-slate-200 dark:bg-slate-600 rounded-lg animate-pulse"
-                />
-              ))}
-            </div>
+            <nav className="mt-8 space-y-6" suppressHydrationWarning>
+              <div
+                className="animate-pulse space-y-3"
+                role="status"
+                aria-label="Cargando navegación"
+              >
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-10 bg-slate-200 dark:bg-slate-600 rounded-lg animate-pulse"
+                  />
+                ))}
+              </div>
+            </nav>
           }
         >
-          <MemoizedNavigation userRole={userRole} />
+          <Navigation userRole={userRole} />
         </Suspense>
 
         {/* Logout - Always at bottom */}

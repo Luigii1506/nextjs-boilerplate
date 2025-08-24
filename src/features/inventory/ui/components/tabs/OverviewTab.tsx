@@ -22,9 +22,9 @@ import {
   Eye,
 } from "lucide-react";
 import { cn } from "@/shared/utils";
-import { useInventoryContext } from "../context";
-import { ProductCard, StockIndicator } from "../components";
-import { TabTransition } from "../components/shared/TabTransition";
+import { useInventoryContext } from "../../../context";
+import { ProductCard, StockIndicator } from "..";
+import { TabTransition } from "../shared/TabTransition";
 
 // 📊 Enhanced Stats Card with Animations
 interface StatsCardProps {

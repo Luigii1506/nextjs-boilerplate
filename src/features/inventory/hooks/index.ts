@@ -5,13 +5,29 @@
  * Exportaciones centralizadas para todos los hooks del módulo inventory
  *
  * Created: 2025-01-17 - Inventory Management Module
+ * Updated: 2025-01-18 - Consolidated UI hooks
  */
 
 // 🎯 Main hooks
+// 🔄 Data Query hooks
 export { useInventoryQuery } from "./useInventoryQuery";
 export { useProductsQuery } from "./useProductsQuery";
 export { useCategoriesQuery } from "./useCategoriesQuery";
 export { useSuppliersQuery } from "./useSuppliersQuery";
+
+// 🎯 UI Interaction hooks
+export { useScrollHeader, useTabScrollHeader } from "./useScrollHeader";
+
+// 📝 Form and Mutation hooks
+export {
+  useCreateProduct,
+  useCreateProductWithNotifications,
+  useCreateProductModal,
+  useUpdateProduct,
+  useUpdateProductModal,
+  useDeleteProduct,
+  useDeleteProductModal,
+} from "./useCreateProduct";
 
 // 🗂️ Query keys for external invalidation
 export {

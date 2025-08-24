@@ -123,14 +123,14 @@ export interface CreateProductInput {
   categoryId: string;
   price: number;
   cost: number;
-  stock?: number;
-  minStock?: number;
-  maxStock?: number;
-  unit?: string;
-  barcode?: string;
-  images?: string[];
-  supplierId?: string;
-  tags?: string[];
+  stock: number;
+  minStock: number;
+  maxStock?: number | null;
+  unit: string;
+  barcode?: string | null;
+  images: string[];
+  supplierId?: string | null;
+  tags: string[];
   metadata?: Record<string, unknown>;
 }
 

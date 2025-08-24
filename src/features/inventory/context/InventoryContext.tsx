@@ -6,6 +6,7 @@
  * Context Pattern + Custom Hooks para UX fluida
  *
  * Created: 2025-01-17 - Inventory SPA Context
+ * Updated: 2025-01-18 - Moved to feature root (context/)
  */
 
 "use client";
@@ -17,8 +18,12 @@ import React, {
   useCallback,
   ReactNode,
 } from "react";
-import { useInventoryQuery } from "../../hooks";
-import type { ProductFilters, CategoryFilters } from "../../types";
+import { useInventoryQuery } from "../hooks";
+import type {
+  ProductFilters,
+  CategoryFilters,
+  ProductWithRelations,
+} from "../types";
 
 // 🎯 TABS DISPONIBLES
 export const INVENTORY_TABS = [
@@ -93,12 +98,27 @@ interface InventoryContextType {
   isCategoryModalOpen: boolean;
   setIsCategoryModalOpen: (open: boolean) => void;
 
+  // Product Edit States
+  editingProduct: ProductWithRelations | null;
+  setEditingProduct: (product: ProductWithRelations | null) => void;
+  isEditMode: boolean;
+
+  // Delete Confirmation
+  deletingProduct: ProductWithRelations | null;
+  setDeletingProduct: (product: ProductWithRelations | null) => void;
+  isDeleteConfirmOpen: boolean;
+  setIsDeleteConfirmOpen: (open: boolean) => void;
+
   // Data from API
   inventory: ReturnType<typeof useInventoryQuery>;
 
   // Actions
   refetchAll: () => void;
   clearAllFilters: () => void;
+  openEditModal: (product: ProductWithRelations) => void;
+  closeEditModal: () => void;
+  openDeleteConfirm: (product: ProductWithRelations) => void;
+  closeDeleteConfirm: () => void;
 }
 
 // 🎯 CONTEXT CREATION
@@ -127,6 +147,16 @@ export const InventoryProvider: React.FC<InventoryProviderProps> = ({
   // 📝 Modal States
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+
+  // ✏️ Product Edit States
+  const [editingProduct, setEditingProduct] =
+    useState<ProductWithRelations | null>(null);
+  const [deletingProduct, setDeletingProduct] =
+    useState<ProductWithRelations | null>(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+
+  // 🎯 Computed values
+  const isEditMode = editingProduct !== null;
 
   // 🔄 Main Data Query
   const inventory = useInventoryQuery({
@@ -169,6 +199,27 @@ export const InventoryProvider: React.FC<InventoryProviderProps> = ({
     setCategoryFilters({});
   }, []);
 
+  // ✏️ Product Edit Actions
+  const openEditModal = useCallback((product: ProductWithRelations) => {
+    setEditingProduct(product);
+    setIsProductModalOpen(true);
+  }, []);
+
+  const closeEditModal = useCallback(() => {
+    setEditingProduct(null);
+    setIsProductModalOpen(false);
+  }, []);
+
+  const openDeleteConfirm = useCallback((product: ProductWithRelations) => {
+    setDeletingProduct(product);
+    setIsDeleteConfirmOpen(true);
+  }, []);
+
+  const closeDeleteConfirm = useCallback(() => {
+    setDeletingProduct(null);
+    setIsDeleteConfirmOpen(false);
+  }, []);
+
   const value: InventoryContextType = {
     // Tab Management
     activeTab,
@@ -193,12 +244,27 @@ export const InventoryProvider: React.FC<InventoryProviderProps> = ({
     isCategoryModalOpen,
     setIsCategoryModalOpen,
 
+    // Product Edit States
+    editingProduct,
+    setEditingProduct,
+    isEditMode,
+
+    // Delete Confirmation
+    deletingProduct,
+    setDeletingProduct,
+    isDeleteConfirmOpen,
+    setIsDeleteConfirmOpen,
+
     // Data
     inventory,
 
     // Actions
     refetchAll,
     clearAllFilters,
+    openEditModal,
+    closeEditModal,
+    openDeleteConfirm,
+    closeDeleteConfirm,
   };
 
   return (

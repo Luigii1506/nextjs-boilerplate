@@ -26,10 +26,10 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/shared/utils";
-import { useInventoryContext } from "../context";
-import { ProductCard, StockIndicator, CategoryBadge } from "../components";
-import { TabTransition } from "../components/shared/TabTransition";
-import type { ProductWithRelations } from "../../types";
+import { useInventoryContext } from "../../../context";
+import { ProductCard, StockIndicator, CategoryBadge } from "..";
+import { TabTransition } from "../shared/TabTransition";
+import type { ProductWithRelations } from "../../../types";
 
 // 🔍 Advanced Search & Filter Component
 const ProductFilters: React.FC = () => {
@@ -42,6 +42,7 @@ const ProductFilters: React.FC = () => {
     viewMode,
     setViewMode,
     clearAllFilters,
+    setIsProductModalOpen,
   } = useInventoryContext();
 
   const { categories, suppliers } = inventory;
@@ -129,7 +130,10 @@ const ProductFilters: React.FC = () => {
           </div>
 
           {/* Actions */}
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg flex items-center space-x-2 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]">
+          <button
+            onClick={() => setIsProductModalOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg flex items-center space-x-2 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-blue-500/20"
+          >
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">Nuevo Producto</span>
           </button>
@@ -264,7 +268,8 @@ const ProductFilters: React.FC = () => {
 
 // 📦 Products Display Component
 const ProductsDisplay: React.FC = () => {
-  const { inventory, viewMode } = useInventoryContext();
+  const { inventory, viewMode, openEditModal, openDeleteConfirm } =
+    useInventoryContext();
   const { products, isLoading } = inventory;
 
   const handleViewProduct = useCallback((product: ProductWithRelations) => {
@@ -272,15 +277,19 @@ const ProductsDisplay: React.FC = () => {
     // TODO: Open product modal
   }, []);
 
-  const handleEditProduct = useCallback((product: ProductWithRelations) => {
-    console.log("Edit product", product);
-    // TODO: Open edit modal
-  }, []);
+  const handleEditProduct = useCallback(
+    (product: ProductWithRelations) => {
+      openEditModal(product);
+    },
+    [openEditModal]
+  );
 
-  const handleDeleteProduct = useCallback((product: ProductWithRelations) => {
-    console.log("Delete product", product);
-    // TODO: Show delete confirmation
-  }, []);
+  const handleDeleteProduct = useCallback(
+    (product: ProductWithRelations) => {
+      openDeleteConfirm(product);
+    },
+    [openDeleteConfirm]
+  );
 
   if (isLoading) {
     return (
@@ -319,7 +328,10 @@ const ProductsDisplay: React.FC = () => {
           No hay productos que coincidan con tus criterios de búsqueda. Intenta
           ajustar los filtros o agregar productos nuevos.
         </p>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg flex items-center space-x-2 mx-auto transition-all duration-200 hover:scale-[1.02]">
+        <button
+          onClick={() => setIsProductModalOpen(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg flex items-center space-x-2 mx-auto transition-all duration-200 hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-blue-500/20"
+        >
           <Plus className="w-5 h-5" />
           <span>Agregar Primer Producto</span>
         </button>

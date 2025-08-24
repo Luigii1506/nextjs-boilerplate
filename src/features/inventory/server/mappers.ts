@@ -1,10 +1,10 @@
 /**
  * 📦 INVENTORY MAPPERS
  * ===================
- * 
+ *
  * Data transformation layer para Inventory Management
  * Clean Architecture: Infrastructure Layer (Data Mapping)
- * 
+ *
  * Created: 2025-01-17 - Inventory Management Module
  */
 
@@ -20,8 +20,64 @@ import type {
   ProductWithComputedProps,
 } from "../types";
 
+// 🏷️ Raw data interfaces for type safety
+interface RawProduct {
+  id: string;
+  sku: string;
+  name: string;
+  description?: string | null;
+  categoryId: string;
+  supplierId: string;
+  costPrice: number;
+  sellPrice: number;
+  stock: number;
+  minStock: number;
+  maxStock: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  category?: RawCategory;
+  supplier?: RawSupplier;
+  stockMovements?: RawStockMovement[];
+  [key: string]: unknown;
+}
+
+interface RawCategory {
+  id: string;
+  name: string;
+  description?: string | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  [key: string]: unknown;
+}
+
+interface RawSupplier {
+  id: string;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  [key: string]: unknown;
+}
+
+interface RawStockMovement {
+  id: string;
+  productId: string;
+  type: string;
+  quantity: number;
+  notes?: string | null;
+  createdAt: Date;
+  [key: string]: unknown;
+}
+
 // 📦 PRODUCT MAPPERS
-export function mapProductToExternal(rawProduct: any): ProductWithRelations {
+export function mapProductToExternal(
+  rawProduct: RawProduct
+): ProductWithRelations {
   return {
     id: rawProduct.id,
     sku: rawProduct.sku,
@@ -42,11 +98,16 @@ export function mapProductToExternal(rawProduct: any): ProductWithRelations {
     metadata: rawProduct.metadata || null,
     createdAt: new Date(rawProduct.createdAt),
     updatedAt: new Date(rawProduct.updatedAt),
-    
+
     // Relations
-    category: rawProduct.category ? mapCategoryToExternal(rawProduct.category) : null!,
-    supplier: rawProduct.supplier ? mapSupplierToExternal(rawProduct.supplier) : null,
-    stockMovements: rawProduct.stockMovements?.map(mapStockMovementToExternal) || [],
+    category: rawProduct.category
+      ? mapCategoryToExternal(rawProduct.category)
+      : null!,
+    supplier: rawProduct.supplier
+      ? mapSupplierToExternal(rawProduct.supplier)
+      : null,
+    stockMovements:
+      rawProduct.stockMovements?.map(mapStockMovementToExternal) || [],
     _count: {
       stockMovements: rawProduct._count?.stockMovements || 0,
     },
@@ -58,37 +119,40 @@ export function mapProductToComputedProps(
 ): ProductWithComputedProps {
   // 📊 Stock status calculation
   const stockStatus = calculateStockStatus(product.stock, product.minStock);
-  
+
   // 📊 Stock percentage
   const stockPercentage = product.maxStock
     ? (product.stock / product.maxStock) * 100
     : Math.min(100, (product.stock / (product.minStock * 4)) * 100);
-    
+
   // 💰 Financial calculations
   const totalValue = product.cost * product.stock;
   const totalRetailValue = product.price * product.stock;
-  
+
   // 🚨 Status flags
   const isLowStock = product.stock <= product.minStock;
-  const isCriticalStock = product.stock <= INVENTORY_DEFAULTS.CRITICAL_STOCK_THRESHOLD;
+  const isCriticalStock =
+    product.stock <= INVENTORY_DEFAULTS.CRITICAL_STOCK_THRESHOLD;
   const isOutOfStock = product.stock === 0;
-  
+
   // 💱 Currency formatting
   const formatter = new Intl.NumberFormat("es-MX", {
     style: "currency",
     currency: "MXN",
   });
-  
+
   const formattedPrice = formatter.format(product.price);
   const formattedCost = formatter.format(product.cost);
-  
+
   // 📈 Last movement
-  const lastMovement = product.stockMovements && product.stockMovements.length > 0
-    ? product.stockMovements.sort((a, b) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      )[0]
-    : undefined;
-  
+  const lastMovement =
+    product.stockMovements && product.stockMovements.length > 0
+      ? product.stockMovements.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )[0]
+      : undefined;
+
   return {
     ...product,
     stockStatus,
@@ -104,7 +168,9 @@ export function mapProductToComputedProps(
   };
 }
 
-export function mapProductToInternal(externalProduct: any): any {
+export function mapProductToInternal(
+  externalProduct: Partial<ProductWithRelations>
+): Partial<RawProduct> {
   return {
     sku: externalProduct.sku,
     name: externalProduct.name,
@@ -126,7 +192,9 @@ export function mapProductToInternal(externalProduct: any): any {
 }
 
 // 🏷️ CATEGORY MAPPERS
-export function mapCategoryToExternal(rawCategory: any): CategoryWithRelations {
+export function mapCategoryToExternal(
+  rawCategory: RawCategory
+): CategoryWithRelations {
   return {
     id: rawCategory.id,
     name: rawCategory.name,
@@ -138,9 +206,11 @@ export function mapCategoryToExternal(rawCategory: any): CategoryWithRelations {
     sortOrder: parseInt(rawCategory.sortOrder),
     createdAt: new Date(rawCategory.createdAt),
     updatedAt: new Date(rawCategory.updatedAt),
-    
+
     // Relations
-    parent: rawCategory.parent ? mapCategoryToExternal(rawCategory.parent) : null,
+    parent: rawCategory.parent
+      ? mapCategoryToExternal(rawCategory.parent)
+      : null,
     children: rawCategory.children?.map(mapCategoryToExternal) || [],
     products: rawCategory.products?.map(mapProductToExternal) || [],
     _count: {
@@ -150,19 +220,21 @@ export function mapCategoryToExternal(rawCategory: any): CategoryWithRelations {
   };
 }
 
-export function mapCategoryToTreeStructure(categories: CategoryWithRelations[]): CategoryWithRelations[] {
+export function mapCategoryToTreeStructure(
+  categories: CategoryWithRelations[]
+): CategoryWithRelations[] {
   const categoryMap = new Map<string, CategoryWithRelations>();
   const rootCategories: CategoryWithRelations[] = [];
-  
+
   // First pass: create map of all categories
-  categories.forEach(category => {
+  categories.forEach((category) => {
     categoryMap.set(category.id, { ...category, children: [] });
   });
-  
+
   // Second pass: build tree structure
-  categories.forEach(category => {
+  categories.forEach((category) => {
     const mappedCategory = categoryMap.get(category.id)!;
-    
+
     if (category.parentId) {
       const parent = categoryMap.get(category.parentId);
       if (parent) {
@@ -175,12 +247,14 @@ export function mapCategoryToTreeStructure(categories: CategoryWithRelations[]):
       rootCategories.push(mappedCategory);
     }
   });
-  
+
   return rootCategories;
 }
 
 // 🚛 SUPPLIER MAPPERS
-export function mapSupplierToExternal(rawSupplier: any): SupplierWithRelations {
+export function mapSupplierToExternal(
+  rawSupplier: RawSupplier
+): SupplierWithRelations {
   return {
     id: rawSupplier.id,
     name: rawSupplier.name,
@@ -201,7 +275,7 @@ export function mapSupplierToExternal(rawSupplier: any): SupplierWithRelations {
     country: rawSupplier.country,
     createdAt: new Date(rawSupplier.createdAt),
     updatedAt: new Date(rawSupplier.updatedAt),
-    
+
     // Relations
     products: rawSupplier.products?.map(mapProductToExternal) || [],
     _count: {
@@ -219,14 +293,17 @@ export function mapSupplierToSummary(supplier: SupplierWithRelations) {
     rating: supplier.rating,
     isActive: supplier.isActive,
     productCount: supplier._count.products,
-    location: [supplier.city, supplier.state, supplier.country]
-      .filter(Boolean)
-      .join(", ") || null,
+    location:
+      [supplier.city, supplier.state, supplier.country]
+        .filter(Boolean)
+        .join(", ") || null,
   };
 }
 
 // 📊 STOCK MOVEMENT MAPPERS
-export function mapStockMovementToExternal(rawMovement: any): StockMovement {
+export function mapStockMovementToExternal(
+  rawMovement: RawStockMovement
+): StockMovement {
   return {
     id: rawMovement.id,
     productId: rawMovement.productId,
@@ -241,12 +318,19 @@ export function mapStockMovementToExternal(rawMovement: any): StockMovement {
   };
 }
 
-export function mapStockMovementWithDetails(rawMovement: any) {
+export function mapStockMovementWithDetails(
+  rawMovement: RawStockMovement & {
+    product?: RawProduct;
+    user?: { id: string; name: string };
+  }
+) {
   const movement = mapStockMovementToExternal(rawMovement);
-  
+
   return {
     ...movement,
-    product: rawMovement.product ? mapProductToExternal(rawMovement.product) : null,
+    product: rawMovement.product
+      ? mapProductToExternal(rawMovement.product)
+      : null,
     user: rawMovement.user ? mapUserSummary(rawMovement.user) : null,
     formattedDate: new Intl.DateTimeFormat("es-MX", {
       day: "numeric",
@@ -260,7 +344,9 @@ export function mapStockMovementWithDetails(rawMovement: any) {
 }
 
 // 📊 ANALYTICS MAPPERS
-export function mapStatsToExternal(rawStats: any): InventoryStats {
+export function mapStatsToExternal(
+  rawStats: Record<string, unknown>
+): InventoryStats {
   return {
     totalProducts: parseInt(rawStats.totalProducts),
     activeProducts: parseInt(rawStats.activeProducts),
@@ -274,22 +360,31 @@ export function mapStatsToExternal(rawStats: any): InventoryStats {
   };
 }
 
-export function mapStatsWithTrends(rawStats: any, previousStats?: any): InventoryStats & {
-  trends: Record<string, { value: number; change: number; changePercent: number }>;
+export function mapStatsWithTrends(
+  rawStats: Record<string, unknown>,
+  previousStats?: Record<string, unknown>
+): InventoryStats & {
+  trends: Record<
+    string,
+    { value: number; change: number; changePercent: number }
+  >;
 } {
   const currentStats = mapStatsToExternal(rawStats);
-  
-  const trends: Record<string, { value: number; change: number; changePercent: number }> = {};
-  
+
+  const trends: Record<
+    string,
+    { value: number; change: number; changePercent: number }
+  > = {};
+
   if (previousStats) {
     const prev = mapStatsToExternal(previousStats);
-    
-    Object.keys(currentStats).forEach(key => {
+
+    Object.keys(currentStats).forEach((key) => {
       const current = (currentStats as any)[key] as number;
       const previous = (prev as any)[key] as number;
       const change = current - previous;
       const changePercent = previous > 0 ? (change / previous) * 100 : 0;
-      
+
       trends[key] = {
         value: current,
         change,
@@ -297,15 +392,27 @@ export function mapStatsWithTrends(rawStats: any, previousStats?: any): Inventor
       };
     });
   }
-  
+
   return {
     ...currentStats,
     trends,
   };
 }
 
-export function mapAlertsToExternal(rawAlerts: any[]): StockAlert[] {
-  return rawAlerts.map(rawAlert => ({
+export function mapAlertsToExternal(
+  rawAlerts: Array<{
+    id: string;
+    productId: string;
+    type: string;
+    severity: string;
+    message: string;
+    threshold?: number;
+    currentValue?: number;
+    createdAt: Date;
+    product?: RawProduct;
+  }>
+): StockAlert[] {
+  return rawAlerts.map((rawAlert) => ({
     id: rawAlert.id,
     productId: rawAlert.productId,
     productName: rawAlert.productName,
@@ -314,49 +421,61 @@ export function mapAlertsToExternal(rawAlerts: any[]): StockAlert[] {
     minStock: parseInt(rawAlert.minStock),
     status: rawAlert.status as StockStatus,
     category: rawAlert.category,
-    lastMovement: rawAlert.lastMovement ? new Date(rawAlert.lastMovement) : undefined,
+    lastMovement: rawAlert.lastMovement
+      ? new Date(rawAlert.lastMovement)
+      : undefined,
   }));
 }
 
 export function mapAlertsWithPriority(alerts: StockAlert[]) {
-  return alerts.map(alert => {
-    let priority = 1; // Low
-    let urgencyScore = 0;
-    
-    // Calculate urgency based on stock status
-    switch (alert.status) {
-      case "OUT_OF_STOCK":
-        priority = 3; // High
-        urgencyScore = 10;
-        break;
-      case "CRITICAL_STOCK":
-        priority = 3; // High
-        urgencyScore = 8;
-        break;
-      case "LOW_STOCK":
-        priority = 2; // Medium
-        urgencyScore = 5;
-        break;
-    }
-    
-    // Adjust based on time since last movement
-    if (alert.lastMovement) {
-      const daysSinceMovement = (Date.now() - alert.lastMovement.getTime()) / (1000 * 60 * 60 * 24);
-      if (daysSinceMovement > 7) urgencyScore += 2;
-      if (daysSinceMovement > 30) urgencyScore += 3;
-    }
-    
-    return {
-      ...alert,
-      priority,
-      urgencyScore,
-      priorityLabel: priority === 3 ? "Alta" : priority === 2 ? "Media" : "Baja",
-    };
-  }).sort((a, b) => b.urgencyScore - a.urgencyScore);
+  return alerts
+    .map((alert) => {
+      let priority = 1; // Low
+      let urgencyScore = 0;
+
+      // Calculate urgency based on stock status
+      switch (alert.status) {
+        case "OUT_OF_STOCK":
+          priority = 3; // High
+          urgencyScore = 10;
+          break;
+        case "CRITICAL_STOCK":
+          priority = 3; // High
+          urgencyScore = 8;
+          break;
+        case "LOW_STOCK":
+          priority = 2; // Medium
+          urgencyScore = 5;
+          break;
+      }
+
+      // Adjust based on time since last movement
+      if (alert.lastMovement) {
+        const daysSinceMovement =
+          (Date.now() - alert.lastMovement.getTime()) / (1000 * 60 * 60 * 24);
+        if (daysSinceMovement > 7) urgencyScore += 2;
+        if (daysSinceMovement > 30) urgencyScore += 3;
+      }
+
+      return {
+        ...alert,
+        priority,
+        urgencyScore,
+        priorityLabel:
+          priority === 3 ? "Alta" : priority === 2 ? "Media" : "Baja",
+      };
+    })
+    .sort((a, b) => b.urgencyScore - a.urgencyScore);
 }
 
 // 🔧 UTILITY MAPPERS
-export function mapUserSummary(rawUser: any) {
+export function mapUserSummary(rawUser: {
+  id: string;
+  name?: string;
+  email?: string;
+  role?: string;
+  [key: string]: unknown;
+}) {
   return {
     id: rawUser.id,
     name: rawUser.name,
@@ -382,34 +501,44 @@ export function mapProductSummary(product: ProductWithRelations) {
 // 📊 CALCULATION HELPERS
 function calculateStockStatus(stock: number, minStock: number): StockStatus {
   if (stock === 0) return "OUT_OF_STOCK";
-  if (stock <= INVENTORY_DEFAULTS.CRITICAL_STOCK_THRESHOLD) return "CRITICAL_STOCK";
+  if (stock <= INVENTORY_DEFAULTS.CRITICAL_STOCK_THRESHOLD)
+    return "CRITICAL_STOCK";
   if (stock <= minStock) return "LOW_STOCK";
   return "IN_STOCK";
 }
 
 function calculateMovementImpact(movement: StockMovement) {
-  const percentageChange = movement.previousStock > 0 
-    ? ((movement.newStock - movement.previousStock) / movement.previousStock) * 100
-    : 0;
-    
+  const percentageChange =
+    movement.previousStock > 0
+      ? ((movement.newStock - movement.previousStock) /
+          movement.previousStock) *
+        100
+      : 0;
+
   return {
     stockChange: movement.newStock - movement.previousStock,
     percentageChange: Math.round(percentageChange * 100) / 100,
-    impactLevel: Math.abs(percentageChange) > 50 ? "high" : 
-                 Math.abs(percentageChange) > 20 ? "medium" : "low",
+    impactLevel:
+      Math.abs(percentageChange) > 50
+        ? "high"
+        : Math.abs(percentageChange) > 20
+        ? "medium"
+        : "low",
   };
 }
 
 // 🎨 PRESENTATION MAPPERS (for UI)
 export function mapProductForCard(product: ProductWithRelations) {
   const computed = mapProductToComputedProps(product);
-  
+
   return {
     ...computed,
     displayName: product.name,
     displaySku: product.sku,
     displayPrice: computed.formattedPrice,
-    displayStock: `${product.stock} ${product.unit === "piece" ? "pzs" : product.unit}`,
+    displayStock: `${product.stock} ${
+      product.unit === "piece" ? "pzs" : product.unit
+    }`,
     statusBadge: {
       label: getStockStatusLabel(computed.stockStatus),
       color: getStockStatusColor(computed.stockStatus),
@@ -420,11 +549,13 @@ export function mapProductForCard(product: ProductWithRelations) {
       color: product.category.color,
       icon: product.category.icon,
     },
-    supplierDisplay: product.supplier ? {
-      name: product.supplier.name,
-      rating: product.supplier.rating,
-      isReliable: (product.supplier.rating || 0) >= 4.0,
-    } : null,
+    supplierDisplay: product.supplier
+      ? {
+          name: product.supplier.name,
+          rating: product.supplier.rating,
+          isReliable: (product.supplier.rating || 0) >= 4.0,
+        }
+      : null,
   };
 }
 
@@ -483,7 +614,7 @@ export function mapProductForExport(product: ProductWithRelations) {
   };
 }
 
-export function mapImportDataToProduct(importRow: any) {
+export function mapImportDataToProduct(importRow: Record<string, unknown>) {
   return {
     sku: importRow.SKU || importRow.sku,
     name: importRow.Nombre || importRow.name,
@@ -492,8 +623,10 @@ export function mapImportDataToProduct(importRow: any) {
     cost: parseFloat(importRow.Costo || importRow.cost),
     stock: parseInt(importRow.Stock || importRow.stock) || 0,
     minStock: parseInt(importRow["Stock Mínimo"] || importRow.minStock) || 0,
-    maxStock: importRow["Stock Máximo"] || importRow.maxStock ? 
-              parseInt(importRow["Stock Máximo"] || importRow.maxStock) : null,
+    maxStock:
+      importRow["Stock Máximo"] || importRow.maxStock
+        ? parseInt(importRow["Stock Máximo"] || importRow.maxStock)
+        : null,
     unit: importRow.Unidad || importRow.unit || "piece",
     barcode: importRow["Código de Barras"] || importRow.barcode || null,
     tags: (importRow.Tags || importRow.tags || "")

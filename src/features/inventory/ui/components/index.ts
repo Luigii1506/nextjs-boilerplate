@@ -5,6 +5,7 @@
  * Exportaciones centralizadas para todos los componentes UI del módulo inventory
  *
  * Created: 2025-01-17 - Inventory Management Module
+ * Updated: 2025-01-18 - Added tabs exports
  */
 
 // 🎯 Shared components (reusable across the module)
@@ -16,6 +17,14 @@ export {
   TabLoadingSkeleton,
   TabBadge,
 } from "./shared";
+
+// 🔍 Tab Components (SPA navigation)
+export { default as OverviewTab } from "./tabs/OverviewTab";
+export { default as ProductsTab } from "./tabs/ProductsTab";
+
+// 📝 Modals and Forms
+export { default as ProductModal } from "./ProductModal";
+export { DeleteProductModal } from "./DeleteProductModal";
 
 // 📊 Main components (TODO: Create these components)
 // export { default as ProductsTable } from "./ProductsTable";

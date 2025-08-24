@@ -30,10 +30,10 @@ import {
   InventoryProvider,
   useInventoryContext,
   INVENTORY_TABS,
-} from "../context";
-import { TabBadge } from "../components";
-import { OverviewTab, ProductsTab } from "../tabs";
-import { useTabScrollHeader } from "../hooks";
+} from "../../context";
+import { TabBadge, ProductModal, DeleteProductModal } from "../components";
+import { OverviewTab, ProductsTab } from "../components/tabs";
+import { useTabScrollHeader } from "../../hooks";
 
 // 🎨 Icon mapping for tabs
 const ICON_MAP = {
@@ -302,6 +302,10 @@ const InventorySPAContent: React.FC = () => {
           <TabContent />
         </div>
       </main>
+
+      {/* 📝 Modal Components */}
+      <ProductModal />
+      <DeleteProductModal />
     </div>
   );
 };
