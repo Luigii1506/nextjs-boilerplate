@@ -225,7 +225,7 @@ export function useAuditDashboard({
         event_label: event.action,
         custom_parameters: {
           event_id: event.id,
-          resource_type: event.resourceType,
+          resource_type: event.resource,
           user_id: event.userId,
         },
       });
