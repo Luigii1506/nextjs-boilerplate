@@ -106,9 +106,7 @@ export function validatePassword(password: string): boolean {
   return password.length >= 8;
 }
 
-export function validateUserName(name: string): boolean {
-  return name.length >= 2 && name.length <= 50;
-}
+// validateUserName moved to server/validators.ts to avoid duplicate export
 
 // 🎨 Status utilities
 export function getUserStatusColor(banned: boolean) {

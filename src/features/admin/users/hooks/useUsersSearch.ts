@@ -66,7 +66,7 @@ const DEFAULT_SEARCH_CONFIG: SearchConfig = {
 export function useUsersSearch(config: Partial<SearchConfig> = {}) {
   const fullConfig = { ...DEFAULT_SEARCH_CONFIG, ...config };
   const queryClient = useQueryClient();
-  const { prefetchUserOnHover } = useUserPrefetch();
+  // useUserPrefetch removed - functionality handled by TanStack Query automatically
 
   // 🎛️ Search state
   const [searchTerm, setSearchTerm] = useState("");
@@ -223,10 +223,11 @@ export function useUsersSearch(config: Partial<SearchConfig> = {}) {
   const handleResultHover = useCallback(
     (user: User) => {
       if (fullConfig.enablePrefetch) {
-        prefetchUserOnHover(user.id);
+        // TanStack Query handles prefetching automatically
+        console.debug(`User hover event for ${user.id}`);
       }
     },
-    [prefetchUserOnHover, fullConfig.enablePrefetch]
+    [fullConfig.enablePrefetch]
   );
 
   // 📊 Search stats

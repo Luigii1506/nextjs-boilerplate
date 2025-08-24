@@ -10,7 +10,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { getAuditStatsAction } from "../server/actions";
-import type { UseAuditStatsReturn, AuditStats } from "../types";
+import type { UseAuditStatsReturn, AuditStats, AuditAction, AuditResource, AuditSeverity } from "../types";
 
 export function useAuditStats(
   dateFrom?: Date,
@@ -297,6 +297,21 @@ export function useAuditStats(
     getActionCount: (action: string) => number;
     getResourceCount: (resource: string) => number;
     getSeverityCount: (severity: string) => number;
-    getUserActivity: (userId: string) => any;
+    getUserActivity: (userId: string) => {
+      totalEvents: number;
+      eventsByAction: Record<string, number>;
+      recentEvents: Array<{
+        id: string;
+        action: AuditAction;
+        resource: AuditResource;
+        resourceId: string;
+        userId: string;
+        userEmail: string;
+        userRole: string;
+        severity: AuditSeverity;
+        createdAt: Date;
+        updatedAt: Date;
+      }>;
+    };
   };
 }

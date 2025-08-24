@@ -29,7 +29,7 @@ export default function QueryProvider({ children }: QueryProviderProps) {
             // 🚀 Performance optimizations
             staleTime: 30 * 1000, // 30s fresh data
             gcTime: 5 * 60 * 1000, // 5min garbage collection
-            retry: (failureCount, error: any) => {
+            retry: (failureCount, error: { status?: number }) => {
               // 🎯 Smart retry logic
               if (error?.status === 401 || error?.status === 403) return false;
               return failureCount < 3;
@@ -51,7 +51,7 @@ export default function QueryProvider({ children }: QueryProviderProps) {
           mutations: {
             retry: 1,
             networkMode: "online",
-            onError: (error: any) => {
+            onError: (error: unknown) => {
               // 🚨 Global mutation error handling
               console.error("Mutation failed:", error);
             },

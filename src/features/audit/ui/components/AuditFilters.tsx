@@ -49,7 +49,7 @@ export function AuditFilters({
 }: AuditFiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const updateFilter = (key: keyof AuditFiltersType, value: any) => {
+  const updateFilter = (key: keyof AuditFiltersType, value: unknown) => {
     onFiltersChange({
       ...filters,
       [key]: value,
@@ -132,7 +132,7 @@ export function AuditFilters({
               // Calculate dates dynamically
               const now = new Date();
               let presetDateFrom: Date | undefined;
-              let presetDateTo: Date | undefined = now;
+              const presetDateTo: Date | undefined = now;
 
               if ("hours" in preset) {
                 presetDateFrom = new Date(

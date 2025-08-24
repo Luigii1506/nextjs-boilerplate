@@ -9,8 +9,15 @@
 
 import React from "react";
 import { cn } from "@/shared/utils";
-import { UI_CONFIG } from "../../../constants";
 import { getUserInitials, getRoleColor } from "../../../utils";
+
+// Local avatar size configuration
+const AVATAR_SIZES = {
+  SM: "h-6 w-6 text-xs",
+  MD: "h-8 w-8 text-sm", 
+  LG: "h-10 w-10 text-base",
+  XL: "h-12 w-12 text-lg",
+} as const;
 
 interface UserAvatarProps {
   user: {
@@ -48,19 +55,15 @@ export const UserAvatar = React.memo<UserAvatarProps>(
     onClick,
     priority = false,
   }) => {
-    const sizeClasses =
-      UI_CONFIG.SIZES.AVATAR[
-        size.toUpperCase() as keyof typeof UI_CONFIG.SIZES.AVATAR
-      ];
+    const sizeClasses = AVATAR_SIZES[size.toUpperCase() as keyof typeof AVATAR_SIZES];
     const roleColors = getRoleColor(user.role);
     const initials = getUserInitials(user.name);
 
     // Base classes para el avatar
     const avatarClasses = cn(
       sizeClasses,
-      "relative flex items-center justify-center rounded-full font-medium text-white overflow-hidden",
-      roleColors.bg,
-      roleColors.text,
+      "relative flex items-center justify-center rounded-full font-medium overflow-hidden",
+      roleColors, // roleColors ya contiene tanto el color de texto como el background
       onClick && "cursor-pointer hover:opacity-80 transition-opacity",
       className
     );

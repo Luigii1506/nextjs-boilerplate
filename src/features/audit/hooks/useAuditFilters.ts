@@ -9,7 +9,7 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import type { UseAuditFiltersReturn, AuditFilters } from "../types";
+import type { UseAuditFiltersReturn, AuditFilters, AuditAction, AuditResource, AuditSeverity } from "../types";
 import { DEFAULT_AUDIT_FILTERS } from "../constants";
 
 export function useAuditFilters(
@@ -186,7 +186,7 @@ export function useAuditFilters(
     (resource: string, resourceId?: string) => {
       setFiltersState((prev) => ({
         ...prev,
-        resource: resource as any,
+        resource: resource as AuditResource,
         resourceId,
       }));
     },
@@ -204,7 +204,7 @@ export function useAuditFilters(
   // 🎯 Filter by Action
   const filterByAction = useCallback(
     (action: string) => {
-      updateFilter("action", action as any);
+      updateFilter("action", action as AuditAction);
     },
     [updateFilter]
   );
@@ -212,7 +212,7 @@ export function useAuditFilters(
   // 🎯 Filter by Severity
   const filterBySeverity = useCallback(
     (severity: string) => {
-      updateFilter("severity", severity as any);
+      updateFilter("severity", severity as AuditSeverity);
     },
     [updateFilter]
   );
@@ -270,8 +270,8 @@ export function useAuditFilters(
           importedFilters[key] = new Date(value);
         } else if (key === "page" || key === "limit") {
           importedFilters[key] = parseInt(value, 10);
-        } else {
-          (importedFilters as any)[key] = value;
+        } else if (key in importedFilters) {
+          (importedFilters as Record<string, unknown>)[key] = value;
         }
       });
 

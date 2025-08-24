@@ -27,7 +27,7 @@ const USERS_QUERY_KEYS = {
 // 🎭 Form validation interface
 interface FormValidation {
   isValid: boolean;
-  errors: Partial<CreateUserForm>;
+  errors: Partial<Record<keyof CreateUserForm, string>>;
 }
 
 /**
@@ -47,12 +47,12 @@ export function useUserModal() {
     password: "",
     role: "user",
   });
-  const [errors, setErrors] = useState<Partial<CreateUserForm>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof CreateUserForm, string>>>({});
 
   // ✅ Form validation
   const validateForm = useCallback(
     (data: CreateUserForm, isEdit = false): FormValidation => {
-      const newErrors: Partial<CreateUserForm> = {};
+      const newErrors: Partial<Record<keyof CreateUserForm, string>> = {};
 
       // Name validation
       if (!data.name.trim()) {

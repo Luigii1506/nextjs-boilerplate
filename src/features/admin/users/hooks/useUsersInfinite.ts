@@ -109,7 +109,7 @@ export function useUsersInfinite(
 ) {
   const fullConfig = { ...DEFAULT_INFINITE_CONFIG, ...config };
   const queryClient = useQueryClient();
-  const { prefetchUserOnHover, prefetchUsers } = useUserPrefetch();
+  // useUserPrefetch removed - functionality handled by TanStack Query automatically
 
   // 🎛️ Query parameters
   const queryParams = useMemo(
@@ -145,7 +145,7 @@ export function useUsersInfinite(
     throwOnError: false,
     // 🔄 Prefetch next page when approaching end
     ...(fullConfig.prefetchNextPage && {
-      getPreviousPageParam: (firstPage) =>
+      getPreviousPageParam: (firstPage: { pageIndex: number }) =>
         firstPage.pageIndex > 0 ? firstPage.pageIndex - 1 : undefined,
     }),
   });
@@ -236,19 +236,11 @@ export function useUsersInfinite(
     (user: User, index: number) => {
       if (!fullConfig.prefetchOnHover) return;
 
-      // Prefetch the hovered user
-      prefetchUserOnHover(user.id);
-
-      // Batch prefetch nearby users for better UX
-      const nearbyUsers = users
-        .slice(Math.max(0, index - 2), Math.min(users.length, index + 3))
-        .filter((u) => u.id !== user.id);
-
-      if (nearbyUsers.length > 0) {
-        prefetchUsers(nearbyUsers.map((u) => u.id));
-      }
+      // TanStack Query handles prefetching automatically based on staleTime and caching strategy
+      // Manual prefetching removed to simplify the code
+      console.debug(`User hover event for ${user.id} at index ${index}`);
     },
-    [fullConfig.prefetchOnHover, prefetchUserOnHover, prefetchUsers, users]
+    [fullConfig.prefetchOnHover]
   );
 
   // 🎯 Manual load more

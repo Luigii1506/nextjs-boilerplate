@@ -46,7 +46,6 @@ interface UseAuditDashboardReturn {
   filters: AuditFilters;
   updateFilter: ReturnType<typeof useAuditFilters>["updateFilter"];
   resetFilters: ReturnType<typeof useAuditFilters>["resetFilters"];
-  applyPreset: ReturnType<typeof useAuditFilters>["applyPreset"];
   activeFiltersCount: number;
   hasActiveFilters: boolean;
 
@@ -96,9 +95,8 @@ export function useAuditDashboard({
     filters,
     updateFilter,
     resetFilters,
-    applyPreset,
     activeFiltersCount,
-    hasActiveFilters,
+    isFiltered,
   } = useAuditFilters(initialFilters);
 
   // ⚡ TanStack Query optimized audit data
@@ -154,7 +152,7 @@ export function useAuditDashboard({
       updateFilter("dateTo", newFilters.dateTo);
       updateFilter("search", newFilters.search);
       updateFilter("page", newFilters.page);
-      updateFilter("pageSize", newFilters.pageSize);
+      updateFilter("limit", newFilters.limit);
 
       if (activeTab === "events") {
         loadEvents(newFilters);
@@ -186,6 +184,10 @@ export function useAuditDashboard({
         format,
         includeMetadata: true,
         includeChanges: true,
+        dateRange: {
+          from: filters.dateFrom || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+          to: filters.dateTo || new Date()
+        },
         filename: `audit-events-${
           new Date().toISOString().split("T")[0]
         }.${format}`,
@@ -282,9 +284,8 @@ export function useAuditDashboard({
     filters,
     updateFilter,
     resetFilters,
-    applyPreset,
     activeFiltersCount,
-    hasActiveFilters,
+    hasActiveFilters: isFiltered,
 
     // Loading states
     isEventsLoading,

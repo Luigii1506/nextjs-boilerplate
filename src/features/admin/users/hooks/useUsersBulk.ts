@@ -367,7 +367,7 @@ export function useUsersBulk() {
         const currentUsers =
           queryClient.getQueryData<User[]>(USERS_QUERY_KEYS.lists()) || [];
         const correctedUsers = currentUsers.map((user) => {
-          const failedError = result.errors.find((e) => e.userId === user.id);
+          const failedError = result.progress.errors.find((e) => e.userId === user.id);
           if (failedError) {
             // Revert this user to original state
             return failedError.user;

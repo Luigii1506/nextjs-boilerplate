@@ -108,7 +108,11 @@ export const UserHookConfigs = {
 } as const;
 
 // 🛠️ Hook utilities and metadata
-export const UserHookUtils = {
+export const UserHookUtils: {
+  HOOKS_REGISTRY: Record<string, string[]>;
+  PERFORMANCE_PROFILES: Record<string, { memory: string; cpu: string; network: string }>;
+  getPerformanceProfile: (hookName: string) => { memory: string; cpu: string; network: string };
+} = {
   // 🎯 Available hooks registry
   HOOKS_REGISTRY: {
     core: ["useUsersQuery", "useUserModal"],

@@ -12,7 +12,7 @@ import { Badge } from "@/shared/ui/components/Badge";
 import { cn } from "@/shared/utils";
 import { formatActionLabel, formatResourceLabel } from "../../utils";
 import { AUDIT_ACTION_COLORS, AUDIT_SEVERITY_COLORS } from "../../constants";
-import type { AuditStats as AuditStatsType } from "../../types";
+import type { AuditStats as AuditStatsType, AuditAction } from "../../types";
 import {
   Activity,
   Users,
@@ -120,7 +120,7 @@ export function AuditStats({ stats, className }: AuditStatsProps) {
                         variant="outline"
                         className={`border-${color}-200 dark:border-${color}-700 text-${color}-700 dark:text-${color}-300 text-xs bg-${color}-50 dark:bg-${color}-900/20`}
                       >
-                        {formatActionLabel(action as any)}
+                        {formatActionLabel(action as AuditAction)}
                       </Badge>
                       <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                         <div

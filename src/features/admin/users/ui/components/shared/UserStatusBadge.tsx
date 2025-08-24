@@ -64,17 +64,16 @@ export const UserStatusBadge = React.memo<UserStatusBadgeProps>(
     const getVariantClasses = () => {
       switch (variant) {
         case "solid":
-          return cn(statusColors.bg, statusColors.text);
+          return statusColors; // statusColors ya contiene las clases completas
         case "outline":
           return cn(
-            "bg-transparent border",
-            statusColors.border,
-            statusColors.text
+            "bg-transparent border border-current",
+            statusColors.replace("bg-", "border-").replace("-50", "-200")
           );
         case "subtle":
-          return cn(statusColors.bg.replace("-100", "-50"), statusColors.text);
+          return statusColors.replace("-50", "-100");
         default:
-          return cn(statusColors.bg, statusColors.text);
+          return statusColors;
       }
     };
 

@@ -38,6 +38,7 @@ export const FEATURE_FLAGS = {
   systemLogs: process.env.FEATURE_SYSTEM_LOGS === "true",
   dataExport: process.env.FEATURE_DATA_EXPORT === "true",
   auditTrail: process.env.FEATURE_AUDIT_TRAIL === "true",
+  settings: process.env.FEATURE_SETTINGS === "true",
 } as const;
 
 // 🎨 Categories for UI organization
@@ -81,7 +82,13 @@ export const FEATURE_CATEGORIES = {
     description: "Administrative functionality",
     color: "purple",
     icon: "Settings",
-    flags: ["advancedUserManagement", "systemLogs", "dataExport", "auditTrail"],
+    flags: [
+      "advancedUserManagement",
+      "systemLogs",
+      "dataExport",
+      "auditTrail",
+      "settings",
+    ],
   },
   ui: {
     name: "UI Features",

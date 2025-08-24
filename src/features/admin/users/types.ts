@@ -2,6 +2,8 @@
 // ===============
 // Interfaces y tipos para la gestión de usuarios - React 19 + Hexagonal Architecture
 
+import type { UserRole, UserStatus } from "./constants";
+
 // 🎯 Core User Interface
 export interface User {
   id: string;
@@ -202,8 +204,8 @@ export interface UserDateRangeQuery {
 }
 
 // 🏷️ Common Enums as Types
-export type UserRole = "user" | "admin" | "super_admin";
-export type UserStatus = "active" | "banned";
+// UserRole moved to constants.ts to avoid duplicate export
+// UserStatus moved to constants.ts to avoid duplicate export
 export type SearchField = "email" | "name";
 export type UserAction =
   | "create"

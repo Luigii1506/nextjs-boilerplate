@@ -9,7 +9,7 @@
 
 import React from "react";
 import { cn } from "@/shared/utils";
-import { USERS_ROLES } from "../../../constants";
+import { USER_ROLES } from "../../../constants";
 import { getRoleLabel, getRoleColor } from "../../../utils";
 
 interface UserRoleBadgeProps {
@@ -24,9 +24,9 @@ interface UserRoleBadgeProps {
 
 // 🎨 Role icons
 const roleIcons = {
-  [USERS_ROLES.USER]: "👤",
-  [USERS_ROLES.ADMIN]: "🛡️",
-  [USERS_ROLES.SUPER_ADMIN]: "👑",
+  [USER_ROLES.USER]: "👤",
+  [USER_ROLES.ADMIN]: "🛡️",
+  [USER_ROLES.SUPER_ADMIN]: "👑",
 } as const;
 
 /**
@@ -65,17 +65,16 @@ export const UserRoleBadge = React.memo<UserRoleBadgeProps>(
     const getVariantClasses = () => {
       switch (variant) {
         case "solid":
-          return cn(roleColors.bg, roleColors.text);
+          return roleColors; // roleColors ya contiene las clases completas
         case "outline":
           return cn(
-            "bg-transparent border",
-            roleColors.border,
-            roleColors.text
+            "bg-transparent border border-current",
+            roleColors.replace("bg-", "border-").replace("-50", "-200")
           );
         case "subtle":
-          return cn(roleColors.bg.replace("-100", "-50"), roleColors.text);
+          return roleColors.replace("-50", "-100");
         default:
-          return cn(roleColors.bg, roleColors.text);
+          return roleColors;
       }
     };
 
