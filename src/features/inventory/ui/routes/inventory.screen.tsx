@@ -47,7 +47,8 @@ const ICON_MAP = {
 
 // 🎯 Enhanced Tab Navigation with Smart Scroll
 const TabNavigation: React.FC = () => {
-  const { activeTab, setActiveTab, inventory, isTabChanging } = useInventoryContext();
+  const { activeTab, setActiveTab, inventory, isTabChanging } =
+    useInventoryContext();
   const { alerts, stats } = inventory;
 
   // 🚀 Smart scroll header hook
