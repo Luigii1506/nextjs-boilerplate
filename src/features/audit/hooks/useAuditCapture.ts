@@ -11,42 +11,147 @@
 import { useState, useCallback } from "react";
 import { createAuditEventAction } from "../server/actions";
 import type {
-  UseAuditCaptureReturn,
   CreateAuditEventData,
   AuditAction,
   AuditResource,
-  AuditSeverity,
   AuditChange,
+  AuditActionResult,
+  AuditEvent,
 } from "../types";
 
-export function useAuditCapture(): UseAuditCaptureReturn {
+// Tipo específico para metadata de auditoría
+type AuditMetadata = Record<string, unknown>;
+
+// Resultado de las operaciones de captura
+interface CaptureResult {
+  event: AuditEvent;
+  success: boolean;
+}
+
+// Resultado de operaciones batch
+interface BatchCaptureResult {
+  success: boolean;
+  data?: CaptureResult;
+  error?: string;
+}
+
+// Interfaz completa con todos los métodos
+interface ExtendedUseAuditCaptureReturn {
+  // Core methods
+  captureEvent: (data: CreateAuditEventData) => Promise<AuditEvent>;
+  captureUserAction: (
+    action: AuditAction,
+    resource: AuditResource,
+    resourceId: string,
+    description: string,
+    changes?: Omit<AuditChange, "type">[]
+  ) => Promise<AuditEvent>;
+  isCapturing: boolean;
+  error: string | null;
+  // Quick capture methods
+  captureCreate: (
+    resource: AuditResource,
+    resourceId: string,
+    resourceName: string,
+    metadata?: AuditMetadata
+  ) => Promise<AuditEvent>;
+  captureUpdate: (
+    resource: AuditResource,
+    resourceId: string,
+    resourceName: string,
+    changes: Omit<AuditChange, "type">[],
+    metadata?: AuditMetadata
+  ) => Promise<AuditEvent>;
+  captureDelete: (
+    resource: AuditResource,
+    resourceId: string,
+    resourceName: string,
+    metadata?: AuditMetadata
+  ) => Promise<AuditEvent>;
+  captureView: (
+    resource: AuditResource,
+    resourceId: string,
+    resourceName: string,
+    metadata?: AuditMetadata
+  ) => Promise<AuditEvent>;
+  captureLogin: (
+    sessionId?: string,
+    metadata?: AuditMetadata
+  ) => Promise<AuditEvent>;
+  captureLogout: (
+    sessionId?: string,
+    metadata?: AuditMetadata
+  ) => Promise<AuditEvent>;
+  captureExport: (
+    resource: AuditResource,
+    format: string,
+    count: number,
+    metadata?: AuditMetadata
+  ) => Promise<AuditEvent>;
+  captureImport: (
+    resource: AuditResource,
+    format: string,
+    count: number,
+    metadata?: AuditMetadata
+  ) => Promise<AuditEvent>;
+  captureBulkAction: (
+    action: "bulk_update" | "bulk_delete",
+    resource: AuditResource,
+    resourceIds: string[],
+    description?: string,
+    metadata?: AuditMetadata
+  ) => Promise<AuditEvent>;
+  captureToggle: (
+    resource: AuditResource,
+    resourceId: string,
+    resourceName: string,
+    enabled: boolean,
+    metadata?: AuditMetadata
+  ) => Promise<AuditEvent>;
+  // Utilities
+  clearError: () => void;
+  captureBatch: (
+    events: CreateAuditEventData[]
+  ) => Promise<BatchCaptureResult[]>;
+  captureWithRetry: (
+    data: CreateAuditEventData,
+    maxRetries?: number,
+    delay?: number
+  ) => Promise<AuditEvent>;
+}
+
+export function useAuditCapture(): ExtendedUseAuditCaptureReturn {
   const [isCapturing, setIsCapturing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // 📝 Capture Event
-  const captureEvent = useCallback(async (data: CreateAuditEventData) => {
-    try {
-      setIsCapturing(true);
-      setError(null);
+  const captureEvent = useCallback(
+    async (data: CreateAuditEventData): Promise<AuditEvent> => {
+      try {
+        setIsCapturing(true);
+        setError(null);
 
-      const result = await createAuditEventAction(data);
+        const result: AuditActionResult<AuditEvent> =
+          await createAuditEventAction(data);
 
-      if (!result.success) {
-        setError(result.error || "Error al capturar evento");
-        throw new Error(result.error || "Error al capturar evento");
+        if (!result.success || !result.data) {
+          setError(result.error || "Error al capturar evento");
+          throw new Error(result.error || "Error al capturar evento");
+        }
+
+        return result.data;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Error desconocido";
+        setError(errorMessage);
+        console.error("[useAuditCapture] Capture error:", err);
+        throw err;
+      } finally {
+        setIsCapturing(false);
       }
-
-      return result.data;
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Error desconocido";
-      setError(errorMessage);
-      console.error("[useAuditCapture] Capture error:", err);
-      throw err;
-    } finally {
-      setIsCapturing(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   // 🎯 Capture User Action (Simplified)
   const captureUserAction = useCallback(
@@ -56,7 +161,7 @@ export function useAuditCapture(): UseAuditCaptureReturn {
       resourceId: string,
       description: string,
       changes?: Omit<AuditChange, "type">[]
-    ) => {
+    ): Promise<AuditEvent> => {
       const data: CreateAuditEventData = {
         action,
         resource,
@@ -77,8 +182,8 @@ export function useAuditCapture(): UseAuditCaptureReturn {
       resource: AuditResource,
       resourceId: string,
       resourceName: string,
-      metadata?: Record<string, any>
-    ) => {
+      metadata?: AuditMetadata
+    ): Promise<AuditEvent> => {
       return captureEvent({
         action: "create",
         resource,
@@ -98,8 +203,8 @@ export function useAuditCapture(): UseAuditCaptureReturn {
       resourceId: string,
       resourceName: string,
       changes: Omit<AuditChange, "type">[],
-      metadata?: Record<string, any>
-    ) => {
+      metadata?: AuditMetadata
+    ): Promise<AuditEvent> => {
       return captureEvent({
         action: "update",
         resource,
@@ -119,8 +224,8 @@ export function useAuditCapture(): UseAuditCaptureReturn {
       resource: AuditResource,
       resourceId: string,
       resourceName: string,
-      metadata?: Record<string, any>
-    ) => {
+      metadata?: AuditMetadata
+    ): Promise<AuditEvent> => {
       return captureEvent({
         action: "delete",
         resource,
@@ -139,8 +244,8 @@ export function useAuditCapture(): UseAuditCaptureReturn {
       resource: AuditResource,
       resourceId: string,
       resourceName: string,
-      metadata?: Record<string, any>
-    ) => {
+      metadata?: AuditMetadata
+    ): Promise<AuditEvent> => {
       return captureEvent({
         action: "view",
         resource,
@@ -155,7 +260,10 @@ export function useAuditCapture(): UseAuditCaptureReturn {
   );
 
   const captureLogin = useCallback(
-    async (sessionId?: string, metadata?: Record<string, any>) => {
+    async (
+      sessionId?: string,
+      metadata?: AuditMetadata
+    ): Promise<AuditEvent> => {
       return captureEvent({
         action: "login",
         resource: "session",
@@ -170,7 +278,10 @@ export function useAuditCapture(): UseAuditCaptureReturn {
   );
 
   const captureLogout = useCallback(
-    async (sessionId?: string, metadata?: Record<string, any>) => {
+    async (
+      sessionId?: string,
+      metadata?: AuditMetadata
+    ): Promise<AuditEvent> => {
       return captureEvent({
         action: "logout",
         resource: "session",
@@ -189,8 +300,8 @@ export function useAuditCapture(): UseAuditCaptureReturn {
       resource: AuditResource,
       format: string,
       count: number,
-      metadata?: Record<string, any>
-    ) => {
+      metadata?: AuditMetadata
+    ): Promise<AuditEvent> => {
       return captureEvent({
         action: "export",
         resource,
@@ -213,8 +324,8 @@ export function useAuditCapture(): UseAuditCaptureReturn {
       resource: AuditResource,
       format: string,
       count: number,
-      metadata?: Record<string, any>
-    ) => {
+      metadata?: AuditMetadata
+    ): Promise<AuditEvent> => {
       return captureEvent({
         action: "import",
         resource,
@@ -238,8 +349,8 @@ export function useAuditCapture(): UseAuditCaptureReturn {
       resource: AuditResource,
       resourceIds: string[],
       description?: string,
-      metadata?: Record<string, any>
-    ) => {
+      metadata?: AuditMetadata
+    ): Promise<AuditEvent> => {
       return captureEvent({
         action,
         resource,
@@ -264,8 +375,8 @@ export function useAuditCapture(): UseAuditCaptureReturn {
       resourceId: string,
       resourceName: string,
       enabled: boolean,
-      metadata?: Record<string, any>
-    ) => {
+      metadata?: AuditMetadata
+    ): Promise<AuditEvent> => {
       return captureEvent({
         action: "toggle",
         resource,
@@ -291,13 +402,16 @@ export function useAuditCapture(): UseAuditCaptureReturn {
 
   // 🎯 Batch Capture (for multiple events)
   const captureBatch = useCallback(
-    async (events: CreateAuditEventData[]) => {
-      const results = [];
+    async (events: CreateAuditEventData[]): Promise<BatchCaptureResult[]> => {
+      const results: BatchCaptureResult[] = [];
 
       for (const eventData of events) {
         try {
           const result = await captureEvent(eventData);
-          results.push({ success: true, data: result });
+          results.push({
+            success: true,
+            data: { event: result, success: true },
+          });
         } catch (err) {
           results.push({
             success: false,
@@ -317,7 +431,7 @@ export function useAuditCapture(): UseAuditCaptureReturn {
       data: CreateAuditEventData,
       maxRetries: number = 3,
       delay: number = 1000
-    ) => {
+    ): Promise<AuditEvent> => {
       let lastError: Error | null = null;
 
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -341,6 +455,7 @@ export function useAuditCapture(): UseAuditCaptureReturn {
     [captureEvent]
   );
 
+  // 🎯 Extended return type with all methods
   return {
     captureEvent,
     captureUserAction,
@@ -361,72 +476,5 @@ export function useAuditCapture(): UseAuditCaptureReturn {
     clearError,
     captureBatch,
     captureWithRetry,
-  } as UseAuditCaptureReturn & {
-    captureCreate: (
-      resource: AuditResource,
-      resourceId: string,
-      resourceName: string,
-      metadata?: Record<string, any>
-    ) => Promise<any>;
-    captureUpdate: (
-      resource: AuditResource,
-      resourceId: string,
-      resourceName: string,
-      changes: Omit<AuditChange, "type">[],
-      metadata?: Record<string, any>
-    ) => Promise<any>;
-    captureDelete: (
-      resource: AuditResource,
-      resourceId: string,
-      resourceName: string,
-      metadata?: Record<string, any>
-    ) => Promise<any>;
-    captureView: (
-      resource: AuditResource,
-      resourceId: string,
-      resourceName: string,
-      metadata?: Record<string, any>
-    ) => Promise<any>;
-    captureLogin: (
-      sessionId?: string,
-      metadata?: Record<string, any>
-    ) => Promise<any>;
-    captureLogout: (
-      sessionId?: string,
-      metadata?: Record<string, any>
-    ) => Promise<any>;
-    captureExport: (
-      resource: AuditResource,
-      format: string,
-      count: number,
-      metadata?: Record<string, any>
-    ) => Promise<any>;
-    captureImport: (
-      resource: AuditResource,
-      format: string,
-      count: number,
-      metadata?: Record<string, any>
-    ) => Promise<any>;
-    captureBulkAction: (
-      action: "bulk_update" | "bulk_delete",
-      resource: AuditResource,
-      resourceIds: string[],
-      description?: string,
-      metadata?: Record<string, any>
-    ) => Promise<any>;
-    captureToggle: (
-      resource: AuditResource,
-      resourceId: string,
-      resourceName: string,
-      enabled: boolean,
-      metadata?: Record<string, any>
-    ) => Promise<any>;
-    clearError: () => void;
-    captureBatch: (events: CreateAuditEventData[]) => Promise<any[]>;
-    captureWithRetry: (
-      data: CreateAuditEventData,
-      maxRetries?: number,
-      delay?: number
-    ) => Promise<any>;
   };
 }
