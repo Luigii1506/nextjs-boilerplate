@@ -20,58 +20,99 @@ import type {
   ProductWithComputedProps,
 } from "../types";
 
-// 🏷️ Raw data interfaces for type safety
+// 🏷️ Raw data interfaces for type safety - Aligned with Prisma schema
 interface RawProduct {
   id: string;
   sku: string;
   name: string;
-  description?: string | null;
+  description: string | null;
   categoryId: string;
-  supplierId: string;
-  costPrice: number;
-  sellPrice: number;
+  price: number; // Prisma Decimal converted to number
+  cost: number; // Prisma Decimal converted to number
   stock: number;
   minStock: number;
-  maxStock: number;
+  maxStock: number | null;
+  unit: string;
+  barcode: string | null;
+  images: string[];
   isActive: boolean;
+  supplierId: string | null;
+  tags: string[];
+  metadata: Record<string, unknown> | null;
   createdAt: Date;
   updatedAt: Date;
   category?: RawCategory;
-  supplier?: RawSupplier;
+  supplier?: RawSupplier | null;
   stockMovements?: RawStockMovement[];
-  [key: string]: unknown;
+  _count?: {
+    stockMovements: number;
+  };
 }
 
 interface RawCategory {
   id: string;
   name: string;
-  description?: string | null;
+  description: string | null;
+  parentId: string | null;
+  color: string | null;
+  icon: string | null;
   isActive: boolean;
+  sortOrder: number;
   createdAt: Date;
   updatedAt: Date;
-  [key: string]: unknown;
+  parent?: RawCategory | null;
+  children?: RawCategory[];
+  products?: RawProduct[];
+  _count?: {
+    products: number;
+    children: number;
+  };
 }
 
 interface RawSupplier {
   id: string;
   name: string;
-  email?: string | null;
-  phone?: string | null;
-  address?: string | null;
+  contactPerson: string | null;
+  email: string | null;
+  phone: string | null;
+  website: string | null;
+  taxId: string | null;
+  paymentTerms: number;
   isActive: boolean;
+  rating: number | null; // Prisma Decimal converted to number
+  notes: string | null;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  state: string | null;
+  postalCode: string | null;
+  country: string | null;
   createdAt: Date;
   updatedAt: Date;
-  [key: string]: unknown;
+  products?: RawProduct[];
+  _count?: {
+    products: number;
+  };
 }
 
 interface RawStockMovement {
   id: string;
   productId: string;
-  type: string;
+  type: "IN" | "OUT" | "ADJUSTMENT" | "TRANSFER"; // StockMovementType enum
   quantity: number;
-  notes?: string | null;
+  previousStock: number;
+  newStock: number;
+  reason: string;
+  reference: string | null;
+  userId: string;
   createdAt: Date;
-  [key: string]: unknown;
+  product?: RawProduct;
+  user?: {
+    id: string;
+    name: string | null;
+    email: string;
+    role: string | null;
+  };
 }
 
 // 📦 PRODUCT MAPPERS
@@ -84,25 +125,46 @@ export function mapProductToExternal(
     name: rawProduct.name,
     description: rawProduct.description,
     categoryId: rawProduct.categoryId,
-    price: parseFloat(rawProduct.price),
-    cost: parseFloat(rawProduct.cost),
-    stock: parseInt(rawProduct.stock),
-    minStock: parseInt(rawProduct.minStock),
-    maxStock: rawProduct.maxStock ? parseInt(rawProduct.maxStock) : null,
+    price: Number(rawProduct.price), // Already number from Prisma, but ensure type
+    cost: Number(rawProduct.cost), // Already number from Prisma, but ensure type
+    stock: Number(rawProduct.stock), // Already number from Prisma, but ensure type
+    minStock: Number(rawProduct.minStock), // Already number from Prisma, but ensure type
+    maxStock: rawProduct.maxStock ? Number(rawProduct.maxStock) : null,
     unit: rawProduct.unit,
     barcode: rawProduct.barcode,
-    images: Array.isArray(rawProduct.images) ? rawProduct.images : [],
+    images: rawProduct.images || [],
     isActive: Boolean(rawProduct.isActive),
     supplierId: rawProduct.supplierId,
-    tags: Array.isArray(rawProduct.tags) ? rawProduct.tags : [],
-    metadata: rawProduct.metadata || null,
-    createdAt: new Date(rawProduct.createdAt),
-    updatedAt: new Date(rawProduct.updatedAt),
+    tags: rawProduct.tags || [],
+    metadata: rawProduct.metadata as Record<string, unknown> | null,
+    createdAt:
+      rawProduct.createdAt instanceof Date
+        ? rawProduct.createdAt
+        : new Date(rawProduct.createdAt),
+    updatedAt:
+      rawProduct.updatedAt instanceof Date
+        ? rawProduct.updatedAt
+        : new Date(rawProduct.updatedAt),
 
-    // Relations
+    // Relations - Handle null category properly
     category: rawProduct.category
       ? mapCategoryToExternal(rawProduct.category)
-      : null!,
+      : {
+          id: "",
+          name: "Sin Categoría",
+          description: null,
+          parentId: null,
+          color: "#6B7280",
+          icon: null,
+          isActive: false,
+          sortOrder: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          parent: null,
+          children: [],
+          products: [],
+          _count: { products: 0, children: 0 },
+        },
     supplier: rawProduct.supplier
       ? mapSupplierToExternal(rawProduct.supplier)
       : null,
@@ -180,12 +242,16 @@ export function mapProductToInternal(
     cost: externalProduct.cost,
     stock: externalProduct.stock,
     minStock: externalProduct.minStock,
-    maxStock: externalProduct.maxStock,
+    maxStock:
+      externalProduct.maxStock !== undefined ? externalProduct.maxStock : null,
     unit: externalProduct.unit,
     barcode: externalProduct.barcode,
     images: externalProduct.images,
     isActive: externalProduct.isActive,
-    supplierId: externalProduct.supplierId,
+    supplierId:
+      externalProduct.supplierId !== undefined
+        ? externalProduct.supplierId
+        : null,
     tags: externalProduct.tags,
     metadata: externalProduct.metadata,
   };
@@ -203,9 +269,15 @@ export function mapCategoryToExternal(
     color: rawCategory.color,
     icon: rawCategory.icon,
     isActive: Boolean(rawCategory.isActive),
-    sortOrder: parseInt(rawCategory.sortOrder),
-    createdAt: new Date(rawCategory.createdAt),
-    updatedAt: new Date(rawCategory.updatedAt),
+    sortOrder: Number(rawCategory.sortOrder), // Already number from Prisma
+    createdAt:
+      rawCategory.createdAt instanceof Date
+        ? rawCategory.createdAt
+        : new Date(rawCategory.createdAt),
+    updatedAt:
+      rawCategory.updatedAt instanceof Date
+        ? rawCategory.updatedAt
+        : new Date(rawCategory.updatedAt),
 
     // Relations
     parent: rawCategory.parent
@@ -238,6 +310,9 @@ export function mapCategoryToTreeStructure(
     if (category.parentId) {
       const parent = categoryMap.get(category.parentId);
       if (parent) {
+        if (!parent.children) {
+          parent.children = [];
+        }
         parent.children.push(mappedCategory);
       } else {
         // Parent not found, treat as root
@@ -263,9 +338,9 @@ export function mapSupplierToExternal(
     phone: rawSupplier.phone,
     website: rawSupplier.website,
     taxId: rawSupplier.taxId,
-    paymentTerms: parseInt(rawSupplier.paymentTerms),
+    paymentTerms: Number(rawSupplier.paymentTerms), // Already number from Prisma
     isActive: Boolean(rawSupplier.isActive),
-    rating: rawSupplier.rating ? parseFloat(rawSupplier.rating) : null,
+    rating: rawSupplier.rating ? Number(rawSupplier.rating) : null,
     notes: rawSupplier.notes,
     addressLine1: rawSupplier.addressLine1,
     addressLine2: rawSupplier.addressLine2,
@@ -292,7 +367,7 @@ export function mapSupplierToSummary(supplier: SupplierWithRelations) {
     phone: supplier.phone,
     rating: supplier.rating,
     isActive: supplier.isActive,
-    productCount: supplier._count.products,
+    productCount: supplier._count?.products || 0,
     location:
       [supplier.city, supplier.state, supplier.country]
         .filter(Boolean)
@@ -308,20 +383,28 @@ export function mapStockMovementToExternal(
     id: rawMovement.id,
     productId: rawMovement.productId,
     type: rawMovement.type,
-    quantity: parseInt(rawMovement.quantity),
-    previousStock: parseInt(rawMovement.previousStock),
-    newStock: parseInt(rawMovement.newStock),
+    quantity: Number(rawMovement.quantity), // Already number from Prisma
+    previousStock: Number(rawMovement.previousStock), // Already number from Prisma
+    newStock: Number(rawMovement.newStock), // Already number from Prisma
     reason: rawMovement.reason,
     reference: rawMovement.reference,
     userId: rawMovement.userId,
-    createdAt: new Date(rawMovement.createdAt),
+    createdAt:
+      rawMovement.createdAt instanceof Date
+        ? rawMovement.createdAt
+        : new Date(rawMovement.createdAt),
   };
 }
 
 export function mapStockMovementWithDetails(
   rawMovement: RawStockMovement & {
     product?: RawProduct;
-    user?: { id: string; name: string };
+    user?: {
+      id: string;
+      name: string | null;
+      email: string;
+      role: string | null;
+    };
   }
 ) {
   const movement = mapStockMovementToExternal(rawMovement);
@@ -348,15 +431,15 @@ export function mapStatsToExternal(
   rawStats: Record<string, unknown>
 ): InventoryStats {
   return {
-    totalProducts: parseInt(rawStats.totalProducts),
-    activeProducts: parseInt(rawStats.activeProducts),
-    totalCategories: parseInt(rawStats.totalCategories),
-    totalSuppliers: parseInt(rawStats.totalSuppliers),
-    totalValue: parseFloat(rawStats.totalValue),
-    totalRetailValue: parseFloat(rawStats.totalRetailValue),
-    lowStockProducts: parseInt(rawStats.lowStockProducts),
-    outOfStockProducts: parseInt(rawStats.outOfStockProducts),
-    recentMovements: parseInt(rawStats.recentMovements),
+    totalProducts: Number(rawStats.totalProducts) || 0,
+    activeProducts: Number(rawStats.activeProducts) || 0,
+    totalCategories: Number(rawStats.totalCategories) || 0,
+    totalSuppliers: Number(rawStats.totalSuppliers) || 0,
+    totalValue: Number(rawStats.totalValue) || 0,
+    totalRetailValue: Number(rawStats.totalRetailValue) || 0,
+    lowStockProducts: Number(rawStats.lowStockProducts) || 0,
+    outOfStockProducts: Number(rawStats.outOfStockProducts) || 0,
+    recentMovements: Number(rawStats.recentMovements) || 0,
   };
 }
 
@@ -380,8 +463,8 @@ export function mapStatsWithTrends(
     const prev = mapStatsToExternal(previousStats);
 
     Object.keys(currentStats).forEach((key) => {
-      const current = (currentStats as any)[key] as number;
-      const previous = (prev as any)[key] as number;
+      const current = currentStats[key as keyof InventoryStats] as number;
+      const previous = prev[key as keyof InventoryStats] as number;
       const change = current - previous;
       const changePercent = previous > 0 ? (change / previous) * 100 : 0;
 
@@ -403,13 +486,13 @@ export function mapAlertsToExternal(
   rawAlerts: Array<{
     id: string;
     productId: string;
-    type: string;
-    severity: string;
-    message: string;
-    threshold?: number;
-    currentValue?: number;
-    createdAt: Date;
-    product?: RawProduct;
+    productName: string;
+    productSku: string;
+    currentStock: number;
+    minStock: number;
+    status: StockStatus;
+    category: string;
+    lastMovement?: Date;
   }>
 ): StockAlert[] {
   return rawAlerts.map((rawAlert) => ({
@@ -417,13 +500,11 @@ export function mapAlertsToExternal(
     productId: rawAlert.productId,
     productName: rawAlert.productName,
     productSku: rawAlert.productSku,
-    currentStock: parseInt(rawAlert.currentStock),
-    minStock: parseInt(rawAlert.minStock),
-    status: rawAlert.status as StockStatus,
+    currentStock: Number(rawAlert.currentStock),
+    minStock: Number(rawAlert.minStock),
+    status: rawAlert.status,
     category: rawAlert.category,
-    lastMovement: rawAlert.lastMovement
-      ? new Date(rawAlert.lastMovement)
-      : undefined,
+    lastMovement: rawAlert.lastMovement,
   }));
 }
 
@@ -471,16 +552,16 @@ export function mapAlertsWithPriority(alerts: StockAlert[]) {
 // 🔧 UTILITY MAPPERS
 export function mapUserSummary(rawUser: {
   id: string;
-  name?: string;
+  name?: string | null;
   email?: string;
-  role?: string;
+  role?: string | null;
   [key: string]: unknown;
 }) {
   return {
     id: rawUser.id,
-    name: rawUser.name,
+    name: rawUser.name || undefined,
     email: rawUser.email,
-    role: rawUser.role,
+    role: rawUser.role || undefined,
   };
 }
 
@@ -567,7 +648,7 @@ export function mapCategoryForSelect(category: CategoryWithRelations) {
     color: category.color,
     icon: category.icon,
     disabled: !category.isActive,
-    productCount: category._count.products,
+    productCount: category._count?.products || 0,
   };
 }
 
@@ -615,21 +696,31 @@ export function mapProductForExport(product: ProductWithRelations) {
 }
 
 export function mapImportDataToProduct(importRow: Record<string, unknown>) {
+  const tagsValue = importRow.Tags || importRow.tags || "";
+  const tagsString =
+    typeof tagsValue === "string" ? tagsValue : String(tagsValue);
+
   return {
-    sku: importRow.SKU || importRow.sku,
-    name: importRow.Nombre || importRow.name,
-    description: importRow.Descripción || importRow.description || null,
-    price: parseFloat(importRow.Precio || importRow.price),
-    cost: parseFloat(importRow.Costo || importRow.cost),
-    stock: parseInt(importRow.Stock || importRow.stock) || 0,
-    minStock: parseInt(importRow["Stock Mínimo"] || importRow.minStock) || 0,
+    sku: String(importRow.SKU || importRow.sku || ""),
+    name: String(importRow.Nombre || importRow.name || ""),
+    description:
+      importRow.Descripción || importRow.description
+        ? String(importRow.Descripción || importRow.description)
+        : null,
+    price: Number(importRow.Precio || importRow.price || 0),
+    cost: Number(importRow.Costo || importRow.cost || 0),
+    stock: Number(importRow.Stock || importRow.stock || 0),
+    minStock: Number(importRow["Stock Mínimo"] || importRow.minStock || 0),
     maxStock:
       importRow["Stock Máximo"] || importRow.maxStock
-        ? parseInt(importRow["Stock Máximo"] || importRow.maxStock)
+        ? Number(importRow["Stock Máximo"] || importRow.maxStock)
         : null,
-    unit: importRow.Unidad || importRow.unit || "piece",
-    barcode: importRow["Código de Barras"] || importRow.barcode || null,
-    tags: (importRow.Tags || importRow.tags || "")
+    unit: String(importRow.Unidad || importRow.unit || "piece"),
+    barcode:
+      importRow["Código de Barras"] || importRow.barcode
+        ? String(importRow["Código de Barras"] || importRow.barcode)
+        : null,
+    tags: tagsString
       .split(",")
       .map((tag: string) => tag.trim())
       .filter((tag: string) => tag.length > 0),

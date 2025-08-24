@@ -31,7 +31,12 @@ import {
   useInventoryContext,
   INVENTORY_TABS,
 } from "../../context";
-import { TabBadge, ProductModal, DeleteProductModal } from "../components";
+import {
+  TabBadge,
+  ProductModal,
+  DeleteProductModal,
+  ProductViewModal,
+} from "../components";
 import { OverviewTab, ProductsTab } from "../components/tabs";
 import { useTabScrollHeader } from "../../hooks";
 
@@ -306,6 +311,7 @@ const InventorySPAContent: React.FC = () => {
       {/* 📝 Modal Components */}
       <ProductModal />
       <DeleteProductModal />
+      <ProductViewModal />
     </div>
   );
 };

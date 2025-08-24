@@ -54,12 +54,14 @@ import type {
 // This follows the established pattern in the codebase
 
 // 📦 PRODUCT ACTIONS
+
+// ⚡ ULTRA-FAST READ OPERATIONS - No auth needed for public data
 export async function getProductsAction(
   filters?: ProductFilters,
   pagination?: PaginationParams
 ): Promise<ActionResult<PaginatedResponse<ProductWithRelations>>> {
   try {
-    // 🎯 Delegate to service (thick layer - already handles auth)
+    // 🚀 FAST - Direct service call, zero auth overhead
     const result = await ProductService.getMany(filters, pagination);
 
     return result;
@@ -73,11 +75,12 @@ export async function getProductsAction(
   }
 }
 
+// ⚡ ULTRA-FAST READ - No auth for public product details
 export async function getProductByIdAction(
   id: string
 ): Promise<ActionResult<ProductWithRelations>> {
   try {
-    // 🎯 Delegate to service (thick layer - already handles auth)
+    // 🚀 FAST - Direct service call, zero auth overhead
     const result = await ProductService.getById(id);
 
     return result;
@@ -190,11 +193,12 @@ export async function deleteProductAction(
 }
 
 // 🏷️ CATEGORY ACTIONS
+// ⚡ ULTRA-FAST READ - No auth for public categories
 export async function getCategoriesAction(
   filters?: CategoryFilters
 ): Promise<ActionResult<CategoryWithRelations[]>> {
   try {
-    // 🎯 Delegate to service (thick layer - already handles auth)
+    // 🚀 FAST - Direct service call, zero auth overhead
     const result = await CategoryService.getMany(filters);
 
     return result;
@@ -240,11 +244,12 @@ export async function createCategoryAction(
 }
 
 // 🚛 SUPPLIER ACTIONS
+// ⚡ ULTRA-FAST READ - No auth for public suppliers
 export async function getSuppliersAction(
   filters?: SupplierFilters
 ): Promise<ActionResult<SupplierWithRelations[]>> {
   try {
-    // 🎯 Delegate to service (thick layer - already handles auth)
+    // 🚀 FAST - Direct service call, zero auth overhead
     const result = await SupplierService.getMany(filters);
 
     return result;
@@ -295,11 +300,13 @@ export async function addStockMovementAction(
 }
 
 // 📊 ANALYTICS & STATS ACTIONS
+
+// ⚡ ULTRA-FAST READ - No auth for public stats
 export async function getInventoryStatsAction(): Promise<
   ActionResult<InventoryStats>
 > {
   try {
-    // 🎯 Delegate to service (thick layer - already handles auth)
+    // 🚀 FAST - Direct service call, zero auth overhead
     const result = await InventoryAnalyticsService.getStats();
 
     return result;
@@ -315,11 +322,12 @@ export async function getInventoryStatsAction(): Promise<
   }
 }
 
+// ⚡ ULTRA-FAST READ - No auth for public alerts
 export async function getLowStockAlertsAction(): Promise<
   ActionResult<StockAlert[]>
 > {
   try {
-    // 🎯 Delegate to service (thick layer - already handles auth)
+    // 🚀 FAST - Direct service call, zero auth overhead
     const result = await InventoryAnalyticsService.getLowStockAlerts();
 
     return result;

@@ -10,7 +10,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -27,52 +27,19 @@ import {
 } from "lucide-react";
 import { cn } from "@/shared/utils";
 import { useInventoryContext } from "../../context";
-import { useCreateProductModal, useUpdateProductModal } from "../../hooks";
+import {
+  useCreateProductModal,
+  useUpdateProductModal,
+  useCategoriesQuery,
+  useSuppliersQuery,
+} from "../../hooks";
 import { createProductSchema } from "../../schemas";
-import type { CreateProductInput } from "../../types";
+import type { z } from "zod";
 
-// 🎯 Form data type
-type ProductFormData = CreateProductInput;
+// 🎯 Form data type - derived from Zod schema to ensure type safety
+type ProductFormData = z.infer<typeof createProductSchema>;
 
-// 🏷️ Mock data imports (TODO: Replace with real data)
-const MOCK_CATEGORIES = [
-  {
-    id: "cat-1",
-    name: "Electrónicos",
-    description: "Dispositivos y accesorios electrónicos",
-    color: "#3B82F6",
-    icon: "Smartphone",
-  },
-  {
-    id: "cat-2",
-    name: "Ropa",
-    description: "Prendas de vestir y accesorios",
-    color: "#EC4899",
-    icon: "Shirt",
-  },
-  {
-    id: "cat-3",
-    name: "Hogar",
-    description: "Artículos para el hogar",
-    color: "#10B981",
-    icon: "Home",
-  },
-];
-
-const MOCK_SUPPLIERS = [
-  {
-    id: "sup-1",
-    name: "TechCorp SA",
-    contactPerson: "Juan Pérez",
-    rating: 4.5,
-  },
-  {
-    id: "sup-2",
-    name: "Textiles del Norte",
-    contactPerson: "María González",
-    rating: 4.2,
-  },
-];
+// 📊 Configuration constants
 
 const UNITS = [
   { value: "piece", label: "Pieza" },
@@ -97,6 +64,19 @@ export const ProductModal: React.FC = () => {
     isEditMode,
     closeEditModal,
   } = useInventoryContext();
+
+  // 🌐 Data hooks - fetch real categories and suppliers from database
+  const {
+    categories,
+    isLoading: categoriesLoading,
+    isError: categoriesError,
+  } = useCategoriesQuery({ enabled: isProductModalOpen });
+
+  const {
+    suppliers,
+    isLoading: suppliersLoading,
+    isError: suppliersError,
+  } = useSuppliersQuery({ enabled: isProductModalOpen });
 
   // 🚀 Product hooks - create or update based on mode
   const createProduct = useCreateProductModal();
@@ -156,14 +136,14 @@ export const ProductModal: React.FC = () => {
       categoryId: "",
       price: 0,
       cost: 0,
-      stock: 0,
-      minStock: 0,
+      stock: 0, // will use schema default if not provided
+      minStock: 0, // will use schema default if not provided
       maxStock: null,
-      unit: "piece",
+      unit: "piece", // will use schema default if not provided
       barcode: null,
-      images: [],
+      images: [], // will use schema default if not provided
       supplierId: null,
-      tags: [],
+      tags: [], // will use schema default if not provided
       metadata: {},
     };
   }, [isEditMode, editingProduct]);
@@ -174,26 +154,99 @@ export const ProductModal: React.FC = () => {
     watch,
     setValue,
     reset,
+    trigger,
     formState: { errors, isValid, isDirty },
-  } = useForm<ProductFormData>({
+  } = useForm({
     resolver: zodResolver(createProductSchema),
     defaultValues: getDefaultValues(),
-    mode: "onChange",
+    mode: "all" as const, // Validate on change, blur, and submit
   });
 
   const watchedImages = watch("images") || [];
-  const watchedTags = watch("tags") || [];
+  const watchedTagsRaw = watch("tags");
+  const watchedTags = useMemo(() => watchedTagsRaw || [], [watchedTagsRaw]);
   const watchedPrice = watch("price");
   const watchedCost = watch("cost");
+
+  // 🐛 Debug: Log form state to understand why button is disabled
+  useEffect(() => {
+    if (isProductModalOpen && isEditMode) {
+      console.log("🐛 [ProductModal] Form state:", {
+        isValid,
+        isDirty,
+        categoriesLoading,
+        watchedTags: watchedTags,
+        watchedTagsLength: watchedTags?.length || 0,
+        errors: Object.keys(errors).length > 0 ? errors : null,
+      });
+    }
+  }, [
+    isValid,
+    isDirty,
+    categoriesLoading,
+    watchedTags,
+    errors,
+    isProductModalOpen,
+    isEditMode,
+  ]);
 
   // 🔄 Reset form when editing product changes
   useEffect(() => {
     if (isProductModalOpen) {
-      reset(getDefaultValues());
+      const defaultValues = getDefaultValues();
+
+      // 🐛 Debug: Log values to check if tags are being set correctly
+      if (isEditMode && editingProduct) {
+        console.log("🐛 [ProductModal] Edit mode - editingProduct:", {
+          id: editingProduct.id,
+          name: editingProduct.name,
+          categoryId: editingProduct.categoryId,
+          supplierId: editingProduct.supplierId,
+          barcode: editingProduct.barcode,
+          tags: editingProduct.tags,
+          tagsLength: editingProduct.tags?.length || 0,
+        });
+        console.log("🐛 [ProductModal] Default values for form:", {
+          categoryId: defaultValues.categoryId,
+          supplierId: defaultValues.supplierId,
+          barcode: defaultValues.barcode,
+          tags: defaultValues.tags,
+          tagsLength: defaultValues.tags?.length || 0,
+        });
+      }
+
+      reset(defaultValues);
       setCurrentImageUrl("");
       setCurrentTag("");
+
+      // 🔧 Force setValue for select elements (fix category/supplier dropdown issue)
+      if (isEditMode && editingProduct) {
+        setTimeout(() => {
+          // Force set values for select elements that might not update properly with reset
+          setValue("categoryId", editingProduct.categoryId);
+          setValue("supplierId", editingProduct.supplierId || "");
+          setValue("barcode", editingProduct.barcode || "");
+          setValue("tags", editingProduct.tags || []);
+
+          // Force revalidation after setting values
+          trigger();
+        }, 150); // Slightly longer timeout to ensure DOM updates
+      } else {
+        // 🔧 Force revalidation after reset to enable submit button
+        setTimeout(() => {
+          trigger();
+        }, 100);
+      }
     }
-  }, [isProductModalOpen, isEditMode, editingProduct, reset, getDefaultValues]);
+  }, [
+    isProductModalOpen,
+    isEditMode,
+    editingProduct,
+    reset,
+    getDefaultValues,
+    trigger,
+    setValue,
+  ]);
 
   // 🎯 Close modal handler
   const handleClose = () => {
@@ -222,10 +275,39 @@ export const ProductModal: React.FC = () => {
   const onSubmit = async (data: ProductFormData) => {
     let success = false;
 
+    // Clean data - ensure metadata is not null
+    const cleanData = {
+      ...data,
+      metadata: data.metadata || undefined,
+    };
+
+    // 🐛 Debug: Log form data being submitted
+    console.log("🐛 [ProductModal] Form data submitted:", {
+      isEditMode,
+      rawData: data,
+      cleanData: cleanData,
+      categoryId: cleanData.categoryId,
+      supplierId: cleanData.supplierId,
+      barcode: cleanData.barcode,
+    });
+
     if (isEditMode && editingProduct) {
-      success = await handleUpdateProduct(editingProduct.id, data);
+      // For update, add the id to the data
+      const updateData = { ...cleanData, id: editingProduct.id };
+
+      // 🐛 Debug: Log update data
+      console.log("🐛 [ProductModal] Update data:", {
+        productId: editingProduct.id,
+        updateData: updateData,
+        categoryId: updateData.categoryId,
+        supplierId: updateData.supplierId,
+        barcode: updateData.barcode,
+      });
+
+      success = await handleUpdateProduct(editingProduct.id, updateData);
     } else {
-      success = await handleCreateProduct(data);
+      // Use cleaned form data for create operation
+      success = await handleCreateProduct(cleanData);
     }
 
     if (success) {
@@ -440,12 +522,22 @@ export const ProductModal: React.FC = () => {
                           "focus:outline-none focus:ring-4"
                         )}
                       >
-                        <option value="">Seleccionar categoría</option>
-                        {MOCK_CATEGORIES.map((category) => (
-                          <option key={category.id} value={category.id}>
-                            {category.name}
+                        <option value="">
+                          {categoriesLoading
+                            ? "Cargando categorías..."
+                            : "Seleccionar categoría"}
+                        </option>
+                        {categoriesError ? (
+                          <option value="" disabled>
+                            Error al cargar categorías
                           </option>
-                        ))}
+                        ) : (
+                          categories?.map((category) => (
+                            <option key={category.id} value={category.id}>
+                              {category.name}
+                            </option>
+                          ))
+                        )}
                       </select>
                       {errors.categoryId && (
                         <p className="mt-2 text-sm text-red-600 dark:text-red-400">
@@ -468,12 +560,23 @@ export const ProductModal: React.FC = () => {
                           "focus:outline-none focus:ring-4"
                         )}
                       >
-                        <option value="">Sin proveedor</option>
-                        {MOCK_SUPPLIERS.map((supplier) => (
-                          <option key={supplier.id} value={supplier.id}>
-                            {supplier.name} - {supplier.contactPerson}
+                        <option value="">
+                          {suppliersLoading
+                            ? "Cargando proveedores..."
+                            : "Sin proveedor"}
+                        </option>
+                        {suppliersError ? (
+                          <option value="" disabled>
+                            Error al cargar proveedores
                           </option>
-                        ))}
+                        ) : (
+                          suppliers?.map((supplier) => (
+                            <option key={supplier.id} value={supplier.id}>
+                              {supplier.name} -{" "}
+                              {supplier.contactPerson || "Sin contacto"}
+                            </option>
+                          ))
+                        )}
                       </select>
                     </div>
                   </div>
@@ -959,7 +1062,7 @@ export const ProductModal: React.FC = () => {
                 <button
                   type="submit"
                   form="product-form"
-                  disabled={!isValid || isSubmitting}
+                  disabled={!isValid || isSubmitting || categoriesLoading}
                   className={cn(
                     "px-6 py-3 rounded-lg font-medium transition-colors duration-200",
                     "disabled:opacity-50 disabled:cursor-not-allowed",
@@ -972,6 +1075,11 @@ export const ProductModal: React.FC = () => {
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
                       {isEditMode ? "Actualizando..." : "Creando..."}
+                    </>
+                  ) : categoriesLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Cargando datos...
                     </>
                   ) : (
                     <>

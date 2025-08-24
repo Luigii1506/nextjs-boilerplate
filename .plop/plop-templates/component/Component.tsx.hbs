@@ -1,0 +1,14 @@
+import { cn } from '@/lib/utils';
+import { {{pascalCase name}}Props } from './types';
+
+export function {{pascalCase name}}({
+  className,
+  ...props
+}: {{pascalCase name}}Props) {
+  return (
+    <div className={cn('{{kebabCase name}}', className)} {...props}>
+      {/* Your component code here */}
+      <h2>{{pascalCase name}} Component</h2>
+    </div>
+  );
+}

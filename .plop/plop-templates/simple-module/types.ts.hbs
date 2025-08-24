@@ -1,0 +1,18 @@
+// Tipos para el módulo {{pascalCase name}}
+
+export interface {{pascalCase name}} {
+  id: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type Create{{pascalCase name}}Dto = Omit<{{pascalCase name}}, 'id' | 'createdAt' | 'updatedAt'>;
+export type Update{{pascalCase name}}Dto = Partial<Create{{pascalCase name}}Dto>;
+
+export interface {{pascalCase name}}ListResponse {
+  data: {{pascalCase name}}[];
+  total: number;
+}

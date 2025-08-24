@@ -268,14 +268,21 @@ const ProductFilters: React.FC = () => {
 
 // 📦 Products Display Component
 const ProductsDisplay: React.FC = () => {
-  const { inventory, viewMode, openEditModal, openDeleteConfirm } =
-    useInventoryContext();
+  const {
+    inventory,
+    viewMode,
+    openEditModal,
+    openDeleteConfirm,
+    openViewModal,
+  } = useInventoryContext();
   const { products, isLoading } = inventory;
 
-  const handleViewProduct = useCallback((product: ProductWithRelations) => {
-    console.log("View product", product);
-    // TODO: Open product modal
-  }, []);
+  const handleViewProduct = useCallback(
+    (product: ProductWithRelations) => {
+      openViewModal(product);
+    },
+    [openViewModal]
+  );
 
   const handleEditProduct = useCallback(
     (product: ProductWithRelations) => {

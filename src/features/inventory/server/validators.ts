@@ -1,10 +1,10 @@
 /**
  * 📦 INVENTORY VALIDATORS
  * ======================
- * 
+ *
  * Server-side validation layer para Inventory Management
  * Clean Architecture: Infrastructure Layer (Validation)
- * 
+ *
  * Created: 2025-01-17 - Inventory Management Module
  */
 
@@ -31,35 +31,160 @@ import type {
   SupplierFilters,
   PaginationParams,
 } from "../types";
+// 🔐 PERMISSIONS SYSTEM
+import {
+  hasPermission,
+  inventoryPermissions,
+  type PermissionUser,
+} from "@/core/auth/permissions";
+import type { Session } from "@/core/auth/server";
 
-// 🛡️ PERMISSION VALIDATION
-export async function validateInventoryPermissions(
-  user: any,
-  action: string
-): Promise<void> {
-  // TODO: Implement proper RBAC permission checking
-  if (!user) {
-    throw new Error("Authentication required");
+// 🔄 SESSION TO PERMISSION USER CONVERTER
+export function sessionToPermissionUser(
+  session: Session | null
+): PermissionUser {
+  if (!session?.user) {
+    throw new ValidationError("Authentication required - no valid session");
   }
 
-  // Basic role-based checks
-  const adminActions = [
-    "DELETE_PRODUCT",
-    "DELETE_CATEGORY", 
-    "DELETE_SUPPLIER",
-    "CREATE_SUPPLIER",
-    "UPDATE_SUPPLIER",
-  ];
-
-  if (adminActions.includes(action) && user.role !== "admin") {
-    throw new Error(`Insufficient permissions for ${action}`);
-  }
-
-  // TODO: Implement more granular permissions
-  // - Module-specific permissions
-  // - Resource-level permissions
-  // - Context-aware permissions
+  return {
+    id: session.user.id,
+    role: session.user.role || "user",
+    permissions: [], // Better Auth handles permissions via role
+  } satisfies PermissionUser;
 }
+
+// 🛡️ INVENTORY PERMISSION VALIDATION
+// ===================================
+// Validación robusta usando el sistema centralizado de permisos
+
+/**
+ * Valida permisos de inventory usando el sistema centralizado
+ * Reemplaza la validación básica anterior con un sistema granular y robusto
+ */
+export function validateInventoryPermissions(
+  user: PermissionUser,
+  action: InventoryPermissionAction
+): void {
+  if (!user) {
+    throw new ValidationError("Authentication required");
+  }
+
+  // Map legacy actions to new permission system
+  const actionMapping: Record<InventoryPermissionAction, () => boolean> = {
+    // Products
+    CREATE_PRODUCT: () => inventoryPermissions.canCreateProduct(user),
+    READ_PRODUCT: () => inventoryPermissions.canReadProduct(user),
+    UPDATE_PRODUCT: () => inventoryPermissions.canUpdateProduct(user),
+    DELETE_PRODUCT: () => inventoryPermissions.canDeleteProduct(user),
+    LIST_PRODUCTS: () => inventoryPermissions.canListProducts(user),
+    SET_STOCK: () => inventoryPermissions.canSetStock(user),
+    VIEW_COST: () => inventoryPermissions.canViewCost(user),
+
+    // Categories
+    CREATE_CATEGORY: () => inventoryPermissions.canCreateCategory(user),
+    DELETE_CATEGORY: () => inventoryPermissions.canDeleteCategory(user),
+
+    // Suppliers
+    CREATE_SUPPLIER: () => inventoryPermissions.canCreateSupplier(user),
+    UPDATE_SUPPLIER: () => hasPermission(user, "inventory_supplier:update"),
+    DELETE_SUPPLIER: () => inventoryPermissions.canDeleteSupplier(user),
+
+    // Stock Movements
+    CREATE_STOCK_MOVEMENT: () =>
+      inventoryPermissions.canCreateStockMovement(user),
+    STOCK_ADJUSTMENT: () => inventoryPermissions.canMakeAdjustment(user),
+
+    // Analytics
+    VIEW_ANALYTICS: () => inventoryPermissions.canViewAnalytics(user),
+    EXPORT_REPORTS: () => inventoryPermissions.canExportReports(user),
+  };
+
+  const permissionCheck = actionMapping[action];
+  if (!permissionCheck) {
+    throw new ValidationError(`Unknown inventory action: ${action}`);
+  }
+
+  if (!permissionCheck()) {
+    throw new ValidationError(
+      `Insufficient permissions for ${action}. Required role: ${
+        user.role || "unknown"
+      } lacks inventory permissions.`
+    );
+  }
+}
+
+// 🎯 INVENTORY PERMISSION ACTIONS
+export type InventoryPermissionAction =
+  | "CREATE_PRODUCT"
+  | "READ_PRODUCT"
+  | "UPDATE_PRODUCT"
+  | "DELETE_PRODUCT"
+  | "LIST_PRODUCTS"
+  | "SET_STOCK"
+  | "VIEW_COST"
+  | "CREATE_CATEGORY"
+  | "DELETE_CATEGORY"
+  | "CREATE_SUPPLIER"
+  | "UPDATE_SUPPLIER"
+  | "DELETE_SUPPLIER"
+  | "CREATE_STOCK_MOVEMENT"
+  | "STOCK_ADJUSTMENT"
+  | "VIEW_ANALYTICS"
+  | "EXPORT_REPORTS";
+
+// 🔧 INVENTORY PERMISSION HELPERS
+// ===============================
+// Funciones de conveniencia para validaciones específicas
+
+export function requireInventoryPermission(
+  user: PermissionUser,
+  action: InventoryPermissionAction
+): void {
+  try {
+    validateInventoryPermissions(user, action);
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      throw error;
+    }
+    throw new ValidationError(`Permission check failed: ${error}`);
+  }
+}
+
+// Helpers específicos para cada recurso
+export const inventoryValidators = {
+  // Products
+  canCreateProduct: (user: PermissionUser) => {
+    requireInventoryPermission(user, "CREATE_PRODUCT");
+  },
+  canDeleteProduct: (user: PermissionUser) => {
+    requireInventoryPermission(user, "DELETE_PRODUCT");
+  },
+  canUpdateProduct: (user: PermissionUser) => {
+    requireInventoryPermission(user, "UPDATE_PRODUCT");
+  },
+  canViewCosts: (user: PermissionUser) => {
+    requireInventoryPermission(user, "VIEW_COST");
+  },
+
+  // Categories
+  canCreateCategory: (user: PermissionUser) => {
+    requireInventoryPermission(user, "CREATE_CATEGORY");
+  },
+  canDeleteCategory: (user: PermissionUser) => {
+    requireInventoryPermission(user, "DELETE_CATEGORY");
+  },
+
+  // Suppliers
+  canManageSuppliers: (user: PermissionUser) => {
+    requireInventoryPermission(user, "CREATE_SUPPLIER");
+  },
+
+  // Stock movements
+  canAdjustStock: (user: PermissionUser) => {
+    requireInventoryPermission(user, "STOCK_ADJUSTMENT");
+  },
+} as const;
 
 // 📦 PRODUCT VALIDATION
 export function validateCreateProduct(input: unknown): CreateProductInput {
@@ -67,7 +192,7 @@ export function validateCreateProduct(input: unknown): CreateProductInput {
     return createProductSchema.parse(input);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new ValidationError("Product validation failed", error.errors);
+      throw new ValidationError("Product validation failed", error.issues);
     }
     throw new Error("Invalid product data");
   }
@@ -78,7 +203,10 @@ export function validateUpdateProduct(input: unknown): UpdateProductInput {
     return updateProductSchema.parse(input);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new ValidationError("Product update validation failed", error.errors);
+      throw new ValidationError(
+        "Product update validation failed",
+        error.issues
+      );
     }
     throw new Error("Invalid product update data");
   }
@@ -90,7 +218,7 @@ export function validateCreateCategory(input: unknown): CreateCategoryInput {
     return createCategorySchema.parse(input);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new ValidationError("Category validation failed", error.errors);
+      throw new ValidationError("Category validation failed", error.issues);
     }
     throw new Error("Invalid category data");
   }
@@ -102,7 +230,7 @@ export function validateCreateSupplier(input: unknown): CreateSupplierInput {
     return createSupplierSchema.parse(input);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new ValidationError("Supplier validation failed", error.errors);
+      throw new ValidationError("Supplier validation failed", error.issues);
     }
     throw new Error("Invalid supplier data");
   }
@@ -118,7 +246,7 @@ export function validateCreateStockMovement(
     if (error instanceof z.ZodError) {
       throw new ValidationError(
         "Stock movement validation failed",
-        error.errors
+        error.issues
       );
     }
     throw new Error("Invalid stock movement data");
@@ -131,7 +259,10 @@ export function validateProductFilters(input: unknown): ProductFilters {
     return productFiltersSchema.parse(input);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new ValidationError("Product filters validation failed", error.errors);
+      throw new ValidationError(
+        "Product filters validation failed",
+        error.issues
+      );
     }
     throw new Error("Invalid product filters");
   }
@@ -144,7 +275,7 @@ export function validateCategoryFilters(input: unknown): CategoryFilters {
     if (error instanceof z.ZodError) {
       throw new ValidationError(
         "Category filters validation failed",
-        error.errors
+        error.issues
       );
     }
     throw new Error("Invalid category filters");
@@ -158,7 +289,7 @@ export function validateSupplierFilters(input: unknown): SupplierFilters {
     if (error instanceof z.ZodError) {
       throw new ValidationError(
         "Supplier filters validation failed",
-        error.errors
+        error.issues
       );
     }
     throw new Error("Invalid supplier filters");
@@ -170,7 +301,7 @@ export function validatePagination(input: unknown): PaginationParams {
     return paginationParamsSchema.parse(input);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new ValidationError("Pagination validation failed", error.errors);
+      throw new ValidationError("Pagination validation failed", error.issues);
     }
     throw new Error("Invalid pagination parameters");
   }
@@ -189,10 +320,7 @@ export class BusinessRuleValidator {
 
     // Stock cannot be negative
     if (input.stock < 0) {
-      throw new BusinessRuleError(
-        "Stock cannot be negative",
-        "NEGATIVE_STOCK"
-      );
+      throw new BusinessRuleError("Stock cannot be negative", "NEGATIVE_STOCK");
     }
 
     // Min stock cannot be greater than max stock
@@ -287,7 +415,7 @@ export class BusinessRuleValidator {
     // Business rule: SKU should follow company format
     // Example: Product type + variant + optional suffix
     // This is just an example - adjust to your business needs
-    
+
     if (sku.length < 3) {
       throw new BusinessRuleError(
         "SKU must be at least 3 characters",
@@ -325,7 +453,7 @@ export class SecurityValidator {
       ];
 
       const urlObj = new URL(url);
-      if (!allowedDomains.some(domain => urlObj.hostname.endsWith(domain))) {
+      if (!allowedDomains.some((domain) => urlObj.hostname.endsWith(domain))) {
         throw new SecurityError(
           "Image URL domain not allowed",
           "UNTRUSTED_DOMAIN"
@@ -334,7 +462,7 @@ export class SecurityValidator {
 
       // Check file extension
       const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
-      const hasValidExtension = allowedExtensions.some(ext => 
+      const hasValidExtension = allowedExtensions.some((ext) =>
         urlObj.pathname.toLowerCase().endsWith(ext)
       );
 
@@ -347,12 +475,14 @@ export class SecurityValidator {
     }
   }
 
-  static sanitizeMetadata(metadata: Record<string, unknown>): Record<string, unknown> {
+  static sanitizeMetadata(
+    metadata: Record<string, unknown>
+  ): Record<string, unknown> {
     // Remove potentially dangerous properties
     const sanitized = { ...metadata };
-    
+
     // Remove functions, undefined, symbols
-    Object.keys(sanitized).forEach(key => {
+    Object.keys(sanitized).forEach((key) => {
       const value = sanitized[key];
       if (
         typeof value === "function" ||
@@ -371,7 +501,7 @@ export class SecurityValidator {
       }
 
       if (Array.isArray(obj)) {
-        return obj.map(item => limitDepth(item, depth + 1));
+        return obj.map((item) => limitDepth(item, depth + 1));
       }
 
       const result: Record<string, unknown> = {};
@@ -422,7 +552,9 @@ export function isValidationError(error: unknown): error is ValidationError {
   return error instanceof ValidationError;
 }
 
-export function isBusinessRuleError(error: unknown): error is BusinessRuleError {
+export function isBusinessRuleError(
+  error: unknown
+): error is BusinessRuleError {
   return error instanceof BusinessRuleError;
 }
 
@@ -430,14 +562,16 @@ export function isSecurityError(error: unknown): error is SecurityError {
   return error instanceof SecurityError;
 }
 
-export function formatValidationErrors(errors: z.ZodIssue[]): Record<string, string> {
+export function formatValidationErrors(
+  errors: z.ZodIssue[]
+): Record<string, string> {
   const formatted: Record<string, string> = {};
-  
-  errors.forEach(error => {
+
+  errors.forEach((error) => {
     const path = error.path.join(".");
     formatted[path] = error.message;
   });
-  
+
   return formatted;
 }
 

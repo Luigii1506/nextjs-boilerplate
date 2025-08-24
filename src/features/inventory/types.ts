@@ -123,14 +123,14 @@ export interface CreateProductInput {
   categoryId: string;
   price: number;
   cost: number;
-  stock: number;
-  minStock: number;
+  stock?: number; // has default in schema
+  minStock?: number; // has default in schema
   maxStock?: number | null;
-  unit: string;
+  unit?: string; // has default in schema
   barcode?: string | null;
-  images: string[];
+  images?: string[]; // has default in schema
   supplierId?: string | null;
-  tags: string[];
+  tags?: string[]; // has default in schema
   metadata?: Record<string, unknown>;
 }
 

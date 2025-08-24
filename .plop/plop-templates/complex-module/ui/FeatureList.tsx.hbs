@@ -1,0 +1,57 @@
+'use client';
+
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { DataTable } from '@/components/ui/data-table';
+import { columns } from './columns';
+import { get{{pascalCase name}}List } from '../server/actions';
+
+export function {{pascalCase name}}List() {
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const limit = 10;
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['{{camelCase name}}', 'list', { page, search }],
+    queryFn: () => get{{pascalCase name}}List({ page, limit, search }),
+  });
+
+  if (isLoading) {
+    return <div>Cargando...</div>;
+  }
+
+  if (error) {
+    return <div>Error al cargar los datos</div>;
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Gestión de {{pascalCase name}}s</h1>
+        <Button>Nuevo {{pascalCase name}}</Button>
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <Input
+          placeholder="Buscar..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+      </div>
+
+      <div className="rounded-md border">
+        <DataTable
+          columns={columns}
+          data={data?.data || []}
+          totalItems={data?.total || 0}
+          page={page}
+          limit={limit}
+          onPageChange={setPage}
+        />
+      </div>
+    </div>
+  );
+}

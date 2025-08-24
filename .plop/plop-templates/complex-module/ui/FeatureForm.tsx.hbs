@@ -1,0 +1,112 @@
+'use client';
+
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/use-toast';
+import { create{{pascalCase name}}Schema } from '../server/validators';
+
+type {{pascalCase name}}FormValues = z.infer<typeof create{{pascalCase name}}Schema>;
+
+interface {{pascalCase name}}FormProps {
+  initialData?: any; // Ajusta el tipo según corresponda
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}
+
+export function {{pascalCase name}}Form({ 
+  initialData,
+  onSuccess,
+  onCancel 
+}: {{pascalCase name}}FormProps) {
+  const { toast } = useToast();
+  const isEditing = !!initialData?.id;
+
+  const form = useForm<{{pascalCase name}}FormValues>({
+    resolver: zodResolver(create{{pascalCase name}}Schema),
+    defaultValues: initialData || {
+      // Valores por defecto
+    },
+  });
+
+  const { isSubmitting } = form.formState;
+
+  const onSubmit = async (data: {{pascalCase name}}FormValues) => {
+    try {
+      if (isEditing) {
+        // Lógica para actualizar
+        // await update{{pascalCase name}}(initialData.id, data);
+        toast({
+          title: '¡Éxito!',
+          description: '{{pascalCase name}} actualizado correctamente',
+        });
+      } else {
+        // Lógica para crear
+        // await create{{pascalCase name}}(data);
+        toast({
+          title: '¡Éxito!',
+          description: '{{pascalCase name}} creado correctamente',
+        });
+      }
+
+      onSuccess?.();
+    } catch (error) {
+      console.error('Error al guardar {{camelCase name}}', error);
+      toast({
+        title: 'Error',
+        description: 'Ocurrió un error al guardar',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nombre</FormLabel>
+                <FormControl>
+                  <Input placeholder="Nombre del {{camelCase name}}" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Agrega más campos según sea necesario */}
+        </div>
+
+        <div className="flex justify-end space-x-4">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onCancel}
+            disabled={isSubmitting}
+          >
+            Cancelar
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Guardando...' : 'Guardar'}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
+}

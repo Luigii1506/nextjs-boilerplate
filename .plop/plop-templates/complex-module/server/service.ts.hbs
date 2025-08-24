@@ -1,0 +1,95 @@
+import { prisma } from '@/core/database/prisma';
+import { 
+  {{pascalCase name}}, 
+  Create{{pascalCase name}}Dto, 
+  Update{{pascalCase name}}Dto,
+  {{pascalCase name}}ListResponse,
+  {{pascalCase name}}FilterOptions
+} from '../types';
+
+export class {{pascalCase name}}Service {
+  /**
+   * Obtiene una lista paginada de registros
+   */
+  async findAll(
+    options: {{pascalCase name}}FilterOptions = {}
+  ): Promise<{{pascalCase name}}ListResponse> {
+    const { page = 1, limit = 10, search } = options;
+    const skip = (page - 1) * limit;
+    
+    const where = {
+      ...(search && {
+        // Ajusta los campos de búsqueda según sea necesario
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+        ],
+      }),
+      // Agrega más condiciones de filtrado según sea necesario
+    };
+
+    const [total, data] = await Promise.all([
+      prisma.{{camelCase name}}.count({ where }),
+      prisma.{{camelCase name}}.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  /**
+   * Busca un registro por su ID
+   */
+  async findById(id: string): Promise<{{pascalCase name}} | null> {
+    return prisma.{{camelCase name}}.findUnique({ 
+      where: { id } 
+    });
+  }
+
+  /**
+   * Crea un nuevo registro
+   */
+  async create(data: Create{{pascalCase name}}Dto): Promise<{{pascalCase name}}> {
+    return prisma.{{camelCase name}}.create({ 
+      data: {
+        ...data,
+        // Agrega valores por defecto si es necesario
+      } 
+    });
+  }
+
+  /**
+   * Actualiza un registro existente
+   */
+  async update(
+    id: string, 
+    data: Update{{pascalCase name}}Dto
+  ): Promise<{{pascalCase name}}> {
+    return prisma.{{camelCase name}}.update({ 
+      where: { id },
+      data,
+    });
+  }
+
+  /**
+   * Elimina un registro
+   */
+  async delete(id: string): Promise<{{pascalCase name}}> {
+    return prisma.{{camelCase name}}.delete({ 
+      where: { id } 
+    });
+  }
+}
+
+// Exporta una instancia del servicio
+export const {{camelCase name}}Service = new {{pascalCase name}}Service();

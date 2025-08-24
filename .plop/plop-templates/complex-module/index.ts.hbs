@@ -1,0 +1,11 @@
+// Exportaciones del módulo {{pascalCase name}}
+export * from './types';
+{{#if hasServer}}
+export * from './server';
+{{/if}}
+{{#if hasUI}}
+export * from './ui';
+{{/if}}
+{{#if hasHooks}}
+export * from './hooks';
+{{/if}}

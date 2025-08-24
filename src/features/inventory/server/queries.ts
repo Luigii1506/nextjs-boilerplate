@@ -11,6 +11,12 @@
 
 import { prisma } from "@/core/database/prisma";
 import type {
+  Product,
+  ProductWithRelations,
+  Category,
+  Supplier,
+  StockMovement,
+  StockStatus,
   CreateProductInput,
   UpdateProductInput,
   CreateCategoryInput,
@@ -27,8 +33,11 @@ import type {
 export async function createProductQuery(
   input: CreateProductInput,
   userId: string
-): Promise<any> {
+): Promise<Product> {
   return await prisma.$transaction(async (tx) => {
+    const stock = input.stock ?? 0;
+    const minStock = input.minStock ?? 0;
+
     // Create the product
     const product = await tx.product.create({
       data: {
@@ -38,27 +47,29 @@ export async function createProductQuery(
         categoryId: input.categoryId,
         price: input.price,
         cost: input.cost,
-        stock: input.stock,
-        minStock: input.minStock,
+        stock,
+        minStock,
         maxStock: input.maxStock || null,
-        unit: input.unit,
+        unit: input.unit || "piece",
         barcode: input.barcode || null,
         images: input.images || [],
         supplierId: input.supplierId || null,
         tags: input.tags || [],
-        metadata: input.metadata || null,
+        metadata: input.metadata
+          ? JSON.parse(JSON.stringify(input.metadata))
+          : null,
       },
     });
 
     // Create initial stock movement if stock > 0
-    if (input.stock > 0) {
+    if (stock > 0) {
       await tx.stockMovement.create({
         data: {
           productId: product.id,
           type: "IN",
-          quantity: input.stock,
+          quantity: stock,
           previousStock: 0,
-          newStock: input.stock,
+          newStock: stock,
           reason: "Stock inicial del producto",
           reference: `INIT-${product.sku}`,
           userId,
@@ -73,7 +84,7 @@ export async function createProductQuery(
 export async function updateProductQuery(
   input: UpdateProductInput,
   userId: string
-): Promise<any> {
+): Promise<Product> {
   return await prisma.$transaction(async (tx) => {
     // Get current product for stock comparison
     const currentProduct = await tx.product.findUnique({
@@ -85,29 +96,97 @@ export async function updateProductQuery(
       throw new Error("Producto no encontrado");
     }
 
+    // 🐛 Debug: Log update input data
+    console.log("🐛 [updateProductQuery] Input data:", {
+      id: input.id,
+      categoryId: input.categoryId,
+      supplierId: input.supplierId,
+      barcode: input.barcode,
+      sku: input.sku,
+      name: input.name,
+    });
+
+    // ✅ Prepare data with proper null handling
+    const updateData: Record<string, unknown> = {};
+
+    // Required/always-present fields
+    if (input.sku !== undefined) updateData.sku = input.sku;
+    if (input.name !== undefined) updateData.name = input.name;
+    if (input.description !== undefined)
+      updateData.description = input.description;
+    if (input.price !== undefined) updateData.price = input.price;
+    if (input.cost !== undefined) updateData.cost = input.cost;
+    if (input.stock !== undefined) updateData.stock = input.stock;
+    if (input.minStock !== undefined) updateData.minStock = input.minStock;
+    if (input.maxStock !== undefined) updateData.maxStock = input.maxStock;
+    if (input.unit !== undefined) updateData.unit = input.unit;
+    if (input.images !== undefined) updateData.images = input.images;
+    if (input.tags !== undefined) updateData.tags = input.tags;
+    if (input.metadata !== undefined) updateData.metadata = input.metadata;
+    if (input.isActive !== undefined) updateData.isActive = input.isActive;
+
+    // ✅ Special handling for categoryId (REQUIRED field - cannot be null)
+    if (input.categoryId !== undefined) {
+      if (!input.categoryId) {
+        throw new Error("Category is required - categoryId cannot be empty");
+      }
+
+      // ✅ Validate category exists and is active
+      const categoryExists = await tx.category.findUnique({
+        where: { id: input.categoryId },
+        select: { id: true, isActive: true },
+      });
+
+      if (!categoryExists) {
+        throw new Error(`Category with ID ${input.categoryId} does not exist`);
+      }
+
+      if (!categoryExists.isActive) {
+        throw new Error(`Category with ID ${input.categoryId} is inactive`);
+      }
+
+      updateData.categoryId = input.categoryId;
+    }
+
+    // ✅ Special handling for nullable fields
+    if (input.barcode !== undefined) {
+      updateData.barcode = input.barcode || null; // Convert empty string to null
+    }
+
+    if (input.supplierId !== undefined) {
+      const supplierId = input.supplierId || null; // Convert empty string to null
+
+      // ✅ Validate supplier exists if provided
+      if (supplierId) {
+        const supplierExists = await tx.supplier.findUnique({
+          where: { id: supplierId },
+          select: { id: true, isActive: true },
+        });
+
+        if (!supplierExists) {
+          throw new Error(`Supplier with ID ${supplierId} does not exist`);
+        }
+
+        if (!supplierExists.isActive) {
+          throw new Error(`Supplier with ID ${supplierId} is inactive`);
+        }
+      }
+
+      updateData.supplierId = supplierId;
+    }
+
+    // 🐛 Debug: Log prepared update data
+    console.log("🐛 [updateProductQuery] Prepared update data:", {
+      updateData,
+      categoryId: updateData.categoryId,
+      supplierId: updateData.supplierId,
+      barcode: updateData.barcode,
+    });
+
     // Update the product
     const product = await tx.product.update({
       where: { id: input.id },
-      data: {
-        ...(input.sku && { sku: input.sku }),
-        ...(input.name && { name: input.name }),
-        ...(input.description !== undefined && {
-          description: input.description,
-        }),
-        ...(input.categoryId && { categoryId: input.categoryId }),
-        ...(input.price !== undefined && { price: input.price }),
-        ...(input.cost !== undefined && { cost: input.cost }),
-        ...(input.stock !== undefined && { stock: input.stock }),
-        ...(input.minStock !== undefined && { minStock: input.minStock }),
-        ...(input.maxStock !== undefined && { maxStock: input.maxStock }),
-        ...(input.unit && { unit: input.unit }),
-        ...(input.barcode !== undefined && { barcode: input.barcode }),
-        ...(input.images && { images: input.images }),
-        ...(input.supplierId !== undefined && { supplierId: input.supplierId }),
-        ...(input.tags && { tags: input.tags }),
-        ...(input.metadata !== undefined && { metadata: input.metadata }),
-        ...(input.isActive !== undefined && { isActive: input.isActive }),
-      },
+      data: updateData,
     });
 
     // Create stock movement if stock changed
@@ -133,7 +212,7 @@ export async function updateProductQuery(
   });
 }
 
-export async function deleteProductQuery(id: string): Promise<any> {
+export async function deleteProductQuery(id: string): Promise<Product> {
   return await prisma.$transaction(async (tx) => {
     // Get full product data for response
     const productToDelete = await tx.product.findUnique({
@@ -156,7 +235,11 @@ export async function deleteProductQuery(id: string): Promise<any> {
 export async function getProductsQuery(
   filters: ProductFilters = {},
   pagination: PaginationParams = { page: 1, limit: 20, sortDirection: "asc" }
-): Promise<PaginatedResponse<any>> {
+): Promise<PaginatedResponse<ProductWithRelations>> {
+  // Ensure pagination has default values
+  const page = pagination.page ?? 1;
+  const limit = pagination.limit ?? 20;
+
   // Build where clause
   const where = {
     ...(filters.search && {
@@ -194,76 +277,134 @@ export async function getProductsQuery(
     ? { [pagination.sortBy]: pagination.sortDirection }
     : { createdAt: "desc" as const };
 
-  // Parallel queries for better performance
+  // ⚡ OPTIMIZED PARALLEL QUERIES - Minimal necessary data for max speed
   const [products, totalCount] = await Promise.all([
     prisma.product.findMany({
       where,
-      include: {
+      // 🚀 FAST - Only essential fields for listing
+      select: {
+        id: true,
+        sku: true,
+        name: true,
+        price: true,
+        cost: true,
+        stock: true,
+        minStock: true,
+        maxStock: true,
+        unit: true,
+        images: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        // 🚀 FAST - Minimal category info (no deep nesting)
         category: {
-          include: {
-            children: true,
-            products: { select: { id: true } },
-            _count: { select: { products: true, children: true } },
+          select: {
+            id: true,
+            name: true,
+            color: true,
+            icon: true,
           },
         },
+        // 🚀 FAST - Minimal supplier info (no deep nesting)
         supplier: {
-          include: {
-            products: { select: { id: true } },
-            _count: { select: { products: true } },
+          select: {
+            id: true,
+            name: true,
+            contactPerson: true,
           },
         },
-        stockMovements: {
-          orderBy: { createdAt: "desc" },
-          take: 5, // Recent movements only for performance
-          include: {
-            user: { select: { id: true, name: true } },
-          },
+        // 🚀 FAST - Essential counts only
+        _count: {
+          select: { stockMovements: true },
         },
-        _count: { select: { stockMovements: true } },
       },
       orderBy,
-      skip: (pagination.page - 1) * pagination.limit,
-      take: pagination.limit,
+      skip: (page - 1) * limit,
+      take: limit,
     }),
     prisma.product.count({ where }),
   ]);
 
   // Format response
-  const totalPages = Math.ceil(totalCount / pagination.limit);
+  const totalPages = Math.ceil(totalCount / limit);
   return {
     data: products,
     pagination: {
-      page: pagination.page,
-      limit: pagination.limit,
+      page,
+      limit,
       total: totalCount,
       totalPages,
-      hasNext: pagination.page < totalPages,
-      hasPrev: pagination.page > 1,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
     },
   };
 }
 
-export async function getProductByIdQuery(id: string): Promise<any> {
+// ⚡ OPTIMIZED - Full product details with necessary relations only
+export async function getProductByIdQuery(
+  id: string
+): Promise<ProductWithRelations | null> {
   const product = await prisma.product.findUnique({
     where: { id },
-    include: {
+    select: {
+      // 🚀 FAST - All product fields
+      id: true,
+      sku: true,
+      name: true,
+      description: true,
+      price: true,
+      cost: true,
+      stock: true,
+      minStock: true,
+      maxStock: true,
+      unit: true,
+      barcode: true,
+      images: true,
+      tags: true,
+      metadata: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true,
+      // 🚀 FAST - Essential category with minimal nesting
       category: {
-        include: {
-          children: true,
-          products: { select: { id: true } },
-          _count: { select: { products: true, children: true } },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          color: true,
+          icon: true,
+          parentId: true,
         },
       },
+      // 🚀 FAST - Essential supplier info
       supplier: {
-        include: {
-          products: { select: { id: true } },
-          _count: { select: { products: true } },
+        select: {
+          id: true,
+          name: true,
+          contactPerson: true,
+          email: true,
+          phone: true,
         },
       },
+      // 🚀 FAST - Recent stock movements (limit for performance)
       stockMovements: {
         orderBy: { createdAt: "desc" },
-        include: {
-          user: { select: { id: true, name: true } },
+        take: 10, // Limit recent movements
+        select: {
+          id: true,
+          type: true,
+          quantity: true,
+          previousStock: true,
+          newStock: true,
+          reason: true,
+          reference: true,
+          createdAt: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       },
       _count: { select: { stockMovements: true } },
@@ -277,17 +418,17 @@ export async function getProductByIdQuery(id: string): Promise<any> {
   return product;
 }
 
-// Business validation queries
+// ⚡ ULTRA-FAST VALIDATION QUERIES - Minimal data for max speed
 export async function checkSkuUniqueness(
   sku: string,
   excludeId?: string
 ): Promise<boolean> {
   const existing = await prisma.product.findUnique({
     where: { sku },
-    select: { id: true },
+    select: { id: true }, // 🚀 FAST - Only ID needed
   });
 
-  return !existing || (excludeId && existing.id === excludeId);
+  return !existing || (!!excludeId && existing.id === excludeId);
 }
 
 export async function checkBarcodeUniqueness(
@@ -298,13 +439,59 @@ export async function checkBarcodeUniqueness(
 
   const existing = await prisma.product.findUnique({
     where: { barcode },
-    select: { id: true },
+    select: { id: true }, // 🚀 FAST - Only ID needed
   });
 
-  return !existing || (excludeId && existing.id === excludeId);
+  return !existing || (!!excludeId && existing.id === excludeId);
 }
 
-export async function getProductWithDependencies(id: string): Promise<any> {
+// ⚡ ULTRA-FAST - Validation-specific product query (minimal fields)
+export async function getProductForValidation(
+  id: string
+): Promise<Product | null> {
+  return await prisma.product.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      sku: true,
+      name: true,
+      stock: true,
+      isActive: true,
+    }, // 🚀 FAST - Only essential validation fields
+  });
+}
+
+// ⚡ ULTRA-FAST - Category validation by ID
+export async function getCategoryByIdQuery(
+  id: string
+): Promise<Category | null> {
+  return await prisma.category.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      name: true,
+      isActive: true,
+    }, // 🚀 FAST - Only essential validation fields
+  });
+}
+
+// ⚡ ULTRA-FAST - Supplier validation by ID
+export async function getSupplierByIdQuery(
+  id: string
+): Promise<Supplier | null> {
+  return await prisma.supplier.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      name: true,
+      isActive: true,
+    }, // 🚀 FAST - Only essential validation fields
+  });
+}
+
+export async function getProductWithDependencies(
+  id: string
+): Promise<ProductWithRelations | null> {
   return await prisma.product.findUnique({
     where: { id },
     include: {
@@ -322,7 +509,7 @@ export async function getProductWithDependencies(id: string): Promise<any> {
 // 🏷️ CATEGORY QUERIES
 export async function createCategoryQuery(
   input: CreateCategoryInput
-): Promise<any> {
+): Promise<Category> {
   return await prisma.category.create({
     data: {
       name: input.name,
@@ -387,17 +574,18 @@ export async function checkCategoryNameUniqueness(
   return !existing;
 }
 
-export async function validateCategoryExists(id: string): Promise<any> {
-  return await prisma.category.findUnique({
+export async function validateCategoryExists(id: string): Promise<boolean> {
+  const category = await prisma.category.findUnique({
     where: { id },
     select: { id: true, isActive: true },
   });
+  return !!category && category.isActive;
 }
 
 // 🚛 SUPPLIER QUERIES
 export async function createSupplierQuery(
   input: CreateSupplierInput
-): Promise<any> {
+): Promise<Supplier> {
   return await prisma.supplier.create({
     data: {
       name: input.name,
@@ -456,11 +644,12 @@ export async function getSuppliersQuery(
   });
 }
 
-export async function validateSupplierExists(id: string): Promise<any> {
-  return await prisma.supplier.findUnique({
+export async function validateSupplierExists(id: string): Promise<boolean> {
+  const supplier = await prisma.supplier.findUnique({
     where: { id },
     select: { id: true, isActive: true },
   });
+  return !!supplier && supplier.isActive;
 }
 
 // 📊 STOCK MOVEMENT QUERIES
@@ -469,7 +658,7 @@ export async function addStockMovementQuery(
   userId: string,
   previousStock: number,
   newStock: number
-): Promise<any> {
+): Promise<StockMovement> {
   return await prisma.$transaction(
     async (tx) => {
       // Create the stock movement
@@ -500,7 +689,9 @@ export async function addStockMovementQuery(
   );
 }
 
-export async function getProductForStockMovement(id: string): Promise<any> {
+export async function getProductForStockMovement(
+  id: string
+): Promise<Product | null> {
   return await prisma.product.findUnique({
     where: { id },
     select: {
@@ -516,7 +707,9 @@ export async function getProductForStockMovement(id: string): Promise<any> {
 }
 
 // 📊 ANALYTICS QUERIES
-export async function getInventoryStatsQuery(): Promise<any> {
+export async function getInventoryStatsQuery(): Promise<
+  Record<string, number>
+> {
   const [
     productCounts,
     categoryCounts,
@@ -653,7 +846,17 @@ export async function getLowStockAlertsQuery(): Promise<any[]> {
   `;
 
   // Process all products and create alerts
-  const alerts: any[] = [];
+  const alerts: Array<{
+    id: string;
+    productId: string;
+    productName: string;
+    productSku: string;
+    currentStock: number;
+    minStock: number;
+    status: StockStatus;
+    category: string;
+    lastMovement?: Date;
+  }> = [];
 
   // Add regular stock alerts
   productsWithAlerts.forEach((product) => {
@@ -696,7 +899,7 @@ export async function getLowStockAlertsQuery(): Promise<any[]> {
   });
 
   // Sort alerts by severity
-  const severityOrder = {
+  const severityOrder: Record<StockStatus, number> = {
     OUT_OF_STOCK: 3,
     CRITICAL_STOCK: 2,
     LOW_STOCK: 1,
@@ -704,7 +907,9 @@ export async function getLowStockAlertsQuery(): Promise<any[]> {
   };
 
   alerts.sort((a, b) => {
-    const severityDiff = severityOrder[b.status] - severityOrder[a.status];
+    const severityDiff =
+      severityOrder[b.status as StockStatus] -
+      severityOrder[a.status as StockStatus];
     if (severityDiff !== 0) return severityDiff;
     return a.currentStock - b.currentStock;
   });

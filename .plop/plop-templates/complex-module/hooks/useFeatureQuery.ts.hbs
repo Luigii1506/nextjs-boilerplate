@@ -1,0 +1,95 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { 
+  get{{pascalCase name}}List, 
+  get{{pascalCase name}}ById, 
+  create{{pascalCase name}}, 
+  update{{pascalCase name}}, 
+  delete{{pascalCase name}} 
+} from '../server/actions';
+import { 
+  {{pascalCase name}}FilterOptions, 
+  Create{{pascalCase name}}Dto, 
+  Update{{pascalCase name}}Dto 
+} from '../types';
+
+const QUERY_KEYS = {
+  list: (filters: any) => ['{{camelCase name}}', 'list', filters],
+  detail: (id: string) => ['{{camelCase name}}', 'detail', id],
+} as const;
+
+export function use{{pascalCase name}}List(filters: {{pascalCase name}}FilterOptions = {}) {
+  return useQuery({
+    queryKey: QUERY_KEYS.list(filters),
+    queryFn: () => get{{pascalCase name}}List(filters),
+    keepPreviousData: true,
+  });
+}
+
+export function use{{pascalCase name}}Detail(id: string) {
+  return useQuery({
+    queryKey: QUERY_KEYS.detail(id),
+    queryFn: () => get{{pascalCase name}}ById(id),
+    enabled: !!id,
+  });
+}
+
+export function useCreate{{pascalCase name}}() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (data: Create{{pascalCase name}}Dto) => create{{pascalCase name}}(data),
+    onSuccess: () => {
+      // Invalida las consultas relacionadas
+      queryClient.invalidateQueries({ queryKey: ['{{camelCase name}}', 'list'] });
+    },
+  });
+}
+
+export function useUpdate{{pascalCase name}}() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Update{{pascalCase name}}Dto }) => 
+      update{{pascalCase name}}(id, data),
+    onSuccess: (_, { id }) => {
+      // Invalida tanto la lista como el detalle
+      queryClient.invalidateQueries({ queryKey: ['{{camelCase name}}', 'list'] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.detail(id) });
+    },
+  });
+}
+
+export function useDelete{{pascalCase name}}() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (id: string) => delete{{pascalCase name}}(id),
+    onSuccess: () => {
+      // Invalida la lista
+      queryClient.invalidateQueries({ queryKey: ['{{camelCase name}}', 'list'] });
+    },
+  });
+}
+
+// Hook para operaciones por lotes (si es necesario)
+export function useBulk{{pascalCase name}}Actions() {
+  const queryClient = useQueryClient();
+  
+  const deleteMany = useMutation({
+    mutationFn: async (ids: string[]) => {
+      // Implementa la lógica para eliminar múltiples registros
+      // Esto es solo un ejemplo
+      const results = await Promise.allSettled(
+        ids.map(id => delete{{pascalCase name}}(id))
+      );
+      return results;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['{{camelCase name}}', 'list'] });
+    },
+  });
+  
+  return {
+    deleteMany,
+  };
+}

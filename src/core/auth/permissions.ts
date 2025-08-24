@@ -30,6 +30,27 @@ export const PERMISSIONS = {
   session: ["list", "revoke", "delete"],
   files: ["read", "upload", "delete"],
   feature_flags: ["read", "write"],
+  // 📦 INVENTORY MANAGEMENT
+  inventory_product: [
+    "create",
+    "read",
+    "list",
+    "update",
+    "delete",
+    "set-stock",
+    "view-cost",
+    "view-profit",
+  ],
+  inventory_category: ["create", "read", "list", "update", "delete"],
+  inventory_supplier: ["create", "read", "list", "update", "delete"],
+  inventory_stock_movement: [
+    "create",
+    "read",
+    "list",
+    "adjustment",
+    "view-history",
+  ],
+  inventory_analytics: ["read", "export", "advanced-reports"],
 } as const;
 
 // Tipos derivados automáticamente
@@ -104,6 +125,27 @@ export const ROLE_STATEMENTS = {
     session: ["list", "revoke", "delete"],
     files: ["read", "upload", "delete"],
     feature_flags: ["read", "write"],
+    // 📦 INVENTORY - Full access for super admin
+    inventory_product: [
+      "create",
+      "read",
+      "list",
+      "update",
+      "delete",
+      "set-stock",
+      "view-cost",
+      "view-profit",
+    ],
+    inventory_category: ["create", "read", "list", "update", "delete"],
+    inventory_supplier: ["create", "read", "list", "update", "delete"],
+    inventory_stock_movement: [
+      "create",
+      "read",
+      "list",
+      "adjustment",
+      "view-history",
+    ],
+    inventory_analytics: ["read", "export", "advanced-reports"],
   },
   admin: {
     user: [
@@ -119,10 +161,37 @@ export const ROLE_STATEMENTS = {
     session: ["list", "revoke", "delete"],
     files: ["read", "upload"],
     feature_flags: ["read"],
+    // 📦 INVENTORY - Admin access (no delete sensitive items)
+    inventory_product: [
+      "create",
+      "read",
+      "list",
+      "update",
+      "delete",
+      "set-stock",
+      "view-cost",
+      "view-profit",
+    ],
+    inventory_category: ["create", "read", "list", "update", "delete"],
+    inventory_supplier: ["create", "read", "list", "update", "delete"],
+    inventory_stock_movement: [
+      "create",
+      "read",
+      "list",
+      "adjustment",
+      "view-history",
+    ],
+    inventory_analytics: ["read", "export"],
   },
   user: {
     session: ["list", "revoke", "delete"],
     files: ["read"],
+    // 📦 INVENTORY - Limited read access for regular users
+    inventory_product: ["read", "list"],
+    inventory_category: ["read", "list"],
+    inventory_supplier: ["read", "list"],
+    inventory_stock_movement: ["read", "list"],
+    inventory_analytics: ["read"],
   },
 } satisfies {
   [role in RoleName]: Partial<{ [R in Resource]: readonly ActionOf<R>[] }>;
@@ -238,6 +307,52 @@ export function createPermissionCheckers<T extends Resource>(resource: T) {
       hasPermission(user, `${resource}:list` as AnyPermission),
   };
 }
+
+// 📦 INVENTORY PERMISSION HELPERS
+// Helpers específicos para módulo de inventory
+export const inventoryPermissions = {
+  // Products
+  canCreateProduct: (user: PermissionUser) =>
+    hasPermission(user, "inventory_product:create"),
+  canReadProduct: (user: PermissionUser) =>
+    hasPermission(user, "inventory_product:read"),
+  canUpdateProduct: (user: PermissionUser) =>
+    hasPermission(user, "inventory_product:update"),
+  canDeleteProduct: (user: PermissionUser) =>
+    hasPermission(user, "inventory_product:delete"),
+  canListProducts: (user: PermissionUser) =>
+    hasPermission(user, "inventory_product:list"),
+  canSetStock: (user: PermissionUser) =>
+    hasPermission(user, "inventory_product:set-stock"),
+  canViewCost: (user: PermissionUser) =>
+    hasPermission(user, "inventory_product:view-cost"),
+  canViewProfit: (user: PermissionUser) =>
+    hasPermission(user, "inventory_product:view-profit"),
+
+  // Categories
+  canCreateCategory: (user: PermissionUser) =>
+    hasPermission(user, "inventory_category:create"),
+  canDeleteCategory: (user: PermissionUser) =>
+    hasPermission(user, "inventory_category:delete"),
+
+  // Suppliers
+  canCreateSupplier: (user: PermissionUser) =>
+    hasPermission(user, "inventory_supplier:create"),
+  canDeleteSupplier: (user: PermissionUser) =>
+    hasPermission(user, "inventory_supplier:delete"),
+
+  // Stock Movements
+  canCreateStockMovement: (user: PermissionUser) =>
+    hasPermission(user, "inventory_stock_movement:create"),
+  canMakeAdjustment: (user: PermissionUser) =>
+    hasPermission(user, "inventory_stock_movement:adjustment"),
+
+  // Analytics
+  canViewAnalytics: (user: PermissionUser) =>
+    hasPermission(user, "inventory_analytics:read"),
+  canExportReports: (user: PermissionUser) =>
+    hasPermission(user, "inventory_analytics:export"),
+} as const;
 
 // 🔌 BETTER AUTH INTEGRATION
 // ===========================

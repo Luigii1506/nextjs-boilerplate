@@ -67,13 +67,13 @@ export function useCreateProduct(
       ? async (newProduct: CreateProductInput) => {
           // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
           await queryClient.cancelQueries({
-            queryKey: [INVENTORY_QUERY_KEYS.products],
+            queryKey: INVENTORY_QUERY_KEYS.products(),
           });
 
           // Snapshot the previous value
-          const previousProducts = queryClient.getQueryData([
-            INVENTORY_QUERY_KEYS.products,
-          ]);
+          const previousProducts = queryClient.getQueryData(
+            INVENTORY_QUERY_KEYS.products()
+          );
 
           // Optimistically update to the new value
           if (previousProducts) {
@@ -108,7 +108,7 @@ export function useCreateProduct(
             };
 
             queryClient.setQueryData(
-              [INVENTORY_QUERY_KEYS.products],
+              INVENTORY_QUERY_KEYS.products(),
               (old: unknown) => {
                 const oldData = old as {
                   data?: { products?: ProductWithRelations[] };
@@ -135,14 +135,28 @@ export function useCreateProduct(
     // 🎯 Success Handler
     onSuccess: (product) => {
       // 🔄 Invalidate and refetch relevant queries
+      // ✅ Fix: Call functions to get proper query keys
       queryClient.invalidateQueries({
-        queryKey: [INVENTORY_QUERY_KEYS.products],
+        queryKey: INVENTORY_QUERY_KEYS.products(),
       });
       queryClient.invalidateQueries({
-        queryKey: [INVENTORY_QUERY_KEYS.stats],
+        queryKey: INVENTORY_QUERY_KEYS.stats(),
       });
+      // ✅ Invalidate ALL product list variations (with any filters/pagination)
       queryClient.invalidateQueries({
-        queryKey: [INVENTORY_QUERY_KEYS.all],
+        predicate: (query) => {
+          const key = query.queryKey;
+          return (
+            Array.isArray(key) &&
+            key[0] === "inventory" &&
+            key[1] === "products" &&
+            key[2] === "list"
+          );
+        },
+      });
+      // ✅ Invalidate the root inventory cache
+      queryClient.invalidateQueries({
+        queryKey: INVENTORY_QUERY_KEYS.all,
       });
 
       // 📢 Success notification
@@ -160,7 +174,7 @@ export function useCreateProduct(
       // 🔄 Rollback optimistic update if it exists
       if (context?.previousProducts && optimisticUpdate) {
         queryClient.setQueryData(
-          [INVENTORY_QUERY_KEYS.products],
+          INVENTORY_QUERY_KEYS.products(),
           context.previousProducts
         );
       }
@@ -269,14 +283,28 @@ export function useUpdateProduct(
     // 🎯 Success Handler
     onSuccess: (product) => {
       // 🔄 Invalidate and refetch relevant queries
+      // ✅ Fix: Call functions to get proper query keys
       queryClient.invalidateQueries({
-        queryKey: [INVENTORY_QUERY_KEYS.products],
+        queryKey: INVENTORY_QUERY_KEYS.products(),
       });
       queryClient.invalidateQueries({
-        queryKey: [INVENTORY_QUERY_KEYS.stats],
+        queryKey: INVENTORY_QUERY_KEYS.stats(),
       });
+      // ✅ Invalidate ALL product list variations (with any filters/pagination)
       queryClient.invalidateQueries({
-        queryKey: [INVENTORY_QUERY_KEYS.all],
+        predicate: (query) => {
+          const key = query.queryKey;
+          return (
+            Array.isArray(key) &&
+            key[0] === "inventory" &&
+            key[1] === "products" &&
+            key[2] === "list"
+          );
+        },
+      });
+      // ✅ Invalidate the root inventory cache
+      queryClient.invalidateQueries({
+        queryKey: INVENTORY_QUERY_KEYS.all,
       });
 
       // 📢 Success notification
@@ -353,14 +381,28 @@ export function useDeleteProduct(
     // 🎯 Success Handler
     onSuccess: () => {
       // 🔄 Invalidate and refetch relevant queries
+      // ✅ Fix: Call functions to get proper query keys
       queryClient.invalidateQueries({
-        queryKey: [INVENTORY_QUERY_KEYS.products],
+        queryKey: INVENTORY_QUERY_KEYS.products(),
       });
       queryClient.invalidateQueries({
-        queryKey: [INVENTORY_QUERY_KEYS.stats],
+        queryKey: INVENTORY_QUERY_KEYS.stats(),
       });
+      // ✅ Invalidate ALL product list variations (with any filters/pagination)
       queryClient.invalidateQueries({
-        queryKey: [INVENTORY_QUERY_KEYS.all],
+        predicate: (query) => {
+          const key = query.queryKey;
+          return (
+            Array.isArray(key) &&
+            key[0] === "inventory" &&
+            key[1] === "products" &&
+            key[2] === "list"
+          );
+        },
+      });
+      // ✅ Invalidate the root inventory cache
+      queryClient.invalidateQueries({
+        queryKey: INVENTORY_QUERY_KEYS.all,
       });
 
       // 📢 Success notification

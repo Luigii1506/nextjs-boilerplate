@@ -25,6 +25,7 @@
     "create-super-admin": "npx tsx scripts/create-super-admin.ts",
     "create-test-users": "npx tsx scripts/create-test-users.ts",
     "update-user-role": "npx tsx scripts/update-user-role.ts",
+    "seed:inventory": "npx tsx src/features/inventory/scripts/seed-inventory.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -45,7 +46,11 @@
     "flags:list": "npx tsx scripts/list-feature-flags.ts",
     "flags:sync": "npx tsx scripts/sync-feature-flags.ts",
     "docs:start": "docusaurus start",
-    "docs:build": "docusaurus build"
+    "docs:build": "docusaurus build",
+    "generate": "plop",
+    "generate:complex": "plop complex-module",
+    "generate:simple": "plop simple-module",
+    "generate:component": "plop component"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.859.0",
@@ -68,6 +73,7 @@
     "react-dom": "19.1.0",
     "react-hook-form": "^7.62.0",
     "sonner": "^2.0.7",
+    "uuid": "^11.1.0",
     "zod": "^4.0.17"
   },
   "devDependencies": {
@@ -82,11 +88,13 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/uuid": "^10.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.4.5",
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^30.0.5",
     "msw": "^2.10.4",
+    "plop": "^4.0.1",
     "prisma": "^5.15.0",
     "tsx": "^4.20.3",
     "typescript": "^5"

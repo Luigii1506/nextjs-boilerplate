@@ -25,6 +25,7 @@ export { default as ProductsTab } from "./tabs/ProductsTab";
 // 📝 Modals and Forms
 export { default as ProductModal } from "./ProductModal";
 export { DeleteProductModal } from "./DeleteProductModal";
+export { default as ProductViewModal } from "./ProductViewModal";
 
 // 📊 Main components (TODO: Create these components)
 // export { default as ProductsTable } from "./ProductsTable";

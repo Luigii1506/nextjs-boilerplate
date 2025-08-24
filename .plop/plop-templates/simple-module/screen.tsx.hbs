@@ -1,0 +1,172 @@
+'use client';
+
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/components/ui/use-toast';
+import { 
+  get{{pascalCase name}}List, 
+  toggle{{pascalCase name}}Status,
+  delete{{pascalCase name}}
+} from './actions';
+
+export default function {{pascalCase name}}Screen() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [search, setSearch] = useState('');
+  
+  // Obtener la lista de {{camelCase name}}
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['{{camelCase name}}', 'list'],
+    queryFn: get{{pascalCase name}}List,
+  });
+  
+  // Mutación para cambiar el estado
+  const toggleStatusMutation = useMutation({
+    mutationFn: ({ id, currentStatus }: { id: string; currentStatus: boolean }) => 
+      toggle{{pascalCase name}}Status(id, currentStatus),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['{{camelCase name}}', 'list'] });
+      toast({
+        title: '¡Éxito!',
+        description: 'Estado actualizado correctamente',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'No se pudo actualizar el estado',
+        variant: 'destructive',
+      });
+    },
+  });
+  
+  // Mutación para eliminar
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => delete{{pascalCase name}}(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['{{camelCase name}}', 'list'] });
+      toast({
+        title: '¡Éxito!',
+        description: 'Registro eliminado correctamente',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'No se pudo eliminar el registro',
+        variant: 'destructive',
+      });
+    },
+  });
+  
+  // Filtrar resultados
+  const filteredData = data?.data.filter(item => 
+    item.name.toLowerCase().includes(search.toLowerCase()) ||
+    item.description?.toLowerCase().includes(search.toLowerCase())
+  ) || [];
+  
+  if (isLoading) {
+    return <div>Cargando...</div>;
+  }
+  
+  if (error) {
+    return <div>Error al cargar los datos</div>;
+  }
+  
+  return (
+    <div className="container mx-auto p-4 space-y-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Gestión de {{pascalCase name}}s</h1>
+          <p className="text-muted-foreground">
+            {data?.total} {{camelCase name}}s en total
+          </p>
+        </div>
+        
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Input
+            placeholder="Buscar {{camelCase name}}..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full sm:w-auto"
+          />
+          <Button>
+            Nuevo {{pascalCase name}}
+          </Button>
+        </div>
+      </div>
+      
+      <div className="grid gap-4">
+        {filteredData.length === 0 ? (
+          <Card>
+            <CardContent className="pt-6 text-center text-muted-foreground">
+              No se encontraron {{camelCase name}}s
+            </CardContent>
+          </Card>
+        ) : (
+          filteredData.map((item) => (
+            <Card key={item.id}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-lg font-medium">
+                  {item.name}
+                </CardTitle>
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id={`status-${item.id}`}
+                      checked={item.isActive}
+                      onCheckedChange={() => 
+                        toggleStatusMutation.mutate({ 
+                          id: item.id, 
+                          currentStatus: item.isActive 
+                        })
+                      }
+                      disabled={toggleStatusMutation.isPending}
+                    />
+                    <Label htmlFor={`status-${item.id}`}>
+                      {item.isActive ? 'Activo' : 'Inactivo'}
+                    </Label>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      // Navegar a la página de edición
+                    }}
+                  >
+                    Editar
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      if (confirm('¿Estás seguro de que deseas eliminar este registro?')) {
+                        deleteMutation.mutate(item.id);
+                      }
+                    }}
+                    disabled={deleteMutation.isPending}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    Eliminar
+                  </Button>
+                </div>
+              </CardHeader>
+              {item.description && (
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    {item.description}
+                  </p>
+                </CardContent>
+              )}
+            </Card>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}

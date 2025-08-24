@@ -1,0 +1,31 @@
+// Tipos para el módulo {{pascalCase name}}
+
+export interface {{pascalCase name}} {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+  // Agrega más campos según sea necesario
+}
+
+export interface Create{{pascalCase name}}Dto {
+  // Define los campos necesarios para crear un nuevo registro
+}
+
+export interface Update{{pascalCase name}}Dto extends Partial<Create{{pascalCase name}}Dto> {
+  // Campos opcionales para actualización
+}
+
+export interface {{pascalCase name}}ListResponse {
+  data: {{pascalCase name}}[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface {{pascalCase name}}FilterOptions {
+  page?: number;
+  limit?: number;
+  search?: string;
+  // Agrega más opciones de filtrado según sea necesario
+}

@@ -109,6 +109,12 @@ interface InventoryContextType {
   isDeleteConfirmOpen: boolean;
   setIsDeleteConfirmOpen: (open: boolean) => void;
 
+  // Product View States
+  viewingProduct: ProductWithRelations | null;
+  setViewingProduct: (product: ProductWithRelations | null) => void;
+  isViewModalOpen: boolean;
+  setIsViewModalOpen: (open: boolean) => void;
+
   // Data from API
   inventory: ReturnType<typeof useInventoryQuery>;
 
@@ -119,6 +125,8 @@ interface InventoryContextType {
   closeEditModal: () => void;
   openDeleteConfirm: (product: ProductWithRelations) => void;
   closeDeleteConfirm: () => void;
+  openViewModal: (product: ProductWithRelations) => void;
+  closeViewModal: () => void;
 }
 
 // 🎯 CONTEXT CREATION
@@ -154,6 +162,11 @@ export const InventoryProvider: React.FC<InventoryProviderProps> = ({
   const [deletingProduct, setDeletingProduct] =
     useState<ProductWithRelations | null>(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+
+  // 👁️ Product View States
+  const [viewingProduct, setViewingProduct] =
+    useState<ProductWithRelations | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
   // 🎯 Computed values
   const isEditMode = editingProduct !== null;
@@ -220,6 +233,17 @@ export const InventoryProvider: React.FC<InventoryProviderProps> = ({
     setIsDeleteConfirmOpen(false);
   }, []);
 
+  // 👁️ Product View Actions
+  const openViewModal = useCallback((product: ProductWithRelations) => {
+    setViewingProduct(product);
+    setIsViewModalOpen(true);
+  }, []);
+
+  const closeViewModal = useCallback(() => {
+    setViewingProduct(null);
+    setIsViewModalOpen(false);
+  }, []);
+
   const value: InventoryContextType = {
     // Tab Management
     activeTab,
@@ -255,6 +279,12 @@ export const InventoryProvider: React.FC<InventoryProviderProps> = ({
     isDeleteConfirmOpen,
     setIsDeleteConfirmOpen,
 
+    // Product View States
+    viewingProduct,
+    setViewingProduct,
+    isViewModalOpen,
+    setIsViewModalOpen,
+
     // Data
     inventory,
 
@@ -265,6 +295,8 @@ export const InventoryProvider: React.FC<InventoryProviderProps> = ({
     closeEditModal,
     openDeleteConfirm,
     closeDeleteConfirm,
+    openViewModal,
+    closeViewModal,
   };
 
   return (

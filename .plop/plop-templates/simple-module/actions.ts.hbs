@@ -1,0 +1,152 @@
+'use server';
+
+import { revalidatePath } from 'next/cache';
+import { prisma } from '@/core/database/prisma';
+import { {{pascalCase name}}, Create{{pascalCase name}}Dto, Update{{pascalCase name}}Dto } from './types';
+
+// Obtener todos los registros
+export async function get{{pascalCase name}}List() {
+  try {
+    const data = await prisma.{{camelCase name}}.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+    
+    return { 
+      success: true, 
+      data,
+      total: data.length 
+    };
+  } catch (error) {
+    console.error('Error al obtener la lista de {{camelCase name}}', error);
+    return { 
+      success: false, 
+      message: 'Error al obtener la lista de {{camelCase name}}',
+      data: [],
+      total: 0
+    };
+  }
+}
+
+// Obtener un registro por ID
+export async function get{{pascalCase name}}ById(id: string) {
+  try {
+    const data = await prisma.{{camelCase name}}.findUnique({
+      where: { id },
+    });
+    
+    if (!data) {
+      return { 
+        success: false, 
+        message: '{{pascalCase name}} no encontrado' 
+      };
+    }
+    
+    return { 
+      success: true, 
+      data 
+    };
+  } catch (error) {
+    console.error('Error al obtener {{camelCase name}}', error);
+    return { 
+      success: false, 
+      message: 'Error al obtener {{camelCase name}}' 
+    };
+  }
+}
+
+// Crear un nuevo registro
+export async function create{{pascalCase name}}(data: Create{{pascalCase name}}Dto) {
+  try {
+    const result = await prisma.{{camelCase name}}.create({
+      data: {
+        ...data,
+        isActive: data.isActive ?? true,
+      },
+    });
+    
+    revalidatePath('/{{kebabCase name}}');
+    
+    return { 
+      success: true, 
+      data: result,
+      message: '{{pascalCase name}} creado exitosamente' 
+    };
+  } catch (error) {
+    console.error('Error al crear {{camelCase name}}', error);
+    return { 
+      success: false, 
+      message: 'Error al crear {{camelCase name}}' 
+    };
+  }
+}
+
+// Actualizar un registro existente
+export async function update{{pascalCase name}}(id: string, data: Update{{pascalCase name}}Dto) {
+  try {
+    const result = await prisma.{{camelCase name}}.update({
+      where: { id },
+      data,
+    });
+    
+    revalidatePath('/{{kebabCase name}}');
+    revalidatePath(`/{{kebabCase name}}/${id}`);
+    
+    return { 
+      success: true, 
+      data: result,
+      message: '{{pascalCase name}} actualizado exitosamente' 
+    };
+  } catch (error) {
+    console.error('Error al actualizar {{camelCase name}}', error);
+    return { 
+      success: false, 
+      message: 'Error al actualizar {{camelCase name}}' 
+    };
+  }
+}
+
+// Eliminar un registro
+export async function delete{{pascalCase name}}(id: string) {
+  try {
+    await prisma.{{camelCase name}}.delete({
+      where: { id },
+    });
+    
+    revalidatePath('/{{kebabCase name}}');
+    
+    return { 
+      success: true, 
+      message: '{{pascalCase name}} eliminado exitosamente' 
+    };
+  } catch (error) {
+    console.error('Error al eliminar {{camelCase name}}', error);
+    return { 
+      success: false, 
+      message: 'Error al eliminar {{camelCase name}}' 
+    };
+  }
+}
+
+// Toggle el estado activo/inactivo
+export async function toggle{{pascalCase name}}Status(id: string, currentStatus: boolean) {
+  try {
+    const result = await prisma.{{camelCase name}}.update({
+      where: { id },
+      data: { isActive: !currentStatus },
+    });
+    
+    revalidatePath('/{{kebabCase name}}');
+    
+    return { 
+      success: true, 
+      data: result,
+      message: `{{pascalCase name}} ${!currentStatus ? 'activado' : 'desactivado'} exitosamente` 
+    };
+  } catch (error) {
+    console.error('Error al cambiar estado de {{camelCase name}}', error);
+    return { 
+      success: false, 
+      message: 'Error al cambiar estado de {{camelCase name}}' 
+    };
+  }
+}

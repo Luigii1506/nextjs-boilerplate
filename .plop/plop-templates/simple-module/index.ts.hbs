@@ -1,0 +1,12 @@
+// Re-exporta todos los componentes y utilidades del módulo
+export * from './types';
+export * from './actions';
+{{#if hasUI}}
+export * from './screen';
+{{/if}}
+{{#if hasHooks}}
+export * from './hooks';
+{{/if}}
+{{#if hasComponents}}
+export * from './components';
+{{/if}}

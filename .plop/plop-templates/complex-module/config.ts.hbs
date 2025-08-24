@@ -1,0 +1,78 @@
+// Configuración del módulo {{pascalCase name}}
+
+export const {{camelCase name}}Config = {
+  // Rutas de la API
+  api: {
+    base: '/api/{{kebabCase name}}',
+    endpoints: {
+      list: '/list',
+      create: '/create',
+      update: '/update',
+      delete: '/delete',
+      get: '/[id]',
+    },
+  },
+  
+  // Configuración de la UI
+  ui: {
+    // Títulos
+    titles: {
+      list: 'Lista de {{pascalCase name}}s',
+      create: 'Crear {{pascalCase name}}',
+      edit: 'Editar {{pascalCase name}}',
+      view: 'Ver {{pascalCase name}}',
+    },
+    
+    // Mensajes
+    messages: {
+      createSuccess: '{{pascalCase name}} creado exitosamente',
+      updateSuccess: '{{pascalCase name}} actualizado exitosamente',
+      deleteSuccess: '{{pascalCase name}} eliminado exitosamente',
+      deleteConfirm: '¿Estás seguro de que deseas eliminar este {{camelCase name}}?',
+    },
+    
+    // Configuración de la tabla
+    table: {
+      pageSize: 10,
+      pageSizeOptions: [10, 20, 50, 100],
+    },
+  },
+  
+  // Configuración de validación
+  validation: {
+    // Longitudes máximas y mínimas
+    lengths: {
+      name: { min: 3, max: 100 },
+      description: { min: 0, max: 1000 },
+    },
+    
+    // Expresiones regulares para validación
+    patterns: {
+      // email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    },
+  },
+  
+  // Configuración de permisos
+  permissions: {
+    create: '{{kebabCase name}}:create',
+    read: '{{kebabCase name}}:read',
+    update: '{{kebabCase name}}:update',
+    delete: '{{kebabCase name}}:delete',
+  },
+  
+  // Configuración de características
+  features: {
+    // Habilita/deshabilita características específicas
+    enabled: {
+      create: true,
+      edit: true,
+      delete: true,
+      export: false,
+      import: false,
+      bulkActions: false,
+    },
+  },
+} as const;
+
+// Tipos derivados de la configuración
+export type {{pascalCase name}}Config = typeof {{camelCase name}}Config;
