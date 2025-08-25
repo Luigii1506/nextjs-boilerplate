@@ -590,3 +590,105 @@
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
 }
+
+/* 🎨 Tab Specific Animations */
+@keyframes tabSlideIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes tabGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 rgba(59, 130, 246, 0);
+  }
+  50% {
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+  }
+}
+
+.animate-tabSlideIn {
+  animation: tabSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation-fill-mode: both;
+}
+
+.animate-tabGlow {
+  animation: tabGlow 1.5s ease-in-out infinite;
+}
+
+/* 🎯 Clean Tab Container - No z-index issues */
+.tabs-container {
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
+}
+
+.tab-item {
+  position: relative;
+  z-index: 2;
+  isolation: isolate;
+}
+
+.tab-item::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    45deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: -1;
+}
+
+.tab-item:hover::before {
+  opacity: 1;
+}
+
+/* 🌟 Notification Badge Animation */
+@keyframes notificationPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+.notification-badge {
+  animation: notificationPulse 2s ease-in-out infinite;
+}
+
+/* 🎨 Active Tab Enhanced Glow */
+.active-tab-glow {
+  position: relative;
+}
+
+.active-tab-glow::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(
+    45deg,
+    var(--tab-color, #3b82f6),
+    transparent,
+    var(--tab-color, #3b82f6)
+  );
+  border-radius: inherit;
+  opacity: 0.1;
+  z-index: -1;
+  animation: tabGlow 2s ease-in-out infinite;
+}

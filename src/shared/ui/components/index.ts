@@ -12,6 +12,14 @@ export { Label } from "./Label";
 // 🧭 Navigation Components
 export * from "./HydrationSafeNavItem";
 
+// 🎨 Tab Components
+export {
+  ReusableTabs,
+  TabPanel,
+  TabSystem,
+  type TabItem,
+} from "./ReusableTabs";
+
 // 🌙 Theme Components
 export * from "./DarkModeToggle";
 export * from "./I18nToggle";

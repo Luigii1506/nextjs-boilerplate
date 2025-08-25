@@ -14,7 +14,7 @@
 // Import custom animations
 import "../styles/animations.css";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import {
   BarChart3,
   Package,
@@ -30,9 +30,9 @@ import {
   InventoryProvider,
   useInventoryContext,
   INVENTORY_TABS,
+  type TabId,
 } from "../../context";
 import {
-  TabBadge,
   ProductModal,
   DeleteProductModal,
   ProductViewModal,
@@ -43,13 +43,13 @@ import {
   SupplierViewModal,
   SupplierDeleteModal,
 } from "../components";
+import { ReusableTabs, type TabItem } from "@/shared/ui/components";
 import {
   OverviewTab,
   ProductsTab,
   CategoriesTab,
   SuppliersTab,
 } from "../components/tabs";
-import { useTabScrollHeader } from "../../hooks";
 
 // 🎨 Icon mapping for tabs
 const ICON_MAP = {
@@ -62,13 +62,22 @@ const ICON_MAP = {
 } as const;
 
 // 🎯 Enhanced Tab Navigation with Smart Scroll
-const TabNavigation: React.FC = () => {
+interface TabNavigationProps {
+  isHeaderVisible: boolean;
+  scrollY: number;
+  isPastThreshold: boolean;
+}
+
+const TabNavigation: React.FC<TabNavigationProps> = ({
+  isHeaderVisible,
+  scrollY,
+  isPastThreshold,
+}) => {
   const { activeTab, setActiveTab, inventory, isTabChanging } =
     useInventoryContext();
   const { alerts, stats } = inventory;
 
-  // 🚀 Smart scroll header hook
-  const { isHeaderVisible, isPastThreshold, scrollY } = useTabScrollHeader();
+  console.log("🔥 TAB NAVIGATION RENDER STATE:", { scrollY, isHeaderVisible });
 
   // Calculate notification counts for each tab
   const notificationCounts = useMemo(
@@ -99,48 +108,82 @@ const TabNavigation: React.FC = () => {
         }px)`,
       }}
     >
-      <div className="px-6 py-4">
+      <div className="px-6 py-4 flex justify-center flex-col">
         {/* Smart Header with Scroll Animations */}
         <div
           id="header-tabs-container"
-          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"
+          className={cn(
+            "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4",
+            "transform-gpu transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
+            isHeaderVisible
+              ? "opacity-100 translate-y-0 scale-y-100 mb-6 max-h-96"
+              : "opacity-0 -translate-y-3 scale-y-90 mb-0 max-h-0 overflow-hidden pointer-events-none"
+          )}
+          style={{
+            visibility: isHeaderVisible ? "visible" : "hidden",
+            transitionProperty: "opacity, transform, margin-bottom, max-height",
+            transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
+          }}
         >
           <div
             id="header-tabs"
             className={cn(
-              "transform-gpu transition-all duration-500 ease-out",
+              "transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] transform-gpu",
               isHeaderVisible
-                ? "header-visible opacity-100 translate-y-0"
-                : "header-hidden opacity-0 -translate-y-full"
+                ? "opacity-100 translate-x-0"
+                : "opacity-0 -translate-x-2"
             )}
           >
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-2">
+            <h1
+              className={cn(
+                "text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-2",
+                "transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] transform-gpu",
+                isHeaderVisible
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-1"
+              )}
+            >
               <Package
                 className={cn(
-                  "w-7 h-7 text-blue-600 dark:text-blue-400 transition-transform duration-300",
-                  !isHeaderVisible && "scale-90"
+                  "w-7 h-7 text-blue-600 dark:text-blue-400",
+                  "transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] transform-gpu",
+                  isHeaderVisible
+                    ? "opacity-100 scale-100 rotate-0"
+                    : "opacity-0 scale-95 rotate-3"
                 )}
               />
-              <span className="transition-all duration-300">
+              <span
+                className={cn(
+                  "transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] transform-gpu",
+                  isHeaderVisible
+                    ? "opacity-100 translate-x-0"
+                    : "opacity-0 translate-x-1"
+                )}
+              >
                 Inventory Management
               </span>
             </h1>
             <p
               className={cn(
-                "text-gray-600 dark:text-gray-300 mt-1 transition-all duration-300",
-                !isHeaderVisible && "opacity-0"
+                "text-gray-600 dark:text-gray-300 mt-1",
+                "transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] transform-gpu",
+                isHeaderVisible
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-1"
               )}
             >
               Sistema completo de gestión de inventario y productos
             </p>
           </div>
 
-          {/* Actions (always visible) */}
+          {/* Actions */}
           <div
             className={cn(
-              "flex items-center space-x-3 transition-all duration-300",
-              // Compact mode when header is hidden
-              !isHeaderVisible && "transform scale-90"
+              "flex items-center space-x-3",
+              "transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] transform-gpu",
+              isHeaderVisible
+                ? "opacity-100 translate-x-0 scale-100"
+                : "opacity-0 translate-x-4 scale-98"
             )}
           >
             <button
@@ -169,41 +212,38 @@ const TabNavigation: React.FC = () => {
           </div>
         </div>
 
-        {/* Enhanced Tab Navigation - Always Visible */}
+        {/* Enhanced Tab Navigation - Always Visible & Clean */}
         <div
           className={cn(
-            "flex space-x-1 overflow-x-auto scrollbar-hide pb-2",
-            "transition-all duration-300",
-            // Add subtle padding when header is hidden
-            !isHeaderVisible && "pt-2"
+            "transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] transform-gpu",
+            // Add smooth movement when header is hidden
+            isHeaderVisible ? "translate-y-0 pt-0" : "translate-y-0"
           )}
         >
-          {INVENTORY_TABS.map((tab, index) => {
-            const IconComponent =
-              ICON_MAP[tab.icon as keyof typeof ICON_MAP] || Package;
-            const notificationCount =
-              notificationCounts[tab.id as keyof typeof notificationCounts];
+          <ReusableTabs
+            tabs={INVENTORY_TABS.map((tab) => {
+              const IconComponent =
+                ICON_MAP[tab.icon as keyof typeof ICON_MAP] || Package;
+              const notificationCount =
+                notificationCounts[tab.id as keyof typeof notificationCounts];
 
-            return (
-              <div
-                key={tab.id}
-                className="animate-fadeInUp"
-                style={{
-                  animationDelay: `${index * 50}ms`,
-                }}
-              >
-                <TabBadge
-                  isActive={activeTab === tab.id}
-                  label={tab.label}
-                  icon={<IconComponent className="w-4 h-4" />}
-                  color={tab.color}
-                  onClick={() => setActiveTab(tab.id)}
-                  hasNotification={notificationCount > 0}
-                  notificationCount={notificationCount}
-                />
-              </div>
-            );
-          })}
+              return {
+                id: tab.id,
+                label: tab.label,
+                icon: <IconComponent className="w-4 h-4" />,
+                color: tab.color,
+                hasNotification: notificationCount > 0,
+                notificationCount: notificationCount || 0,
+              } as TabItem;
+            })}
+            activeTab={activeTab}
+            onTabChange={(tabId) => setActiveTab(tabId as TabId)}
+            variant="default"
+            size="md"
+            animated={true}
+            scrollable={true}
+            className="bg-transparent border-0 shadow-none p-0"
+          />
         </div>
       </div>
 
@@ -219,9 +259,20 @@ const TabNavigation: React.FC = () => {
 
       {/* SPA Performance Indicator (dev mode) */}
       {process.env.NODE_ENV === "development" && (
-        <div className="absolute top-2 right-2 z-50">
+        <div className="absolute top-2 right-2 z-50 space-y-1">
           <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full opacity-75 hover:opacity-100 transition-opacity">
             SPA ⚡ {!isTabChanging ? "Instant" : "Transitioning"}
+          </div>
+          <div
+            className={cn(
+              "text-white text-xs px-2 py-1 rounded-full opacity-75",
+              isHeaderVisible ? "bg-green-500" : "bg-red-500"
+            )}
+          >
+            Header: {isHeaderVisible ? "VISIBLE" : "HIDDEN"}
+          </div>
+          <div className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full opacity-75">
+            Y: {scrollY}px
           </div>
         </div>
       )}
@@ -285,17 +336,184 @@ const TabContent: React.FC = () => {
 
 // 🎯 Main SPA Component (without Provider)
 const InventorySPAContent: React.FC = () => {
+  // 🔥 WHEEL-BASED SCROLL SIMULATION (bypassing broken window scroll)
+  const [scrollY, setScrollY] = useState(0);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const scrollYRef = useRef(0);
+
+  useEffect(() => {
+    console.log("🔥 EFECT EJECUTÁNDOSE - agregando scroll listener");
+
+    // Check initial scroll info + CSS debugging
+    const docHeight = document.documentElement.scrollHeight;
+    const windowHeight = window.innerHeight;
+    const bodyHeight = document.body.scrollHeight;
+    const bodyOverflow = window.getComputedStyle(document.body).overflow;
+    const htmlOverflow = window.getComputedStyle(
+      document.documentElement
+    ).overflow;
+    const bodyOverflowY = window.getComputedStyle(document.body).overflowY;
+    const htmlOverflowY = window.getComputedStyle(
+      document.documentElement
+    ).overflowY;
+
+    console.log("📏 COMPLETE SCROLL DEBUG:", {
+      docHeight,
+      windowHeight,
+      bodyHeight,
+      isScrollable: docHeight > windowHeight,
+      scrollY: window.scrollY,
+      bodyOverflow,
+      htmlOverflow,
+      bodyOverflowY,
+      htmlOverflowY,
+      bodyClientHeight: document.body.clientHeight,
+      docClientHeight: document.documentElement.clientHeight,
+    });
+
+    const handleScroll = () => {
+      console.log("🚨 SCROLL EVENT TRIGGERED!!! ScrollY:", window.scrollY);
+      const currentY = window.scrollY;
+      setScrollY(currentY);
+      setIsHeaderVisible(currentY < 17);
+    };
+
+    // 🧪 TEST: Add multiple event listeners to see if ANY work
+    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", () =>
+      console.log("🟢 BACKUP SCROLL LISTENER:", window.scrollY)
+    );
+    document.addEventListener("scroll", () =>
+      console.log("🔵 DOCUMENT SCROLL LISTENER:", window.scrollY)
+    );
+
+    console.log("✅ THREE scroll listeners agregados");
+
+    // 🚀 WHEEL-BASED SCROLL SIMULATION (since window.scrollTo is broken)
+    const handleWheel = (e) => {
+      // Accumulate scroll based on wheel delta
+      const deltaY = e.deltaY * 0.5; // Sensitivity factor
+      const currentScrollY = scrollYRef.current;
+      const newScrollY = Math.max(0, currentScrollY + deltaY);
+
+      console.log(
+        "🎯 WHEEL SCROLL SIMULATION:",
+        currentScrollY,
+        "→",
+        newScrollY
+      );
+
+      scrollYRef.current = newScrollY;
+      setScrollY(newScrollY);
+      setIsHeaderVisible(newScrollY < 17);
+
+      console.log(
+        "✅ Header should be:",
+        newScrollY < 50 ? "VISIBLE" : "HIDDEN"
+      );
+    };
+
+    window.addEventListener("wheel", handleWheel);
+
+    // 🚨 FORCE ENABLE SCROLL IN CSS (temporary fix)
+    document.body.style.overflow = "auto";
+    document.documentElement.style.overflow = "auto";
+    document.body.style.overflowY = "auto";
+    document.documentElement.style.overflowY = "auto";
+    document.body.style.height = "auto";
+    document.documentElement.style.height = "auto";
+    console.log("🔧 FORCED SCROLL CSS PROPERTIES");
+
+    // Test scroll programmatically
+    setTimeout(() => {
+      console.log("🧪 Testing programmatic scroll...");
+      window.scrollTo(0, 100);
+
+      // Test scroll again after CSS changes
+      setTimeout(() => {
+        console.log("🧪 Second scroll test after CSS fix...");
+        const newDocHeight = document.documentElement.scrollHeight;
+        const newWindowHeight = window.innerHeight;
+        console.log("📏 AFTER CSS FIX:", {
+          newDocHeight,
+          newWindowHeight,
+          newIsScrollable: newDocHeight > newWindowHeight,
+          newScrollY: window.scrollY,
+        });
+      }, 500);
+    }, 2000);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("wheel", handleWheel);
+      console.log("🗑️ Scroll and wheel listeners removidos");
+    };
+  }, []);
+
+  const isPastThreshold = scrollY > 50;
+
+  console.log("🔥 INVENTORYSPA RENDER STATE:", {
+    scrollY,
+    isHeaderVisible,
+    isPastThreshold,
+  });
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Fixed Navigation */}
-      <TabNavigation />
+      <TabNavigation
+        isHeaderVisible={isHeaderVisible}
+        scrollY={scrollY}
+        isPastThreshold={isPastThreshold}
+      />
 
       {/* Main Content Area */}
       <main className="flex-1 relative">
-        <div className="max-w-full">
+        <div
+          className={cn(
+            "max-w-full",
+            "transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] transform-gpu",
+            isHeaderVisible ? "translate-y-0" : "-translate-y-6"
+          )}
+        >
           <TabContent />
         </div>
       </main>
+
+      {/* 🚨 MASSIVE CONTENT TO FORCE SCROLL */}
+      <div
+        style={{ minHeight: "200vh" }}
+        className="bg-gradient-to-b from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-8 m-6 rounded-lg"
+      >
+        <h2 className="text-3xl font-bold mb-6">
+          🚨 SCROLL FORCE TEST - 200% VIEWPORT HEIGHT
+        </h2>
+
+        <div className="mb-8 p-6 bg-red-100 dark:bg-red-900/30 rounded-lg border-2 border-red-300">
+          <h3 className="text-xl font-bold text-red-800 dark:text-red-200 mb-2">
+            SCROLL STATUS
+          </h3>
+          <p className="text-red-700 dark:text-red-300">
+            This div is 200% viewport height. Should be scrollable!
+          </p>
+        </div>
+
+        <div className="space-y-6">
+          {Array.from({ length: 40 }, (_, i) => (
+            <div
+              key={i}
+              className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg border"
+              style={{ minHeight: "120px" }}
+            >
+              <h3 className="text-lg font-semibold mb-2">🔄 Card #{i + 1}</h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Line {i + 1}: Forcing scroll with large content. ScrollY should
+                change!
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* 📝 Modal Components */}
       <ProductModal />

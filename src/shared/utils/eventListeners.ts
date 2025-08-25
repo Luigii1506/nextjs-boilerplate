@@ -527,8 +527,24 @@ const createProfileDropdown = (user: {
 };
 
 // 📋 Create Audit Event Modal
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const createAuditEventModal = (event: any, source: string): HTMLElement => {
+interface AuditEvent {
+  id: string;
+  action: string;
+  resourceType: string;
+  userId: string;
+  timestamp: string;
+  metadata?: Record<string, unknown>;
+  changes?: Array<{
+    field: string;
+    oldValue: string;
+    newValue: string;
+  }>;
+  riskLevel?: 'low' | 'medium' | 'high';
+  ipAddress?: string;
+  userAgent?: string;
+}
+
+const createAuditEventModal = (event: AuditEvent, source: string): HTMLElement => {
   const modal = document.createElement("div");
   modal.id = "audit-event-modal";
   modal.className =
