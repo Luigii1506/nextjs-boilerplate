@@ -248,10 +248,7 @@ const AdminsTab: React.FC = () => {
   // 🛡️ Filter only administrative users
   const adminUsers = useMemo(() => {
     const admins = (usersList || []).filter(
-      (user) =>
-        user.role === "super_admin" ||
-        user.role === "admin" ||
-        user.role === "moderator"
+      (user) => user.role === "super_admin" || user.role === "admin"
     );
 
     if (searchTerm) {
@@ -274,9 +271,7 @@ const AdminsTab: React.FC = () => {
     const regularAdmins = adminUsers.filter(
       (user) => user.role === "admin"
     ).length;
-    const moderators = adminUsers.filter(
-      (user) => user.role === "moderator"
-    ).length;
+    const moderators = 0; // No moderator role available
     const totalAdmins = adminUsers.length;
 
     return {
