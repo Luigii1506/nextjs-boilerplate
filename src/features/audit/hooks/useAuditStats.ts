@@ -288,30 +288,5 @@ export function useAuditStats(
     getResourceCount,
     getSeverityCount,
     getUserActivity,
-  } as UseAuditStatsReturn & {
-    computedStats: typeof computedStats;
-    chartData: typeof chartData;
-    summaryMetrics: typeof summaryMetrics;
-    lastUpdated: Date | null;
-    dateRangeInfo: string;
-    getActionCount: (action: string) => number;
-    getResourceCount: (resource: string) => number;
-    getSeverityCount: (severity: string) => number;
-    getUserActivity: (userId: string) => {
-      totalEvents: number;
-      eventsByAction: Record<string, number>;
-      recentEvents: Array<{
-        id: string;
-        action: AuditAction;
-        resource: AuditResource;
-        resourceId: string;
-        userId: string;
-        userEmail: string;
-        userRole: string;
-        severity: AuditSeverity;
-        createdAt: Date;
-        updatedAt: Date;
-      }>;
-    };
   };
 }

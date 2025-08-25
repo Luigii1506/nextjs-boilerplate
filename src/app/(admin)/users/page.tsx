@@ -1,16 +1,20 @@
-export const runtime = "nodejs";
+/**
+ * 👥 USERS PAGE
+ * =============
+ *
+ * Next.js App Router page para el módulo de users
+ * Página principal del dashboard de usuarios
+ */
 
-// 🧪 Using working version with fixed tabs
+import { Metadata } from "next";
 import UsersSPAScreen from "@/features/admin/users/ui/routes/users.spa.screen";
 
-// Debug versions
-// import UsersSPADebug from "@/features/admin/users/ui/routes/users.spa.debug";
-// import UsersSPAMinimal from "@/features/admin/users/ui/routes/users.spa.minimal";
-// import UsersSPASimple from "@/features/admin/users/ui/routes/users.spa.simple";
+export const metadata: Metadata = {
+  title: "Usuarios | Dashboard",
+  description:
+    "Gestiona usuarios, administradores y permisos de forma eficiente",
+};
 
-// Legacy version (backup)
-// import UsersView from "@/features/admin/users/ui/routes/users.screen";
-
-export default async function UsersPage() {
+export default function UsersPage() {
   return <UsersSPAScreen />;
 }

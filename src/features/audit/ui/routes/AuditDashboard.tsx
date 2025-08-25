@@ -60,7 +60,6 @@ export default function AuditDashboard({ onViewChange }: AuditDashboardProps) {
     // Filters
     filters,
     resetFilters,
-    applyPreset,
     activeFiltersCount,
     hasActiveFilters,
 
@@ -284,9 +283,6 @@ export default function AuditDashboard({ onViewChange }: AuditDashboardProps) {
             filters={filters}
             onFiltersChange={handleFiltersChange}
             onReset={resetFilters}
-            onApplyPreset={applyPreset}
-            activeFiltersCount={activeFiltersCount}
-            isLoading={isEventsLoading}
           />
 
           {/* Export Actions */}

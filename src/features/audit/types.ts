@@ -212,6 +212,15 @@ export interface UseAuditStatsReturn {
   isLoading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
+  computedStats: unknown;
+  chartData: unknown;
+  summaryMetrics: unknown;
+  lastUpdated: Date | null;
+  dateRangeInfo: unknown;
+  getActionCount: (action: string) => number;
+  getResourceCount: (resource: string) => number;
+  getSeverityCount: (severity: string) => number;
+  getUserActivity: (userId: string) => { userId: string; userName: string | null; userEmail: string; eventCount: number; } | undefined;
 }
 
 // Server Action Results
