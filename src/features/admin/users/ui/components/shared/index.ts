@@ -1,20 +1,11 @@
 /**
- * 👥 USERS SHARED COMPONENTS
- * ==========================
+ * 🎭 SHARED COMPONENTS - USERS MODULE
+ * ==================================
  *
- * Barrel export para componentes compartidos y reutilizables del módulo users
+ * Componentes compartidos para el módulo de usuarios
  *
- * Updated: 2025-01-17 - Enterprise patterns v2.0
+ * Created: 2025-01-18 - Users shared components
  */
 
-// 👤 User Avatar Components
-export { UserAvatar } from "./UserAvatar";
-
-// 🎭 User Role Components
-export { UserRoleBadge } from "./UserRoleBadge";
-
-// 📊 User Status Components
-export { UserStatusBadge } from "./UserStatusBadge";
-
-// 👤 Composite User Components
-export { UserInfo } from "./UserInfo";
+// SPA Transition components
+export { TabTransition, UsersTabLoadingSkeleton } from "./TabTransition";

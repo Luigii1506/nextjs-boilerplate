@@ -1,0 +1,126 @@
+/**
+ * 🎨 USERS SPA ANIMATIONS
+ * ======================
+ *
+ * Custom animations for Users SPA module
+ * Focused on smooth scroll effects and tab transitions
+ *
+ * Created: 2025-01-18 - Users SPA Implementation
+ */
+
+/* Header backdrop effects for scroll */
+.header-backdrop {
+  @apply transition-all duration-300;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.header-backdrop.scrolled {
+  background-color: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.dark .header-backdrop.scrolled {
+  background-color: rgba(17, 24, 39, 0.9);
+}
+
+/* Smooth fade animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Apply animations */
+.animate-fadeInUp {
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-slideInUp {
+  animation: slideInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-fadeInScale {
+  animation: fadeInScale 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Staggered animation delays */
+.stagger-1 {
+  animation-delay: 0.1s;
+}
+.stagger-2 {
+  animation-delay: 0.2s;
+}
+.stagger-3 {
+  animation-delay: 0.3s;
+}
+.stagger-4 {
+  animation-delay: 0.4s;
+}
+.stagger-5 {
+  animation-delay: 0.5s;
+}
+.stagger-6 {
+  animation-delay: 0.6s;
+}
+
+/* GPU acceleration for smooth animations */
+.transform-gpu {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Tab container specific animations */
+#header-tabs-container {
+  transform-origin: top center;
+}
+
+/* Ensure smooth transitions */
+* {
+  transition-property: transform, opacity, visibility, max-height, margin;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}

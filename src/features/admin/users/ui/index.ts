@@ -3,8 +3,8 @@
 // Entry point para componentes UI de usuarios
 
 // Routes
-export { default as UsersView } from "./routes/users.screen";
+export { default as UsersView } from "./routes/users.screen"; // Legacy
+export { default as UsersSPAView } from "./routes/users.spa.screen"; // New SPA
 
 // Components
-export { default as UserCard } from "./components/UserCard";
-export { default as UserModal } from "./components/UserModal.main";
+export * from "./components";

@@ -336,14 +336,14 @@ const OverviewTab: React.FC = React.memo(function OverviewTab() {
             onClick={() => setActiveTab("categories")}
             className="border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg flex items-center space-x-2 transition-all duration-200 hover:scale-[1.02]"
           >
-            <span>🏷️ Categorías</span>
+            <span>Categorías</span>
           </button>
 
           <button
             onClick={() => setActiveTab("suppliers")}
             className="border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg flex items-center space-x-2 transition-all duration-200 hover:scale-[1.02]"
           >
-            <span>🚛 Proveedores</span>
+            <span>Proveedores</span>
           </button>
         </div>
 

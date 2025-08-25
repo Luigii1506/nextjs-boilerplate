@@ -4,3 +4,9 @@
 
 export { default as UserCard } from "./UserCard";
 export { default as UserModal } from "./UserModal.main";
+
+// 🎯 SPA Tabs Components
+export * from "./tabs";
+
+// 🎭 Shared Components
+export * from "./shared";
