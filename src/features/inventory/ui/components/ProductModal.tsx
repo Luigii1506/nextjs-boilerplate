@@ -14,7 +14,6 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  X,
   Package,
   DollarSign,
   Warehouse,
@@ -24,8 +23,14 @@ import {
   AlertTriangle,
   Check,
   Plus,
+  X,
 } from "lucide-react";
 import { cn } from "@/shared/utils";
+import {
+  BaseModal,
+  BaseModalActions,
+  BaseModalButton,
+} from "@/shared/ui/components";
 import { useInventoryContext } from "../../context";
 import {
   useCreateProductModal,
@@ -376,726 +381,656 @@ export const ProductModal: React.FC = () => {
     }
   }, [productName, currentSku, setValue, isEditMode]);
 
-  // 🚫 Don't render if modal is closed
-  if (!isProductModalOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      {/* 🌫️ Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 transition-opacity duration-300 animate-fadeIn"
-        onClick={handleClose}
-      />
+    <BaseModal
+      isOpen={isProductModalOpen}
+      onClose={handleClose}
+      title={isEditMode ? "Editar Producto" : "Agregar Producto"}
+      description={
+        isEditMode
+          ? `Modifica la información de "${editingProduct?.name}"`
+          : "Completa la información del nuevo producto"
+      }
+      icon={<Package className="w-5 h-5 text-white" />}
+      isDirty={isDirty}
+      isLoading={isSubmitting}
+      maxWidth="4xl"
+      actions={
+        <BaseModalActions align="between">
+          {/* Validation Summary */}
+          <div className="flex items-center gap-4">
+            {Object.keys(errors).length > 0 && (
+              <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
+                <AlertTriangle className="w-4 h-4" />
+                <span>
+                  {Object.keys(errors).length} error(es) en el formulario
+                </span>
+              </div>
+            )}
+            {isValid && isDirty && (
+              <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                <Check className="w-4 h-4" />
+                <span>Formulario válido</span>
+              </div>
+            )}
+          </div>
 
-      {/* 📦 Modal Container */}
-      <div className="flex min-h-full items-end sm:items-center justify-center p-4">
-        <div
-          className={cn(
-            "relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl",
-            "w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh]",
-            "transform transition-all duration-300 animate-slideInUp",
-            "flex flex-col" // 🎯 Flexbox container
-          )}
-        >
-          {/* 📋 Header - FIXED */}
-          <div className="flex-shrink-0 flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-t-2xl">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
-                <Package className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                  {isEditMode ? "Editar Producto" : "Agregar Producto"}
-                </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {isEditMode
-                    ? `Modifica la información de "${editingProduct?.name}"`
-                    : "Completa la información del nuevo producto"}
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
+          {/* Action Buttons */}
+          <div className="flex items-center gap-3">
+            <BaseModalButton
+              variant="secondary"
               onClick={handleClose}
-              className={cn(
-                "w-8 h-8 rounded-lg flex items-center justify-center",
-                "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300",
-                "hover:bg-gray-100 dark:hover:bg-gray-700",
-                "transition-colors duration-200"
+              disabled={isSubmitting}
+            >
+              Cancelar
+            </BaseModalButton>
+
+            <BaseModalButton
+              variant="primary"
+              type="submit"
+              disabled={!isValid || isSubmitting || categoriesLoading}
+              loading={isSubmitting || categoriesLoading}
+              onClick={handleSubmit(onSubmit)}
+            >
+              {isEditMode ? (
+                <>
+                  <Package className="w-4 h-4" />
+                  Actualizar Producto
+                </>
+              ) : (
+                <>
+                  <Package className="w-4 h-4" />
+                  Crear Producto
+                </>
               )}
-            >
-              <X className="w-5 h-5" />
-            </button>
+            </BaseModalButton>
           </div>
+        </BaseModalActions>
+      }
+    >
+      {/* 🚨 Error Alert */}
+      {submitError && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-8">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-500" />
+            <p className="text-sm text-red-700 dark:text-red-400">
+              {submitError}
+            </p>
+          </div>
+        </div>
+      )}
 
-          {/* 📝 Form Content - SCROLLABLE */}
-          <div className="flex-1 overflow-y-auto overscroll-contain scrollbar-thin">
-            <form
-              id="product-form"
-              onSubmit={handleSubmit(onSubmit)}
-              className="h-full"
-            >
-              <div className="p-6 pb-8 space-y-8">
-                {/* 🚨 Error Alert */}
-                {submitError && (
-                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                    <div className="flex items-center gap-3">
-                      <AlertTriangle className="w-5 h-5 text-red-500" />
-                      <p className="text-sm text-red-700 dark:text-red-400">
-                        {submitError}
-                      </p>
-                    </div>
-                  </div>
+      {/* 📝 Form Content */}
+      <form
+        id="product-form"
+        onSubmit={handleSubmit(onSubmit)}
+        className="space-y-8"
+      >
+        {/* 📦 Basic Information */}
+        <div className="space-y-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <Package className="w-5 h-5 text-blue-500" />
+            Información Básica
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* SKU */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                SKU *
+              </label>
+              <input
+                {...register("sku")}
+                className={cn(
+                  "w-full px-4 py-3 rounded-lg border transition-colors duration-200",
+                  "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
+                  "placeholder-gray-500 dark:placeholder-gray-400",
+                  errors.sku
+                    ? "border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20"
+                    : "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
+                  "focus:outline-none focus:ring-4"
                 )}
+                placeholder="Ej: IPHONE-14-2024"
+                autoComplete="off"
+              />
+              {errors.sku && (
+                <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                  {errors.sku.message}
+                </p>
+              )}
+            </div>
 
-                {/* 📦 Basic Information */}
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                    <Package className="w-5 h-5 text-blue-500" />
-                    Información Básica
-                  </h3>
+            {/* Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Nombre del Producto *
+              </label>
+              <input
+                {...register("name")}
+                className={cn(
+                  "w-full px-4 py-3 rounded-lg border transition-colors duration-200",
+                  "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
+                  "placeholder-gray-500 dark:placeholder-gray-400",
+                  errors.name
+                    ? "border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20"
+                    : "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
+                  "focus:outline-none focus:ring-4"
+                )}
+                placeholder="Ej: iPhone 14 Pro Max"
+                autoComplete="off"
+              />
+              {errors.name && (
+                <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                  {errors.name.message}
+                </p>
+              )}
+            </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* SKU */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        SKU *
-                      </label>
-                      <input
-                        {...register("sku")}
-                        className={cn(
-                          "w-full px-4 py-3 rounded-lg border transition-colors duration-200",
-                          "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
-                          "placeholder-gray-500 dark:placeholder-gray-400",
-                          errors.sku
-                            ? "border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20"
-                            : "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
-                          "focus:outline-none focus:ring-4"
-                        )}
-                        placeholder="Ej: IPHONE-14-2024"
-                        autoComplete="off"
-                      />
-                      {errors.sku && (
-                        <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-                          {errors.sku.message}
-                        </p>
-                      )}
-                    </div>
+            {/* Category */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Categoría *
+              </label>
+              <select
+                {...register("categoryId")}
+                className={cn(
+                  "w-full px-4 py-3 rounded-lg border transition-colors duration-200",
+                  "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
+                  errors.categoryId
+                    ? "border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20"
+                    : "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
+                  "focus:outline-none focus:ring-4"
+                )}
+              >
+                <option value="">
+                  {categoriesLoading
+                    ? "Cargando categorías..."
+                    : "Seleccionar categoría"}
+                </option>
+                {categoriesError ? (
+                  <option value="" disabled>
+                    Error al cargar categorías
+                  </option>
+                ) : (
+                  categories?.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))
+                )}
+              </select>
+              {errors.categoryId && (
+                <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                  {errors.categoryId.message}
+                </p>
+              )}
+            </div>
 
-                    {/* Name */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Nombre del Producto *
-                      </label>
-                      <input
-                        {...register("name")}
-                        className={cn(
-                          "w-full px-4 py-3 rounded-lg border transition-colors duration-200",
-                          "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
-                          "placeholder-gray-500 dark:placeholder-gray-400",
-                          errors.name
-                            ? "border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20"
-                            : "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
-                          "focus:outline-none focus:ring-4"
-                        )}
-                        placeholder="Ej: iPhone 14 Pro Max"
-                        autoComplete="off"
-                      />
-                      {errors.name && (
-                        <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-                          {errors.name.message}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Category */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Categoría *
-                      </label>
-                      <select
-                        {...register("categoryId")}
-                        className={cn(
-                          "w-full px-4 py-3 rounded-lg border transition-colors duration-200",
-                          "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
-                          errors.categoryId
-                            ? "border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20"
-                            : "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
-                          "focus:outline-none focus:ring-4"
-                        )}
-                      >
-                        <option value="">
-                          {categoriesLoading
-                            ? "Cargando categorías..."
-                            : "Seleccionar categoría"}
-                        </option>
-                        {categoriesError ? (
-                          <option value="" disabled>
-                            Error al cargar categorías
-                          </option>
-                        ) : (
-                          categories?.map((category) => (
-                            <option key={category.id} value={category.id}>
-                              {category.name}
-                            </option>
-                          ))
-                        )}
-                      </select>
-                      {errors.categoryId && (
-                        <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-                          {errors.categoryId.message}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Supplier */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Proveedor
-                      </label>
-                      <select
-                        {...register("supplierId")}
-                        className={cn(
-                          "w-full px-4 py-3 rounded-lg border transition-colors duration-200",
-                          "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
-                          "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
-                          "focus:outline-none focus:ring-4"
-                        )}
-                      >
-                        <option value="">
-                          {suppliersLoading
-                            ? "Cargando proveedores..."
-                            : "Sin proveedor"}
-                        </option>
-                        {suppliersError ? (
-                          <option value="" disabled>
-                            Error al cargar proveedores
-                          </option>
-                        ) : (
-                          suppliers?.map((supplier) => (
-                            <option key={supplier.id} value={supplier.id}>
-                              {supplier.name} -{" "}
-                              {supplier.contactPerson || "Sin contacto"}
-                            </option>
-                          ))
-                        )}
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Description */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Descripción
-                    </label>
-                    <textarea
-                      {...register("description")}
-                      rows={4}
-                      className={cn(
-                        "w-full px-4 py-3 rounded-lg border transition-colors duration-200 resize-none",
-                        "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
-                        "placeholder-gray-500 dark:placeholder-gray-400",
-                        errors.description
-                          ? "border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20"
-                          : "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
-                        "focus:outline-none focus:ring-4"
-                      )}
-                      placeholder="Descripción detallada del producto..."
-                    />
-                    {errors.description && (
-                      <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-                        {errors.description.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* 💰 Pricing */}
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                    <DollarSign className="w-5 h-5 text-green-500" />
-                    Precios
-                  </h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Cost */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Costo *
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <span className="text-gray-500 dark:text-gray-400">
-                            $
-                          </span>
-                        </div>
-                        <input
-                          {...register("cost", { valueAsNumber: true })}
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          className={cn(
-                            "w-full pl-8 pr-4 py-3 rounded-lg border transition-colors duration-200",
-                            "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
-                            "placeholder-gray-500 dark:placeholder-gray-400",
-                            errors.cost
-                              ? "border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20"
-                              : "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
-                            "focus:outline-none focus:ring-4"
-                          )}
-                          placeholder="0.00"
-                        />
-                      </div>
-                      {errors.cost && (
-                        <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-                          {errors.cost.message}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Price */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Precio de Venta *
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <span className="text-gray-500 dark:text-gray-400">
-                            $
-                          </span>
-                        </div>
-                        <input
-                          {...register("price", { valueAsNumber: true })}
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          className={cn(
-                            "w-full pl-8 pr-4 py-3 rounded-lg border transition-colors duration-200",
-                            "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
-                            "placeholder-gray-500 dark:placeholder-gray-400",
-                            errors.price
-                              ? "border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20"
-                              : "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
-                            "focus:outline-none focus:ring-4"
-                          )}
-                          placeholder="0.00"
-                        />
-                      </div>
-                      {errors.price && (
-                        <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-                          {errors.price.message}
-                        </p>
-                      )}
-                      {/* Profit margin indicator */}
-                      {watchedPrice > 0 && watchedCost > 0 && (
-                        <div className="mt-2">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-gray-500 dark:text-gray-400">
-                              Margen:
-                            </span>
-                            <span
-                              className={cn(
-                                "font-medium",
-                                watchedPrice >= watchedCost
-                                  ? "text-green-600 dark:text-green-400"
-                                  : "text-red-600 dark:text-red-400"
-                              )}
-                            >
-                              ${(watchedPrice - watchedCost).toFixed(2)} (
-                              {(
-                                ((watchedPrice - watchedCost) / watchedPrice) *
-                                100
-                              ).toFixed(1)}
-                              %)
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* 📦 Inventory */}
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                    <Warehouse className="w-5 h-5 text-purple-500" />
-                    Inventario
-                  </h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    {/* Stock */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Stock Inicial
-                      </label>
-                      <input
-                        {...register("stock", { valueAsNumber: true })}
-                        type="number"
-                        min="0"
-                        step="1"
-                        className={cn(
-                          "w-full px-4 py-3 rounded-lg border transition-colors duration-200",
-                          "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
-                          "placeholder-gray-500 dark:placeholder-gray-400",
-                          errors.stock
-                            ? "border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20"
-                            : "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
-                          "focus:outline-none focus:ring-4"
-                        )}
-                        placeholder="0"
-                      />
-                      {errors.stock && (
-                        <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-                          {errors.stock.message}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Min Stock */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Stock Mínimo
-                      </label>
-                      <input
-                        {...register("minStock", { valueAsNumber: true })}
-                        type="number"
-                        min="0"
-                        step="1"
-                        className={cn(
-                          "w-full px-4 py-3 rounded-lg border transition-colors duration-200",
-                          "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
-                          "placeholder-gray-500 dark:placeholder-gray-400",
-                          errors.minStock
-                            ? "border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20"
-                            : "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
-                          "focus:outline-none focus:ring-4"
-                        )}
-                        placeholder="0"
-                      />
-                      {errors.minStock && (
-                        <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-                          {errors.minStock.message}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Max Stock */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Stock Máximo
-                      </label>
-                      <input
-                        {...register("maxStock", {
-                          valueAsNumber: true,
-                          setValueAs: (value) =>
-                            value === "" ? null : Number(value),
-                        })}
-                        type="number"
-                        min="0"
-                        step="1"
-                        className={cn(
-                          "w-full px-4 py-3 rounded-lg border transition-colors duration-200",
-                          "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
-                          "placeholder-gray-500 dark:placeholder-gray-400",
-                          errors.maxStock
-                            ? "border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20"
-                            : "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
-                          "focus:outline-none focus:ring-4"
-                        )}
-                        placeholder="Opcional"
-                      />
-                      {errors.maxStock && (
-                        <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-                          {errors.maxStock.message}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Unit */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Unidad
-                      </label>
-                      <select
-                        {...register("unit")}
-                        className={cn(
-                          "w-full px-4 py-3 rounded-lg border transition-colors duration-200",
-                          "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
-                          errors.unit
-                            ? "border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20"
-                            : "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
-                          "focus:outline-none focus:ring-4"
-                        )}
-                      >
-                        {UNITS.map((unit) => (
-                          <option key={unit.value} value={unit.value}>
-                            {unit.label}
-                          </option>
-                        ))}
-                      </select>
-                      {errors.unit && (
-                        <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-                          {errors.unit.message}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Barcode */}
-                  <div className="max-w-md">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Código de Barras
-                    </label>
-                    <input
-                      {...register("barcode")}
-                      className={cn(
-                        "w-full px-4 py-3 rounded-lg border transition-colors duration-200",
-                        "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
-                        "placeholder-gray-500 dark:placeholder-gray-400",
-                        errors.barcode
-                          ? "border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20"
-                          : "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
-                        "focus:outline-none focus:ring-4"
-                      )}
-                      placeholder="Ej: 1234567890123"
-                      autoComplete="off"
-                    />
-                    {errors.barcode && (
-                      <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-                        {errors.barcode.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* 🖼️ Images */}
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                    <ImageIcon className="w-5 h-5 text-indigo-500" />
-                    Imágenes ({watchedImages.length}/10)
-                  </h3>
-
-                  {/* Add Image */}
-                  <div className="flex gap-3">
-                    <input
-                      value={currentImageUrl}
-                      onChange={(e) => setCurrentImageUrl(e.target.value)}
-                      className={cn(
-                        "flex-1 px-4 py-3 rounded-lg border transition-colors duration-200",
-                        "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
-                        "placeholder-gray-500 dark:placeholder-gray-400",
-                        "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
-                        "focus:outline-none focus:ring-4"
-                      )}
-                      placeholder="URL de la imagen"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          addImage();
-                        }
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={addImage}
-                      disabled={
-                        !currentImageUrl.trim() || watchedImages.length >= 10
-                      }
-                      className={cn(
-                        "px-4 py-3 rounded-lg font-medium transition-colors duration-200",
-                        "disabled:opacity-50 disabled:cursor-not-allowed",
-                        "bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700",
-                        "text-white focus:outline-none focus:ring-4 focus:ring-blue-500/20"
-                      )}
-                    >
-                      <Plus className="w-5 h-5" />
-                    </button>
-                  </div>
-
-                  {/* Image List */}
-                  {watchedImages.length > 0 && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {watchedImages.map((url, index) => (
-                        <div key={index} className="relative group">
-                          <div className="aspect-square rounded-lg bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                            <img
-                              src={url}
-                              alt={`Imagen ${index + 1}`}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.currentTarget.src =
-                                  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik03MCA5MEwxMzAgNTBMMTcwIDEwTDE3MDE2MEgzMFY5MEg3MFoiIGZpbGw9IiNEMUQ1REIiLz4KPC9zdmc+";
-                              }}
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeImage(index)}
-                            className={cn(
-                              "absolute -top-2 -right-2 w-6 h-6 rounded-full",
-                              "bg-red-500 hover:bg-red-600 text-white",
-                              "flex items-center justify-center transition-colors duration-200",
-                              "opacity-0 group-hover:opacity-100 focus:opacity-100",
-                              "focus:outline-none focus:ring-2 focus:ring-red-500/20"
-                            )}
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* 🏷️ Tags */}
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                    <Tag className="w-5 h-5 text-yellow-500" />
-                    Etiquetas ({watchedTags.length}/20)
-                  </h3>
-
-                  {/* Add Tag */}
-                  <div className="flex gap-3">
-                    <input
-                      value={currentTag}
-                      onChange={(e) => setCurrentTag(e.target.value)}
-                      className={cn(
-                        "flex-1 px-4 py-3 rounded-lg border transition-colors duration-200",
-                        "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
-                        "placeholder-gray-500 dark:placeholder-gray-400",
-                        "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
-                        "focus:outline-none focus:ring-4"
-                      )}
-                      placeholder="Agregar etiqueta"
-                      maxLength={30}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          addTag();
-                        }
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={addTag}
-                      disabled={
-                        !currentTag.trim() ||
-                        watchedTags.length >= 20 ||
-                        watchedTags.includes(currentTag.trim())
-                      }
-                      className={cn(
-                        "px-4 py-3 rounded-lg font-medium transition-colors duration-200",
-                        "disabled:opacity-50 disabled:cursor-not-allowed",
-                        "bg-yellow-500 hover:bg-yellow-600 dark:bg-yellow-600 dark:hover:bg-yellow-700",
-                        "text-white focus:outline-none focus:ring-4 focus:ring-yellow-500/20"
-                      )}
-                    >
-                      <Plus className="w-5 h-5" />
-                    </button>
-                  </div>
-
-                  {/* Tag List */}
-                  {watchedTags.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {watchedTags.map((tag, index) => (
-                        <span
-                          key={index}
-                          className={cn(
-                            "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm",
-                            "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-400"
-                          )}
-                        >
-                          {tag}
-                          <button
-                            type="button"
-                            onClick={() => removeTag(index)}
-                            className="w-4 h-4 rounded-full hover:bg-yellow-200 dark:hover:bg-yellow-800 flex items-center justify-center"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </form>
+            {/* Supplier */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Proveedor
+              </label>
+              <select
+                {...register("supplierId")}
+                className={cn(
+                  "w-full px-4 py-3 rounded-lg border transition-colors duration-200",
+                  "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
+                  "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
+                  "focus:outline-none focus:ring-4"
+                )}
+              >
+                <option value="">
+                  {suppliersLoading
+                    ? "Cargando proveedores..."
+                    : "Sin proveedor"}
+                </option>
+                {suppliersError ? (
+                  <option value="" disabled>
+                    Error al cargar proveedores
+                  </option>
+                ) : (
+                  suppliers?.map((supplier) => (
+                    <option key={supplier.id} value={supplier.id}>
+                      {supplier.name} -{" "}
+                      {supplier.contactPerson || "Sin contacto"}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
           </div>
 
-          {/* 🎯 Footer - FIXED */}
-          <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 p-6 bg-white dark:bg-gray-800 rounded-b-2xl">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center gap-4">
-                {/* Validation Summary */}
-                {Object.keys(errors).length > 0 && (
-                  <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
-                    <AlertTriangle className="w-4 h-4" />
-                    <span>
-                      {Object.keys(errors).length} error(es) en el formulario
+          {/* Description */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Descripción
+            </label>
+            <textarea
+              {...register("description")}
+              rows={4}
+              className={cn(
+                "w-full px-4 py-3 rounded-lg border transition-colors duration-200 resize-none",
+                "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
+                "placeholder-gray-500 dark:placeholder-gray-400",
+                errors.description
+                  ? "border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20"
+                  : "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
+                "focus:outline-none focus:ring-4"
+              )}
+              placeholder="Descripción detallada del producto..."
+            />
+            {errors.description && (
+              <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                {errors.description.message}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* 💰 Pricing */}
+        <div className="space-y-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <DollarSign className="w-5 h-5 text-green-500" />
+            Precios
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Cost */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Costo *
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 dark:text-gray-400">$</span>
+                </div>
+                <input
+                  {...register("cost", { valueAsNumber: true })}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  className={cn(
+                    "w-full pl-8 pr-4 py-3 rounded-lg border transition-colors duration-200",
+                    "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
+                    "placeholder-gray-500 dark:placeholder-gray-400",
+                    errors.cost
+                      ? "border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20"
+                      : "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
+                    "focus:outline-none focus:ring-4"
+                  )}
+                  placeholder="0.00"
+                />
+              </div>
+              {errors.cost && (
+                <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                  {errors.cost.message}
+                </p>
+              )}
+            </div>
+
+            {/* Price */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Precio de Venta *
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 dark:text-gray-400">$</span>
+                </div>
+                <input
+                  {...register("price", { valueAsNumber: true })}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  className={cn(
+                    "w-full pl-8 pr-4 py-3 rounded-lg border transition-colors duration-200",
+                    "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
+                    "placeholder-gray-500 dark:placeholder-gray-400",
+                    errors.price
+                      ? "border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20"
+                      : "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
+                    "focus:outline-none focus:ring-4"
+                  )}
+                  placeholder="0.00"
+                />
+              </div>
+              {errors.price && (
+                <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                  {errors.price.message}
+                </p>
+              )}
+              {/* Profit margin indicator */}
+              {watchedPrice > 0 && watchedCost > 0 && (
+                <div className="mt-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-500 dark:text-gray-400">
+                      Margen:
+                    </span>
+                    <span
+                      className={cn(
+                        "font-medium",
+                        watchedPrice >= watchedCost
+                          ? "text-green-600 dark:text-green-400"
+                          : "text-red-600 dark:text-red-400"
+                      )}
+                    >
+                      ${(watchedPrice - watchedCost).toFixed(2)} (
+                      {(
+                        ((watchedPrice - watchedCost) / watchedPrice) *
+                        100
+                      ).toFixed(1)}
+                      %)
                     </span>
                   </div>
-                )}
-                {isValid && isDirty && (
-                  <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
-                    <Check className="w-4 h-4" />
-                    <span>Formulario válido</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center gap-3 sm:ml-auto">
-                {/* Cancel */}
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  disabled={isSubmitting}
-                  className={cn(
-                    "px-6 py-3 rounded-lg font-medium transition-colors duration-200",
-                    "bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600",
-                    "text-gray-700 dark:text-gray-300",
-                    "disabled:opacity-50 disabled:cursor-not-allowed",
-                    "focus:outline-none focus:ring-4 focus:ring-gray-500/20"
-                  )}
-                >
-                  Cancelar
-                </button>
-
-                {/* Submit */}
-                <button
-                  type="submit"
-                  form="product-form"
-                  disabled={!isValid || isSubmitting || categoriesLoading}
-                  className={cn(
-                    "px-6 py-3 rounded-lg font-medium transition-colors duration-200",
-                    "disabled:opacity-50 disabled:cursor-not-allowed",
-                    "bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700",
-                    "text-white focus:outline-none focus:ring-4 focus:ring-blue-500/20",
-                    "flex items-center gap-2"
-                  )}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      {isEditMode ? "Actualizando..." : "Creando..."}
-                    </>
-                  ) : categoriesLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Cargando datos...
-                    </>
-                  ) : (
-                    <>
-                      <Package className="w-4 h-4" />
-                      {isEditMode ? "Actualizar Producto" : "Crear Producto"}
-                    </>
-                  )}
-                </button>
-              </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
-      </div>
-    </div>
+
+        {/* 📦 Inventory */}
+        <div className="space-y-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <Warehouse className="w-5 h-5 text-purple-500" />
+            Inventario
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {/* Stock */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Stock Inicial
+              </label>
+              <input
+                {...register("stock", { valueAsNumber: true })}
+                type="number"
+                min="0"
+                step="1"
+                className={cn(
+                  "w-full px-4 py-3 rounded-lg border transition-colors duration-200",
+                  "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
+                  "placeholder-gray-500 dark:placeholder-gray-400",
+                  errors.stock
+                    ? "border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20"
+                    : "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
+                  "focus:outline-none focus:ring-4"
+                )}
+                placeholder="0"
+              />
+              {errors.stock && (
+                <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                  {errors.stock.message}
+                </p>
+              )}
+            </div>
+
+            {/* Min Stock */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Stock Mínimo
+              </label>
+              <input
+                {...register("minStock", { valueAsNumber: true })}
+                type="number"
+                min="0"
+                step="1"
+                className={cn(
+                  "w-full px-4 py-3 rounded-lg border transition-colors duration-200",
+                  "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
+                  "placeholder-gray-500 dark:placeholder-gray-400",
+                  errors.minStock
+                    ? "border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20"
+                    : "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
+                  "focus:outline-none focus:ring-4"
+                )}
+                placeholder="0"
+              />
+              {errors.minStock && (
+                <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                  {errors.minStock.message}
+                </p>
+              )}
+            </div>
+
+            {/* Max Stock */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Stock Máximo
+              </label>
+              <input
+                {...register("maxStock", {
+                  valueAsNumber: true,
+                  setValueAs: (value) => (value === "" ? null : Number(value)),
+                })}
+                type="number"
+                min="0"
+                step="1"
+                className={cn(
+                  "w-full px-4 py-3 rounded-lg border transition-colors duration-200",
+                  "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
+                  "placeholder-gray-500 dark:placeholder-gray-400",
+                  errors.maxStock
+                    ? "border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20"
+                    : "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
+                  "focus:outline-none focus:ring-4"
+                )}
+                placeholder="Opcional"
+              />
+              {errors.maxStock && (
+                <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                  {errors.maxStock.message}
+                </p>
+              )}
+            </div>
+
+            {/* Unit */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Unidad
+              </label>
+              <select
+                {...register("unit")}
+                className={cn(
+                  "w-full px-4 py-3 rounded-lg border transition-colors duration-200",
+                  "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
+                  errors.unit
+                    ? "border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20"
+                    : "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
+                  "focus:outline-none focus:ring-4"
+                )}
+              >
+                {UNITS.map((unit) => (
+                  <option key={unit.value} value={unit.value}>
+                    {unit.label}
+                  </option>
+                ))}
+              </select>
+              {errors.unit && (
+                <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                  {errors.unit.message}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Barcode */}
+          <div className="max-w-md">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Código de Barras
+            </label>
+            <input
+              {...register("barcode")}
+              className={cn(
+                "w-full px-4 py-3 rounded-lg border transition-colors duration-200",
+                "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
+                "placeholder-gray-500 dark:placeholder-gray-400",
+                errors.barcode
+                  ? "border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20"
+                  : "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
+                "focus:outline-none focus:ring-4"
+              )}
+              placeholder="Ej: 1234567890123"
+              autoComplete="off"
+            />
+            {errors.barcode && (
+              <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                {errors.barcode.message}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* 🖼️ Images */}
+        <div className="space-y-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <ImageIcon className="w-5 h-5 text-indigo-500" />
+            Imágenes ({watchedImages.length}/10)
+          </h3>
+
+          {/* Add Image */}
+          <div className="flex gap-3">
+            <input
+              value={currentImageUrl}
+              onChange={(e) => setCurrentImageUrl(e.target.value)}
+              className={cn(
+                "flex-1 px-4 py-3 rounded-lg border transition-colors duration-200",
+                "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
+                "placeholder-gray-500 dark:placeholder-gray-400",
+                "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
+                "focus:outline-none focus:ring-4"
+              )}
+              placeholder="URL de la imagen"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addImage();
+                }
+              }}
+            />
+            <button
+              type="button"
+              onClick={addImage}
+              disabled={!currentImageUrl.trim() || watchedImages.length >= 10}
+              className={cn(
+                "px-4 py-3 rounded-lg font-medium transition-colors duration-200",
+                "disabled:opacity-50 disabled:cursor-not-allowed",
+                "bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700",
+                "text-white focus:outline-none focus:ring-4 focus:ring-blue-500/20"
+              )}
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Image List */}
+          {watchedImages.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {watchedImages.map((url, index) => (
+                <div key={index} className="relative group">
+                  <div className="aspect-square rounded-lg bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                    <img
+                      src={url}
+                      alt={`Imagen ${index + 1}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src =
+                          "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik03MCA5MEwxMzAgNTBMMTcwIDEwTDE3MDE2MEgzMFY5MEg3MFoiIGZpbGw9IiNEMUQ1REIiLz4KPC9zdmc+";
+                      }}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className={cn(
+                      "absolute -top-2 -right-2 w-6 h-6 rounded-full",
+                      "bg-red-500 hover:bg-red-600 text-white",
+                      "flex items-center justify-center transition-colors duration-200",
+                      "opacity-0 group-hover:opacity-100 focus:opacity-100",
+                      "focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                    )}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 🏷️ Tags */}
+        <div className="space-y-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <Tag className="w-5 h-5 text-yellow-500" />
+            Etiquetas ({watchedTags.length}/20)
+          </h3>
+
+          {/* Add Tag */}
+          <div className="flex gap-3">
+            <input
+              value={currentTag}
+              onChange={(e) => setCurrentTag(e.target.value)}
+              className={cn(
+                "flex-1 px-4 py-3 rounded-lg border transition-colors duration-200",
+                "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
+                "placeholder-gray-500 dark:placeholder-gray-400",
+                "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20",
+                "focus:outline-none focus:ring-4"
+              )}
+              placeholder="Agregar etiqueta"
+              maxLength={30}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addTag();
+                }
+              }}
+            />
+            <button
+              type="button"
+              onClick={addTag}
+              disabled={
+                !currentTag.trim() ||
+                watchedTags.length >= 20 ||
+                watchedTags.includes(currentTag.trim())
+              }
+              className={cn(
+                "px-4 py-3 rounded-lg font-medium transition-colors duration-200",
+                "disabled:opacity-50 disabled:cursor-not-allowed",
+                "bg-yellow-500 hover:bg-yellow-600 dark:bg-yellow-600 dark:hover:bg-yellow-700",
+                "text-white focus:outline-none focus:ring-4 focus:ring-yellow-500/20"
+              )}
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Tag List */}
+          {watchedTags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {watchedTags.map((tag, index) => (
+                <span
+                  key={index}
+                  className={cn(
+                    "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm",
+                    "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-400"
+                  )}
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => removeTag(index)}
+                    className="w-4 h-4 rounded-full hover:bg-yellow-200 dark:hover:bg-yellow-800 flex items-center justify-center"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </form>
+    </BaseModal>
   );
 };
 

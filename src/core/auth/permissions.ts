@@ -332,6 +332,8 @@ export const inventoryPermissions = {
   // Categories
   canCreateCategory: (user: PermissionUser) =>
     hasPermission(user, "inventory_category:create"),
+  canUpdateCategory: (user: PermissionUser) =>
+    hasPermission(user, "inventory_category:update"),
   canDeleteCategory: (user: PermissionUser) =>
     hasPermission(user, "inventory_category:delete"),
 

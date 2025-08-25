@@ -18,7 +18,7 @@ export { useSuppliersQuery } from "./useSuppliersQuery";
 // 🎯 UI Interaction hooks
 export { useScrollHeader, useTabScrollHeader } from "./useScrollHeader";
 
-// 📝 Form and Mutation hooks
+// 📝 Form and Mutation hooks - Products
 export {
   useCreateProduct,
   useCreateProductWithNotifications,
@@ -28,6 +28,19 @@ export {
   useDeleteProduct,
   useDeleteProductModal,
 } from "./useCreateProduct";
+
+// 📝 Form and Mutation hooks - Categories
+export {
+  useCreateCategory,
+  useCreateCategoryWithNotifications,
+  useCreateCategoryModal,
+  useUpdateCategory,
+  useUpdateCategoryWithNotifications,
+  useUpdateCategoryModal,
+  useDeleteCategory,
+  useDeleteCategoryWithNotifications,
+  useDeleteCategoryModal,
+} from "./useCreateCategory";
 
 // 🗂️ Query keys for external invalidation
 export {

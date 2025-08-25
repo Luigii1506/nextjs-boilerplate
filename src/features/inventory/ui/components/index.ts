@@ -21,11 +21,15 @@ export {
 // 🔍 Tab Components (SPA navigation)
 export { default as OverviewTab } from "./tabs/OverviewTab";
 export { default as ProductsTab } from "./tabs/ProductsTab";
+export { default as CategoriesTab } from "./tabs/CategoriesTab";
 
 // 📝 Modals and Forms
 export { default as ProductModal } from "./ProductModal";
 export { DeleteProductModal } from "./DeleteProductModal";
 export { default as ProductViewModal } from "./ProductViewModal";
+export { default as CategoryModal } from "./CategoryModal";
+export { default as CategoryViewModal } from "./CategoryViewModal";
+export { default as CategoryDeleteModal } from "./CategoryDeleteModal";
 
 // 📊 Main components (TODO: Create these components)
 // export { default as ProductsTable } from "./ProductsTable";
@@ -36,7 +40,6 @@ export { default as ProductViewModal } from "./ProductViewModal";
 
 // 🏷️ Category components (TODO: Create these components)
 // export { default as CategoriesTree } from "./CategoriesTree";
-// export { default as CategoryModal } from "./CategoryModal";
 
 // 🚛 Supplier components (TODO: Create these components)
 // export { default as SuppliersGrid } from "./SuppliersGrid";

@@ -26,3 +26,13 @@ export {
   SkeletonFeatureFlagCard,
   SkeletonPage,
 } from "./SkeletonLoader";
+
+// 🎭 Modal Components
+export {
+  BaseModal,
+  BaseModalActions,
+  BaseModalButton,
+  type BaseModalProps,
+  type BaseModalActionsProps,
+  type BaseModalButtonProps,
+} from "./BaseModal";

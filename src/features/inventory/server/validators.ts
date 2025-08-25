@@ -13,6 +13,7 @@ import {
   createProductSchema,
   updateProductSchema,
   createCategorySchema,
+  updateCategorySchema,
   createSupplierSchema,
   createStockMovementSchema,
   productFiltersSchema,
@@ -84,6 +85,7 @@ export function validateInventoryPermissions(
 
     // Categories
     CREATE_CATEGORY: () => inventoryPermissions.canCreateCategory(user),
+    UPDATE_CATEGORY: () => inventoryPermissions.canUpdateCategory(user),
     DELETE_CATEGORY: () => inventoryPermissions.canDeleteCategory(user),
 
     // Suppliers
@@ -125,6 +127,7 @@ export type InventoryPermissionAction =
   | "SET_STOCK"
   | "VIEW_COST"
   | "CREATE_CATEGORY"
+  | "UPDATE_CATEGORY"
   | "DELETE_CATEGORY"
   | "CREATE_SUPPLIER"
   | "UPDATE_SUPPLIER"
@@ -171,6 +174,9 @@ export const inventoryValidators = {
   // Categories
   canCreateCategory: (user: PermissionUser) => {
     requireInventoryPermission(user, "CREATE_CATEGORY");
+  },
+  canUpdateCategory: (user: PermissionUser) => {
+    requireInventoryPermission(user, "UPDATE_CATEGORY");
   },
   canDeleteCategory: (user: PermissionUser) => {
     requireInventoryPermission(user, "DELETE_CATEGORY");
@@ -237,6 +243,27 @@ export function validateCreateCategory(input: unknown): CreateCategoryInput {
       throw new ValidationError("Category validation failed", error.issues);
     }
     throw new Error("Invalid category data");
+  }
+}
+
+export function validateUpdateCategory(
+  input: unknown
+): CreateCategoryInput & { id: string; isActive?: boolean } {
+  try {
+    const result = updateCategorySchema.parse(input);
+    // Convert null to undefined to match TypeScript type
+    return {
+      ...result,
+      parentId: result.parentId ?? undefined,
+    } as CreateCategoryInput & { id: string; isActive?: boolean };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw new ValidationError(
+        "Category update validation failed",
+        error.issues
+      );
+    }
+    throw new Error("Invalid category update data");
   }
 }
 

@@ -53,6 +53,14 @@ export const INVENTORY_QUERY_KEYS = {
   productsList: (filters?: ProductFilters, pagination?: PaginationParams) =>
     ["inventory", "products", "list", filters, pagination] as const,
   product: (id: string) => ["inventory", "products", id] as const,
+  categories: () => ["inventory", "categories"] as const,
+  categoriesList: (filters?: CategoryFilters) =>
+    ["inventory", "categories", "list", filters] as const,
+  category: (id: string) => ["inventory", "categories", id] as const,
+  suppliers: () => ["inventory", "suppliers"] as const,
+  suppliersList: (filters?: SupplierFilters) =>
+    ["inventory", "suppliers", "list", filters] as const,
+  supplier: (id: string) => ["inventory", "suppliers", id] as const,
   stats: () => ["inventory", "stats"] as const,
   alerts: () => ["inventory", "alerts"] as const,
 } as const;

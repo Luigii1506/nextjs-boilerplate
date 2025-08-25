@@ -23,6 +23,7 @@ import type {
   ProductFilters,
   CategoryFilters,
   ProductWithRelations,
+  CategoryWithRelations,
 } from "../types";
 
 // 🎯 TABS DISPONIBLES
@@ -115,18 +116,43 @@ interface InventoryContextType {
   isViewModalOpen: boolean;
   setIsViewModalOpen: (open: boolean) => void;
 
+  // Category Edit States
+  editingCategory: CategoryWithRelations | null;
+  setEditingCategory: (category: CategoryWithRelations | null) => void;
+  isEditCategoryMode: boolean;
+
+  // Category Delete Confirmation
+  deletingCategory: CategoryWithRelations | null;
+  setDeletingCategory: (category: CategoryWithRelations | null) => void;
+  isCategoryDeleteConfirmOpen: boolean;
+  setIsCategoryDeleteConfirmOpen: (open: boolean) => void;
+
+  // Category View States
+  viewingCategory: CategoryWithRelations | null;
+  setViewingCategory: (category: CategoryWithRelations | null) => void;
+  isCategoryViewModalOpen: boolean;
+  setIsCategoryViewModalOpen: (open: boolean) => void;
+
   // Data from API
   inventory: ReturnType<typeof useInventoryQuery>;
 
   // Actions
   refetchAll: () => void;
   clearAllFilters: () => void;
+  // Product Actions
   openEditModal: (product: ProductWithRelations) => void;
   closeEditModal: () => void;
   openDeleteConfirm: (product: ProductWithRelations) => void;
   closeDeleteConfirm: () => void;
   openViewModal: (product: ProductWithRelations) => void;
   closeViewModal: () => void;
+  // Category Actions
+  openEditCategoryModal: (category: CategoryWithRelations) => void;
+  closeEditCategoryModal: () => void;
+  openDeleteCategoryConfirm: (category: CategoryWithRelations) => void;
+  closeDeleteCategoryConfirm: () => void;
+  openViewCategoryModal: (category: CategoryWithRelations) => void;
+  closeViewCategoryModal: () => void;
 }
 
 // 🎯 CONTEXT CREATION
@@ -168,8 +194,22 @@ export const InventoryProvider: React.FC<InventoryProviderProps> = ({
     useState<ProductWithRelations | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
+  // ✏️ Category Edit States
+  const [editingCategory, setEditingCategory] =
+    useState<CategoryWithRelations | null>(null);
+  const [deletingCategory, setDeletingCategory] =
+    useState<CategoryWithRelations | null>(null);
+  const [isCategoryDeleteConfirmOpen, setIsCategoryDeleteConfirmOpen] =
+    useState(false);
+
+  // 👁️ Category View States
+  const [viewingCategory, setViewingCategory] =
+    useState<CategoryWithRelations | null>(null);
+  const [isCategoryViewModalOpen, setIsCategoryViewModalOpen] = useState(false);
+
   // 🎯 Computed values
   const isEditMode = editingProduct !== null;
+  const isEditCategoryMode = editingCategory !== null;
 
   // 🔄 Main Data Query
   const inventory = useInventoryQuery({
@@ -244,6 +284,47 @@ export const InventoryProvider: React.FC<InventoryProviderProps> = ({
     setIsViewModalOpen(false);
   }, []);
 
+  // ✏️ Category Edit Actions
+  const openEditCategoryModal = useCallback(
+    (category: CategoryWithRelations) => {
+      setEditingCategory(category);
+      setIsCategoryModalOpen(true);
+    },
+    []
+  );
+
+  const closeEditCategoryModal = useCallback(() => {
+    setEditingCategory(null);
+    setIsCategoryModalOpen(false);
+  }, []);
+
+  const openDeleteCategoryConfirm = useCallback(
+    (category: CategoryWithRelations) => {
+      setDeletingCategory(category);
+      setIsCategoryDeleteConfirmOpen(true);
+    },
+    []
+  );
+
+  const closeDeleteCategoryConfirm = useCallback(() => {
+    setDeletingCategory(null);
+    setIsCategoryDeleteConfirmOpen(false);
+  }, []);
+
+  // 👁️ Category View Actions
+  const openViewCategoryModal = useCallback(
+    (category: CategoryWithRelations) => {
+      setViewingCategory(category);
+      setIsCategoryViewModalOpen(true);
+    },
+    []
+  );
+
+  const closeViewCategoryModal = useCallback(() => {
+    setViewingCategory(null);
+    setIsCategoryViewModalOpen(false);
+  }, []);
+
   const value: InventoryContextType = {
     // Tab Management
     activeTab,
@@ -285,18 +366,43 @@ export const InventoryProvider: React.FC<InventoryProviderProps> = ({
     isViewModalOpen,
     setIsViewModalOpen,
 
+    // Category Edit States
+    editingCategory,
+    setEditingCategory,
+    isEditCategoryMode,
+
+    // Category Delete Confirmation
+    deletingCategory,
+    setDeletingCategory,
+    isCategoryDeleteConfirmOpen,
+    setIsCategoryDeleteConfirmOpen,
+
+    // Category View States
+    viewingCategory,
+    setViewingCategory,
+    isCategoryViewModalOpen,
+    setIsCategoryViewModalOpen,
+
     // Data
     inventory,
 
     // Actions
     refetchAll,
     clearAllFilters,
+    // Product Actions
     openEditModal,
     closeEditModal,
     openDeleteConfirm,
     closeDeleteConfirm,
     openViewModal,
     closeViewModal,
+    // Category Actions
+    openEditCategoryModal,
+    closeEditCategoryModal,
+    openDeleteCategoryConfirm,
+    closeDeleteCategoryConfirm,
+    openViewCategoryModal,
+    closeViewCategoryModal,
   };
 
   return (

@@ -243,6 +243,75 @@ export async function createCategoryAction(
   }
 }
 
+export async function updateCategoryAction(
+  id: string,
+  input: CreateCategoryInput & { isActive?: boolean }
+): Promise<ActionResult<Category>> {
+  try {
+    // 🔐 Authentication
+    const session = await requireAuth();
+    if (!session?.user) {
+      return { success: false, error: "No autenticado" };
+    }
+    const userId = session.user.id;
+
+    // 🎯 Delegate to service (thick layer)
+    const result = await CategoryService.update(id, input, userId);
+
+    // 🔄 Cache invalidation (UI concerns)
+    if (result.success) {
+      revalidateTag(INVENTORY_CACHE_TAGS.categories);
+      revalidateTag(INVENTORY_CACHE_TAGS.category(id));
+      revalidateTag(INVENTORY_CACHE_TAGS.products); // Categories affect products
+      revalidateTag(INVENTORY_CACHE_TAGS.all);
+    }
+
+    return result;
+  } catch (error) {
+    console.error("[Inventory] Action error - updateCategory:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error al actualizar categoría",
+    };
+  }
+}
+
+export async function deleteCategoryAction(
+  id: string
+): Promise<ActionResult<void>> {
+  try {
+    // 🔐 Authentication
+    const session = await requireAuth();
+    if (!session?.user) {
+      return { success: false, error: "No autenticado" };
+    }
+    const userId = session.user.id;
+
+    // 🎯 Delegate to service (thick layer)
+    const result = await CategoryService.delete(id, userId);
+
+    // 🔄 Cache invalidation (UI concerns)
+    if (result.success) {
+      revalidateTag(INVENTORY_CACHE_TAGS.categories);
+      revalidateTag(INVENTORY_CACHE_TAGS.category(id));
+      revalidateTag(INVENTORY_CACHE_TAGS.products); // Categories affect products
+      revalidateTag(INVENTORY_CACHE_TAGS.all);
+    }
+
+    return result;
+  } catch (error) {
+    console.error("[Inventory] Action error - deleteCategory:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error al eliminar categoría",
+    };
+  }
+}
+
 // 🚛 SUPPLIER ACTIONS
 // ⚡ ULTRA-FAST READ - No auth for public suppliers
 export async function getSuppliersAction(

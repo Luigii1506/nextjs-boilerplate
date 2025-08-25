@@ -719,6 +719,57 @@ export async function validateCategoryExists(id: string): Promise<boolean> {
   return !!category && category.isActive;
 }
 
+export async function updateCategoryQuery(
+  id: string,
+  input: Partial<CreateCategoryInput> & { isActive?: boolean }
+): Promise<Category> {
+  return await prisma.category.update({
+    where: { id },
+    data: {
+      ...(input.name && { name: input.name }),
+      ...(input.description !== undefined && {
+        description: input.description,
+      }),
+      ...(input.parentId !== undefined && { parentId: input.parentId }),
+      ...(input.color !== undefined && { color: input.color }),
+      ...(input.icon !== undefined && { icon: input.icon }),
+      ...(input.sortOrder !== undefined && { sortOrder: input.sortOrder }),
+      ...(input.isActive !== undefined && { isActive: input.isActive }),
+    },
+  });
+}
+
+export async function deleteCategoryQuery(id: string): Promise<Category> {
+  return await prisma.category.delete({
+    where: { id },
+  });
+}
+
+export async function getCategoryWithProductsQuery(
+  id: string
+): Promise<CategoryListResponse | null> {
+  return await prisma.category.findUnique({
+    where: { id },
+    include: {
+      parent: true,
+      children: {
+        where: { isActive: true },
+        orderBy: { sortOrder: "asc" },
+      },
+      products: {
+        where: { isActive: true },
+        select: { id: true },
+      },
+      _count: {
+        select: {
+          products: { where: { isActive: true } },
+          children: { where: { isActive: true } },
+        },
+      },
+    },
+  });
+}
+
 // 🚛 SUPPLIER QUERIES
 export async function createSupplierQuery(
   input: CreateSupplierInput

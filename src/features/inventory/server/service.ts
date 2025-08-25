@@ -20,8 +20,11 @@ import {
   getProductsQuery,
   getProductByIdQuery,
   createCategoryQuery,
+  updateCategoryQuery,
+  deleteCategoryQuery,
   getCategoriesQuery,
   getCategoryByIdQuery,
+  getCategoryWithProductsQuery,
   createSupplierQuery,
   getSuppliersQuery,
   getSupplierByIdQuery,
@@ -42,6 +45,7 @@ import {
   validateCreateProduct,
   validateUpdateProduct,
   validateCreateCategory,
+  validateUpdateCategory,
   validateCreateSupplier,
   validateCreateStockMovement,
   validateProductFilters,
@@ -471,6 +475,86 @@ export class CategoryService {
       };
     } catch (error) {
       return this.handleError(error, "Error fetching categories");
+    }
+  }
+
+  static async update(
+    id: string,
+    input: CreateCategoryInput & { isActive?: boolean },
+    userId: string
+  ): Promise<ActionResult<CategoryWithRelations>> {
+    try {
+      const session = await requireAuth();
+      const user = sessionToPermissionUser(session);
+      validateInventoryPermissions(user, "UPDATE_CATEGORY");
+
+      const validatedInput = validateUpdateCategory({ ...input, id });
+
+      // Business Logic - Name uniqueness (except for current category)
+      if (validatedInput.name) {
+        const existing = await getCategoriesQuery({
+          search: validatedInput.name,
+        });
+        const duplicateCategory = existing.find(
+          (c) =>
+            c.name.toLowerCase() === validatedInput.name!.toLowerCase() &&
+            c.id !== id
+        );
+        if (duplicateCategory) {
+          return { success: false, error: "Category name already exists" };
+        }
+      }
+
+      const rawCategory = await updateCategoryQuery(id, validatedInput);
+      const category = mapCategoryToExternal(rawCategory);
+
+      await this.logCategoryAction("UPDATED", category.id, userId);
+
+      return {
+        success: true,
+        data: category,
+      };
+    } catch (error) {
+      return this.handleError(error, "Error updating category");
+    }
+  }
+
+  static async delete(id: string, userId: string): Promise<ActionResult<void>> {
+    try {
+      const session = await requireAuth();
+      const user = sessionToPermissionUser(session);
+      validateInventoryPermissions(user, "DELETE_CATEGORY");
+
+      // Business Logic - Check if category has products
+      const categoryWithProducts = await getCategoryWithProductsQuery(id);
+      if (!categoryWithProducts) {
+        return { success: false, error: "Category not found" };
+      }
+
+      if (categoryWithProducts._count.products > 0) {
+        return {
+          success: false,
+          error: "Cannot delete category that contains products",
+        };
+      }
+
+      // Check if category has child categories
+      if (categoryWithProducts._count.children > 0) {
+        return {
+          success: false,
+          error: "Cannot delete category that has subcategories",
+        };
+      }
+
+      await deleteCategoryQuery(id);
+      await this.logCategoryAction("DELETED", id, userId);
+
+      return {
+        success: true,
+        data: undefined,
+      };
+    } catch (error) {
+      return this.handleError(error, "Error deleting category");
     }
   }
 

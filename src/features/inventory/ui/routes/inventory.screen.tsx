@@ -36,8 +36,11 @@ import {
   ProductModal,
   DeleteProductModal,
   ProductViewModal,
+  CategoryModal,
+  CategoryViewModal,
+  CategoryDeleteModal,
 } from "../components";
-import { OverviewTab, ProductsTab } from "../components/tabs";
+import { OverviewTab, ProductsTab, CategoriesTab } from "../components/tabs";
 import { useTabScrollHeader } from "../../hooks";
 
 // 🎨 Icon mapping for tabs
@@ -234,18 +237,7 @@ const TabContent: React.FC = () => {
       return <ProductsTab />;
 
     case "categories":
-      // TODO: Implement CategoriesTab
-      return (
-        <div className="p-6 text-center animate-fadeInUp">
-          <Tags className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4 animate-scaleIn" />
-          <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2 animate-slideInUp stagger-1">
-            🏷️ Gestión de Categorías
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400 animate-fadeInScale stagger-2">
-            Próximamente: Organización y clasificación de productos
-          </p>
-        </div>
-      );
+      return <CategoriesTab />;
 
     case "suppliers":
       // TODO: Implement SuppliersTab
@@ -312,6 +304,9 @@ const InventorySPAContent: React.FC = () => {
       <ProductModal />
       <DeleteProductModal />
       <ProductViewModal />
+      <CategoryModal />
+      <CategoryViewModal />
+      <CategoryDeleteModal />
     </div>
   );
 };
