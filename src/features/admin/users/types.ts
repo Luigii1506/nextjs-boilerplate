@@ -23,10 +23,10 @@ export interface User {
 
 // 🔍 Search and Filtering
 export interface UserSearchParams {
-  limit: number;
-  offset: number;
+  limit?: number;
+  offset?: number;
   searchValue?: string;
-  searchField: "email" | "name";
+  searchField?: "email" | "name";
 }
 
 export interface UserAdvancedSearch {
