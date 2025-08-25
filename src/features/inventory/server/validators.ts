@@ -21,6 +21,7 @@ import {
   paginationParamsSchema,
 } from "../schemas";
 import type {
+  Product,
   CreateProductInput,
   UpdateProductInput,
   CreateCategoryInput,
@@ -189,7 +190,12 @@ export const inventoryValidators = {
 // 📦 PRODUCT VALIDATION
 export function validateCreateProduct(input: unknown): CreateProductInput {
   try {
-    return createProductSchema.parse(input);
+    const result = createProductSchema.parse(input);
+    // Convert metadata null to undefined to match TypeScript type
+    return {
+      ...result,
+      metadata: result.metadata ?? undefined,
+    } as CreateProductInput;
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw new ValidationError("Product validation failed", error.issues);
@@ -200,7 +206,12 @@ export function validateCreateProduct(input: unknown): CreateProductInput {
 
 export function validateUpdateProduct(input: unknown): UpdateProductInput {
   try {
-    return updateProductSchema.parse(input);
+    const result = updateProductSchema.parse(input);
+    // Convert metadata null to undefined to match TypeScript type
+    return {
+      ...result,
+      metadata: result.metadata ?? undefined,
+    } as UpdateProductInput;
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw new ValidationError(
@@ -215,7 +226,12 @@ export function validateUpdateProduct(input: unknown): UpdateProductInput {
 // 🏷️ CATEGORY VALIDATION
 export function validateCreateCategory(input: unknown): CreateCategoryInput {
   try {
-    return createCategorySchema.parse(input);
+    const result = createCategorySchema.parse(input);
+    // Convert null to undefined to match TypeScript type
+    return {
+      ...result,
+      parentId: result.parentId ?? undefined,
+    } as CreateCategoryInput;
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw new ValidationError("Category validation failed", error.issues);
@@ -227,7 +243,12 @@ export function validateCreateCategory(input: unknown): CreateCategoryInput {
 // 🚛 SUPPLIER VALIDATION
 export function validateCreateSupplier(input: unknown): CreateSupplierInput {
   try {
-    return createSupplierSchema.parse(input);
+    const result = createSupplierSchema.parse(input);
+    // Convert null values to undefined to match TypeScript type
+    return {
+      ...result,
+      email: result.email ?? undefined,
+    } as CreateSupplierInput;
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw new ValidationError("Supplier validation failed", error.issues);
@@ -241,7 +262,12 @@ export function validateCreateStockMovement(
   input: unknown
 ): CreateStockMovementInput {
   try {
-    return createStockMovementSchema.parse(input);
+    const result = createStockMovementSchema.parse(input);
+    // Convert null values to undefined to match TypeScript type
+    return {
+      ...result,
+      reference: result.reference ?? undefined,
+    } as CreateStockMovementInput;
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw new ValidationError(
@@ -270,7 +296,12 @@ export function validateProductFilters(input: unknown): ProductFilters {
 
 export function validateCategoryFilters(input: unknown): CategoryFilters {
   try {
-    return categoryFiltersSchema.parse(input);
+    const result = categoryFiltersSchema.parse(input);
+    // Convert null values to undefined to match TypeScript type
+    return {
+      ...result,
+      parentId: result.parentId ?? undefined,
+    } as CategoryFilters;
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw new ValidationError(
@@ -319,12 +350,16 @@ export class BusinessRuleValidator {
     }
 
     // Stock cannot be negative
-    if (input.stock < 0) {
+    if (input.stock !== undefined && input.stock < 0) {
       throw new BusinessRuleError("Stock cannot be negative", "NEGATIVE_STOCK");
     }
 
     // Min stock cannot be greater than max stock
-    if (input.maxStock && input.minStock > input.maxStock) {
+    if (
+      input.maxStock &&
+      input.minStock !== undefined &&
+      input.minStock > input.maxStock
+    ) {
       throw new BusinessRuleError(
         "Minimum stock cannot be greater than maximum stock",
         "MIN_MAX_STOCK_VALIDATION"
@@ -353,7 +388,7 @@ export class BusinessRuleValidator {
 
   static validateProductUpdateBusinessRules(
     input: UpdateProductInput,
-    existingProduct?: any
+    _existingProduct?: Pick<Product, "id" | "stock" | "price" | "cost">
   ): void {
     // Price validation
     if (input.price !== undefined && input.cost !== undefined) {
@@ -495,7 +530,7 @@ export class SecurityValidator {
 
     // Limit nesting depth to prevent JSON bombs
     const maxDepth = 3;
-    function limitDepth(obj: any, depth: number): any {
+    function limitDepth(obj: unknown, depth: number): unknown {
       if (depth > maxDepth || typeof obj !== "object" || obj === null) {
         return obj;
       }
@@ -505,22 +540,24 @@ export class SecurityValidator {
       }
 
       const result: Record<string, unknown> = {};
-      for (const [key, value] of Object.entries(obj)) {
+      for (const [key, value] of Object.entries(
+        obj as Record<string, unknown>
+      )) {
         result[key] = limitDepth(value, depth + 1);
       }
       return result;
     }
 
-    return limitDepth(sanitized, 0);
+    return limitDepth(sanitized, 0) as Record<string, unknown>;
   }
 }
 
 // 🚨 CUSTOM ERROR CLASSES
 export class ValidationError extends Error {
   public readonly code = "VALIDATION_ERROR";
-  public readonly details: any[];
+  public readonly details: z.ZodIssue[];
 
-  constructor(message: string, details: any[] = []) {
+  constructor(message: string, details: z.ZodIssue[] = []) {
     super(message);
     this.name = "ValidationError";
     this.details = details;

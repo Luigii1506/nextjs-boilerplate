@@ -28,6 +28,8 @@ import {
   addStockMovementQuery,
   getInventoryStatsQuery,
   getLowStockAlertsQuery,
+  type ProductListItem,
+  type ProductDetailItem,
 } from "./queries";
 import {
   mapProductToExternal,
@@ -180,9 +182,46 @@ export class ProductService {
         validatedPagination
       );
 
+      // 🔄 Transform ProductListItem[] to ProductWithRelations[]
       const result: PaginatedResponse<ProductWithRelations> = {
         ...rawResult,
-        data: rawResult.data.map(mapProductToExternal),
+        data: rawResult.data.map(
+          (product: ProductListItem): ProductWithRelations => ({
+            ...product,
+            // Add missing optional fields for ProductWithRelations compatibility
+            category: {
+              ...product.category,
+              description: null, // Not available in list view
+              parentId: null, // Not available in list view
+              isActive: true, // Assume active
+              sortOrder: 0, // Not needed
+              createdAt: new Date(), // Placeholder
+              updatedAt: new Date(), // Placeholder
+            },
+            supplier: product.supplier
+              ? {
+                  ...product.supplier,
+                  email: null, // Not available in list view
+                  phone: null, // Not available in list view
+                  website: null, // Not available in list view
+                  taxId: null, // Not available in list view
+                  paymentTerms: 30, // Default
+                  rating: null, // Not available in list view
+                  notes: null, // Not available in list view
+                  addressLine1: null, // Not available in list view
+                  addressLine2: null, // Not available in list view
+                  city: null, // Not available in list view
+                  state: null, // Not available in list view
+                  postalCode: null, // Not available in list view
+                  country: null, // Not available in list view
+                  isActive: true, // Assume active
+                  createdAt: new Date(), // Placeholder
+                  updatedAt: new Date(), // Placeholder
+                }
+              : null,
+            stockMovements: [], // Empty for list view - use _count instead
+          })
+        ),
       };
 
       return {
@@ -205,7 +244,45 @@ export class ProductService {
         return { success: false, error: "Product not found" };
       }
 
-      const product = mapProductToExternal(rawProduct);
+      // 🔄 Transform ProductDetailItem to ProductWithRelations
+      const product: ProductWithRelations = {
+        ...rawProduct,
+        // Add missing fields for Category
+        category: {
+          ...rawProduct.category,
+          isActive: true, // Assume active
+          sortOrder: 0, // Not needed for detail view
+          createdAt: new Date(), // Placeholder
+          updatedAt: new Date(), // Placeholder
+        },
+        // Add missing fields for Supplier (if exists)
+        supplier: rawProduct.supplier
+          ? {
+              ...rawProduct.supplier,
+              website: null, // Not selected in query
+              taxId: null, // Not selected in query
+              paymentTerms: 30, // Default
+              rating: null, // Not selected in query
+              notes: null, // Not selected in query
+              addressLine1: null, // Not selected in query
+              addressLine2: null, // Not selected in query
+              city: null, // Not selected in query
+              state: null, // Not selected in query
+              postalCode: null, // Not selected in query
+              country: null, // Not selected in query
+              isActive: true, // Assume active
+              createdAt: new Date(), // Placeholder
+              updatedAt: new Date(), // Placeholder
+            }
+          : null,
+        // Transform stockMovements to complete StockMovement objects
+        stockMovements: rawProduct.stockMovements.map((movement) => ({
+          ...movement,
+          productId: rawProduct.id, // Fill missing required field
+          userId: movement.user.id, // Map from user relation
+          updatedAt: movement.createdAt, // Use createdAt as updatedAt placeholder
+        })),
+      };
 
       return {
         success: true,
@@ -375,8 +452,18 @@ export class CategoryService {
     try {
       // 🚀 FAST - Skip auth for public reads, direct validation
       const validatedFilters = filters ? validateCategoryFilters(filters) : {};
+
+      // 🚀 FAST - Get categories from database
       const rawCategories = await getCategoriesQuery(validatedFilters);
-      const categories = rawCategories.map(mapCategoryToExternal);
+
+      // 🔄 Transform to domain types (products is optional so we omit it for performance)
+      const categories: CategoryWithRelations[] = rawCategories.map(
+        (category) => ({
+          ...category,
+          // Omit products array for list performance - use _count for product count info
+          products: undefined, // Optional field - undefined for listing performance
+        })
+      );
 
       return {
         success: true,
@@ -459,8 +546,18 @@ export class SupplierService {
     try {
       // 🚀 FAST - Skip auth for public reads, direct validation
       const validatedFilters = filters ? validateSupplierFilters(filters) : {};
+
+      // 🚀 FAST - Get suppliers from database
       const rawSuppliers = await getSuppliersQuery(validatedFilters);
-      const suppliers = rawSuppliers.map(mapSupplierToExternal);
+
+      // 🔄 Transform to domain types (products is optional so we omit it for performance)
+      const suppliers: SupplierWithRelations[] = rawSuppliers.map(
+        (supplier) => ({
+          ...supplier,
+          // Omit products array for list performance - use _count for product count info
+          products: undefined, // Optional field - undefined for listing performance
+        })
+      );
 
       return {
         success: true,

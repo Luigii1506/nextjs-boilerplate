@@ -10,6 +10,7 @@
  */
 
 import { prisma } from "@/core/database/prisma";
+import type { Decimal } from "@prisma/client/runtime/library";
 import type {
   Product,
   ProductWithRelations,
@@ -29,6 +30,30 @@ import type {
   PaginatedResponse,
 } from "../types";
 
+// 🔄 DECIMAL CONVERSION HELPERS
+// ============================
+// Converts Prisma Decimal types to numbers for TypeScript compatibility
+
+function convertDecimalToNumber(decimal: Decimal | number): number {
+  return typeof decimal === "number" ? decimal : Number(decimal.toString());
+}
+
+function convertDecimalToNullableNumber(
+  decimal: Decimal | number | null
+): number | null {
+  return decimal === null ? null : convertDecimalToNumber(decimal);
+}
+
+function convertJsonValueToMetadata(
+  jsonValue: unknown
+): Record<string, unknown> | null {
+  if (jsonValue === null || jsonValue === undefined) return null;
+  if (typeof jsonValue === "object" && jsonValue !== null) {
+    return jsonValue as Record<string, unknown>;
+  }
+  return null;
+}
+
 // 📦 PRODUCT QUERIES
 export async function createProductQuery(
   input: CreateProductInput,
@@ -39,7 +64,7 @@ export async function createProductQuery(
     const minStock = input.minStock ?? 0;
 
     // Create the product
-    const product = await tx.product.create({
+    const rawProduct = await tx.product.create({
       data: {
         sku: input.sku,
         name: input.name,
@@ -65,19 +90,25 @@ export async function createProductQuery(
     if (stock > 0) {
       await tx.stockMovement.create({
         data: {
-          productId: product.id,
+          productId: rawProduct.id,
           type: "IN",
           quantity: stock,
           previousStock: 0,
           newStock: stock,
           reason: "Stock inicial del producto",
-          reference: `INIT-${product.sku}`,
+          reference: `INIT-${rawProduct.sku}`,
           userId,
         },
       });
     }
 
-    return product;
+    // Convert Decimal fields to numbers for TypeScript compatibility
+    return {
+      ...rawProduct,
+      price: convertDecimalToNumber(rawProduct.price),
+      cost: convertDecimalToNumber(rawProduct.cost),
+      metadata: convertJsonValueToMetadata(rawProduct.metadata),
+    };
   });
 }
 
@@ -184,7 +215,7 @@ export async function updateProductQuery(
     });
 
     // Update the product
-    const product = await tx.product.update({
+    const rawProduct = await tx.product.update({
       where: { id: input.id },
       data: updateData,
     });
@@ -208,18 +239,24 @@ export async function updateProductQuery(
       });
     }
 
-    return product;
+    // Convert Decimal fields to numbers for TypeScript compatibility
+    return {
+      ...rawProduct,
+      price: convertDecimalToNumber(rawProduct.price),
+      cost: convertDecimalToNumber(rawProduct.cost),
+      metadata: convertJsonValueToMetadata(rawProduct.metadata),
+    };
   });
 }
 
 export async function deleteProductQuery(id: string): Promise<Product> {
   return await prisma.$transaction(async (tx) => {
     // Get full product data for response
-    const productToDelete = await tx.product.findUnique({
+    const rawProductToDelete = await tx.product.findUnique({
       where: { id },
     });
 
-    if (!productToDelete) {
+    if (!rawProductToDelete) {
       throw new Error("Producto no encontrado durante la eliminación");
     }
 
@@ -228,14 +265,27 @@ export async function deleteProductQuery(id: string): Promise<Product> {
       where: { id },
     });
 
-    return productToDelete;
+    // Convert Decimal fields to numbers for TypeScript compatibility
+    return {
+      ...rawProductToDelete,
+      price: convertDecimalToNumber(rawProductToDelete.price),
+      cost: convertDecimalToNumber(rawProductToDelete.cost),
+      metadata: convertJsonValueToMetadata(rawProductToDelete.metadata),
+    };
   });
 }
+
+// 📦 Product List Response Type - minimal data for listing performance
+export type ProductListItem = Product & {
+  category: Pick<Category, "id" | "name" | "color" | "icon">;
+  supplier: Pick<Supplier, "id" | "name" | "contactPerson"> | null;
+  _count: { stockMovements: number };
+};
 
 export async function getProductsQuery(
   filters: ProductFilters = {},
   pagination: PaginationParams = { page: 1, limit: 20, sortDirection: "asc" }
-): Promise<PaginatedResponse<ProductWithRelations>> {
+): Promise<PaginatedResponse<ProductListItem>> {
   // Ensure pagination has default values
   const page = pagination.page ?? 1;
   const limit = pagination.limit ?? 20;
@@ -278,7 +328,7 @@ export async function getProductsQuery(
     : { createdAt: "desc" as const };
 
   // ⚡ OPTIMIZED PARALLEL QUERIES - Minimal necessary data for max speed
-  const [products, totalCount] = await Promise.all([
+  const [rawProducts, totalCount] = await Promise.all([
     prisma.product.findMany({
       where,
       // 🚀 FAST - Only essential fields for listing
@@ -286,13 +336,19 @@ export async function getProductsQuery(
         id: true,
         sku: true,
         name: true,
+        description: true,
+        categoryId: true,
         price: true,
         cost: true,
         stock: true,
         minStock: true,
         maxStock: true,
         unit: true,
+        barcode: true,
         images: true,
+        supplierId: true,
+        tags: true,
+        metadata: true,
         isActive: true,
         createdAt: true,
         updatedAt: true,
@@ -325,6 +381,15 @@ export async function getProductsQuery(
     prisma.product.count({ where }),
   ]);
 
+  // Convert Decimal fields to numbers for TypeScript compatibility
+  const products: ProductListItem[] = rawProducts.map((product) => ({
+    ...product,
+    price: convertDecimalToNumber(product.price),
+    cost: convertDecimalToNumber(product.cost),
+    metadata: convertJsonValueToMetadata(product.metadata),
+    // category and supplier are already in the correct partial format
+  }));
+
   // Format response
   const totalPages = Math.ceil(totalCount / limit);
   return {
@@ -340,11 +405,37 @@ export async function getProductsQuery(
   };
 }
 
+// 📦 Product Detail Response Type - full data for detail view
+export type ProductDetailItem = Product & {
+  category: Pick<
+    Category,
+    "id" | "name" | "description" | "color" | "icon" | "parentId"
+  >;
+  supplier: Pick<
+    Supplier,
+    "id" | "name" | "contactPerson" | "email" | "phone"
+  > | null;
+  stockMovements: (Pick<
+    StockMovement,
+    | "id"
+    | "type"
+    | "quantity"
+    | "previousStock"
+    | "newStock"
+    | "reason"
+    | "reference"
+    | "createdAt"
+  > & {
+    user: { id: string; name: string | null }; // User info from auth system
+  })[];
+  _count: { stockMovements: number };
+};
+
 // ⚡ OPTIMIZED - Full product details with necessary relations only
 export async function getProductByIdQuery(
   id: string
-): Promise<ProductWithRelations | null> {
-  const product = await prisma.product.findUnique({
+): Promise<ProductDetailItem | null> {
+  const rawProduct = await prisma.product.findUnique({
     where: { id },
     select: {
       // 🚀 FAST - All product fields
@@ -352,6 +443,7 @@ export async function getProductByIdQuery(
       sku: true,
       name: true,
       description: true,
+      categoryId: true,
       price: true,
       cost: true,
       stock: true,
@@ -360,6 +452,7 @@ export async function getProductByIdQuery(
       unit: true,
       barcode: true,
       images: true,
+      supplierId: true,
       tags: true,
       metadata: true,
       isActive: true,
@@ -411,11 +504,18 @@ export async function getProductByIdQuery(
     },
   });
 
-  if (!product) {
+  if (!rawProduct) {
     throw new Error("Producto no encontrado");
   }
 
-  return product;
+  // Convert Decimal fields to numbers for TypeScript compatibility
+  return {
+    ...rawProduct,
+    price: convertDecimalToNumber(rawProduct.price),
+    cost: convertDecimalToNumber(rawProduct.cost),
+    metadata: convertJsonValueToMetadata(rawProduct.metadata),
+    // category, supplier, and stockMovements are already in the correct partial format
+  } as ProductDetailItem;
 }
 
 // ⚡ ULTRA-FAST VALIDATION QUERIES - Minimal data for max speed
@@ -448,7 +548,7 @@ export async function checkBarcodeUniqueness(
 // ⚡ ULTRA-FAST - Validation-specific product query (minimal fields)
 export async function getProductForValidation(
   id: string
-): Promise<Product | null> {
+): Promise<Pick<Product, "id" | "sku" | "name" | "stock" | "isActive"> | null> {
   return await prisma.product.findUnique({
     where: { id },
     select: {
@@ -464,7 +564,7 @@ export async function getProductForValidation(
 // ⚡ ULTRA-FAST - Category validation by ID
 export async function getCategoryByIdQuery(
   id: string
-): Promise<Category | null> {
+): Promise<Pick<Category, "id" | "name" | "isActive"> | null> {
   return await prisma.category.findUnique({
     where: { id },
     select: {
@@ -478,7 +578,7 @@ export async function getCategoryByIdQuery(
 // ⚡ ULTRA-FAST - Supplier validation by ID
 export async function getSupplierByIdQuery(
   id: string
-): Promise<Supplier | null> {
+): Promise<Pick<Supplier, "id" | "name" | "isActive"> | null> {
   return await prisma.supplier.findUnique({
     where: { id },
     select: {
@@ -489,12 +589,22 @@ export async function getSupplierByIdQuery(
   });
 }
 
+// 📦 Product Dependencies Response Type - minimal data for dependency checking
+type ProductDependenciesItem = Product & {
+  category: Category;
+  supplier: Supplier | null;
+  stockMovements: { id: string }[]; // Just IDs for dependency checking
+  _count: { stockMovements: number };
+};
+
 export async function getProductWithDependencies(
   id: string
-): Promise<ProductWithRelations | null> {
-  return await prisma.product.findUnique({
+): Promise<ProductDependenciesItem | null> {
+  const rawProduct = await prisma.product.findUnique({
     where: { id },
     include: {
+      category: true,
+      supplier: true,
       stockMovements: {
         select: { id: true },
         take: 1,
@@ -504,6 +614,22 @@ export async function getProductWithDependencies(
       },
     },
   });
+
+  if (!rawProduct) return null;
+
+  // Convert Decimal fields to numbers for TypeScript compatibility
+  return {
+    ...rawProduct,
+    price: convertDecimalToNumber(rawProduct.price),
+    cost: convertDecimalToNumber(rawProduct.cost),
+    metadata: convertJsonValueToMetadata(rawProduct.metadata),
+    supplier: rawProduct.supplier
+      ? {
+          ...rawProduct.supplier,
+          rating: convertDecimalToNullableNumber(rawProduct.supplier.rating),
+        }
+      : null,
+  } as ProductDependenciesItem;
 }
 
 // 🏷️ CATEGORY QUERIES
@@ -522,9 +648,20 @@ export async function createCategoryQuery(
   });
 }
 
+// 🏷️ Extended Category type for listing with relations
+type CategoryListResponse = Category & {
+  parent: Category | null;
+  children: Category[];
+  products: Array<{ id: string }>;
+  _count: {
+    products: number;
+    children: number;
+  };
+};
+
 export async function getCategoriesQuery(
   filters: CategoryFilters = {}
-): Promise<any[]> {
+): Promise<CategoryListResponse[]> {
   const where = {
     ...(filters.search && {
       OR: [
@@ -586,7 +723,7 @@ export async function validateCategoryExists(id: string): Promise<boolean> {
 export async function createSupplierQuery(
   input: CreateSupplierInput
 ): Promise<Supplier> {
-  return await prisma.supplier.create({
+  const rawSupplier = await prisma.supplier.create({
     data: {
       name: input.name,
       contactPerson: input.contactPerson || null,
@@ -605,11 +742,25 @@ export async function createSupplierQuery(
       country: input.country || "MX",
     },
   });
+
+  // Convert Decimal fields to numbers for TypeScript compatibility
+  return {
+    ...rawSupplier,
+    rating: convertDecimalToNullableNumber(rawSupplier.rating),
+  };
 }
+
+// 🚛 Extended Supplier type for listing with relations
+type SupplierListResponse = Supplier & {
+  products: Array<{ id: string; name: string; sku: string; stock: number }>;
+  _count: {
+    products: number;
+  };
+};
 
 export async function getSuppliersQuery(
   filters: SupplierFilters = {}
-): Promise<any[]> {
+): Promise<SupplierListResponse[]> {
   const where = {
     ...(filters.search && {
       OR: [
@@ -627,7 +778,7 @@ export async function getSuppliersQuery(
     ...(filters.isActive !== undefined && { isActive: filters.isActive }),
   };
 
-  return await prisma.supplier.findMany({
+  const rawSuppliers = await prisma.supplier.findMany({
     where,
     include: {
       products: {
@@ -642,6 +793,12 @@ export async function getSuppliersQuery(
     },
     orderBy: [{ name: "asc" }],
   });
+
+  // Convert Decimal fields to numbers for TypeScript compatibility
+  return rawSuppliers.map((supplier) => ({
+    ...supplier,
+    rating: convertDecimalToNullableNumber(supplier.rating),
+  }));
 }
 
 export async function validateSupplierExists(id: string): Promise<boolean> {
@@ -691,7 +848,10 @@ export async function addStockMovementQuery(
 
 export async function getProductForStockMovement(
   id: string
-): Promise<Product | null> {
+): Promise<Pick<
+  Product,
+  "id" | "name" | "sku" | "stock" | "minStock" | "maxStock" | "isActive"
+> | null> {
   return await prisma.product.findUnique({
     where: { id },
     select: {
@@ -798,7 +958,20 @@ export async function getInventoryStatsQuery(): Promise<
   };
 }
 
-export async function getLowStockAlertsQuery(): Promise<any[]> {
+// 📊 Stock Alert type
+type StockAlert = {
+  id: string;
+  productId: string;
+  productName: string;
+  productSku: string;
+  currentStock: number;
+  minStock: number;
+  status: StockStatus;
+  category: string;
+  lastMovement?: Date;
+};
+
+export async function getLowStockAlertsQuery(): Promise<StockAlert[]> {
   // Get products with stock issues
   const productsWithAlerts = await prisma.product.findMany({
     where: {
@@ -846,17 +1019,7 @@ export async function getLowStockAlertsQuery(): Promise<any[]> {
   `;
 
   // Process all products and create alerts
-  const alerts: Array<{
-    id: string;
-    productId: string;
-    productName: string;
-    productSku: string;
-    currentStock: number;
-    minStock: number;
-    status: StockStatus;
-    category: string;
-    lastMovement?: Date;
-  }> = [];
+  const alerts: StockAlert[] = [];
 
   // Add regular stock alerts
   productsWithAlerts.forEach((product) => {

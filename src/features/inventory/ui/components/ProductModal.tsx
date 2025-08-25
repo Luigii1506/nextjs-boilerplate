@@ -120,9 +120,9 @@ export const ProductModal: React.FC = () => {
         minStock: editingProduct.minStock,
         maxStock: editingProduct.maxStock,
         unit: editingProduct.unit,
-        barcode: editingProduct.barcode,
+        barcode: editingProduct.barcode ?? "", // Convert null to empty string for input
         images: editingProduct.images ?? [],
-        supplierId: editingProduct.supplierId,
+        supplierId: editingProduct.supplierId ?? "", // Convert null to empty string for select
         tags: editingProduct.tags ?? [],
         metadata: editingProduct.metadata ?? {},
       };
@@ -140,9 +140,9 @@ export const ProductModal: React.FC = () => {
       minStock: 0, // will use schema default if not provided
       maxStock: null,
       unit: "piece", // will use schema default if not provided
-      barcode: null,
+      barcode: "", // Use empty string instead of null for input compatibility
       images: [], // will use schema default if not provided
-      supplierId: null,
+      supplierId: "", // Use empty string instead of null for select compatibility
       tags: [], // will use schema default if not provided
       metadata: {},
     };
@@ -215,37 +215,37 @@ export const ProductModal: React.FC = () => {
         });
       }
 
+      // First reset with default values
       reset(defaultValues);
       setCurrentImageUrl("");
       setCurrentTag("");
 
-      // 🔧 Force setValue for select elements (fix category/supplier dropdown issue)
+      // 🔧 IMPROVED: Immediate setValue after reset for better reliability
       if (isEditMode && editingProduct) {
-        setTimeout(() => {
-          // Force set values for select elements that might not update properly with reset
-          setValue("categoryId", editingProduct.categoryId);
-          setValue("supplierId", editingProduct.supplierId || "");
-          setValue("barcode", editingProduct.barcode || "");
-          setValue("tags", editingProduct.tags || []);
+        // Set values immediately after reset (don't wait for timeout)
+        setValue("categoryId", editingProduct.categoryId);
+        setValue("supplierId", editingProduct.supplierId ?? ""); // Use nullish coalescing
+        setValue("barcode", editingProduct.barcode ?? ""); // Use nullish coalescing
+        setValue("tags", editingProduct.tags ?? []);
 
-          // Force revalidation after setting values
-          trigger();
-        }, 150); // Slightly longer timeout to ensure DOM updates
+        // Then use shorter timeout for validation trigger
+        setTimeout(() => {
+          trigger(); // Force revalidation
+        }, 50); // Reduced timeout
       } else {
-        // 🔧 Force revalidation after reset to enable submit button
+        // 🔧 Immediate trigger for create mode
         setTimeout(() => {
           trigger();
-        }, 100);
+        }, 50);
       }
     }
   }, [
     isProductModalOpen,
     isEditMode,
-    editingProduct,
+    editingProduct?.id, // Only depend on ID to prevent unnecessary reruns
     reset,
-    getDefaultValues,
-    trigger,
     setValue,
+    trigger,
   ]);
 
   // 🎯 Close modal handler
@@ -275,10 +275,12 @@ export const ProductModal: React.FC = () => {
   const onSubmit = async (data: ProductFormData) => {
     let success = false;
 
-    // Clean data - ensure metadata is not null
+    // Clean data - convert empty strings back to null/undefined for nullable fields
     const cleanData = {
       ...data,
       metadata: data.metadata || undefined,
+      barcode: data.barcode || null, // Convert empty string back to null
+      supplierId: data.supplierId || null, // Convert empty string back to null
     };
 
     // 🐛 Debug: Log form data being submitted
