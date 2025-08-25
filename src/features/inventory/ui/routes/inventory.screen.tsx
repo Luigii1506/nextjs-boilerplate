@@ -14,7 +14,7 @@
 // Import custom animations
 import "../styles/animations.css";
 
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import React, { useMemo } from "react";
 import {
   BarChart3,
   Package,
@@ -44,6 +44,7 @@ import {
   SupplierDeleteModal,
 } from "../components";
 import { ReusableTabs, type TabItem } from "@/shared/ui/components";
+import { useScrollHeader } from "@/shared/hooks";
 import {
   OverviewTab,
   ProductsTab,
@@ -336,126 +337,18 @@ const TabContent: React.FC = () => {
 
 // 🎯 Main SPA Component (without Provider)
 const InventorySPAContent: React.FC = () => {
-  // 🔥 WHEEL-BASED SCROLL SIMULATION (bypassing broken window scroll)
-  const [scrollY, setScrollY] = useState(0);
-  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
-  const scrollYRef = useRef(0);
-
-  useEffect(() => {
-    console.log("🔥 EFECT EJECUTÁNDOSE - agregando scroll listener");
-
-    // Check initial scroll info + CSS debugging
-    const docHeight = document.documentElement.scrollHeight;
-    const windowHeight = window.innerHeight;
-    const bodyHeight = document.body.scrollHeight;
-    const bodyOverflow = window.getComputedStyle(document.body).overflow;
-    const htmlOverflow = window.getComputedStyle(
-      document.documentElement
-    ).overflow;
-    const bodyOverflowY = window.getComputedStyle(document.body).overflowY;
-    const htmlOverflowY = window.getComputedStyle(
-      document.documentElement
-    ).overflowY;
-
-    console.log("📏 COMPLETE SCROLL DEBUG:", {
-      docHeight,
-      windowHeight,
-      bodyHeight,
-      isScrollable: docHeight > windowHeight,
-      scrollY: window.scrollY,
-      bodyOverflow,
-      htmlOverflow,
-      bodyOverflowY,
-      htmlOverflowY,
-      bodyClientHeight: document.body.clientHeight,
-      docClientHeight: document.documentElement.clientHeight,
-    });
-
-    const handleScroll = () => {
-      console.log("🚨 SCROLL EVENT TRIGGERED!!! ScrollY:", window.scrollY);
-      const currentY = window.scrollY;
-      setScrollY(currentY);
-      setIsHeaderVisible(currentY < 17);
-    };
-
-    // 🧪 TEST: Add multiple event listeners to see if ANY work
-    window.addEventListener("scroll", handleScroll);
-    window.addEventListener("scroll", () =>
-      console.log("🟢 BACKUP SCROLL LISTENER:", window.scrollY)
-    );
-    document.addEventListener("scroll", () =>
-      console.log("🔵 DOCUMENT SCROLL LISTENER:", window.scrollY)
-    );
-
-    console.log("✅ THREE scroll listeners agregados");
-
-    // 🚀 WHEEL-BASED SCROLL SIMULATION (since window.scrollTo is broken)
-    const handleWheel = (e) => {
-      // Accumulate scroll based on wheel delta
-      const deltaY = e.deltaY * 0.5; // Sensitivity factor
-      const currentScrollY = scrollYRef.current;
-      const newScrollY = Math.max(0, currentScrollY + deltaY);
-
-      console.log(
-        "🎯 WHEEL SCROLL SIMULATION:",
-        currentScrollY,
-        "→",
-        newScrollY
-      );
-
-      scrollYRef.current = newScrollY;
-      setScrollY(newScrollY);
-      setIsHeaderVisible(newScrollY < 17);
-
-      console.log(
-        "✅ Header should be:",
-        newScrollY < 50 ? "VISIBLE" : "HIDDEN"
-      );
-    };
-
-    window.addEventListener("wheel", handleWheel);
-
-    // 🚨 FORCE ENABLE SCROLL IN CSS (temporary fix)
-    document.body.style.overflow = "auto";
-    document.documentElement.style.overflow = "auto";
-    document.body.style.overflowY = "auto";
-    document.documentElement.style.overflowY = "auto";
-    document.body.style.height = "auto";
-    document.documentElement.style.height = "auto";
-    console.log("🔧 FORCED SCROLL CSS PROPERTIES");
-
-    // Test scroll programmatically
-    setTimeout(() => {
-      console.log("🧪 Testing programmatic scroll...");
-      window.scrollTo(0, 100);
-
-      // Test scroll again after CSS changes
-      setTimeout(() => {
-        console.log("🧪 Second scroll test after CSS fix...");
-        const newDocHeight = document.documentElement.scrollHeight;
-        const newWindowHeight = window.innerHeight;
-        console.log("📏 AFTER CSS FIX:", {
-          newDocHeight,
-          newWindowHeight,
-          newIsScrollable: newDocHeight > newWindowHeight,
-          newScrollY: window.scrollY,
-        });
-      }, 500);
-    }, 2000);
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("wheel", handleWheel);
-      console.log("🗑️ Scroll and wheel listeners removidos");
-    };
-  }, []);
-
-  const isPastThreshold = scrollY > 50;
-
-  console.log("🔥 INVENTORYSPA RENDER STATE:", {
+  // ✨ Clean Scroll Detection Hook
+  const {
     scrollY,
     isHeaderVisible,
     isPastThreshold,
+    isNativeScrollWorking,
+    isWheelSimulationActive,
+  } = useScrollHeader({
+    threshold: 17,
+    wheelSensitivity: 0.5,
+    useWheelFallback: true,
+    debug: false, // Set to true for debugging
   });
 
   return (

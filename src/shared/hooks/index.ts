@@ -12,5 +12,6 @@ export * from "./useNotifications";
 export * from "./useNotificationsBadge"; // ✅ NEW - TODO completado
 export * from "./useBroadcast";
 export * from "./useSwipeGestures"; // ✅ NEW - Mobile UX enhancement
+export * from "./useScrollHeader"; // ✅ NEW - Reusable scroll header detection
 
 export * from "./useI18n";
