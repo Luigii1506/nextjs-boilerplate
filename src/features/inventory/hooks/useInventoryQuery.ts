@@ -29,6 +29,7 @@ import type {
   ProductWithRelations,
   CategoryWithRelations,
   SupplierWithRelations,
+  StockMovement,
   InventoryStats,
   StockAlert,
   CreateProductInput,
@@ -534,21 +535,21 @@ export function useInventoryQuery(
 
     // Product actions
     createProduct: async (data: CreateProductInput) => {
-      return (await createProductMutation.mutateAsync(data)) as ActionResult;
+      return (await createProductMutation.mutateAsync(data)) as ActionResult<ProductWithRelations>;
     },
     updateProduct: async (id: string, data: UpdateProductInput) => {
       return (await updateProductMutation.mutateAsync({
         id,
         data,
-      })) as ActionResult;
+      })) as ActionResult<ProductWithRelations>;
     },
     deleteProduct: async (id: string) => {
-      return (await deleteProductMutation.mutateAsync(id)) as ActionResult;
+      return (await deleteProductMutation.mutateAsync(id)) as ActionResult<void>;
     },
 
     // Category actions
     createCategory: async (data: CreateCategoryInput) => {
-      return (await createCategoryMutation.mutateAsync(data)) as ActionResult;
+      return (await createCategoryMutation.mutateAsync(data)) as ActionResult<CategoryWithRelations>;
     },
     updateCategory: async () => ({ success: false, error: "Not implemented" }), // TODO
     deleteCategory: async () => ({ success: false, error: "Not implemented" }), // TODO
@@ -560,7 +561,7 @@ export function useInventoryQuery(
 
     // Stock movement actions
     addStockMovement: async (data: CreateStockMovementInput) => {
-      return (await addStockMovementMutation.mutateAsync(data)) as ActionResult;
+      return (await addStockMovementMutation.mutateAsync(data)) as ActionResult<StockMovement>;
     },
 
     // Utilities

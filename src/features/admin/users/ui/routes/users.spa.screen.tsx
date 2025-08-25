@@ -254,6 +254,44 @@ const UsersSPAContent: React.FC = () => {
           <TabContent />
         </div>
       </main>
+
+      {/* 🚨 MASSIVE CONTENT TO FORCE SCROLL */}
+      <div
+        style={{ minHeight: "200vh" }}
+        className="bg-gradient-to-b from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-8 m-6 rounded-lg"
+      >
+        <h2 className="text-3xl font-bold mb-6">
+          🚨 USERS SCROLL FORCE TEST - 200% VIEWPORT HEIGHT
+        </h2>
+
+        <div className="mb-8 p-6 bg-red-100 dark:bg-red-900/30 rounded-lg border-2 border-red-300">
+          <h3 className="text-xl font-bold text-red-800 dark:text-red-200 mb-2">
+            SCROLL STATUS - USERS
+          </h3>
+          <p className="text-red-700 dark:text-red-300">
+            This div is 200% viewport height. Should be scrollable on Users
+            page!
+          </p>
+        </div>
+
+        <div className="space-y-6">
+          {Array.from({ length: 40 }, (_, i) => (
+            <div
+              key={i}
+              className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg border"
+              style={{ minHeight: "120px" }}
+            >
+              <h3 className="text-lg font-semibold mb-2">
+                👥 Users Card #{i + 1}
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Line {i + 1}: Forcing scroll with large content in Users.
+                ScrollY should change exactly like in Inventory!
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };
