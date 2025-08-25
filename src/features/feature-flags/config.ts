@@ -48,6 +48,8 @@ export const FEATURE_FLAGS = {
   settings: process.env.FEATURE_SETTINGS === "true",
 } as const;
 
+export type FeatureFlag = keyof typeof FEATURE_FLAGS;
+
 // 🎨 Categories for UI organization
 export const FEATURE_CATEGORIES = {
   core: {
@@ -142,14 +144,16 @@ export const getFeaturesByCategory = (
 };
 
 // 🔗 FEATURE DEPENDENCIES SYSTEM
-export const FEATURE_DEPENDENCIES = {
+export const FEATURE_DEPENDENCIES: FeatureDependencies = {
   pos: ["inventory"],                           // POS requiere Inventory
   ecommerce: ["inventory", "payments"],         // E-commerce requiere Inventory + Payments  
   suppliers: ["inventory"],                     // Suppliers requiere Inventory
   shippingIntegration: ["ecommerce"],          // Shipping requiere E-commerce
   emailNotifications: ["ecommerce", "pos"],   // Emails requiere ventas
-  paymentGateways: ["payments"],               // Gateways requiere payments base
+  paymentGateways: ["payments"],
 } as const;
+
+export type FeatureDependencies = { [key in FeatureFlag]?: readonly FeatureFlag[] };
 
 // 🔍 Validation utilities
 export function validateFeatureDependencies(
@@ -167,17 +171,15 @@ export function getFeatureDependencies(
 }
 
 export function getDependentFeatures(
-  feature: string
+  feature: FeatureFlag
 ): Array<keyof typeof FEATURE_DEPENDENCIES> {
   const result: Array<keyof typeof FEATURE_DEPENDENCIES> = [];
-  
-  // Check each dependency manually to avoid type issues
-  if (FEATURE_DEPENDENCIES.pos.includes(feature as any)) result.push('pos');
-  if (FEATURE_DEPENDENCIES.ecommerce.includes(feature as any)) result.push('ecommerce');
-  if (FEATURE_DEPENDENCIES.suppliers.includes(feature as any)) result.push('suppliers');
-  if (FEATURE_DEPENDENCIES.shippingIntegration.includes(feature as any)) result.push('shippingIntegration');
-  if (FEATURE_DEPENDENCIES.emailNotifications.includes(feature as any)) result.push('emailNotifications');
-  if (FEATURE_DEPENDENCIES.paymentGateways.includes(feature as any)) result.push('paymentGateways');
-  
+
+  for (const [key, dependencies] of Object.entries(FEATURE_DEPENDENCIES)) {
+    if ((dependencies as readonly FeatureFlag[]).includes(feature)) {
+      result.push(key as keyof typeof FEATURE_DEPENDENCIES);
+    }
+  }
+
   return result;
 }

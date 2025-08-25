@@ -32,6 +32,14 @@ interface PrismaField {
   default?: string;
 }
 
+// 🎯 Operation Types for generated hooks
+export type OperationInput = Record<string, unknown>;
+export interface OperationResult<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
 /**
  * 📊 GENERAR CONSTANTS
  */
@@ -1161,7 +1169,7 @@ export function use${pascalName}() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const performOperation = useCallback(async (input: any) => {
+  const performOperation = useCallback(async (input: OperationInput): Promise<OperationResult> => {
     setIsLoading(true);
     try {
       // TODO: Implement operation logic
@@ -1234,7 +1242,7 @@ export function useCore${pascalName}() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const performOperation = useCallback(async (input: any) => {
+  const performOperation = useCallback(async (input: OperationInput): Promise<OperationResult> => {
     setIsLoading(true);
     try {
       // TODO: Implement operation logic

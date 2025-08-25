@@ -32,23 +32,33 @@ interface ProfileEventDetail {
   };
 }
 
+interface AuditEvent {
+  id: string;
+  action: string;
+  resourceType: string;
+  userId: string;
+  timestamp: string;
+  changes?: Array<{
+    field: string;
+    oldValue: string;
+    newValue: string;
+  }>;
+  riskLevel?: string;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
 interface AuditEventDetail {
-  event: {
-    id: string;
-    action: string;
-    resourceType: string;
-    userId: string;
-    timestamp: string;
-    changes?: Array<{
-      field: string;
-      oldValue: string;
-      newValue: string;
-    }>;
-    riskLevel?: string;
-    ipAddress?: string;
-    userAgent?: string;
-  };
+  event: AuditEvent;
   source: string;
+}
+
+declare global {
+  interface Window {
+    handleSearch: (query: string) => void;
+    markAllAsRead: () => void;
+    handleProfileAction: (index: number) => void;
+  }
 }
 
 // 🔍 Search Event Listener
@@ -235,8 +245,7 @@ const createSearchModal = (user: string, currentPath: string): HTMLElement => {
   });
 
   // Add global search function
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (window as any).handleSearch = (query: string) => {
+  window.handleSearch = (query: string) => {
     console.log(`🔍 Search query: "${query}"`);
     alert(
       `🔍 Search Results for: "${query}"\n\n✅ This would show real search results!\n\n🚀 Implementation ideas:\n- Full-text search across users\n- File search with filters\n- Settings search\n- Command palette functionality`
@@ -377,8 +386,7 @@ const createNotificationsPanel = (
   `;
 
   // Add global mark all as read function
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (window as any).markAllAsRead = () => {
+  window.markAllAsRead = () => {
     console.log("🔔 Marking all notifications as read");
     // Update UI
     const unreadIndicators = panel.querySelectorAll(
@@ -515,8 +523,7 @@ const createProfileDropdown = (user: {
   }, 100);
 
   // Add profile action handler
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (window as any).handleProfileAction = (index: number) => {
+  window.handleProfileAction = (index: number) => {
     const action = profileActions[index];
     console.log(`👤 Profile action: ${action.label}`);
     action.action();
@@ -527,23 +534,6 @@ const createProfileDropdown = (user: {
 };
 
 // 📋 Create Audit Event Modal
-interface AuditEvent {
-  id: string;
-  action: string;
-  resourceType: string;
-  userId: string;
-  timestamp: string;
-  metadata?: Record<string, unknown>;
-  changes?: Array<{
-    field: string;
-    oldValue: string;
-    newValue: string;
-  }>;
-  riskLevel?: 'low' | 'medium' | 'high';
-  ipAddress?: string;
-  userAgent?: string;
-}
-
 const createAuditEventModal = (event: AuditEvent, source: string): HTMLElement => {
   const modal = document.createElement("div");
   modal.id = "audit-event-modal";

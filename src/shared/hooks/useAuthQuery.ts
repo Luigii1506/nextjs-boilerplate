@@ -17,6 +17,13 @@ import { authClient } from "@/core/auth/auth-client";
 import { useNotifications } from "@/shared/hooks/useNotifications";
 import type { User } from "@/shared/types/user";
 
+// 📝 Session Data Interface
+interface SessionData {
+  user: User | null;
+  // Agrega otras propiedades de la sesión si existen
+  [key: string]: any;
+}
+
 // 🎯 Query Keys para auth
 export const AUTH_QUERY_KEYS = {
   all: ["auth"] as const,
@@ -50,7 +57,7 @@ export interface AuthHookReturn extends AuthState, AuthActions {
   isLoggingOut: boolean;
 
   // Session data
-  sessionData: Record<string, unknown> | null;
+  sessionData: SessionData | null;
 
   // Utilities
   hasRole: (role: string) => boolean;
@@ -59,10 +66,10 @@ export interface AuthHookReturn extends AuthState, AuthActions {
 }
 
 // 🔍 Session fetcher
-async function fetchSession() {
+async function fetchSession(): Promise<SessionData | null> {
   try {
     const session = await authClient.getSession();
-    return session.data || null;
+    return (session.data as SessionData) || null;
   } catch (error) {
     console.error("Error fetching session:", error);
     throw error;
@@ -138,7 +145,7 @@ export function useAuthQuery(
   });
 
   // 🚪 LOGOUT MUTATION
-  const logoutMutation = useMutation({
+  const logoutMutation = useMutation<boolean, Error, void>({
     mutationFn: performLogout,
     onSuccess: () => {
       // Clear all auth-related cache
@@ -158,7 +165,7 @@ export function useAuthQuery(
 
   // 🧮 Computed Auth State
   const authState = useMemo((): AuthState => {
-    const user = sessionData?.user as User | null;
+    const user = sessionData?.user ?? null;
     const isAuthenticated = !!user;
     const isAdmin = user?.role === "admin" || user?.role === "super_admin";
     const isSuperAdmin = user?.role === "super_admin";

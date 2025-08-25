@@ -1173,10 +1173,10 @@ interface EnhancedActionResult<T = unknown> extends ActionResult<T> {
 ```typescript
 // ui/components/ErrorBoundary.tsx
 export class ModuleErrorBoundary extends React.Component<
-  React.PropsWithChildren<{ fallback?: React.ComponentType<{ error?: Error }> }>,
+  React.PropsWithChildren<{ fallback?: React.ComponentType<any> }>,
   { hasError: boolean; error?: Error }
 > {
-  constructor(props: React.PropsWithChildren<{ fallback?: React.ComponentType<{ error?: Error }> }>) {
+  constructor(props: any) {
     super(props);
     this.state = { hasError: false };
   }

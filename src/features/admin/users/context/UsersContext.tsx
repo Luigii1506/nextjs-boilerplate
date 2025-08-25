@@ -112,6 +112,8 @@ interface UsersContextType {
   setBanningUser: (user: User | null) => void;
   isBanConfirmOpen: boolean;
   setIsBanConfirmOpen: (open: boolean) => void;
+  isBanReasonModalOpen: boolean;
+  setIsBanReasonModalOpen: (open: boolean) => void;
 
   // Bulk Operations States
   selectedUsers: Set<string>;
@@ -135,6 +137,8 @@ interface UsersContextType {
   closeViewModal: () => void;
   openBanConfirm: (user: User) => void;
   closeBanConfirm: () => void;
+  openBanReasonModal: (user: User) => void;
+  closeBanReasonModal: () => void;
 
   // Selection helpers
   toggleUserSelection: (userId: string) => void;
@@ -182,6 +186,7 @@ export const UsersProvider: React.FC<UsersProviderProps> = ({ children }) => {
   // 🚫 Ban/Unban States
   const [banningUser, setBanningUser] = useState<User | null>(null);
   const [isBanConfirmOpen, setIsBanConfirmOpen] = useState(false);
+  const [isBanReasonModalOpen, setIsBanReasonModalOpen] = useState(false);
 
   // 📦 Bulk Operations
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
@@ -223,9 +228,11 @@ export const UsersProvider: React.FC<UsersProviderProps> = ({ children }) => {
 
   // ✏️ User Edit Actions
   const openEditModal = useCallback((user: User) => {
+    console.log("🔄 openEditModal called with user:", user);
     setEditingUser(user);
     setIsUserModalOpen(true);
     setIsEditMode(true);
+    console.log("🔄 States after openEditModal - editingUser:", user, "isUserModalOpen: true");
   }, []);
 
   const closeEditModal = useCallback(() => {
@@ -265,6 +272,17 @@ export const UsersProvider: React.FC<UsersProviderProps> = ({ children }) => {
   const closeBanConfirm = useCallback(() => {
     setBanningUser(null);
     setIsBanConfirmOpen(false);
+  }, []);
+
+  // 🚫 Ban Reason Modal Actions
+  const openBanReasonModal = useCallback((user: User) => {
+    setBanningUser(user);
+    setIsBanReasonModalOpen(true);
+  }, []);
+
+  const closeBanReasonModal = useCallback(() => {
+    setBanningUser(null);
+    setIsBanReasonModalOpen(false);
   }, []);
 
   // 📦 Selection helpers
@@ -339,6 +357,8 @@ export const UsersProvider: React.FC<UsersProviderProps> = ({ children }) => {
     setBanningUser,
     isBanConfirmOpen,
     setIsBanConfirmOpen,
+    isBanReasonModalOpen,
+    setIsBanReasonModalOpen,
 
     // Bulk States
     selectedUsers,
@@ -362,6 +382,8 @@ export const UsersProvider: React.FC<UsersProviderProps> = ({ children }) => {
     closeViewModal,
     openBanConfirm,
     closeBanConfirm,
+    openBanReasonModal,
+    closeBanReasonModal,
 
     // Selection helpers
     toggleUserSelection,

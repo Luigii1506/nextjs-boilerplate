@@ -259,58 +259,6 @@ const UsersSPAContent: React.FC = () => {
           <TabContent />
         </div>
       </main>
-
-      {/* 🚨 MASSIVE CONTENT TO FORCE SCROLL - Same as inventory */}
-      <div
-        style={{ minHeight: "200vh" }}
-        className="bg-gradient-to-b from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-8 m-6 rounded-lg"
-      >
-        <h2 className="text-3xl font-bold mb-6">
-          🚨 USERS MODULE - SCROLL TEST (200% viewport height)
-        </h2>
-
-        <div className="mb-8 p-6 bg-blue-100 dark:bg-blue-900/30 rounded-lg border-2 border-blue-300">
-          <h3 className="text-xl font-bold text-blue-800 dark:text-blue-200 mb-2">
-            USERS SCROLL STATUS
-          </h3>
-          <p className="text-blue-700 dark:text-blue-300">
-            Testing scroll functionality in Users module. Header should
-            hide/show smoothly while tabs remain visible!
-          </p>
-        </div>
-
-        <div className="space-y-6">
-          {Array.from({ length: 40 }, (_, i) => (
-            <div
-              key={i}
-              className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg border"
-              style={{ minHeight: "120px" }}
-            >
-              <h3 className="text-lg font-semibold mb-2">
-                👥 Users Test Card #{i + 1}
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Line {i + 1}: Testing Users SPA scroll behavior. Header content
-                should disappear while tabs remain visible!
-              </p>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-12 p-6 bg-green-100 dark:bg-green-900/30 rounded-lg border-2 border-green-300">
-          <h3 className="text-xl font-bold text-green-800 dark:text-green-200 mb-2">
-            🎯 Expected Behavior
-          </h3>
-          <ul className="list-disc list-inside text-green-700 dark:text-green-300 space-y-2">
-            <li>
-              Header title and description should disappear on scroll down
-            </li>
-            <li>Tabs should REMAIN VISIBLE at all times</li>
-            <li>Header should reappear on scroll up</li>
-            <li>Smooth animations throughout</li>
-          </ul>
-        </div>
-      </div>
     </div>
   );
 };

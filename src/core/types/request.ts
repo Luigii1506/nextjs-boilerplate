@@ -21,7 +21,7 @@ export interface RequestGeoData {
 
 // 🔒 Enhanced NextRequest with proper geo typing
 export interface EnhancedNextRequest extends NextRequest {
-  geo?: RequestGeoData;
+  geo: RequestGeoData;
 }
 
 // 🛡️ Type guard to check if request has geo data
@@ -37,11 +37,17 @@ export function extractGeoData(request: NextRequest): {
   city: string;
   userAgent: string;
 } {
-  const enhancedRequest = request as EnhancedNextRequest;
+  if (hasGeoData(request)) {
+    return {
+      country: request.geo.country ?? "unknown",
+      city: request.geo.city ?? "unknown",
+      userAgent: request.headers.get("user-agent") || "unknown",
+    };
+  }
 
   return {
-    country: enhancedRequest.geo?.country || "unknown",
-    city: enhancedRequest.geo?.city || "unknown",
+    country: "unknown",
+    city: "unknown",
     userAgent: request.headers.get("user-agent") || "unknown",
   };
 }

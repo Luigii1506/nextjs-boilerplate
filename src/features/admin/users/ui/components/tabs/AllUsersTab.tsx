@@ -36,6 +36,11 @@ import { cn } from "@/shared/utils";
 import { useUsersContext } from "../../../context";
 import { TabTransition } from "../shared";
 import type { User } from "../../../types";
+import UserModal from "../UserModal.main";
+import UserViewModal from "../UserViewModal";
+import DeleteUserModal from "../DeleteUserModal";
+import BanUserModal from "../BanUserModal";
+import BanReasonModal from "../BanReasonModal";
 
 // 👤 User Card Component
 interface UserCardProps {
@@ -119,7 +124,10 @@ const UserCard: React.FC<UserCardProps> = ({
               <Eye className="w-5 h-5" />
             </button>
             <button
-              onClick={() => onEdit(user)}
+              onClick={() => {
+                console.log("🖱️ Edit button clicked for user:", user.name);
+                onEdit(user);
+              }}
               className="p-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               title="Editar"
             >
@@ -182,6 +190,7 @@ const UserCard: React.FC<UserCardProps> = ({
               </button>
               <button
                 onClick={() => {
+                  console.log("🖱️ Edit button (grid) clicked for user:", user.name);
                   onEdit(user);
                   setIsMenuOpen(false);
                 }}
@@ -256,17 +265,23 @@ const UserCard: React.FC<UserCardProps> = ({
 };
 
 // 🔍 Advanced Filters Component
+interface UserFiltersState {
+  role: string;
+  status: string;
+  dateRange: string;
+}
+
 const UserFilters: React.FC<{
-  onFilterChange: (filters: any) => void;
+  onFilterChange: (filters: UserFiltersState) => void;
 }> = ({ onFilterChange }) => {
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<UserFiltersState>({
     role: "all",
     status: "all",
     dateRange: "all",
   });
 
-  const applyFilters = (newFilters: typeof filters) => {
+  const applyFilters = (newFilters: UserFiltersState) => {
     setFilters(newFilters);
     onFilterChange(newFilters);
   };
@@ -382,11 +397,38 @@ const AllUsersTab: React.FC = () => {
     openEditModal,
     openDeleteConfirm,
     openViewModal,
+    closeViewModal,
+    isViewModalOpen,
+    viewingUser,
     openBanConfirm,
+    isUserModalOpen,
+    setIsUserModalOpen,
+    editingUser,
+    closeEditModal,
+    deletingUser,
+    closeDeleteConfirm,
+    isDeleteConfirmOpen,
+    banningUser,
+    closeBanConfirm,
+    isBanConfirmOpen,
+    openBanReasonModal,
+    closeBanReasonModal,
+    isBanReasonModalOpen,
   } = useUsersContext();
 
-  const { users: usersList, isLoading, refresh } = users;
-  const [currentFilters, setCurrentFilters] = useState({});
+  const {
+    users: usersList,
+    isLoading,
+    refresh,
+    deleteUser,
+    banUser,
+    unbanUser,
+  } = users;
+  const [currentFilters, setCurrentFilters] = useState<UserFiltersState>({
+    role: "all",
+    status: "all",
+    dateRange: "all",
+  });
 
   // 🔍 Filtered and searched users
   const filteredUsers = useMemo(() => {
@@ -415,8 +457,41 @@ const AllUsersTab: React.FC = () => {
     return filtered;
   }, [usersList, globalSearchTerm, currentFilters]);
 
+  // 🎯 Real Action Handlers
   const handleToggleBan = (user: User) => {
-    openBanConfirm(user);
+    if (user.banned) {
+      // If user is already banned, use simple confirmation modal to unban
+      openBanConfirm(user);
+    } else {
+      // If user is not banned, use reason modal to capture ban reason
+      openBanReasonModal(user);
+    }
+  };
+
+  const handleCreateUser = () => {
+    setIsUserModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (deletingUser) {
+      await deleteUser(deletingUser.id);
+      closeDeleteConfirm();
+    }
+  };
+
+  const handleConfirmBan = async () => {
+    if (banningUser) {
+      // This handler is only for unbanning (since banned users use BanUserModal)
+      await unbanUser(banningUser.id);
+      closeBanConfirm();
+    }
+  };
+
+  const handleConfirmBanWithReason = async (reason: string) => {
+    if (banningUser && !banningUser.banned) {
+      await banUser(banningUser.id, reason);
+      closeBanReasonModal();
+    }
   };
 
   if (isLoading) {
@@ -456,7 +531,7 @@ const AllUsersTab: React.FC = () => {
 
           <div className="flex items-center space-x-3">
             <button
-              onClick={refresh}
+              onClick={() => refresh()}
               className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
             >
               <RefreshCw className="w-4 h-4" />
@@ -465,7 +540,10 @@ const AllUsersTab: React.FC = () => {
 
             <UserFilters onFilterChange={setCurrentFilters} />
 
-            <button className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <button
+              onClick={handleCreateUser}
+              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
               <Plus className="w-4 h-4" />
               <span>Nuevo Usuario</span>
             </button>
@@ -570,6 +648,50 @@ const AllUsersTab: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* 🎭 User Management Modal */}
+        {console.log("🎭 Modal states:", { isUserModalOpen, editingUser: editingUser?.name })}
+        <UserModal
+          isOpen={isUserModalOpen}
+          onClose={closeEditModal}
+          user={editingUser}
+          mode={editingUser ? "edit" : "create"}
+          title={editingUser ? "Editar Usuario" : "Crear Nuevo Usuario"}
+        />
+
+        {/* 🗑️ Delete Confirmation Modal */}
+        <DeleteUserModal
+          isOpen={isDeleteConfirmOpen}
+          onClose={closeDeleteConfirm}
+          user={deletingUser}
+          onConfirm={handleConfirmDelete}
+        />
+
+        {/* 🚫 Ban/Unban Confirmation Modal (Only for unbanning) */}
+        <BanUserModal
+          isOpen={isBanConfirmOpen}
+          onClose={closeBanConfirm}
+          user={banningUser}
+          onConfirm={handleConfirmBan}
+        />
+
+        {/* 🚫 Ban Reason Modal (For banning with reason) */}
+        <BanReasonModal
+          isOpen={isBanReasonModalOpen}
+          onClose={closeBanReasonModal}
+          user={banningUser}
+          onConfirm={handleConfirmBanWithReason}
+        />
+
+        {/* 👁️ User View Modal (For detailed user information) */}
+        <UserViewModal
+          isOpen={isViewModalOpen}
+          onClose={closeViewModal}
+          user={viewingUser}
+          onEdit={openEditModal}
+          onDelete={openDeleteConfirm}
+          onBan={handleToggleBan}
+        />
       </div>
     </TabTransition>
   );

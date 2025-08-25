@@ -44,10 +44,29 @@ export interface FileCategory {
 export type UploadProvider = "local" | "s3" | "cloudinary";
 
 export interface UploadConfig {
-  provider: UploadProvider;
-  maxFileSize: number; // bytes
-  allowedTypes: string[];
-  multiple: boolean;
+  provider?: UploadProvider;
+  maxFileSize?: number; // bytes
+  allowedTypes?: string[];
+  multiple?: boolean;
+  // Hook-specific configurations
+  autoFetch?: boolean;
+  enableOptimistic?: boolean;
+  cacheTime?: number;
+  staleTime?: number;
+  retry?: number;
+  retryDelay?: (attemptIndex: number) => number;
+}
+
+export interface FileFilters {
+  categoryId?: string;
+  provider?: UploadProvider;
+  search?: string;
+  mimeType?: string;
+  isPublic?: boolean;
+  limit?: number;
+  offset?: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
 }
 
 export interface S3Config {

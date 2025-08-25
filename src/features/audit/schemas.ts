@@ -15,52 +15,21 @@ import {
 } from "./constants";
 
 // 🎯 Base Schemas
-export const auditActionSchema = z.enum([
-  "create",
-  "update",
-  "delete",
-  "login",
-  "logout",
-  "view",
-  "export",
-  "import",
-  "bulk_update",
-  "bulk_delete",
-  "toggle",
-  "activate",
-  "deactivate",
-  "role_change",
-  "ban",
-  "unban",
-]);
+const auditActionValues = Object.values(AUDIT_ACTIONS);
+export const auditActionSchema = z.enum(auditActionValues as [string, ...string[]]);
 
-export const auditResourceSchema = z.enum([
-  "user",
-  "feature_flag",
-  "order",
-  "product",
-  "setting",
-  "role",
-  "permission",
-  "session",
-  "file",
-  "dashboard",
-  "system",
-]);
+const auditResourceValues = Object.values(AUDIT_RESOURCES);
+export const auditResourceSchema = z.enum(auditResourceValues as [string, ...string[]]);
 
-export const auditSeveritySchema = z.enum([
-  "low",
-  "medium",
-  "high",
-  "critical",
-]);
+const auditSeverityValues = Object.values(AUDIT_SEVERITIES);
+export const auditSeveritySchema = z.enum(auditSeverityValues as [string, ...string[]]);
 
 // 🔄 Audit Change Schema
 export const auditChangeSchema = z.object({
   field: z.string().min(1, "El campo es requerido"),
   fieldLabel: z.string().optional(),
-  oldValue: z.any(),
-  newValue: z.any(),
+  oldValue: z.unknown(),
+  newValue: z.unknown(),
   type: z.enum(["added", "modified", "removed"]),
 });
 

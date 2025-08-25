@@ -4,6 +4,10 @@
 
 export { default as UserCard } from "./UserCard";
 export { default as UserModal } from "./UserModal.main";
+export { default as UserViewModal } from "./UserViewModal";
+export { default as DeleteUserModal } from "./DeleteUserModal";
+export { default as BanUserModal } from "./BanUserModal";
+export { default as BanReasonModal } from "./BanReasonModal";
 
 // 🎯 SPA Tabs Components
 export * from "./tabs";

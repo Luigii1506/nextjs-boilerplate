@@ -13,7 +13,6 @@ import { z } from "zod";
 // 🏷️ Base Schemas
 const stringRequired = (field: string) =>
   z.string().min(1, `${field} es requerido`);
-const stringOptional = z.string().optional();
 const numberPositive = (field: string) =>
   z.number().positive(`${field} debe ser positivo`);
 const numberNonNegative = (field: string) =>
@@ -103,7 +102,10 @@ export const createProductSchema = z
       .max(20, "No se pueden agregar más de 20 tags")
       .default([]),
 
-    metadata: z.record(z.any()).optional().nullable(),
+    metadata: z
+      .record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()]))
+      .optional()
+      .nullable(),
   })
   .refine((data) => !data.maxStock || data.maxStock >= data.minStock, {
     message: "Stock máximo debe ser mayor o igual al stock mínimo",

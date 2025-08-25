@@ -97,7 +97,6 @@ async function fetchCategories(): Promise<FileCategory[]> {
  */
 export function useFileUploadQuery(config?: UploadConfig) {
   const {
-    notify,
     error: notifyError,
     success: notifySuccess,
   } = useNotifications();
@@ -166,7 +165,12 @@ export function useFileUploadQuery(config?: UploadConfig) {
   });
 
   // 📤 UPLOAD FILE MUTATION
-  const uploadFileMutation = useMutation({
+  const uploadFileMutation = useMutation<
+    UploadFile,
+    Error,
+    File,
+    { previousFiles: UploadFile[] | undefined }
+  >({
     mutationFn: async (file: File): Promise<UploadFile> => {
       const formData = new FormData();
       formData.append("file", file);
@@ -202,7 +206,7 @@ export function useFileUploadQuery(config?: UploadConfig) {
             isPublic: false,
             provider: "local",
             userId: "uploading...", // Temporary placeholder
-            categoryId: null,
+            categoryId: undefined,
             tags: [],
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
@@ -247,7 +251,12 @@ export function useFileUploadQuery(config?: UploadConfig) {
   });
 
   // 🗑️ DELETE FILE MUTATION
-  const deleteFileMutation = useMutation({
+  const deleteFileMutation = useMutation<
+    void,
+    Error,
+    string,
+    { previousFiles: UploadFile[] | undefined }
+  >({
     mutationFn: async (fileId: string): Promise<void> => {
       const formData = new FormData();
       formData.append("id", fileId);
@@ -302,7 +311,17 @@ export function useFileUploadQuery(config?: UploadConfig) {
   });
 
   // ✏️ UPDATE FILE MUTATION
-  const updateFileMutation = useMutation({
+  const updateFileMutation = useMutation<
+    UploadFile,
+    Error,
+    {
+      fileId: string;
+      filename?: string;
+      isPublic?: boolean;
+      tags?: string[];
+    },
+    { previousFiles: UploadFile[] | undefined }
+  >({
     mutationFn: async ({
       fileId,
       filename,

@@ -41,9 +41,21 @@ import { useUsersContext } from "../../../context";
 import { TabTransition } from "../shared";
 
 // 📋 Audit Entry Interface
+interface AuditFiltersState {
+  actionType: string;
+  severity: string;
+  dateRange: string;
+  user: string;
+}
+
 interface AuditEntry {
   id: string;
-  timestamp: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+  };
   action: string;
   actionType:
     | "create"
@@ -70,7 +82,7 @@ interface AuditEntry {
   severity: "low" | "medium" | "high" | "critical";
   ipAddress?: string;
   userAgent?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // 🎨 Action Type Colors and Icons
@@ -311,17 +323,17 @@ const AuditEntryCard: React.FC<AuditEntryCardProps> = ({
 
 // 🔍 Advanced Filters Component
 const AuditFilters: React.FC<{
-  onFilterChange: (filters: any) => void;
+  onFilterChange: (filters: AuditFiltersState) => void;
 }> = ({ onFilterChange }) => {
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<AuditFiltersState>({
     actionType: "all",
     severity: "all",
     dateRange: "7d",
     user: "",
   });
 
-  const applyFilters = (newFilters: typeof filters) => {
+  const applyFilters = (newFilters: AuditFiltersState) => {
     setFilters(newFilters);
     onFilterChange(newFilters);
   };
@@ -454,7 +466,12 @@ const AuditTab: React.FC = () => {
   const { users } = useUsersContext();
   const { users: usersList, isLoading } = users;
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentFilters, setCurrentFilters] = useState({});
+  const [currentFilters, setCurrentFilters] = useState<AuditFiltersState>({
+    actionType: "all",
+    severity: "all",
+    dateRange: "7d",
+    user: "",
+  });
   const [selectedEntry, setSelectedEntry] = useState<AuditEntry | null>(null);
 
   // 📋 Mock audit entries (in real app, this would come from audit API)
