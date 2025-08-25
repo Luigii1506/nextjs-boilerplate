@@ -11,7 +11,7 @@
 
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
   Search,
   Plus,
@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/shared/utils";
 import { useUsersContext } from "../../../context";
+import { useUsersInfinite } from "../../../hooks/useUsersInfinite";
 import { TabTransition } from "../shared";
 import type { User } from "../../../types";
 import UserModal from "../UserModal.main";
@@ -382,7 +383,6 @@ const UserFilters: React.FC<{
 // 📊 Main All Users Tab Component
 const AllUsersTab: React.FC = () => {
   const {
-    users,
     viewMode,
     setViewMode,
     globalSearchTerm,
@@ -407,48 +407,49 @@ const AllUsersTab: React.FC = () => {
     openBanReasonModal,
     closeBanReasonModal,
     isBanReasonModalOpen,
+    users: { deleteUser, banUser, unbanUser },
   } = useUsersContext();
 
-  const {
-    users: usersList,
-    isLoading,
-    refresh,
-    deleteUser,
-    banUser,
-    unbanUser,
-  } = users;
   const [currentFilters, setCurrentFilters] = useState<UserFiltersState>({
     role: "all",
     status: "all",
     dateRange: "all",
   });
 
-  // 🔍 Filtered and searched users
-  const filteredUsers = useMemo(() => {
-    let filtered = usersList || [];
-
-    // Apply search
-    if (globalSearchTerm) {
-      filtered = filtered.filter(
-        (user) =>
-          user.name.toLowerCase().includes(globalSearchTerm.toLowerCase()) ||
-          user.email.toLowerCase().includes(globalSearchTerm.toLowerCase())
-      );
+  // 🚀 Infinite scroll hook with optimized filters
+  const infiniteUsersQuery = useUsersInfinite(
+    {
+      searchValue: globalSearchTerm || undefined,
+      searchField: "name", // Default to name search
+      role: currentFilters.role !== "all" ? (currentFilters.role as User["role"]) : undefined,
+      status: currentFilters.status !== "all" ? (currentFilters.status as "active" | "banned") : undefined,
+    },
+    {
+      pageSize: 20,
+      prefetchNextPage: true,
+      prefetchOnHover: true,
+      enableVirtualScroll: false, // Keep simple for now
+      loadMoreThreshold: 300,
     }
+  );
 
-    // Apply filters
-    if (currentFilters.role && currentFilters.role !== "all") {
-      filtered = filtered.filter((user) => user.role === currentFilters.role);
-    }
+  const {
+    users: usersList,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    loadMore,
+    refresh,
+    scrollRef,
+    loadMoreTriggerRef,
+    handleScroll,
+    stats,
+    error,
+    hasError,
+  } = infiniteUsersQuery;
 
-    if (currentFilters.status && currentFilters.status !== "all") {
-      filtered = filtered.filter((user) => {
-        return currentFilters.status === "active" ? !user.banned : user.banned;
-      });
-    }
-
-    return filtered;
-  }, [usersList, globalSearchTerm, currentFilters]);
+  // 📊 Users are already filtered by the infinite query
+  const filteredUsers = usersList || [];
 
   // 🎯 Real Action Handlers
   const handleToggleBan = (user: User) => {
@@ -487,7 +488,35 @@ const AllUsersTab: React.FC = () => {
     }
   };
 
-  if (isLoading) {
+  // 🚨 Error state
+  if (hasError && !usersList.length) {
+    return (
+      <TabTransition>
+        <div className="p-6 space-y-6">
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Users className="w-8 h-8 text-red-600 dark:text-red-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              Error al cargar usuarios
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              {error || "Ocurrió un error inesperado"}
+            </p>
+            <button
+              onClick={() => refresh()}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Reintentar
+            </button>
+          </div>
+        </div>
+      </TabTransition>
+    );
+  }
+
+  // 🔄 Initial loading state
+  if (isLoading && !usersList.length) {
     return (
       <TabTransition>
         <div className="p-6 space-y-6">
@@ -517,8 +546,7 @@ const AllUsersTab: React.FC = () => {
               Todos los Usuarios
             </h2>
             <p className="text-gray-600 dark:text-gray-400">
-              Gestión completa de usuarios del sistema ({filteredUsers.length}{" "}
-              usuarios)
+              Gestión completa de usuarios del sistema ({stats.loadedUsers} de {stats.totalUsers} usuarios cargados)
             </p>
           </div>
 
@@ -587,48 +615,104 @@ const AllUsersTab: React.FC = () => {
           </div>
         </div>
 
-        {/* Users Grid/List */}
-        {filteredUsers.length === 0 ? (
-          <div className="text-center py-12">
-            <Users className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              No se encontraron usuarios
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              {globalSearchTerm
-                ? "Intenta ajustar los filtros de búsqueda"
-                : "Aún no hay usuarios registrados en el sistema"}
-            </p>
-          </div>
-        ) : (
-          <div
-            className={cn(
-              "gap-6",
-              viewMode === "grid"
-                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-                : "space-y-4"
-            )}
-          >
-            {filteredUsers.map((user) => (
-              <UserCard
-                key={user.id}
-                user={user}
-                viewMode={viewMode}
-                onView={openViewModal}
-                onEdit={openEditModal}
-                onDelete={openDeleteConfirm}
-                onToggleBan={handleToggleBan}
-              />
-            ))}
-          </div>
-        )}
+        {/* 🚀 Infinite Scroll Container */}
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="max-h-[calc(100vh-300px)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent"
+        >
+          {/* Users Grid/List */}
+          {filteredUsers.length === 0 && !isLoading ? (
+            <div className="text-center py-12">
+              <Users className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                No se encontraron usuarios
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                {globalSearchTerm || currentFilters.role !== "all" || currentFilters.status !== "all"
+                  ? "Intenta ajustar los filtros de búsqueda"
+                  : "Aún no hay usuarios registrados en el sistema"}
+              </p>
+            </div>
+          ) : (
+            <>
+              <div
+                className={cn(
+                  "gap-6 pb-6",
+                  viewMode === "grid"
+                    ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+                    : "space-y-4"
+                )}
+              >
+                {filteredUsers.map((user) => (
+                  <UserCard
+                    key={user.id}
+                    user={user}
+                    viewMode={viewMode}
+                    onView={openViewModal}
+                    onEdit={openEditModal}
+                    onDelete={openDeleteConfirm}
+                    onToggleBan={handleToggleBan}
+                  />
+                ))}
+              </div>
 
-        {/* Bulk Actions (if any users selected) */}
+              {/* 🔄 Load More Trigger & Loading States */}
+              {hasNextPage && (
+                <div
+                  ref={loadMoreTriggerRef}
+                  className="flex justify-center py-8"
+                >
+                  {isFetchingNextPage ? (
+                    <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+                      <RefreshCw className="w-5 h-5 animate-spin" />
+                      <span>Cargando más usuarios...</span>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={loadMore}
+                      className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Cargar más usuarios</span>
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* 🎯 End of List Indicator */}
+              {!hasNextPage && filteredUsers.length > 0 && (
+                <div className="text-center py-6 border-t border-gray-200 dark:border-gray-700">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    ✅ Todos los usuarios han sido cargados ({stats.totalUsers} total)
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* 📊 Stats Footer */}
         <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Mostrando {filteredUsers.length} de {usersList.length} usuarios
-            </p>
+            <div className="flex items-center space-x-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Mostrando {stats.loadedUsers} de {stats.totalUsers} usuarios
+              </p>
+              {stats.loadingProgress > 0 && (
+                <div className="flex items-center space-x-2">
+                  <div className="w-20 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-blue-600 transition-all duration-300"
+                      style={{ width: `${Math.min(stats.loadingProgress, 100)}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {Math.round(stats.loadingProgress)}%
+                  </span>
+                </div>
+              )}
+            </div>
             <div className="flex items-center space-x-2">
               <button className="flex items-center space-x-2 px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors">
                 <Download className="w-4 h-4" />
