@@ -11,7 +11,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 // import { useNotifications } from "@/shared/providers/NotificationProvider";
 import { useNotifications } from "@/shared/hooks/useNotifications";
-import { INVENTORY_DEFAULTS, INVENTORY_CACHE_TAGS } from "../constants";
+import { INVENTORY_DEFAULTS } from "../constants";
 import {
   getProductsAction,
   getProductByIdAction,
@@ -34,7 +34,6 @@ import type {
   CreateProductInput,
   UpdateProductInput,
   CreateCategoryInput,
-  CreateSupplierInput,
   CreateStockMovementInput,
   ProductFilters,
   CategoryFilters,

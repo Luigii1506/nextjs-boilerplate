@@ -15,7 +15,7 @@
 // Import custom animations
 import "../styles/animations.css";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import {
   BarChart3,
   Users,
@@ -235,11 +235,6 @@ const UsersSPAContent: React.FC = () => {
     useWheelFallback: true,
     debug: false, // Set to true for debugging
   });
-
-  // 🎯 Simple scroll to top function
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

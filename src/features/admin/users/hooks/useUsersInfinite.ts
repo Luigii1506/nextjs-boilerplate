@@ -13,7 +13,7 @@
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { getAllUsersAction } from "../server/actions";
-import type { User, UserListResponse } from "../types";
+import type { User } from "../types";
 // Removed useUserPrefetch - unnecessary complexity
 
 // 🎯 Infinite Query keys
@@ -158,7 +158,6 @@ export function useUsersInfinite(
   // 📊 Stats and metadata
   const stats = useMemo(() => {
     const firstPage = data?.pages[0];
-    const lastPage = data?.pages[data.pages.length - 1];
 
     return {
       totalUsers: firstPage?.totalUsers ?? 0,
@@ -233,12 +232,12 @@ export function useUsersInfinite(
 
   // 🚀 Prefetch on hover with batching
   const handleUserHover = useCallback(
-    (user: User, index: number) => {
+    (user: User) => {
       if (!fullConfig.prefetchOnHover) return;
 
       // TanStack Query handles prefetching automatically based on staleTime and caching strategy
       // Manual prefetching removed to simplify the code
-      console.debug(`User hover event for ${user.id} at index ${index}`);
+      console.debug(`User hover event for ${user.id}`);
     },
     [fullConfig.prefetchOnHover]
   );
@@ -271,7 +270,7 @@ export function useUsersInfinite(
     [users]
   );
 
-  const getItemHeight = useCallback((index: number) => {
+  const getItemHeight = useCallback(() => {
     // Could implement dynamic heights here
     return DEFAULT_VIRTUAL_CONFIG.itemHeight;
   }, []);
@@ -322,7 +321,10 @@ export function useVirtualUsersList(
   filters: Partial<InfiniteUsersParams> = {},
   virtualConfig: Partial<VirtualScrollConfig> = {}
 ) {
-  const fullVirtualConfig = { ...DEFAULT_VIRTUAL_CONFIG, ...virtualConfig };
+  const fullVirtualConfig = useMemo(
+    () => ({ ...DEFAULT_VIRTUAL_CONFIG, ...virtualConfig }),
+    [virtualConfig]
+  );
 
   const infiniteQuery = useUsersInfinite(filters, {
     enableVirtualScroll: true,

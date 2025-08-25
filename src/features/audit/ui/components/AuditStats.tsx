@@ -223,7 +223,7 @@ export function AuditStats({ stats, className }: AuditStatsProps) {
             Usuarios Más Activos
           </h3>
           <div className="space-y-3">
-            {stats.byUser.slice(0, 6).map((user, index) => (
+            {stats.byUser.slice(0, 6).map((user) => (
               <div
                 key={user.userId}
                 className="flex items-center justify-between"

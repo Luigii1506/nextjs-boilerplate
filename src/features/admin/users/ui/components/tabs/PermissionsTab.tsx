@@ -167,7 +167,7 @@ const PermissionsTab: React.FC = () => {
         </h3>
 
         <div className="space-y-4">
-          {mockPermissions.map((resource, index) => {
+          {mockPermissions.map((resource) => {
             const IconComponent = resource.icon;
             return (
               <div

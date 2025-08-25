@@ -19,8 +19,6 @@ import {
   Grid,
   List,
   UserCheck,
-  UserX,
-  Shield,
   Eye,
   Edit,
   Trash2,
@@ -30,7 +28,6 @@ import {
   RefreshCw,
   Users,
   Ban,
-  UserPlus,
 } from "lucide-react";
 import { cn } from "@/shared/utils";
 import { useUsersContext } from "../../../context";
@@ -124,10 +121,7 @@ const UserCard: React.FC<UserCardProps> = ({
               <Eye className="w-5 h-5" />
             </button>
             <button
-              onClick={() => {
-                console.log("🖱️ Edit button clicked for user:", user.name);
-                onEdit(user);
-              }}
+              onClick={() => onEdit(user)}
               className="p-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               title="Editar"
             >
@@ -190,7 +184,6 @@ const UserCard: React.FC<UserCardProps> = ({
               </button>
               <button
                 onClick={() => {
-                  console.log("🖱️ Edit button (grid) clicked for user:", user.name);
                   onEdit(user);
                   setIsMenuOpen(false);
                 }}
@@ -650,7 +643,6 @@ const AllUsersTab: React.FC = () => {
         </div>
 
         {/* 🎭 User Management Modal */}
-        {console.log("🎭 Modal states:", { isUserModalOpen, editingUser: editingUser?.name })}
         <UserModal
           isOpen={isUserModalOpen}
           onClose={closeEditModal}

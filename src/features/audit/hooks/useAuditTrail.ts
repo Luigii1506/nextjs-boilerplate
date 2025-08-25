@@ -147,7 +147,7 @@ export function useAuditTrail(
   // 🚀 Initial Load
   useEffect(() => {
     loadEvents();
-  }, []); // Only run on mount
+  }, [loadEvents]); // Run on mount and when loadEvents changes
 
   // 📊 Computed Values
   const isEmpty = useMemo(

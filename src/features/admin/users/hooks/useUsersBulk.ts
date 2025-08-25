@@ -83,8 +83,7 @@ export function useUsersBulk() {
   const executeSingleOperation = useCallback(
     async (
       config: BulkOperationConfig,
-      userId: string,
-      user: User
+      userId: string
     ): Promise<{ success: boolean; error?: string }> => {
       try {
         const formData = new FormData();
@@ -255,7 +254,7 @@ export function useUsersBulk() {
             };
           }
 
-          const result = await executeSingleOperation(config, userId, user);
+          const result = await executeSingleOperation(config, userId);
 
           // Update progress
           setProgress((prev) => {
@@ -360,7 +359,7 @@ export function useUsersBulk() {
         );
       }
     },
-    onSuccess: (result, config) => {
+    onSuccess: (result) => {
       // Handle partial failures
       if (result.errors.length > 0) {
         // Rollback failed items

@@ -103,9 +103,9 @@ export async function getDashboardActivityAction(): Promise<
 
     // 📈 Calculate trends (compare with previous period)
     const previousPeriod = await Promise.all([
-      getUserRegistrationsCount(30), // 30 days ago
-      getUserLoginsCount(30),
-      getUserVerificationsCount(30),
+      getUserRegistrationsCount(), // Previous period data
+      getUserLoginsCount(),
+      getUserVerificationsCount(),
     ]);
 
     const calculateTrend = (current: number, previous: number): string => {
@@ -171,7 +171,7 @@ export async function getDashboardActivityAction(): Promise<
 }
 
 // ✅ Helper functions - implement these based on your database
-async function getUserRegistrationsCount(daysAgo: number = 0): Promise<number> {
+async function getUserRegistrationsCount(): Promise<number> {
   // TODO: Implement actual database query
   // Example: return await prisma.user.count({
   //   where: { createdAt: { gte: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000) } }
@@ -179,12 +179,12 @@ async function getUserRegistrationsCount(daysAgo: number = 0): Promise<number> {
   return Math.floor(Math.random() * 100) + 50; // Mock data
 }
 
-async function getUserLoginsCount(daysAgo: number = 0): Promise<number> {
+async function getUserLoginsCount(): Promise<number> {
   // TODO: Implement actual database query for login events
   return Math.floor(Math.random() * 200) + 100; // Mock data
 }
 
-async function getUserVerificationsCount(daysAgo: number = 0): Promise<number> {
+async function getUserVerificationsCount(): Promise<number> {
   // TODO: Implement actual database query for verification events
   return Math.floor(Math.random() * 80) + 20; // Mock data
 }

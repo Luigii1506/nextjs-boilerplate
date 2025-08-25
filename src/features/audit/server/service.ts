@@ -197,7 +197,7 @@ export class AuditService {
   // 📤 Export audit events with business logic
   async exportAuditEvents(
     filters: AuditFilters,
-    format: "csv" | "json"
+    _format: "csv" | "json"
   ): Promise<AuditEvent[]> {
     // Validate permissions
     auditValidators.validateExportPermissions(this.options.currentUserRole);

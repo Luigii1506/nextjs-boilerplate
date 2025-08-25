@@ -36,11 +36,10 @@ interface UseScrollHeaderReturn {
   hideHeader: () => void;
 }
 
-export const useScrollHeader = ({
-  threshold = 100,
-  debounceDelay = 10,
-  scrollDelta = 5,
-}: UseScrollHeaderOptions = {}): UseScrollHeaderReturn => {
+export const useScrollHeader = (
+  options: UseScrollHeaderOptions = {}
+): UseScrollHeaderReturn => {
+  const { threshold = 100 } = options;
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [isScrollingDown, setIsScrollingDown] = useState(false);
   const [scrollY, setScrollY] = useState(0);

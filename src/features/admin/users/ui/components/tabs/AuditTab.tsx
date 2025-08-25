@@ -18,7 +18,6 @@ import {
   Search,
   Filter,
   Download,
-  Calendar,
   Clock,
   User,
   Shield,
@@ -31,7 +30,6 @@ import {
   Edit,
   Trash2,
   UserPlus,
-  Settings,
   RefreshCw,
   ChevronDown,
   ChevronRight,
@@ -50,6 +48,7 @@ interface AuditFiltersState {
 
 interface AuditEntry {
   id: string;
+  timestamp: string;
   user: {
     id: string;
     name: string;
@@ -67,12 +66,6 @@ interface AuditEntry {
     | "unban"
     | "role_change"
     | "security";
-  user: {
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-  };
   target?: {
     id: string;
     name: string;
@@ -464,7 +457,7 @@ const AuditFilters: React.FC<{
 // 📊 Main Audit Tab Component
 const AuditTab: React.FC = () => {
   const { users } = useUsersContext();
-  const { users: usersList, isLoading } = users;
+  const { isLoading } = users;
   const [searchTerm, setSearchTerm] = useState("");
   const [currentFilters, setCurrentFilters] = useState<AuditFiltersState>({
     actionType: "all",
@@ -472,7 +465,7 @@ const AuditTab: React.FC = () => {
     dateRange: "7d",
     user: "",
   });
-  const [selectedEntry, setSelectedEntry] = useState<AuditEntry | null>(null);
+  const [, setSelectedEntry] = useState<AuditEntry | null>(null);
 
   // 📋 Mock audit entries (in real app, this would come from audit API)
   const auditEntries = useMemo(() => {

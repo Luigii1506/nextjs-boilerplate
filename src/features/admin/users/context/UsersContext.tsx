@@ -173,7 +173,6 @@ export const UsersProvider: React.FC<UsersProviderProps> = ({ children }) => {
 
   // ✏️ User Edit States
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [isEditMode, setIsEditMode] = useState(false);
 
   // 🗑️ Delete Confirmation
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
@@ -228,17 +227,13 @@ export const UsersProvider: React.FC<UsersProviderProps> = ({ children }) => {
 
   // ✏️ User Edit Actions
   const openEditModal = useCallback((user: User) => {
-    console.log("🔄 openEditModal called with user:", user);
     setEditingUser(user);
     setIsUserModalOpen(true);
-    setIsEditMode(true);
-    console.log("🔄 States after openEditModal - editingUser:", user, "isUserModalOpen: true");
   }, []);
 
   const closeEditModal = useCallback(() => {
     setEditingUser(null);
     setIsUserModalOpen(false);
-    setIsEditMode(false);
   }, []);
 
   // 🗑️ Delete Actions

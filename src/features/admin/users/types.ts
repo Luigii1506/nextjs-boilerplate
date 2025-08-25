@@ -2,7 +2,7 @@
 // ===============
 // Interfaces y tipos para la gestión de usuarios - React 19 + Hexagonal Architecture
 
-import type { UserRole, UserStatus } from "./constants";
+import type { UserRole } from "./constants";
 
 // 🎯 Core User Interface
 export interface User {

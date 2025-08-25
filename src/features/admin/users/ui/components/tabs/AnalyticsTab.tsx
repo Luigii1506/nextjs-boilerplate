@@ -15,18 +15,14 @@ import React, { useMemo, useState } from "react";
 import {
   BarChart3,
   TrendingUp,
-  TrendingDown,
   Users,
   UserPlus,
-  Calendar,
-  PieChart,
   Activity,
   Clock,
   Shield,
   AlertTriangle,
   Download,
   RefreshCw,
-  Filter,
   ArrowUpRight,
   ArrowDownRight,
 } from "lucide-react";

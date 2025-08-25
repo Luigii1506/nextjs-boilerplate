@@ -112,6 +112,7 @@ const UserModal: React.FC<UserModalProps> = ({
 
   // 🚀 Form submission handler
   const onSubmit = async (data: UserFormData) => {
+    console.log("🚀", data);
     try {
       if (isEditMode && user) {
         // Update existing user (exclude password from update)
@@ -140,7 +141,6 @@ const UserModal: React.FC<UserModalProps> = ({
     : "Completa la información para crear un nuevo usuario";
 
   // 🚫 Don't render if closed or no document (SSR safety)
-  console.log("🎭 UserModal props:", { isOpen, mode, user: user?.name, title });
   if (!isOpen || typeof document === "undefined") return null;
 
   // 🌐 Use Portal to render modal directly in document.body
@@ -148,7 +148,7 @@ const UserModal: React.FC<UserModalProps> = ({
     <div className="fixed inset-0 z-[9999] overflow-y-auto">
       {/* 🌫️ Backdrop */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 animate-fadeIn"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
 
@@ -158,7 +158,6 @@ const UserModal: React.FC<UserModalProps> = ({
           className={cn(
             "relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl",
             "w-full max-w-md max-h-[90vh]",
-            "transform transition-all duration-300 animate-slideInUp",
             "border border-gray-200 dark:border-gray-700",
             "flex flex-col overflow-hidden"
           )}
@@ -166,115 +165,115 @@ const UserModal: React.FC<UserModalProps> = ({
         >
           {/* 📋 Header */}
           <div className="flex-shrink-0 flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
                 <UserIcon className="w-5 h-5 text-white" />
-            </div>
-            <div>
+              </div>
+              <div>
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                {modalTitle}
+                  {modalTitle}
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                   {modalDescription}
-              </p>
+                </p>
+              </div>
             </div>
-          </div>
 
             {/* Close Button */}
-          <button
+            <button
               type="button"
-            onClick={onClose}
+              onClick={onClose}
               disabled={isSubmitting}
               className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
 
           {/* 📝 Content */}
           <div className="flex-1 overflow-y-auto p-6">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* 👤 Name Field */}
-          <div>
+              {/* 👤 Name Field */}
+              <div>
                 <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <UserIcon className="w-4 h-4 mr-2" />
-              Nombre completo
-            </label>
-            <input
-              type="text"
+                  Nombre completo
+                </label>
+                <input
+                  type="text"
                   {...register("name")}
                   className={cn(
                     "w-full px-4 py-3 border rounded-lg transition-all",
                     "focus:ring-2 focus:ring-blue-500 focus:border-transparent",
                     "bg-white dark:bg-gray-700 text-gray-900 dark:text-white",
                     "placeholder-gray-500 dark:placeholder-gray-400",
-                errors.name
-                  ? "border-red-500 bg-red-50 dark:bg-red-900/20"
+                    errors.name
+                      ? "border-red-500 bg-red-50 dark:bg-red-900/20"
                       : "border-gray-300 dark:border-gray-600"
                   )}
-              placeholder="Ej: Juan Pérez López"
+                  placeholder="Ej: Juan Pérez López"
                   disabled={isSubmitting}
-            />
-            {errors.name && (
+                />
+                {errors.name && (
                   <div className="flex items-center gap-1 mt-2 text-red-600 dark:text-red-400 text-sm">
                     <AlertCircle className="w-4 h-4 flex-shrink-0" />
                     {errors.name.message}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          {/* 📧 Email Field */}
-          <div>
+              {/* 📧 Email Field */}
+              <div>
                 <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <Mail className="w-4 h-4 mr-2" />
-              Correo electrónico
-            </label>
-            <input
-              type="email"
+                  Correo electrónico
+                </label>
+                <input
+                  type="email"
                   {...register("email")}
                   className={cn(
                     "w-full px-4 py-3 border rounded-lg transition-all",
                     "focus:ring-2 focus:ring-blue-500 focus:border-transparent",
                     "bg-white dark:bg-gray-700 text-gray-900 dark:text-white",
                     "placeholder-gray-500 dark:placeholder-gray-400",
-                errors.email
-                  ? "border-red-500 bg-red-50 dark:bg-red-900/20"
+                    errors.email
+                      ? "border-red-500 bg-red-50 dark:bg-red-900/20"
                       : "border-gray-300 dark:border-gray-600"
                   )}
-              placeholder="usuario@empresa.com"
+                  placeholder="usuario@empresa.com"
                   disabled={isSubmitting}
-            />
-            {errors.email && (
+                />
+                {errors.email && (
                   <div className="flex items-center gap-1 mt-2 text-red-600 dark:text-red-400 text-sm">
                     <AlertCircle className="w-4 h-4 flex-shrink-0" />
                     {errors.email.message}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          {/* 🔒 Password Field (only for create mode) */}
+              {/* 🔒 Password Field (only for create mode) */}
               {!isEditMode && (
-            <div>
+                <div>
                   <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     <Lock className="w-4 h-4 mr-2" />
-                Contraseña
-              </label>
-              <input
-                type="password"
+                    Contraseña
+                  </label>
+                  <input
+                    type="password"
                     {...register("password")}
                     className={cn(
                       "w-full px-4 py-3 border rounded-lg transition-all",
                       "focus:ring-2 focus:ring-blue-500 focus:border-transparent",
                       "bg-white dark:bg-gray-700 text-gray-900 dark:text-white",
                       "placeholder-gray-500 dark:placeholder-gray-400",
-                  errors.password
-                    ? "border-red-500 bg-red-50 dark:bg-red-900/20"
+                      errors.password
+                        ? "border-red-500 bg-red-50 dark:bg-red-900/20"
                         : "border-gray-300 dark:border-gray-600"
                     )}
-                placeholder="Mínimo 8 caracteres"
+                    placeholder="Mínimo 8 caracteres"
                     disabled={isSubmitting}
-              />
-              {errors.password && (
+                  />
+                  {errors.password && (
                     <div className="flex items-center gap-1 mt-2 text-red-600 dark:text-red-400 text-sm">
                       <AlertCircle className="w-4 h-4 flex-shrink-0" />
                       {errors.password.message}
@@ -297,33 +296,33 @@ const UserModal: React.FC<UserModalProps> = ({
                   <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
                     La contraseña no se puede modificar desde aquí. El usuario
                     debe cambiarla desde su perfil.
-              </p>
-            </div>
-          )}
+                  </p>
+                </div>
+              )}
 
-          {/* 👑 Role Field */}
-          <div>
+              {/* 👑 Role Field */}
+              <div>
                 <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <Shield className="w-4 h-4 mr-2" />
-              Rol del usuario
-            </label>
-            <select
+                  Rol del usuario
+                </label>
+                <select
                   {...register("role")}
                   className={cn(
                     "w-full px-4 py-3 border rounded-lg transition-all",
                     "focus:ring-2 focus:ring-blue-500 focus:border-transparent",
                     "bg-white dark:bg-gray-700 text-gray-900 dark:text-white",
-                errors.role
-                  ? "border-red-500 bg-red-50 dark:bg-red-900/20"
+                    errors.role
+                      ? "border-red-500 bg-red-50 dark:bg-red-900/20"
                       : "border-gray-300 dark:border-gray-600"
                   )}
                   disabled={isSubmitting}
-            >
-              <option value="user">Usuario</option>
-              <option value="admin">Administrador</option>
-              <option value="super_admin">Super Administrador</option>
-            </select>
-            {errors.role && (
+                >
+                  <option value="user">Usuario</option>
+                  <option value="admin">Administrador</option>
+                  <option value="super_admin">Super Administrador</option>
+                </select>
+                {errors.role && (
                   <div className="flex items-center gap-1 mt-2 text-red-600 dark:text-red-400 text-sm">
                     <AlertCircle className="w-4 h-4 flex-shrink-0" />
                     {errors.role.message}
@@ -363,41 +362,41 @@ const UserModal: React.FC<UserModalProps> = ({
                       </span>
                     </p>
                   </div>
-              </div>
-            )}
-            </form>
-          </div>
-
-          {/* 🎯 Footer Actions */}
-          <div className="flex-shrink-0 flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isSubmitting}
-              className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={handleSubmit(onSubmit)}
-              disabled={isSubmitting}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>{isEditMode ? "Actualizando..." : "Creando..."}</span>
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  <span>
-                    {isEditMode ? "Guardar Cambios" : "Crear Usuario"}
-                  </span>
-                </>
+                </div>
               )}
-            </button>
+              {/* 🎯 Footer Actions - DENTRO del form */}
+              <div className="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  disabled={isSubmitting}
+                  className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>
+                        {isEditMode ? "Actualizando..." : "Creando..."}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      <span>
+                        {isEditMode ? "Guardar Cambios" : "Crear Usuario"}
+                      </span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>

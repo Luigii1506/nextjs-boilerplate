@@ -21,7 +21,7 @@ import type { User } from "@/shared/types/user";
 interface SessionData {
   user: User | null;
   // Agrega otras propiedades de la sesión si existen
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // 🎯 Query Keys para auth
@@ -117,7 +117,6 @@ export function useAuthQuery(
   const queryClient = useQueryClient();
   const router = useRouter();
   const {
-    notify,
     error: notifyError,
     success: notifySuccess,
   } = useNotifications();

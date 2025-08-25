@@ -24,6 +24,7 @@ import type {
   AuditFilters,
   AuditExportOptions,
   AuditEventsResponse,
+  CreateAuditEventData,
 } from "../types";
 import { DEFAULT_AUDIT_FILTERS } from "../constants";
 import { useNotifications } from "@/shared/hooks/useNotifications";
@@ -108,7 +109,7 @@ interface UseAuditQueryReturn {
     filters: AuditFilters,
     options: AuditExportOptions
   ) => Promise<void>;
-  createEvent: (event: Partial<AuditEvent>) => Promise<void>;
+  createEvent: (event: CreateAuditEventData) => Promise<void>;
   refreshEvents: () => void;
   refreshStats: () => void;
 
@@ -139,11 +140,7 @@ export function useAuditQuery(
   } = {}
 ): UseAuditQueryReturn {
   const queryClient = useQueryClient();
-  const {
-    notify,
-    error: notifyError,
-    success: notifySuccess,
-  } = useNotifications();
+  const { error: notifyError, success: notifySuccess } = useNotifications();
 
   // ⚡ TanStack Query for audit events
   const {
@@ -208,7 +205,7 @@ export function useAuditQuery(
 
   // 🆕 Create audit event mutation
   const createEventMutation = useMutation({
-    mutationFn: async (eventData: Partial<AuditEvent>) => {
+    mutationFn: async (eventData: CreateAuditEventData) => {
       const result = await createAuditEventAction(eventData);
       if (!result.success) {
         throw new Error(result.error || "Error creating audit event");
@@ -299,7 +296,7 @@ export function useAuditQuery(
   );
 
   const createEvent = useCallback(
-    async (eventData: Partial<AuditEvent>) => {
+    async (eventData: CreateAuditEventData) => {
       await createEventMutation.mutateAsync(eventData);
     },
     [createEventMutation]

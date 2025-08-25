@@ -175,7 +175,7 @@ export function AuditFilters({
             Acciones
           </Label>
           <div className="flex flex-wrap gap-2">
-            {Object.entries(AUDIT_ACTIONS).map(([key, action]) => (
+            {Object.entries(AUDIT_ACTIONS).map(([, action]) => (
               <Button
                 key={action}
                 variant={filters.action === action ? "default" : "outline"}
@@ -199,7 +199,7 @@ export function AuditFilters({
             Severidad
           </Label>
           <div className="flex flex-wrap gap-2">
-            {Object.entries(AUDIT_SEVERITIES).map(([key, severity]) => (
+            {Object.entries(AUDIT_SEVERITIES).map(([, severity]) => (
               <Button
                 key={severity}
                 variant={filters.severity === severity ? "default" : "outline"}
@@ -226,7 +226,7 @@ export function AuditFilters({
               Recursos
             </Label>
             <div className="grid grid-cols-2 gap-2">
-              {Object.entries(AUDIT_RESOURCES).map(([key, resource]) => (
+              {Object.entries(AUDIT_RESOURCES).map(([, resource]) => (
                 <Button
                   key={resource}
                   variant={
