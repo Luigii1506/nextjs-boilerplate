@@ -21,6 +21,7 @@ import type {
   CreateProductInput,
   UpdateProductInput,
   ProductWithRelations,
+  CategoryWithRelations,
 } from "../types";
 import { useNotifications } from "@/shared/hooks/useNotifications";
 
@@ -80,6 +81,14 @@ export function useCreateProduct(
             const optimisticProduct: ProductWithRelations = {
               id: `optimistic-${Date.now()}`,
               ...newProduct,
+              description: newProduct.description || null,
+              barcode: newProduct.barcode || null,
+              supplierId: newProduct.supplierId || null,
+              stock: newProduct.stock || 0,
+              minStock: newProduct.minStock || 0,
+              maxStock: newProduct.maxStock || 0,
+              unit: newProduct.unit || "unidad",
+              metadata: newProduct.metadata || null,
               images: newProduct.images || [],
               tags: newProduct.tags || [],
               isActive: true,
@@ -97,10 +106,6 @@ export function useCreateProduct(
                 sortOrder: 0,
                 createdAt: new Date(),
                 updatedAt: new Date(),
-                parent: null,
-                children: [],
-                products: [],
-                _count: { products: 0, children: 0 },
               },
               supplier: null,
               stockMovements: [],
@@ -160,13 +165,17 @@ export function useCreateProduct(
       });
 
       // 📢 Success notification
-      success(`${product.name} fue agregado exitosamente al inventario.`, {
-        title: "¡Producto creado!",
-        duration: 5000,
-      });
-
-      // 🎯 Custom success handler
-      onSuccess?.(product);
+      if (product) {
+        success(`${product.name} fue agregado exitosamente al inventario.`, {
+          duration: 5000,
+        });
+        // 🎯 Custom success handler
+        onSuccess?.(product as ProductWithRelations);
+      } else {
+        success("Producto fue agregado exitosamente al inventario.", {
+          duration: 5000,
+        });
+      }
     },
 
     // 🚨 Error Handler
@@ -183,7 +192,6 @@ export function useCreateProduct(
 
       // 📢 Error notification
       notifyError(errorMessage, {
-        title: "Error al crear producto",
         duration: 8000,
       });
 
@@ -197,7 +205,9 @@ export function useCreateProduct(
   });
 
   return {
-    createProduct: mutation.mutateAsync,
+    createProduct: async (data: CreateProductInput) => {
+      await mutation.mutateAsync(data);
+    },
     isLoading: mutation.isPending,
     error: mutation.error?.message || null,
     reset: mutation.reset,
@@ -308,13 +318,17 @@ export function useUpdateProduct(
       });
 
       // 📢 Success notification
-      success(`${product.name} fue actualizado exitosamente.`, {
-        title: "¡Producto actualizado!",
-        duration: 5000,
-      });
-
-      // 🎯 Custom success handler
-      onSuccess?.(product);
+      if (product) {
+        success(`${product.name} fue actualizado exitosamente.`, {
+          duration: 5000,
+        });
+        // 🎯 Custom success handler
+        onSuccess?.(product as ProductWithRelations);
+      } else {
+        success("Producto fue actualizado exitosamente.", {
+          duration: 5000,
+        });
+      }
     },
 
     // 🚨 Error Handler
@@ -323,7 +337,6 @@ export function useUpdateProduct(
 
       // 📢 Error notification
       notifyError(errorMessage, {
-        title: "Error al actualizar producto",
         duration: 8000,
       });
 
@@ -337,8 +350,9 @@ export function useUpdateProduct(
   });
 
   return {
-    updateProduct: (id: string, data: UpdateProductInput) =>
-      mutation.mutateAsync({ id, data }),
+    updateProduct: async (id: string, data: UpdateProductInput) => {
+      await mutation.mutateAsync({ id, data });
+    },
     isLoading: mutation.isPending,
     error: mutation.error?.message || null,
     reset: mutation.reset,
@@ -407,7 +421,6 @@ export function useDeleteProduct(
 
       // 📢 Success notification
       success(`El producto fue eliminado exitosamente.`, {
-        title: "¡Producto eliminado!",
         duration: 5000,
       });
 
@@ -421,7 +434,6 @@ export function useDeleteProduct(
 
       // 📢 Error notification
       notifyError(errorMessage, {
-        title: "Error al eliminar producto",
         duration: 8000,
       });
 

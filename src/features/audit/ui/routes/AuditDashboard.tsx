@@ -352,7 +352,6 @@ export default function AuditDashboard({ onViewChange }: AuditDashboardProps) {
               onRefresh={handleRefresh}
               onExport={handleExport}
               onViewEvent={handleViewEvent}
-              pageInfo={pageInfo}
             />
           ) : (
             <Card className="p-8 text-center">

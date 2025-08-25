@@ -220,7 +220,16 @@ export interface UseAuditStatsReturn {
   getActionCount: (action: string) => number;
   getResourceCount: (resource: string) => number;
   getSeverityCount: (severity: string) => number;
-  getUserActivity: (userId: string) => { userId: string; userName: string | null; userEmail: string; eventCount: number; } | undefined;
+  getUserActivity: (
+    userId: string
+  ) =>
+    | {
+        userId: string;
+        userName: string | null;
+        userEmail: string;
+        eventCount: number;
+      }
+    | undefined;
 }
 
 // Server Action Results

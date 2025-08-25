@@ -167,13 +167,17 @@ export function useCreateSupplier(
       });
 
       // 📢 Success notification
-      success(`"${supplier.name}" fue creado exitosamente.`, {
-        title: "¡Proveedor creado!",
-        duration: 5000,
-      });
-
-      // 🎯 Custom success handler
-      onSuccess?.(supplier);
+      if (supplier) {
+        success(`"${supplier.name}" fue creado exitosamente.`, {
+          duration: 5000,
+        });
+        // 🎯 Custom success handler
+        onSuccess?.(supplier as SupplierWithRelations);
+      } else {
+        success("Proveedor fue creado exitosamente.", {
+          duration: 5000,
+        });
+      }
     },
 
     // 🚨 Error Handler
@@ -189,7 +193,6 @@ export function useCreateSupplier(
       // 🚨 Error notification
       const errorMessage = error.message || "Error al crear proveedor";
       notifyError(errorMessage, {
-        title: "Error",
         duration: 8000,
       });
 
@@ -199,7 +202,9 @@ export function useCreateSupplier(
   });
 
   return {
-    createSupplier: mutation.mutateAsync,
+    createSupplier: async (data: CreateSupplierInput) => {
+      await mutation.mutateAsync(data);
+    },
     isLoading: mutation.isPending,
     error: mutation.error?.message || null,
     reset: mutation.reset,
@@ -237,9 +242,11 @@ export function useUpdateSupplier(
       queryClient.invalidateQueries({
         queryKey: INVENTORY_QUERY_KEYS.suppliers(),
       });
-      queryClient.invalidateQueries({
-        queryKey: INVENTORY_QUERY_KEYS.supplier(supplier.id),
-      });
+      if (supplier) {
+        queryClient.invalidateQueries({
+          queryKey: INVENTORY_QUERY_KEYS.supplier(supplier.id),
+        });
+      }
       queryClient.invalidateQueries({
         queryKey: INVENTORY_QUERY_KEYS.products(),
       });
@@ -248,18 +255,21 @@ export function useUpdateSupplier(
       });
 
       // 📢 Success notification
-      success(`"${supplier.name}" fue actualizado exitosamente.`, {
-        title: "¡Proveedor actualizado!",
-        duration: 5000,
-      });
-
-      onSuccess?.(supplier);
+      if (supplier) {
+        success(`"${supplier.name}" fue actualizado exitosamente.`, {
+          duration: 5000,
+        });
+        onSuccess?.(supplier as SupplierWithRelations);
+      } else {
+        success("Proveedor fue actualizado exitosamente.", {
+          duration: 5000,
+        });
+      }
     },
 
     onError: (error: Error) => {
       const errorMessage = error.message || "Error al actualizar proveedor";
       notifyError(errorMessage, {
-        title: "Error",
         duration: 8000,
       });
 
@@ -268,10 +278,12 @@ export function useUpdateSupplier(
   });
 
   return {
-    updateSupplier: (
+    updateSupplier: async (
       id: string,
       data: CreateSupplierInput & { isActive?: boolean }
-    ) => mutation.mutateAsync({ id, data }),
+    ) => {
+      await mutation.mutateAsync({ id, data });
+    },
     isLoading: mutation.isPending,
     error: mutation.error?.message || null,
     reset: mutation.reset,
@@ -315,7 +327,6 @@ export function useDeleteSupplier(
 
       // 📢 Success notification
       success("Proveedor eliminado exitosamente.", {
-        title: "¡Proveedor eliminado!",
         duration: 5000,
       });
 
@@ -325,7 +336,6 @@ export function useDeleteSupplier(
     onError: (error: Error) => {
       const errorMessage = error.message || "Error al eliminar proveedor";
       notifyError(errorMessage, {
-        title: "Error",
         duration: 8000,
       });
 

@@ -161,10 +161,15 @@ export function useCreateCategory(
       });
 
       // 📢 Success notification
-      success(`"${category.name}" fue creada exitosamente.`, {
-        title: "¡Categoría creada!",
-        duration: 5000,
-      });
+      if (category) {
+        success(`"${category.name}" fue creada exitosamente.`, {
+          duration: 5000,
+        });
+      } else {
+        success("Categoría fue creada exitosamente.", {
+          duration: 5000,
+        });
+      }
 
       // 🎯 Custom success handler
       onSuccess?.(category);
@@ -184,7 +189,6 @@ export function useCreateCategory(
 
       // 📢 Error notification
       notifyError(errorMessage, {
-        title: "Error al crear categoría",
         duration: 8000,
       });
 
@@ -198,7 +202,9 @@ export function useCreateCategory(
   });
 
   return {
-    createCategory: mutation.mutateAsync,
+    createCategory: async (data: CreateCategoryInput) => {
+      await mutation.mutateAsync(data);
+    },
     isLoading: mutation.isPending,
     error: mutation.error?.message || null,
     reset: mutation.reset,
@@ -264,10 +270,15 @@ export function useUpdateCategory(
       });
 
       // 📢 Success notification
-      success(`"${category.name}" fue actualizada exitosamente.`, {
-        title: "¡Categoría actualizada!",
-        duration: 5000,
-      });
+      if (category) {
+        success(`"${category.name}" fue actualizada exitosamente.`, {
+          duration: 5000,
+        });
+      } else {
+        success("Categoría fue actualizada exitosamente.", {
+          duration: 5000,
+        });
+      }
 
       // 🎯 Custom success handler
       onSuccess?.(category);
@@ -279,7 +290,6 @@ export function useUpdateCategory(
 
       // 📢 Error notification
       notifyError(errorMessage, {
-        title: "Error al actualizar categoría",
         duration: 8000,
       });
 
@@ -293,10 +303,12 @@ export function useUpdateCategory(
   });
 
   return {
-    updateCategory: (
+    updateCategory: async (
       id: string,
       data: CreateCategoryInput & { isActive?: boolean }
-    ) => mutation.mutateAsync({ id, data }),
+    ) => {
+      await mutation.mutateAsync({ id, data });
+    },
     isLoading: mutation.isPending,
     error: mutation.error?.message || null,
     reset: mutation.reset,
@@ -357,7 +369,6 @@ export function useDeleteCategory(
 
       // 📢 Success notification
       success(`La categoría fue eliminada exitosamente.`, {
-        title: "¡Categoría eliminada!",
         duration: 5000,
       });
 
@@ -371,7 +382,6 @@ export function useDeleteCategory(
 
       // 📢 Error notification
       notifyError(errorMessage, {
-        title: "Error al eliminar categoría",
         duration: 8000,
       });
 
@@ -495,4 +505,3 @@ export function useDeleteCategoryModal() {
     reset,
   };
 }
-

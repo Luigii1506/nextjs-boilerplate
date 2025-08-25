@@ -149,8 +149,14 @@ async function createProduct(data: CreateProductInput): Promise<ActionResult> {
   return await createProductAction(data);
 }
 
-async function updateProduct(data: UpdateProductInput): Promise<ActionResult> {
-  return await updateProductAction(data);
+async function updateProduct({
+  id,
+  data,
+}: {
+  id: string;
+  data: UpdateProductInput;
+}): Promise<ActionResult> {
+  return await updateProductAction(id, data);
 }
 
 async function deleteProduct(id: string): Promise<ActionResult> {
@@ -189,7 +195,7 @@ interface UseInventoryQueryProps {
 export function useInventoryQuery(
   props: UseInventoryQueryProps = {}
 ): UseInventoryQueryResult {
-  const { notify } = useNotifications();
+  const { success, error: notifyError } = useNotifications();
   const queryClient = useQueryClient();
 
   const {
@@ -297,24 +303,18 @@ export function useInventoryQuery(
         queryClient.invalidateQueries({
           queryKey: INVENTORY_QUERY_KEYS.stats(),
         });
-        notify({
-          type: "success",
-          title: "Producto creado",
-          message: "El producto se ha creado exitosamente",
+        success("El producto se ha creado exitosamente", {
+          duration: 5000,
         });
       } else {
-        notify({
-          type: "error",
-          title: "Error al crear producto",
-          message: result.error || "Ocurrió un error inesperado",
+        notifyError(result.error || "Ocurrió un error inesperado", {
+          duration: 8000,
         });
       }
     },
     onError: (error) => {
-      notify({
-        type: "error",
-        title: "Error al crear producto",
-        message: error.message || "Ocurrió un error inesperado",
+      notifyError(error.message || "Ocurrió un error inesperado", {
+        duration: 8000,
       });
     },
   });
@@ -358,16 +358,12 @@ export function useInventoryQuery(
         queryClient.invalidateQueries({
           queryKey: INVENTORY_QUERY_KEYS.stats(),
         });
-        notify({
-          type: "success",
-          title: "Producto actualizado",
-          message: "Los cambios se han guardado exitosamente",
+        success("Los cambios se han guardado exitosamente", {
+          duration: 5000,
         });
       } else {
-        notify({
-          type: "error",
-          title: "Error al actualizar",
-          message: result.error || "Ocurrió un error inesperado",
+        notifyError(result.error || "Ocurrió un error inesperado", {
+          duration: 8000,
         });
       }
     },
@@ -380,10 +376,8 @@ export function useInventoryQuery(
         );
       }
 
-      notify({
-        type: "error",
-        title: "Error al actualizar producto",
-        message: error.message || "Ocurrió un error inesperado",
+      notifyError(error.message || "Ocurrió un error inesperado", {
+        duration: 8000,
       });
     },
   });
@@ -402,24 +396,18 @@ export function useInventoryQuery(
           queryKey: INVENTORY_QUERY_KEYS.product(productId),
         });
 
-        notify({
-          type: "success",
-          title: "Producto eliminado",
-          message: "El producto se ha eliminado exitosamente",
+        success("El producto se ha eliminado exitosamente", {
+          duration: 5000,
         });
       } else {
-        notify({
-          type: "error",
-          title: "Error al eliminar",
-          message: result.error || "Ocurrió un error inesperado",
+        notifyError(result.error || "Ocurrió un error inesperado", {
+          duration: 8000,
         });
       }
     },
     onError: (error) => {
-      notify({
-        type: "error",
-        title: "Error al eliminar producto",
-        message: error.message || "Ocurrió un error inesperado",
+      notifyError(error.message || "Ocurrió un error inesperado", {
+        duration: 8000,
       });
     },
   });
@@ -431,16 +419,12 @@ export function useInventoryQuery(
         queryClient.invalidateQueries({
           queryKey: CATEGORIES_QUERY_KEYS.all(),
         });
-        notify({
-          type: "success",
-          title: "Categoría creada",
-          message: "La categoría se ha creado exitosamente",
+        success("La categoría se ha creado exitosamente", {
+          duration: 5000,
         });
       } else {
-        notify({
-          type: "error",
-          title: "Error al crear categoría",
-          message: result.error || "Ocurrió un error inesperado",
+        notifyError(result.error || "Ocurrió un error inesperado", {
+          duration: 8000,
         });
       }
     },
@@ -463,16 +447,12 @@ export function useInventoryQuery(
           queryKey: STOCK_MOVEMENTS_QUERY_KEYS.all(),
         });
 
-        notify({
-          type: "success",
-          title: "Movimiento registrado",
-          message: "El movimiento de stock se ha registrado exitosamente",
+        success("El movimiento de stock se ha registrado exitosamente", {
+          duration: 5000,
         });
       } else {
-        notify({
-          type: "error",
-          title: "Error en movimiento",
-          message: result.error || "Ocurrió un error inesperado",
+        notifyError(result.error || "Ocurrió un error inesperado", {
+          duration: 8000,
         });
       }
     },
@@ -553,12 +533,23 @@ export function useInventoryQuery(
     error: error as Error | null,
 
     // Product actions
-    createProduct: createProductMutation.mutateAsync,
-    updateProduct: updateProductMutation.mutateAsync,
-    deleteProduct: deleteProductMutation.mutateAsync,
+    createProduct: async (data: CreateProductInput) => {
+      return (await createProductMutation.mutateAsync(data)) as ActionResult;
+    },
+    updateProduct: async (id: string, data: UpdateProductInput) => {
+      return (await updateProductMutation.mutateAsync({
+        id,
+        data,
+      })) as ActionResult;
+    },
+    deleteProduct: async (id: string) => {
+      return (await deleteProductMutation.mutateAsync(id)) as ActionResult;
+    },
 
     // Category actions
-    createCategory: createCategoryMutation.mutateAsync,
+    createCategory: async (data: CreateCategoryInput) => {
+      return (await createCategoryMutation.mutateAsync(data)) as ActionResult;
+    },
     updateCategory: async () => ({ success: false, error: "Not implemented" }), // TODO
     deleteCategory: async () => ({ success: false, error: "Not implemented" }), // TODO
 
@@ -568,7 +559,9 @@ export function useInventoryQuery(
     deleteSupplier: async () => ({ success: false, error: "Not implemented" }), // TODO
 
     // Stock movement actions
-    addStockMovement: addStockMovementMutation.mutateAsync,
+    addStockMovement: async (data: CreateStockMovementInput) => {
+      return (await addStockMovementMutation.mutateAsync(data)) as ActionResult;
+    },
 
     // Utilities
     refetch: refetchAll,

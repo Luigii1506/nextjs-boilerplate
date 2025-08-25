@@ -10,7 +10,13 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { getAuditStatsAction } from "../server/actions";
-import type { UseAuditStatsReturn, AuditStats, AuditAction, AuditResource, AuditSeverity } from "../types";
+import type {
+  UseAuditStatsReturn,
+  AuditStats,
+  AuditAction,
+  AuditResource,
+  AuditSeverity,
+} from "../types";
 
 export function useAuditStats(
   dateFrom?: Date,

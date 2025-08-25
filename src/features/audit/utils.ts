@@ -108,10 +108,10 @@ export function formatValue(value: unknown): string {
   }
 
   if (typeof value === "object") {
-    const keys = Object.keys(value);
+    const obj = value as Record<string, unknown>;
+    const keys = Object.keys(obj);
     if (keys.length === 0) return "{}";
-    if (keys.length === 1)
-      return `{${keys[0]}: ${formatValue(value[keys[0]])}}`;
+    if (keys.length === 1) return `{${keys[0]}: ${formatValue(obj[keys[0]])}}`;
     return `{${keys.length} propiedades}`;
   }
 

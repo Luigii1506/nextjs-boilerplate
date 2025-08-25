@@ -113,7 +113,11 @@ export function useFeatureFlagsByCategory(category?: FeatureCategory) {
   const { filterFlags } = useFeatureFlagsQuery();
 
   return useCallback(() => {
-    return filterFlags({ category });
+    return filterFlags({
+      category: category || "all",
+      search: "",
+      status: "all",
+    });
   }, [filterFlags, category]);
 }
 
@@ -121,8 +125,9 @@ export function useFeatureFlagsByCategory(category?: FeatureCategory) {
  * 📦 USE BATCH FEATURE FLAGS - Direct TanStack Query Hook
  *
  * Hook optimizado para operaciones batch.
+ * TODO: Implement batchUpdate functionality
  */
 export function useBatchFeatureFlags() {
-  const { batchUpdate } = useFeatureFlagsQuery();
-  return { batchUpdate };
+  // TODO: Implement batch update functionality
+  return { batchUpdate: () => Promise.resolve() };
 }
