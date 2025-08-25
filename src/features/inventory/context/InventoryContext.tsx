@@ -24,6 +24,7 @@ import type {
   CategoryFilters,
   ProductWithRelations,
   CategoryWithRelations,
+  SupplierWithRelations,
 } from "../types";
 
 // 🎯 TABS DISPONIBLES
@@ -133,6 +134,27 @@ interface InventoryContextType {
   isCategoryViewModalOpen: boolean;
   setIsCategoryViewModalOpen: (open: boolean) => void;
 
+  // Supplier Modal States
+  isSupplierModalOpen: boolean;
+  setIsSupplierModalOpen: (open: boolean) => void;
+
+  // Supplier Edit States
+  editingSupplier: SupplierWithRelations | null;
+  setEditingSupplier: (supplier: SupplierWithRelations | null) => void;
+  isEditSupplierMode: boolean;
+
+  // Supplier Delete Confirmation
+  deletingSupplier: SupplierWithRelations | null;
+  setDeletingSupplier: (supplier: SupplierWithRelations | null) => void;
+  isSupplierDeleteConfirmOpen: boolean;
+  setIsSupplierDeleteConfirmOpen: (open: boolean) => void;
+
+  // Supplier View States
+  viewingSupplier: SupplierWithRelations | null;
+  setViewingSupplier: (supplier: SupplierWithRelations | null) => void;
+  isSupplierViewModalOpen: boolean;
+  setIsSupplierViewModalOpen: (open: boolean) => void;
+
   // Data from API
   inventory: ReturnType<typeof useInventoryQuery>;
 
@@ -153,6 +175,13 @@ interface InventoryContextType {
   closeDeleteCategoryConfirm: () => void;
   openViewCategoryModal: (category: CategoryWithRelations) => void;
   closeViewCategoryModal: () => void;
+  // Supplier Actions
+  openEditSupplierModal: (supplier: SupplierWithRelations) => void;
+  closeEditSupplierModal: () => void;
+  openDeleteSupplierConfirm: (supplier: SupplierWithRelations) => void;
+  closeDeleteSupplierConfirm: () => void;
+  openViewSupplierModal: (supplier: SupplierWithRelations) => void;
+  closeViewSupplierModal: () => void;
 }
 
 // 🎯 CONTEXT CREATION
@@ -181,6 +210,7 @@ export const InventoryProvider: React.FC<InventoryProviderProps> = ({
   // 📝 Modal States
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
 
   // ✏️ Product Edit States
   const [editingProduct, setEditingProduct] =
@@ -207,9 +237,23 @@ export const InventoryProvider: React.FC<InventoryProviderProps> = ({
     useState<CategoryWithRelations | null>(null);
   const [isCategoryViewModalOpen, setIsCategoryViewModalOpen] = useState(false);
 
+  // ✏️ Supplier Edit States
+  const [editingSupplier, setEditingSupplier] =
+    useState<SupplierWithRelations | null>(null);
+  const [deletingSupplier, setDeletingSupplier] =
+    useState<SupplierWithRelations | null>(null);
+  const [isSupplierDeleteConfirmOpen, setIsSupplierDeleteConfirmOpen] =
+    useState(false);
+
+  // 👁️ Supplier View States
+  const [viewingSupplier, setViewingSupplier] =
+    useState<SupplierWithRelations | null>(null);
+  const [isSupplierViewModalOpen, setIsSupplierViewModalOpen] = useState(false);
+
   // 🎯 Computed values
   const isEditMode = editingProduct !== null;
   const isEditCategoryMode = editingCategory !== null;
+  const isEditSupplierMode = editingSupplier !== null;
 
   // 🔄 Main Data Query
   const inventory = useInventoryQuery({
@@ -325,6 +369,47 @@ export const InventoryProvider: React.FC<InventoryProviderProps> = ({
     setIsCategoryViewModalOpen(false);
   }, []);
 
+  // ✏️ Supplier Edit Actions
+  const openEditSupplierModal = useCallback(
+    (supplier: SupplierWithRelations) => {
+      setEditingSupplier(supplier);
+      setIsSupplierModalOpen(true);
+    },
+    []
+  );
+
+  const closeEditSupplierModal = useCallback(() => {
+    setEditingSupplier(null);
+    setIsSupplierModalOpen(false);
+  }, []);
+
+  const openDeleteSupplierConfirm = useCallback(
+    (supplier: SupplierWithRelations) => {
+      setDeletingSupplier(supplier);
+      setIsSupplierDeleteConfirmOpen(true);
+    },
+    []
+  );
+
+  const closeDeleteSupplierConfirm = useCallback(() => {
+    setDeletingSupplier(null);
+    setIsSupplierDeleteConfirmOpen(false);
+  }, []);
+
+  // 👁️ Supplier View Actions
+  const openViewSupplierModal = useCallback(
+    (supplier: SupplierWithRelations) => {
+      setViewingSupplier(supplier);
+      setIsSupplierViewModalOpen(true);
+    },
+    []
+  );
+
+  const closeViewSupplierModal = useCallback(() => {
+    setViewingSupplier(null);
+    setIsSupplierViewModalOpen(false);
+  }, []);
+
   const value: InventoryContextType = {
     // Tab Management
     activeTab,
@@ -348,6 +433,8 @@ export const InventoryProvider: React.FC<InventoryProviderProps> = ({
     setIsProductModalOpen,
     isCategoryModalOpen,
     setIsCategoryModalOpen,
+    isSupplierModalOpen,
+    setIsSupplierModalOpen,
 
     // Product Edit States
     editingProduct,
@@ -383,6 +470,23 @@ export const InventoryProvider: React.FC<InventoryProviderProps> = ({
     isCategoryViewModalOpen,
     setIsCategoryViewModalOpen,
 
+    // Supplier Edit States
+    editingSupplier,
+    setEditingSupplier,
+    isEditSupplierMode,
+
+    // Supplier Delete Confirmation
+    deletingSupplier,
+    setDeletingSupplier,
+    isSupplierDeleteConfirmOpen,
+    setIsSupplierDeleteConfirmOpen,
+
+    // Supplier View States
+    viewingSupplier,
+    setViewingSupplier,
+    isSupplierViewModalOpen,
+    setIsSupplierViewModalOpen,
+
     // Data
     inventory,
 
@@ -403,6 +507,13 @@ export const InventoryProvider: React.FC<InventoryProviderProps> = ({
     closeDeleteCategoryConfirm,
     openViewCategoryModal,
     closeViewCategoryModal,
+    // Supplier Actions
+    openEditSupplierModal,
+    closeEditSupplierModal,
+    openDeleteSupplierConfirm,
+    closeDeleteSupplierConfirm,
+    openViewSupplierModal,
+    closeViewSupplierModal,
   };
 
   return (

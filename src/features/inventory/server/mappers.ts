@@ -292,6 +292,45 @@ export function mapCategoryToExternal(
   };
 }
 
+// 🚛 SUPPLIER MAPPERS
+export function mapSupplierToExternal(
+  rawSupplier: RawSupplier
+): SupplierWithRelations {
+  return {
+    id: rawSupplier.id,
+    name: rawSupplier.name,
+    contactPerson: rawSupplier.contactPerson,
+    email: rawSupplier.email,
+    phone: rawSupplier.phone,
+    website: rawSupplier.website,
+    taxId: rawSupplier.taxId,
+    paymentTerms: Number(rawSupplier.paymentTerms),
+    rating: rawSupplier.rating ? Number(rawSupplier.rating) : null,
+    notes: rawSupplier.notes,
+    addressLine1: rawSupplier.addressLine1,
+    addressLine2: rawSupplier.addressLine2,
+    city: rawSupplier.city,
+    state: rawSupplier.state,
+    postalCode: rawSupplier.postalCode,
+    country: rawSupplier.country,
+    isActive: Boolean(rawSupplier.isActive),
+    createdAt:
+      rawSupplier.createdAt instanceof Date
+        ? rawSupplier.createdAt
+        : new Date(rawSupplier.createdAt),
+    updatedAt:
+      rawSupplier.updatedAt instanceof Date
+        ? rawSupplier.updatedAt
+        : new Date(rawSupplier.updatedAt),
+
+    // Relations
+    products: rawSupplier.products?.map(mapProductToExternal) || [],
+    _count: {
+      products: rawSupplier._count?.products || 0,
+    },
+  };
+}
+
 export function mapCategoryToTreeStructure(
   categories: CategoryWithRelations[]
 ): CategoryWithRelations[] {
@@ -324,39 +363,6 @@ export function mapCategoryToTreeStructure(
   });
 
   return rootCategories;
-}
-
-// 🚛 SUPPLIER MAPPERS
-export function mapSupplierToExternal(
-  rawSupplier: RawSupplier
-): SupplierWithRelations {
-  return {
-    id: rawSupplier.id,
-    name: rawSupplier.name,
-    contactPerson: rawSupplier.contactPerson,
-    email: rawSupplier.email,
-    phone: rawSupplier.phone,
-    website: rawSupplier.website,
-    taxId: rawSupplier.taxId,
-    paymentTerms: Number(rawSupplier.paymentTerms), // Already number from Prisma
-    isActive: Boolean(rawSupplier.isActive),
-    rating: rawSupplier.rating ? Number(rawSupplier.rating) : null,
-    notes: rawSupplier.notes,
-    addressLine1: rawSupplier.addressLine1,
-    addressLine2: rawSupplier.addressLine2,
-    city: rawSupplier.city,
-    state: rawSupplier.state,
-    postalCode: rawSupplier.postalCode,
-    country: rawSupplier.country,
-    createdAt: new Date(rawSupplier.createdAt),
-    updatedAt: new Date(rawSupplier.updatedAt),
-
-    // Relations
-    products: rawSupplier.products?.map(mapProductToExternal) || [],
-    _count: {
-      products: rawSupplier._count?.products || 0,
-    },
-  };
 }
 
 export function mapSupplierToSummary(supplier: SupplierWithRelations) {

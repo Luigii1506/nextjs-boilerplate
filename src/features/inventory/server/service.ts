@@ -26,8 +26,12 @@ import {
   getCategoryByIdQuery,
   getCategoryWithProductsQuery,
   createSupplierQuery,
+  updateSupplierQuery,
+  deleteSupplierQuery,
   getSuppliersQuery,
   getSupplierByIdQuery,
+  getSupplierWithProductsQuery,
+  validateSupplierExists,
   addStockMovementQuery,
   getInventoryStatsQuery,
   getLowStockAlertsQuery,
@@ -47,6 +51,7 @@ import {
   validateCreateCategory,
   validateUpdateCategory,
   validateCreateSupplier,
+  validateUpdateSupplier,
   validateCreateStockMovement,
   validateProductFilters,
   validateCategoryFilters,
@@ -338,8 +343,8 @@ export class ProductService {
     // Supplier validation if provided (conditional parallel validation)
     if (input.supplierId) {
       validationPromises.push(
-        getSupplierByIdQuery(input.supplierId).then((result) => {
-          if (!result || !result.isActive) {
+        validateSupplierExists(input.supplierId).then((isValid) => {
+          if (!isValid) {
             throw new Error("Invalid supplier");
           }
         })
@@ -649,6 +654,96 @@ export class SupplierService {
       };
     } catch (error) {
       return this.handleError(error, "Error fetching suppliers");
+    }
+  }
+
+  static async update(
+    id: string,
+    input: CreateSupplierInput & { isActive?: boolean },
+    userId: string
+  ): Promise<ActionResult<SupplierWithRelations>> {
+    try {
+      const session = await requireAuth();
+      const user = sessionToPermissionUser(session);
+      validateInventoryPermissions(user, "UPDATE_SUPPLIER");
+
+      const validatedInput = validateUpdateSupplier({ ...input, id });
+
+      // Business Logic - Name uniqueness (except for current supplier)
+      if (validatedInput.name) {
+        const existing = await getSuppliersQuery({
+          search: validatedInput.name,
+        });
+        const duplicateSupplier = existing.find(
+          (s) =>
+            s.name.toLowerCase() === validatedInput.name!.toLowerCase() &&
+            s.id !== id
+        );
+        if (duplicateSupplier) {
+          return { success: false, error: "Supplier name already exists" };
+        }
+      }
+
+      // Email uniqueness if provided (except for current supplier)
+      if (validatedInput.email) {
+        const existingEmail = await getSuppliersQuery({
+          search: validatedInput.email,
+        });
+        const duplicateEmail = existingEmail.find(
+          (s) => s.email === validatedInput.email && s.id !== id
+        );
+        if (duplicateEmail) {
+          return { success: false, error: "Supplier email already exists" };
+        }
+      }
+
+      const rawSupplier = await updateSupplierQuery(validatedInput);
+      const supplier = mapSupplierToExternal(rawSupplier);
+
+      await this.logSupplierAction("UPDATED", supplier.id, userId);
+
+      return {
+        success: true,
+        data: supplier,
+      };
+    } catch (error) {
+      return this.handleError(error, "Error updating supplier");
+    }
+  }
+
+  static async delete(id: string, userId: string): Promise<ActionResult<void>> {
+    try {
+      const session = await requireAuth();
+      const user = sessionToPermissionUser(session);
+      validateInventoryPermissions(user, "DELETE_SUPPLIER");
+
+      // Business Logic - Check if supplier has products
+      const supplierWithProducts = await getSupplierWithProductsQuery(id);
+      if (!supplierWithProducts) {
+        return { success: false, error: "Supplier not found" };
+      }
+
+      if (
+        supplierWithProducts._count &&
+        supplierWithProducts._count.products > 0
+      ) {
+        return {
+          success: false,
+          error: "Cannot delete supplier that has products",
+        };
+      }
+
+      // Soft delete - set isActive to false
+      await deleteSupplierQuery(id);
+
+      await this.logSupplierAction("DELETED", id, userId);
+
+      return {
+        success: true,
+        data: undefined,
+      };
+    } catch (error) {
+      return this.handleError(error, "Error deleting supplier");
     }
   }
 

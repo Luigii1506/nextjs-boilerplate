@@ -22,6 +22,7 @@ export {
 export { default as OverviewTab } from "./tabs/OverviewTab";
 export { default as ProductsTab } from "./tabs/ProductsTab";
 export { default as CategoriesTab } from "./tabs/CategoriesTab";
+export { default as SuppliersTab } from "./tabs/SuppliersTab";
 
 // 📝 Modals and Forms
 export { default as ProductModal } from "./ProductModal";
@@ -30,6 +31,9 @@ export { default as ProductViewModal } from "./ProductViewModal";
 export { default as CategoryModal } from "./CategoryModal";
 export { default as CategoryViewModal } from "./CategoryViewModal";
 export { default as CategoryDeleteModal } from "./CategoryDeleteModal";
+export { default as SupplierModal } from "./SupplierModal";
+export { default as SupplierViewModal } from "./SupplierViewModal";
+export { default as SupplierDeleteModal } from "./SupplierDeleteModal";
 
 // 📊 Main components (TODO: Create these components)
 // export { default as ProductsTable } from "./ProductsTable";

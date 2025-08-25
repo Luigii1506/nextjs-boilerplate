@@ -15,6 +15,7 @@ import {
   createCategorySchema,
   updateCategorySchema,
   createSupplierSchema,
+  updateSupplierSchema,
   createStockMovementSchema,
   productFiltersSchema,
   categoryFiltersSchema,
@@ -233,14 +234,20 @@ export function validateUpdateProduct(input: unknown): UpdateProductInput {
 export function validateCreateCategory(input: unknown): CreateCategoryInput {
   try {
     const result = createCategorySchema.parse(input);
-    // Convert null to undefined to match TypeScript type
     return {
       ...result,
+      description: result.description ?? undefined,
       parentId: result.parentId ?? undefined,
+      color: result.color ?? undefined,
+      icon: result.icon ?? undefined,
+      sortOrder: result.sortOrder ?? undefined,
     } as CreateCategoryInput;
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new ValidationError("Category validation failed", error.issues);
+      throw new ValidationError(
+        "Create category validation failed",
+        error.issues
+      );
     }
     throw new Error("Invalid category data");
   }
@@ -251,15 +258,18 @@ export function validateUpdateCategory(
 ): CreateCategoryInput & { id: string; isActive?: boolean } {
   try {
     const result = updateCategorySchema.parse(input);
-    // Convert null to undefined to match TypeScript type
     return {
       ...result,
+      description: result.description ?? undefined,
       parentId: result.parentId ?? undefined,
+      color: result.color ?? undefined,
+      icon: result.icon ?? undefined,
+      sortOrder: result.sortOrder ?? undefined,
     } as CreateCategoryInput & { id: string; isActive?: boolean };
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw new ValidationError(
-        "Category update validation failed",
+        "Update category validation failed",
         error.issues
       );
     }
@@ -271,16 +281,62 @@ export function validateUpdateCategory(
 export function validateCreateSupplier(input: unknown): CreateSupplierInput {
   try {
     const result = createSupplierSchema.parse(input);
-    // Convert null values to undefined to match TypeScript type
     return {
       ...result,
       email: result.email ?? undefined,
+      contactPerson: result.contactPerson ?? undefined,
+      phone: result.phone ?? undefined,
+      website: result.website ?? undefined,
+      taxId: result.taxId ?? undefined,
+      rating: result.rating ?? undefined,
+      notes: result.notes ?? undefined,
+      addressLine1: result.addressLine1 ?? undefined,
+      addressLine2: result.addressLine2 ?? undefined,
+      city: result.city ?? undefined,
+      state: result.state ?? undefined,
+      postalCode: result.postalCode ?? undefined,
+      country: result.country ?? undefined,
     } as CreateSupplierInput;
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new ValidationError("Supplier validation failed", error.issues);
+      throw new ValidationError(
+        "Create supplier validation failed",
+        error.issues
+      );
     }
     throw new Error("Invalid supplier data");
+  }
+}
+
+export function validateUpdateSupplier(
+  input: unknown
+): CreateSupplierInput & { id: string; isActive?: boolean } {
+  try {
+    const result = updateSupplierSchema.parse(input);
+    return {
+      ...result,
+      email: result.email ?? undefined,
+      contactPerson: result.contactPerson ?? undefined,
+      phone: result.phone ?? undefined,
+      website: result.website ?? undefined,
+      taxId: result.taxId ?? undefined,
+      rating: result.rating ?? undefined,
+      notes: result.notes ?? undefined,
+      addressLine1: result.addressLine1 ?? undefined,
+      addressLine2: result.addressLine2 ?? undefined,
+      city: result.city ?? undefined,
+      state: result.state ?? undefined,
+      postalCode: result.postalCode ?? undefined,
+      country: result.country ?? undefined,
+    } as CreateSupplierInput & { id: string; isActive?: boolean };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw new ValidationError(
+        "Update supplier validation failed",
+        error.issues
+      );
+    }
+    throw new Error("Invalid supplier update data");
   }
 }
 
@@ -324,7 +380,6 @@ export function validateProductFilters(input: unknown): ProductFilters {
 export function validateCategoryFilters(input: unknown): CategoryFilters {
   try {
     const result = categoryFiltersSchema.parse(input);
-    // Convert null values to undefined to match TypeScript type
     return {
       ...result,
       parentId: result.parentId ?? undefined,
@@ -337,20 +392,6 @@ export function validateCategoryFilters(input: unknown): CategoryFilters {
       );
     }
     throw new Error("Invalid category filters");
-  }
-}
-
-export function validateSupplierFilters(input: unknown): SupplierFilters {
-  try {
-    return supplierFiltersSchema.parse(input);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      throw new ValidationError(
-        "Supplier filters validation failed",
-        error.issues
-      );
-    }
-    throw new Error("Invalid supplier filters");
   }
 }
 
@@ -637,6 +678,21 @@ export function formatValidationErrors(
   });
 
   return formatted;
+}
+
+// 🚛 SUPPLIER FILTERS VALIDATION
+export function validateSupplierFilters(input: unknown): SupplierFilters {
+  try {
+    return supplierFiltersSchema.parse(input) as SupplierFilters;
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw new ValidationError(
+        "Supplier filters validation failed",
+        error.issues
+      );
+    }
+    throw new Error("Invalid supplier filters");
+  }
 }
 
 // 📊 VALIDATION METRICS (for monitoring)

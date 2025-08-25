@@ -10,6 +10,7 @@
  */
 
 import { prisma } from "@/core/database/prisma";
+import { Prisma } from "@prisma/client";
 import type { Decimal } from "@prisma/client/runtime/library";
 import type {
   Product,
@@ -28,20 +29,34 @@ import type {
   SupplierFilters,
   PaginationParams,
   PaginatedResponse,
+  SupplierWithRelations,
 } from "../types";
 
 // 🔄 DECIMAL CONVERSION HELPERS
 // ============================
-// Converts Prisma Decimal types to numbers for TypeScript compatibility
+// Handles conversion between Prisma Decimal and JavaScript number types
+
+function convertNumberToDecimal(value: number | string | Decimal): Decimal {
+  if (typeof value === "number") {
+    return new Prisma.Decimal(value);
+  }
+  if (value instanceof Prisma.Decimal) {
+    return value;
+  }
+  return new Prisma.Decimal(value);
+}
 
 function convertDecimalToNumber(decimal: Decimal | number): number {
   return typeof decimal === "number" ? decimal : Number(decimal.toString());
 }
 
 function convertDecimalToNullableNumber(
-  decimal: Decimal | number | null
+  decimal: Decimal | number | null | undefined
 ): number | null {
-  return decimal === null ? null : convertDecimalToNumber(decimal);
+  if (decimal === null || decimal === undefined) {
+    return null;
+  }
+  return typeof decimal === "number" ? decimal : Number(decimal.toString());
 }
 
 function convertJsonValueToMetadata(
@@ -576,7 +591,7 @@ export async function getCategoryByIdQuery(
 }
 
 // ⚡ ULTRA-FAST - Supplier validation by ID
-export async function getSupplierByIdQuery(
+export async function getSupplierForValidationQuery(
   id: string
 ): Promise<Pick<Supplier, "id" | "name" | "isActive"> | null> {
   return await prisma.supplier.findUnique({
@@ -773,7 +788,7 @@ export async function getCategoryWithProductsQuery(
 // 🚛 SUPPLIER QUERIES
 export async function createSupplierQuery(
   input: CreateSupplierInput
-): Promise<Supplier> {
+): Promise<SupplierWithRelations> {
   const rawSupplier = await prisma.supplier.create({
     data: {
       name: input.name,
@@ -783,7 +798,7 @@ export async function createSupplierQuery(
       website: input.website || null,
       taxId: input.taxId || null,
       paymentTerms: input.paymentTerms || 30,
-      rating: input.rating || null,
+      rating: input.rating ? convertNumberToDecimal(input.rating) : null,
       notes: input.notes || null,
       addressLine1: input.addressLine1 || null,
       addressLine2: input.addressLine2 || null,
@@ -791,13 +806,23 @@ export async function createSupplierQuery(
       state: input.state || null,
       postalCode: input.postalCode || null,
       country: input.country || "MX",
+      isActive: true,
+    },
+    include: {
+      products: true,
+      _count: {
+        select: {
+          products: true,
+        },
+      },
     },
   });
 
-  // Convert Decimal fields to numbers for TypeScript compatibility
   return {
     ...rawSupplier,
     rating: convertDecimalToNullableNumber(rawSupplier.rating),
+    products: rawSupplier.products || [],
+    _count: rawSupplier._count,
   };
 }
 
@@ -858,6 +883,97 @@ export async function validateSupplierExists(id: string): Promise<boolean> {
     select: { id: true, isActive: true },
   });
   return !!supplier && supplier.isActive;
+}
+
+/**
+ * Get supplier by ID with full relations
+ */
+export async function getSupplierByIdQuery(
+  id: string
+): Promise<SupplierWithRelations | null> {
+  const rawSupplier = await prisma.supplier.findUnique({
+    where: { id },
+    include: {
+      products: true,
+      _count: {
+        select: {
+          products: true,
+        },
+      },
+    },
+  });
+
+  if (!rawSupplier) return null;
+
+  return {
+    ...rawSupplier,
+    rating: convertDecimalToNullableNumber(rawSupplier.rating),
+    products: rawSupplier.products || [],
+    _count: rawSupplier._count,
+  };
+}
+
+/**
+ * Update a supplier
+ */
+export async function updateSupplierQuery(
+  input: CreateSupplierInput & { id: string; isActive?: boolean }
+): Promise<SupplierWithRelations> {
+  const rawSupplier = await prisma.supplier.update({
+    where: { id: input.id },
+    data: {
+      name: input.name,
+      contactPerson: input.contactPerson || null,
+      email: input.email || null,
+      phone: input.phone || null,
+      website: input.website || null,
+      taxId: input.taxId || null,
+      paymentTerms: input.paymentTerms,
+      rating: input.rating ? convertNumberToDecimal(input.rating) : null,
+      notes: input.notes || null,
+      addressLine1: input.addressLine1 || null,
+      addressLine2: input.addressLine2 || null,
+      city: input.city || null,
+      state: input.state || null,
+      postalCode: input.postalCode || null,
+      country: input.country,
+      isActive: input.isActive !== undefined ? input.isActive : true,
+    },
+    include: {
+      products: true,
+      _count: {
+        select: {
+          products: { where: { isActive: true } },
+        },
+      },
+    },
+  });
+
+  return {
+    ...rawSupplier,
+    rating: convertDecimalToNullableNumber(rawSupplier.rating),
+    products: rawSupplier.products || [],
+    _count: rawSupplier._count,
+  };
+}
+
+/**
+ * Delete a supplier (soft delete - set isActive to false)
+ */
+export async function deleteSupplierQuery(id: string): Promise<void> {
+  await prisma.supplier.update({
+    where: { id },
+    data: { isActive: false },
+  });
+}
+
+/**
+ * Hard delete a supplier (permanently remove from database)
+ */
+export async function hardDeleteSupplierQuery(id: string): Promise<void> {
+  await prisma.supplier.delete({
+    where: { id },
+  });
 }
 
 // 📊 STOCK MOVEMENT QUERIES
@@ -1129,4 +1245,20 @@ export async function getLowStockAlertsQuery(): Promise<StockAlert[]> {
   });
 
   return alerts;
+}
+
+/**
+ * Check if supplier has products (for safe deletion)
+ */
+export async function getSupplierWithProductsQuery(id: string) {
+  return prisma.supplier.findUnique({
+    where: { id },
+    include: {
+      _count: {
+        select: {
+          products: true,
+        },
+      },
+    },
+  });
 }

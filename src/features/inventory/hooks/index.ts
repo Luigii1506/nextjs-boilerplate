@@ -12,8 +12,6 @@
 // 🔄 Data Query hooks
 export { useInventoryQuery } from "./useInventoryQuery";
 export { useProductsQuery } from "./useProductsQuery";
-export { useCategoriesQuery } from "./useCategoriesQuery";
-export { useSuppliersQuery } from "./useSuppliersQuery";
 
 // 🎯 UI Interaction hooks
 export { useScrollHeader, useTabScrollHeader } from "./useScrollHeader";
@@ -42,6 +40,19 @@ export {
   useDeleteCategoryModal,
 } from "./useCreateCategory";
 
+// 📝 Form and Mutation hooks - Suppliers
+export {
+  useCreateSupplier,
+  useCreateSupplierWithNotifications,
+  useCreateSupplierModal,
+  useUpdateSupplier,
+  useUpdateSupplierWithNotifications,
+  useUpdateSupplierModal,
+  useDeleteSupplier,
+  useDeleteSupplierWithNotifications,
+  useDeleteSupplierModal,
+} from "./useCreateSupplier";
+
 // 🗂️ Query keys for external invalidation
 export {
   INVENTORY_QUERY_KEYS,
@@ -49,6 +60,8 @@ export {
   CATEGORIES_QUERY_KEYS,
   SUPPLIERS_QUERY_KEYS,
   STOCK_MOVEMENTS_QUERY_KEYS,
+  useCategoriesQuery,
+  useSuppliersQuery,
 } from "./useInventoryQuery";
 
 // 🔧 Utility hooks (will be created later)

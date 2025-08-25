@@ -332,6 +332,106 @@ export async function getSuppliersAction(
   }
 }
 
+export async function createSupplierAction(
+  input: CreateSupplierInput
+): Promise<ActionResult<Supplier>> {
+  try {
+    // 🔐 Authentication
+    const session = await requireAuth();
+    if (!session?.user) {
+      return { success: false, error: "No autenticado" };
+    }
+    const userId = session.user.id;
+
+    // 🎯 Delegate to service (thick layer)
+    const result = await SupplierService.create(input, userId);
+
+    // 🔄 Cache invalidation (UI concerns)
+    if (result.success) {
+      revalidateTag(INVENTORY_CACHE_TAGS.suppliers);
+      revalidateTag(INVENTORY_CACHE_TAGS.all);
+    }
+
+    return result;
+  } catch (error) {
+    console.error("[Inventory] Action error - createSupplier:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error al crear proveedor",
+    };
+  }
+}
+
+export async function updateSupplierAction(
+  id: string,
+  input: CreateSupplierInput & { isActive?: boolean }
+): Promise<ActionResult<Supplier>> {
+  try {
+    // 🔐 Authentication
+    const session = await requireAuth();
+    if (!session?.user) {
+      return { success: false, error: "No autenticado" };
+    }
+    const userId = session.user.id;
+
+    // 🎯 Delegate to service (thick layer)
+    const result = await SupplierService.update(id, input, userId);
+
+    // 🔄 Cache invalidation (UI concerns)
+    if (result.success) {
+      revalidateTag(INVENTORY_CACHE_TAGS.suppliers);
+      revalidateTag(INVENTORY_CACHE_TAGS.supplier(id));
+      revalidateTag(INVENTORY_CACHE_TAGS.products); // Suppliers affect products
+      revalidateTag(INVENTORY_CACHE_TAGS.all);
+    }
+
+    return result;
+  } catch (error) {
+    console.error("[Inventory] Action error - updateSupplier:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error al actualizar proveedor",
+    };
+  }
+}
+
+export async function deleteSupplierAction(
+  id: string
+): Promise<ActionResult<void>> {
+  try {
+    // 🔐 Authentication
+    const session = await requireAuth();
+    if (!session?.user) {
+      return { success: false, error: "No autenticado" };
+    }
+    const userId = session.user.id;
+
+    // 🎯 Delegate to service (thick layer)
+    const result = await SupplierService.delete(id, userId);
+
+    // 🔄 Cache invalidation (UI concerns)
+    if (result.success) {
+      revalidateTag(INVENTORY_CACHE_TAGS.suppliers);
+      revalidateTag(INVENTORY_CACHE_TAGS.supplier(id));
+      revalidateTag(INVENTORY_CACHE_TAGS.products); // Suppliers affect products
+      revalidateTag(INVENTORY_CACHE_TAGS.all);
+    }
+
+    return result;
+  } catch (error) {
+    console.error("[Inventory] Action error - deleteSupplier:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error al eliminar proveedor",
+    };
+  }
+}
+
 // 📊 STOCK MOVEMENT ACTIONS
 export async function addStockMovementAction(
   input: CreateStockMovementInput

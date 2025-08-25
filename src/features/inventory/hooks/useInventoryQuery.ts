@@ -576,3 +576,85 @@ export function useInventoryQuery(
     invalidateCache,
   };
 }
+
+// 🎯 INDIVIDUAL QUERY HOOKS
+
+/**
+ * Hook for categories only
+ */
+export function useCategoriesQuery(
+  filters?: CategoryFilters,
+  options: {
+    enabled?: boolean;
+    staleTime?: number;
+    refetchOnWindowFocus?: boolean;
+  } = {}
+) {
+  const {
+    enabled = true,
+    staleTime = 30000,
+    refetchOnWindowFocus = false,
+  } = options;
+
+  const query = useQuery({
+    queryKey: CATEGORIES_QUERY_KEYS.list(filters),
+    queryFn: () => getCategoriesAction(filters),
+    enabled,
+    staleTime,
+    refetchOnWindowFocus,
+    select: (response) => {
+      if (response.success) {
+        return response.data;
+      }
+      throw new Error(response.error || "Error fetching categories");
+    },
+  });
+
+  return {
+    data: query.data || [],
+    categories: query.data || [],
+    isLoading: query.isLoading,
+    error: query.error || null,
+    refetch: query.refetch,
+  };
+}
+
+/**
+ * Hook for suppliers only
+ */
+export function useSuppliersQuery(
+  filters?: SupplierFilters,
+  options: {
+    enabled?: boolean;
+    staleTime?: number;
+    refetchOnWindowFocus?: boolean;
+  } = {}
+) {
+  const {
+    enabled = true,
+    staleTime = 30000,
+    refetchOnWindowFocus = false,
+  } = options;
+
+  const query = useQuery({
+    queryKey: SUPPLIERS_QUERY_KEYS.list(filters),
+    queryFn: () => getSuppliersAction(filters),
+    enabled,
+    staleTime,
+    refetchOnWindowFocus,
+    select: (response) => {
+      if (response.success) {
+        return response.data;
+      }
+      throw new Error(response.error || "Error fetching suppliers");
+    },
+  });
+
+  return {
+    data: query.data || [],
+    suppliers: query.data || [],
+    isLoading: query.isLoading,
+    error: query.error || null,
+    refetch: query.refetch,
+  };
+}
