@@ -229,3 +229,27 @@ export const mapRecentUsers = (
     banExpires: user.banExpires?.toISOString() || null,
   }));
 };
+
+// 📊 Dashboard-specific mapper for simplified user data
+export const mapDashboardRecentUsers = (
+  users: Array<{
+    id: string | number;
+    email: string;
+    name: string | null;
+  }>
+): User[] => {
+  return users.map((user) => ({
+    id: String(user.id), // Convert number to string if needed
+    name: user.name || "Usuario Sin Nombre",
+    email: user.email,
+    emailVerified: false,
+    role: "user" as const,
+    status: "active" as const,
+    image: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    banned: false,
+    banReason: null,
+    banExpires: null,
+  }));
+};

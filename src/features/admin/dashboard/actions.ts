@@ -45,8 +45,8 @@ export async function getRecentUsersAction(
     // 👥 Obtener usuarios recientes reales de la base de datos
     const rawRecentUsers = await userQueries.getRecentUsers(limit);
 
-    // 🔄 Transformar datos usando mapper
-    const recentUsers = userMappers.mapRecentUsers(rawRecentUsers);
+    // 🔄 Transformar datos usando mapper específico para dashboard
+    const recentUsers = userMappers.mapDashboardRecentUsers(rawRecentUsers);
 
     return {
       success: true,
