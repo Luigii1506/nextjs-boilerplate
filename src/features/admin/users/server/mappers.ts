@@ -201,8 +201,8 @@ export const mapRecentUsers = (
   users: Array<{
     id: string;
     email: string;
-    name: string;
-    emailVerified: boolean;
+    name: string | null;
+    emailVerified: boolean | null;
     image: string | null;
     role: string | null;
     createdAt: Date;
@@ -215,9 +215,9 @@ export const mapRecentUsers = (
 ): User[] => {
   return users.map((user) => ({
     id: user.id,
-    name: user.name,
+    name: user.name || "Usuario Sin Nombre",
     email: user.email,
-    emailVerified: user.emailVerified,
+    emailVerified: user.emailVerified || false,
     role: (user.role as "user" | "admin" | "super_admin") || "user",
     status: user.banned ? "banned" : "active",
     image: user.image,
