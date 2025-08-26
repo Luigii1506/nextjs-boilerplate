@@ -21,6 +21,7 @@ export const FEATURE_FLAGS = {
   fileUpload: process.env.FEATURE_FILE_UPLOAD !== "false", // Default true
   payments: process.env.FEATURE_PAYMENTS === "true",
   inventory: process.env.FEATURE_INVENTORY === "true",
+  storefront: process.env.FEATURE_STOREFRONT === "true",
   pos: process.env.FEATURE_POS === "true",
   ecommerce: process.env.FEATURE_ECOMMERCE === "true",
   suppliers: process.env.FEATURE_SUPPLIERS === "true",
@@ -74,6 +75,7 @@ export const FEATURE_CATEGORIES = {
       "fileUpload",
       "payments",
       "inventory",
+      "storefront",
       "pos",
       "ecommerce",
       "suppliers",
@@ -145,15 +147,17 @@ export const getFeaturesByCategory = (
 
 // 🔗 FEATURE DEPENDENCIES SYSTEM
 export const FEATURE_DEPENDENCIES: FeatureDependencies = {
-  pos: ["inventory"],                           // POS requiere Inventory
-  ecommerce: ["inventory", "payments"],         // E-commerce requiere Inventory + Payments  
-  suppliers: ["inventory"],                     // Suppliers requiere Inventory
-  shippingIntegration: ["ecommerce"],          // Shipping requiere E-commerce
-  emailNotifications: ["ecommerce", "pos"],   // Emails requiere ventas
+  pos: ["inventory"], // POS requiere Inventory
+  ecommerce: ["inventory", "payments"], // E-commerce requiere Inventory + Payments
+  suppliers: ["inventory"], // Suppliers requiere Inventory
+  shippingIntegration: ["ecommerce"], // Shipping requiere E-commerce
+  emailNotifications: ["ecommerce", "pos"], // Emails requiere ventas
   paymentGateways: ["payments"],
 } as const;
 
-export type FeatureDependencies = { [key in FeatureFlag]?: readonly FeatureFlag[] };
+export type FeatureDependencies = {
+  [key in FeatureFlag]?: readonly FeatureFlag[];
+};
 
 // 🔍 Validation utilities
 export function validateFeatureDependencies(
@@ -161,7 +165,7 @@ export function validateFeatureDependencies(
   enabledFeatures: readonly string[]
 ): boolean {
   const dependencies = FEATURE_DEPENDENCIES[feature] || [];
-  return dependencies.every(dep => enabledFeatures.includes(dep));
+  return dependencies.every((dep) => enabledFeatures.includes(dep));
 }
 
 export function getFeatureDependencies(

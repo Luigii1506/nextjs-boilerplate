@@ -26,6 +26,7 @@
     "create-test-users": "npx tsx scripts/create-test-users.ts",
     "update-user-role": "npx tsx scripts/update-user-role.ts",
     "seed:inventory": "npx tsx src/features/inventory/scripts/seed-inventory.ts",
+    "seed:storefront": "npx tsx src/features/storefront/scripts/seed-storefront.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",

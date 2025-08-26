@@ -68,10 +68,21 @@ export interface AuthHookReturn extends AuthState, AuthActions {
 // 🔍 Session fetcher
 async function fetchSession(): Promise<SessionData | null> {
   try {
+    console.log("🔍 [useAuthQuery] Fetching session...");
     const session = await authClient.getSession();
-    return (session.data as SessionData) || null;
+    console.log("📋 [useAuthQuery] Raw session from authClient:", session);
+
+    const sessionData = (session.data as SessionData) || null;
+    console.log("✅ [useAuthQuery] Processed session data:", {
+      hasData: !!sessionData,
+      user: sessionData?.user,
+      userId: sessionData?.user?.id,
+      userEmail: sessionData?.user?.email,
+    });
+
+    return sessionData;
   } catch (error) {
-    console.error("Error fetching session:", error);
+    console.error("❌ [useAuthQuery] Error fetching session:", error);
     throw error;
   }
 }
@@ -116,10 +127,7 @@ export function useAuthQuery(
 
   const queryClient = useQueryClient();
   const router = useRouter();
-  const {
-    error: notifyError,
-    success: notifySuccess,
-  } = useNotifications();
+  const { error: notifyError, success: notifySuccess } = useNotifications();
 
   // 📊 SESSION QUERY
   const {

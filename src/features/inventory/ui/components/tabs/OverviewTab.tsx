@@ -6,11 +6,12 @@
  * Componente optimizado para React 19 con dark mode
  *
  * Created: 2025-01-17 - Inventory Overview Tab
+ * Fixed: 2025-01-17 - Eliminated initial animation flicker on first load
  */
 
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useRef, useEffect, useState } from "react";
 import {
   Package,
   TrendingUp,
@@ -25,6 +26,51 @@ import { cn } from "@/shared/utils";
 import { useInventoryContext } from "../../../context";
 import { ProductCard, StockIndicator } from "..";
 import { TabTransition } from "../shared/TabTransition";
+import type {
+  ProductWithRelations,
+  ProductWithComputedProps,
+  StockStatus,
+} from "../../../types";
+
+// 🧮 Utility function to compute product properties
+const computeProductProps = (
+  product: ProductWithRelations
+): ProductWithComputedProps => {
+  // Calculate stock status
+  const stockStatus: StockStatus =
+    product.stock === 0
+      ? "OUT_OF_STOCK"
+      : product.stock <= 2
+      ? "CRITICAL_STOCK"
+      : product.stock <= product.minStock
+      ? "LOW_STOCK"
+      : "IN_STOCK";
+
+  // Calculate stock percentage (vs max stock)
+  const stockPercentage = product.maxStock
+    ? (product.stock / product.maxStock) * 100
+    : 100;
+
+  return {
+    ...product,
+    stockStatus,
+    stockPercentage,
+    totalValue: product.cost * product.stock,
+    totalRetailValue: product.price * product.stock,
+    isLowStock: stockStatus === "LOW_STOCK",
+    isCriticalStock: stockStatus === "CRITICAL_STOCK",
+    isOutOfStock: stockStatus === "OUT_OF_STOCK",
+    lastMovement: product.stockMovements?.[0],
+    formattedPrice: new Intl.NumberFormat("es-MX", {
+      style: "currency",
+      currency: "MXN",
+    }).format(product.price),
+    formattedCost: new Intl.NumberFormat("es-MX", {
+      style: "currency",
+      currency: "MXN",
+    }).format(product.cost),
+  };
+};
 
 // 📊 Enhanced Stats Card with Animations
 interface StatsCardProps {
@@ -282,7 +328,7 @@ const RecentProductsSection: React.FC = () => {
                 }}
               >
                 <ProductCard
-                  product={product}
+                  product={computeProductProps(product)}
                   showActions={false}
                   className="h-full hover:scale-[1.02] transition-transform duration-200"
                 />
@@ -299,6 +345,21 @@ const RecentProductsSection: React.FC = () => {
 const OverviewTab: React.FC = React.memo(function OverviewTab() {
   const { inventory, setActiveTab } = useInventoryContext();
   const { stats, categories, suppliers } = inventory;
+
+  // 🚨 FIX: Prevent initial flicker by detecting first render
+  const isFirstRender = useRef(true);
+  const [allowAnimations, setAllowAnimations] = useState(false);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      // Small delay to prevent initial animation flicker
+      const timer = setTimeout(() => {
+        setAllowAnimations(true);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   // 🧮 Computed values with memoization
   const totalInventoryValue = useMemo(() => {
@@ -323,7 +384,12 @@ const OverviewTab: React.FC = React.memo(function OverviewTab() {
     <TabTransition isActive={true} transitionType="slideUp" delay={0}>
       <div className="space-y-6 p-6">
         {/* Quick Actions Bar */}
-        <div className="flex flex-wrap gap-3 animate-fadeInUp stagger-1">
+        <div
+          className={cn(
+            "flex flex-wrap gap-3",
+            allowAnimations && "animate-fadeInUp stagger-1"
+          )}
+        >
           <button
             onClick={() => setActiveTab("products")}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-all duration-200 hover:scale-[1.02]"
@@ -348,7 +414,12 @@ const OverviewTab: React.FC = React.memo(function OverviewTab() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-slideInUp stagger-2">
+        <div
+          className={cn(
+            "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6",
+            allowAnimations && "animate-slideInUp stagger-2"
+          )}
+        >
           <StatsCard
             title="Total Productos"
             value={stats?.totalProducts || 0}

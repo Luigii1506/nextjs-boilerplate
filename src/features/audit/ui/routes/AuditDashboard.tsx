@@ -81,7 +81,7 @@ export default function AuditDashboard({ onViewChange }: AuditDashboardProps) {
     handleViewEvent,
 
     // Utilities
-    getPageInfo,
+    // getPageInfo,
     getActiveFiltersDisplay,
     canExport,
   } = useAuditDashboard({
@@ -90,7 +90,7 @@ export default function AuditDashboard({ onViewChange }: AuditDashboardProps) {
     refreshInterval: 30000,
   });
 
-  const pageInfo = getPageInfo();
+  // const pageInfo = getPageInfo();
   const activeFiltersDisplay = getActiveFiltersDisplay();
 
   return (

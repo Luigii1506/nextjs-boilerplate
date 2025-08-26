@@ -21,7 +21,6 @@ import type {
   CreateProductInput,
   UpdateProductInput,
   ProductWithRelations,
-  CategoryWithRelations,
 } from "../types";
 import { useNotifications } from "@/shared/hooks/useNotifications";
 

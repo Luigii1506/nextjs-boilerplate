@@ -8,6 +8,7 @@
  *
  * Created: 2025-01-18 - Users SPA Implementation
  * Pattern: Strictly following InventoryContext architecture
+ * Fixed: 2025-01-17 - True SPA behavior - tabs no longer re-mount when switching
  */
 
 "use client";
@@ -164,44 +165,119 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ isHeaderVisible }) => {
           />
         </div>
       </div>
-
-      {/* SPA Performance Indicator (dev mode) */}
-      {process.env.NODE_ENV === "development" && (
-        <div className="absolute top-2 right-2 z-50 space-y-1">
-          <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full opacity-75 hover:opacity-100 transition-opacity">
-            SPA ⚡ {!isTabChanging ? "Instant" : "Transitioning"}
-          </div>
-          <div className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full opacity-75">
-            Users: {stats.total}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-// 🎯 Optimized Tab Content Renderer - True SPA Experience
+// 🎯 TRUE SPA Tab Content - Keep All Tabs Mounted (Users)
 const TabContent: React.FC = () => {
-  const { activeTab } = useUsersContext();
+  const { activeTab, isTabChanging } = useUsersContext();
 
-  switch (activeTab) {
-    case "overview":
-      return <OverviewTab />;
+  // 🚨 SPA FIX: Render ALL tabs but only show the active one
+  // This prevents unmounting/remounting which was causing the "refresh" behavior
+  return (
+    <div className="relative min-h-screen">
+      {/* Tab transition overlay */}
+      <div
+        className={cn(
+          "absolute inset-0 bg-white/50 dark:bg-gray-900/50 z-10 pointer-events-none transition-opacity duration-150",
+          isTabChanging ? "opacity-100" : "opacity-0"
+        )}
+      />
 
-    case "all-users":
-      return <AllUsersTab />;
+      {/* Overview Tab - Always mounted */}
+      <div
+        className={cn(
+          "transition-all duration-300 ease-out",
+          activeTab === "overview"
+            ? "opacity-100 visible relative z-0"
+            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
+        )}
+        style={{
+          transform:
+            activeTab === "overview" ? "translateY(0)" : "translateY(20px)",
+        }}
+      >
+        <OverviewTab />
+      </div>
 
-    case "admins":
-      return <AdminsTab />;
+      {/* All Users Tab - Always mounted */}
+      <div
+        className={cn(
+          "transition-all duration-300 ease-out",
+          activeTab === "all-users"
+            ? "opacity-100 visible relative z-0"
+            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
+        )}
+        style={{
+          transform:
+            activeTab === "all-users" ? "translateY(0)" : "translateY(20px)",
+        }}
+      >
+        <AllUsersTab />
+      </div>
 
-    case "analytics":
-      return <AnalyticsTab />;
+      {/* Admins Tab - Always mounted */}
+      <div
+        className={cn(
+          "transition-all duration-300 ease-out",
+          activeTab === "admins"
+            ? "opacity-100 visible relative z-0"
+            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
+        )}
+        style={{
+          transform:
+            activeTab === "admins" ? "translateY(0)" : "translateY(20px)",
+        }}
+      >
+        <AdminsTab />
+      </div>
 
-    case "audit":
-      return <AuditTab />;
+      {/* Analytics Tab - Always mounted */}
+      <div
+        className={cn(
+          "transition-all duration-300 ease-out",
+          activeTab === "analytics"
+            ? "opacity-100 visible relative z-0"
+            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
+        )}
+        style={{
+          transform:
+            activeTab === "analytics" ? "translateY(0)" : "translateY(20px)",
+        }}
+      >
+        <AnalyticsTab />
+      </div>
 
-    case "permissions":
-      return (
+      {/* Audit Tab - Always mounted */}
+      <div
+        className={cn(
+          "transition-all duration-300 ease-out",
+          activeTab === "audit"
+            ? "opacity-100 visible relative z-0"
+            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
+        )}
+        style={{
+          transform:
+            activeTab === "audit" ? "translateY(0)" : "translateY(20px)",
+        }}
+      >
+        <AuditTab />
+      </div>
+
+      {/* Permissions Tab - Placeholder (Always mounted) */}
+      <div
+        className={cn(
+          "transition-all duration-300 ease-out",
+          activeTab === "permissions"
+            ? "opacity-100 visible relative z-0"
+            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
+        )}
+        style={{
+          transform:
+            activeTab === "permissions" ? "translateY(0)" : "translateY(20px)",
+        }}
+      >
         <div className="p-8 text-center">
           <div className="max-w-md mx-auto">
             <Key className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
@@ -219,11 +295,9 @@ const TabContent: React.FC = () => {
             </div>
           </div>
         </div>
-      );
-
-    default:
-      return <OverviewTab />;
-  }
+      </div>
+    </div>
+  );
 };
 
 // 🎯 Main SPA Component (without Provider)

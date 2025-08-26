@@ -242,7 +242,7 @@ const AdminsTab: React.FC = () => {
   const { users, openViewModal, openEditModal, openDeleteConfirm } =
     useUsersContext();
 
-  const { users: usersList, isLoading, stats } = users;
+  const { users: usersList, isLoading } = users;
   const [searchTerm, setSearchTerm] = useState("");
 
   // 🛡️ Filter only administrative users

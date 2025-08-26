@@ -26,7 +26,12 @@ model User {
   // 🧩 FUTURE: Modular relations (uncomment when modules are active)
   uploads       Upload[]        // MODULE: file-upload
   stockMovements StockMovement[] // MODULE: inventory
-  // orders       Order[]        // MODULE: ecommerce  
+  
+  // 🛒 STOREFRONT: E-commerce relations
+  cart          Cart?           @relation("UserCart")       // MODULE: storefront
+  wishlistItems WishlistItem[]  @relation("UserWishlist")   // MODULE: storefront
+  orders        Order[]         @relation("UserOrders")     // MODULE: storefront
+  reviews       ProductReview[] @relation("UserReviews")    // MODULE: storefront
   // payments     Payment[]      // MODULE: stripe-payments
 
   @@map("user")

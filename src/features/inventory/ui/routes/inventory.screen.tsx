@@ -7,6 +7,7 @@
  *
  * Created: 2025-01-17 - Inventory SPA Implementation
  * Updated: 2025-01-17 - Enhanced smooth transitions
+ * Fixed: 2025-01-17 - True SPA behavior - tabs no longer re-mount when switching
  */
 
 "use client";
@@ -257,54 +258,103 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
           }}
         />
       )}
-
-      {/* SPA Performance Indicator (dev mode) */}
-      {process.env.NODE_ENV === "development" && (
-        <div className="absolute top-2 right-2 z-50 space-y-1">
-          <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full opacity-75 hover:opacity-100 transition-opacity">
-            SPA ⚡ {!isTabChanging ? "Instant" : "Transitioning"}
-          </div>
-          <div
-            className={cn(
-              "text-white text-xs px-2 py-1 rounded-full opacity-75",
-              isHeaderVisible ? "bg-green-500" : "bg-red-500"
-            )}
-          >
-            Header: {isHeaderVisible ? "VISIBLE" : "HIDDEN"}
-          </div>
-          <div className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full opacity-75">
-            Y: {scrollY}px
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-// 🎯 Optimized Tab Content Renderer - True SPA Experience
+// 🎯 TRUE SPA Tab Content - Keep All Tabs Mounted
 const TabContent: React.FC = () => {
-  const { activeTab } = useInventoryContext();
+  const { activeTab, isTabChanging } = useInventoryContext();
 
-  // Note: No loading skeleton between tabs - data is already loaded!
-  // Only show actual data loading when initially fetching from server
+  // 🚨 SPA FIX: Render ALL tabs but only show the active one
+  // This prevents unmounting/remounting which was causing the "refresh" behavior
+  return (
+    <div className="relative min-h-screen">
+      {/* Tab transition overlay */}
+      <div
+        className={cn(
+          "absolute inset-0 bg-white/50 dark:bg-gray-900/50 z-10 pointer-events-none transition-opacity duration-150",
+          isTabChanging ? "opacity-100" : "opacity-0"
+        )}
+      />
 
-  // Render active tab content instantly
-  switch (activeTab) {
-    case "overview":
-      return <OverviewTab />;
+      {/* Overview Tab - Always mounted */}
+      <div
+        className={cn(
+          "transition-all duration-300 ease-out",
+          activeTab === "overview"
+            ? "opacity-100 visible relative z-0"
+            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
+        )}
+        style={{
+          transform:
+            activeTab === "overview" ? "translateY(0)" : "translateY(20px)",
+        }}
+      >
+        <OverviewTab />
+      </div>
 
-    case "products":
-      return <ProductsTab />;
+      {/* Products Tab - Always mounted */}
+      <div
+        className={cn(
+          "transition-all duration-300 ease-out",
+          activeTab === "products"
+            ? "opacity-100 visible relative z-0"
+            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
+        )}
+        style={{
+          transform:
+            activeTab === "products" ? "translateY(0)" : "translateY(20px)",
+        }}
+      >
+        <ProductsTab />
+      </div>
 
-    case "categories":
-      return <CategoriesTab />;
+      {/* Categories Tab - Always mounted */}
+      <div
+        className={cn(
+          "transition-all duration-300 ease-out",
+          activeTab === "categories"
+            ? "opacity-100 visible relative z-0"
+            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
+        )}
+        style={{
+          transform:
+            activeTab === "categories" ? "translateY(0)" : "translateY(20px)",
+        }}
+      >
+        <CategoriesTab />
+      </div>
 
-    case "suppliers":
-      return <SuppliersTab />;
+      {/* Suppliers Tab - Always mounted */}
+      <div
+        className={cn(
+          "transition-all duration-300 ease-out",
+          activeTab === "suppliers"
+            ? "opacity-100 visible relative z-0"
+            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
+        )}
+        style={{
+          transform:
+            activeTab === "suppliers" ? "translateY(0)" : "translateY(20px)",
+        }}
+      >
+        <SuppliersTab />
+      </div>
 
-    case "movements":
-      // TODO: Implement MovementsTab
-      return (
+      {/* Movements Tab - Placeholder (Always mounted) */}
+      <div
+        className={cn(
+          "transition-all duration-300 ease-out",
+          activeTab === "movements"
+            ? "opacity-100 visible relative z-0"
+            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
+        )}
+        style={{
+          transform:
+            activeTab === "movements" ? "translateY(0)" : "translateY(20px)",
+        }}
+      >
         <div className="p-6 text-center animate-fadeInUp">
           <Archive className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4 animate-scaleIn" />
           <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2 animate-slideInUp stagger-1">
@@ -314,11 +364,21 @@ const TabContent: React.FC = () => {
             Próximamente: Historial completo de movimientos de inventario
           </p>
         </div>
-      );
+      </div>
 
-    case "reports":
-      // TODO: Implement ReportsTab
-      return (
+      {/* Reports Tab - Placeholder (Always mounted) */}
+      <div
+        className={cn(
+          "transition-all duration-300 ease-out",
+          activeTab === "reports"
+            ? "opacity-100 visible relative z-0"
+            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
+        )}
+        style={{
+          transform:
+            activeTab === "reports" ? "translateY(0)" : "translateY(20px)",
+        }}
+      >
         <div className="p-6 text-center animate-fadeInUp">
           <FileText className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4 animate-scaleIn" />
           <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2 animate-slideInUp stagger-1">
@@ -328,23 +388,15 @@ const TabContent: React.FC = () => {
             Próximamente: Reportes detallados y análisis de datos
           </p>
         </div>
-      );
-
-    default:
-      return <OverviewTab />;
-  }
+      </div>
+    </div>
+  );
 };
 
 // 🎯 Main SPA Component (without Provider)
 const InventorySPAContent: React.FC = () => {
   // ✨ Clean Scroll Detection Hook
-  const {
-    scrollY,
-    isHeaderVisible,
-    isPastThreshold,
-    isNativeScrollWorking,
-    isWheelSimulationActive,
-  } = useScrollHeader({
+  const { scrollY, isHeaderVisible, isPastThreshold } = useScrollHeader({
     threshold: 17,
     wheelSensitivity: 0.5,
     useWheelFallback: true,

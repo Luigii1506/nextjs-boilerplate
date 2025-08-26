@@ -31,9 +31,23 @@ model Product {
   supplier      Supplier?       @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   stockMovements StockMovement[] 
 
-  // 🧩 FUTURE: E-commerce relations (uncomment when modules are active)  
-  // cartItems     CartItem[]     // MODULE: ecommerce
-  // orderItems    OrderItem[]    // MODULE: ecommerce  
+  // 🧩 STOREFRONT RELATIONS (active when FEATURE_STOREFRONT=true)  
+  cartItems     CartItem[]     // MODULE: storefront
+  orderItems    OrderItem[]    // MODULE: storefront
+  wishlistItems WishlistItem[] // MODULE: storefront  
+  reviews       ProductReview[] // MODULE: storefront
+  
+  // 🛍️ STOREFRONT PUBLIC FIELDS
+  isPublic        Boolean  @default(false)  // Visible in storefront
+  publicPrice     Decimal? @db.Decimal(10, 2) // Public price (can be different from admin price)
+  publicDescription String?                   // Customer-facing description
+  publicImages    String[] @default([])       // Customer-facing images
+  seoTitle        String?                     // SEO optimized title
+  seoDescription  String?                     // SEO meta description
+  seoKeywords     String[] @default([])       // SEO keywords
+  featured        Boolean  @default(false)   // Featured product
+  
+  // 🧩 FUTURE: Other e-commerce relations
   // saleItems     SaleItem[]     // MODULE: pos
 
   @@index([categoryId])
@@ -41,6 +55,9 @@ model Product {
   @@index([sku])
   @@index([isActive])
   @@index([stock])
+  @@index([isPublic])
+  @@index([featured])
+  @@index([publicPrice])
   @@map("products")
 }
 
@@ -53,6 +70,15 @@ model Category {
   icon        String?                      // Icono (lucide name o URL)
   isActive    Boolean  @default(true)
   sortOrder   Int      @default(0)        // Para ordenamiento custom
+  
+  // 🛍️ STOREFRONT PUBLIC FIELDS
+  isPublic         Boolean  @default(false)  // Visible in storefront
+  publicDescription String?                   // Customer-facing description
+  publicImage      String?                    // Customer-facing banner image
+  seoTitle         String?                    // SEO optimized title
+  seoDescription   String?                    // SEO meta description
+  seoKeywords      String[] @default([])      // SEO keywords
+  featured         Boolean  @default(false)  // Featured category
 
   // 📅 Timestamps
   createdAt DateTime @default(now())
@@ -66,6 +92,8 @@ model Category {
   @@index([parentId])
   @@index([isActive])
   @@index([sortOrder])
+  @@index([isPublic])
+  @@index([featured])
   @@map("categories")
 }
 

@@ -29,14 +29,12 @@ import {
   updateSupplierQuery,
   deleteSupplierQuery,
   getSuppliersQuery,
-  getSupplierByIdQuery,
   getSupplierWithProductsQuery,
   validateSupplierExists,
   addStockMovementQuery,
   getInventoryStatsQuery,
   getLowStockAlertsQuery,
   type ProductListItem,
-  type ProductDetailItem,
 } from "./queries";
 import {
   mapProductToExternal,
