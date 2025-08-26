@@ -185,8 +185,7 @@ export default function AdminLayout({
   const { unreadCount, shouldShowBadge } = useNotificationsBadge();
 
   // 📱 Swipe gestures for mobile UX
-  const { handlers: swipeHandlers, state: swipeState } = useSwipeGestures(
-    // eslint-disable-line @typescript-eslint/no-unused-vars -- Available for future gesture state needs
+  const { handlers: swipeHandlers } = useSwipeGestures(
     {
       onSwipeRight: () => {
         if (!sidebarOpen) setSidebarOpen(true);
@@ -298,7 +297,7 @@ export default function AdminLayout({
       {/* 📄 Main Content Area */}
       <div
         className={cn(
-          "flex-1 flex flex-col",
+          "flex-1 flex flex-col min-h-0",
           RESPONSIVE_CONFIG.mainContent.desktop,
           RESPONSIVE_CONFIG.mainContent.mobile
         )}
@@ -318,14 +317,14 @@ export default function AdminLayout({
         {/* 📄 Main Content */}
         <main
           id="main-content"
-          className="flex-1 overflow-auto"
+          className="flex-1 overflow-auto min-h-0"
           role="main"
           aria-label="Contenido principal"
           tabIndex={-1}
         >
           <div
             className={cn(
-              "h-full",
+              "h-full min-h-0",
               compact
                 ? "p-4"
                 : ENTERPRISE_SHELL_CONFIG.layout.contentPadding.desktop
