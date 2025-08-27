@@ -16,11 +16,9 @@ import {
   Grid3X3,
   TrendingUp,
   Star,
-  Heart,
   ShoppingCart,
   Sparkles,
   ArrowRight,
-  Filter,
   Search,
 } from "lucide-react";
 import { AnimatedHeartButton } from "../shared/AnimatedHeartButton";
@@ -161,7 +159,9 @@ const CustomerProductCard: React.FC<CustomerProductCardProps> = ({
         {/* Category & Rating */}
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-            {product.category?.name}
+            {(typeof product.category === "object" && product.category?.name) ||
+              product.category ||
+              "Sin categoría"}
           </span>
           <div className="flex items-center space-x-1">
             <Star className="w-3 h-3 text-yellow-400 fill-current" />
@@ -287,13 +287,12 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
   );
 };
 
-// 🎯 MAIN OVERVIEW TAB COMPONENT
+// 🎯 MAIN OVERVIEW TAB COMPONENT - Same pattern as ProductsTab.tsx
 const OverviewTab: React.FC = () => {
   const {
     featuredProducts,
     popularCategories,
     stats,
-    isLoading,
     isError,
     error,
     addToCartOptimistic,
@@ -302,21 +301,28 @@ const OverviewTab: React.FC = () => {
     setActiveTab,
   } = useStorefrontContext();
 
-  // 🎯 Anti-flicker pattern (exactly like inventory module)
-  const isFirstRender = useRef(true);
+  // 🎯 Component State - EXACT same pattern as ProductsTab.tsx
+  const [isFirstRender, setIsFirstRender] = useState(true);
   const [allowAnimations, setAllowAnimations] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // 🎨 Anti-flicker Animation Setup - EXACT same as ProductsTab.tsx
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      const timer = setTimeout(() => {
+    if (isFirstRender) {
+      timeoutRef.current = setTimeout(() => {
         setAllowAnimations(true);
+        setIsFirstRender(false);
       }, 100);
-      return () => clearTimeout(timer);
     }
-  }, []);
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [isFirstRender]);
 
-  if (isLoading) {
+  // Loading State with elegant skeleton - SAME as ProductsTab.tsx
+  if (isFirstRender) {
     return <OverviewPageSkeleton />;
   }
 
@@ -595,7 +601,7 @@ const OverviewTab: React.FC = () => {
             {/* Section Header */}
             <div className="text-center space-y-4">
               <div className="flex items-center justify-center space-x-2">
-                <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                <div className="w-8 h-nop8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
@@ -669,7 +675,7 @@ const OverviewTab: React.FC = () => {
                 <CategoryCard
                   key={category.id}
                   category={category}
-                  onClick={(category) => {
+                  onClick={() => {
                     // TODO: Set category filter and switch to products tab
                     setActiveTab("products");
                   }}

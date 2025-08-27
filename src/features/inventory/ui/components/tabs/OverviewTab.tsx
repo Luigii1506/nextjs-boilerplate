@@ -84,7 +84,7 @@ interface StatsCardProps {
   onClick?: () => void;
 }
 
-const StatsCard: React.FC<StatsCardProps> = ({
+const StatsCard: React.FC<StatsCardProps> = React.memo(function StatsCard({
   title,
   value,
   change,
@@ -93,7 +93,7 @@ const StatsCard: React.FC<StatsCardProps> = ({
   description,
   color = "blue",
   onClick,
-}) => {
+}) {
   const colorClasses = {
     blue: "from-blue-500 to-blue-600",
     green: "from-green-500 to-green-600",
@@ -177,10 +177,10 @@ const StatsCard: React.FC<StatsCardProps> = ({
       </div>
     </div>
   );
-};
+});
 
-// 🚨 Enhanced Alert Card
-const AlertsCard: React.FC = () => {
+// 🚨 Enhanced Alert Card - Memoized for SPA Performance
+const AlertsCard: React.FC = React.memo(function AlertsCard() {
   const { inventory, setActiveTab } = useInventoryContext();
   const { alerts } = inventory;
 
@@ -270,96 +270,105 @@ const AlertsCard: React.FC = () => {
       </div>
     </div>
   );
-};
+});
 
-// 📦 Recent Products Section
-const RecentProductsSection: React.FC = () => {
-  const { inventory, setActiveTab } = useInventoryContext();
-  const { products, isLoading } = inventory;
+// 📦 Recent Products Section - Memoized for SPA Performance
+const RecentProductsSection: React.FC = React.memo(
+  function RecentProductsSection() {
+    const { inventory, setActiveTab } = useInventoryContext();
+    const { products, isLoading } = inventory;
 
-  const recentProducts = useMemo(
-    () =>
-      products
-        .slice(0, 6)
-        .sort(
-          (a, b) =>
-            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-        ),
-    [products]
-  );
+    const recentProducts = useMemo(
+      () =>
+        products
+          .slice(0, 6)
+          .sort(
+            (a, b) =>
+              new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+          ),
+      [products]
+    );
 
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              📦 Productos Recientes
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Últimos productos actualizados
-            </p>
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                📦 Productos Recientes
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Últimos productos actualizados
+              </p>
+            </div>
+            <button
+              onClick={() => setActiveTab("products")}
+              className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center space-x-1 transition-colors"
+            >
+              <Package className="w-3 h-3" />
+              <span>Gestionar productos</span>
+            </button>
           </div>
-          <button
-            onClick={() => setActiveTab("products")}
-            className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center space-x-1 transition-colors"
-          >
-            <Package className="w-3 h-3" />
-            <span>Gestionar productos</span>
-          </button>
-        </div>
 
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...Array(6)].map((_, i) => (
-              <div
-                key={i}
-                className="bg-gray-200 dark:bg-gray-700 rounded-xl h-48 animate-pulse"
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {recentProducts.map((product, index) => (
-              <div
-                key={product.id}
-                style={{
-                  animationDelay: `${index * 0.1}s`,
-                }}
-              >
-                <ProductCard
-                  product={computeProductProps(product)}
-                  showActions={false}
-                  className="h-full hover:scale-[1.02] transition-transform duration-200"
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(6)].map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-gray-200 dark:bg-gray-700 rounded-xl h-48 animate-pulse"
                 />
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {recentProducts.map((product, index) => (
+                <div
+                  key={product.id}
+                  style={{
+                    animationDelay: `${index * 0.1}s`,
+                  }}
+                >
+                  <ProductCard
+                    product={computeProductProps(product)}
+                    showActions={false}
+                    className="h-full hover:scale-[1.02] transition-transform duration-200"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  }
+);
 
 // 🎯 OPTIMIZED OVERVIEW TAB - Memoized for SPA Performance
 const OverviewTab: React.FC = React.memo(function OverviewTab() {
   const { inventory, setActiveTab } = useInventoryContext();
   const { stats, categories, suppliers } = inventory;
 
-  // 🚨 FIX: Prevent initial flicker by detecting first render
-  const isFirstRender = useRef(true);
+  // 🚨 FIX: SPA-compatible animation system - no flicker on wishlist updates
+  const hasInitialized = useRef(false);
   const [allowAnimations, setAllowAnimations] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
+    // ✅ Only run animation setup once during true component mount
+    if (!hasInitialized.current) {
+      hasInitialized.current = true;
       // Small delay to prevent initial animation flicker
-      const timer = setTimeout(() => {
+      timeoutRef.current = setTimeout(() => {
         setAllowAnimations(true);
       }, 100);
-      return () => clearTimeout(timer);
     }
-  }, []);
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []); // ✅ IMPORTANT: Empty dependency array - run only once
 
   // 🧮 Computed values with memoization
   const totalInventoryValue = useMemo(() => {

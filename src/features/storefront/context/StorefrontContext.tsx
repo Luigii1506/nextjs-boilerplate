@@ -47,6 +47,7 @@ import type {
   CustomerLoginInput,
   ActionResult,
 } from "../types";
+import { QuickViewModal } from "../ui/components/shared/QuickViewModal";
 
 // 🎯 TABS DISPONIBLES PARA STOREFRONT (OBLIGATORIO)
 export const STOREFRONT_TABS = [
@@ -980,6 +981,11 @@ export const StorefrontProvider: React.FC<StorefrontProviderProps> = ({
     setIsLoginModalOpen(true);
   }, []);
 
+  // 🎯 Loading States (for JSX usage)
+  const isAddingToWishlistLocal =
+    syncAddToWishlistMutation.isPending ||
+    syncRemoveFromWishlistMutation.isPending;
+
   // 🎯 Context Value
   const value: StorefrontContextType = {
     // Tab Management
@@ -1033,9 +1039,7 @@ export const StorefrontProvider: React.FC<StorefrontProviderProps> = ({
     // Loading States - TRUE SPA (no constant loading)
     isAddingToCart,
     isUpdatingCart,
-    isAddingToWishlist:
-      syncAddToWishlistMutation.isPending ||
-      syncRemoveFromWishlistMutation.isPending,
+    isAddingToWishlist: isAddingToWishlistLocal,
 
     // Global Loading States - Only initial load
     isLoading,
@@ -1101,6 +1105,17 @@ export const StorefrontProvider: React.FC<StorefrontProviderProps> = ({
   return (
     <StorefrontContext.Provider value={value}>
       {children}
+
+      {/* Quick View Modal */}
+      <QuickViewModal
+        product={viewingProduct}
+        isOpen={isProductQuickViewOpen}
+        onClose={closeProductQuickView}
+        onAddToCart={addToCartOptimistic}
+        onAddToWishlist={toggleWishlist}
+        isAddingToWishlist={isAddingToWishlistLocal}
+        isAddingToCart={false}
+      />
     </StorefrontContext.Provider>
   );
 };

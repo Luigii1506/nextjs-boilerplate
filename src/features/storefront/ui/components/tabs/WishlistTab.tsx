@@ -29,16 +29,10 @@ import {
   Grid,
   List,
   ChevronDown,
-  Star,
   Heart,
   Package,
-  ArrowRight,
-  ShoppingCart,
-  Trash2,
-  Eye,
   ChevronLeft,
   ChevronRight,
-  Calendar,
   DollarSign,
   Sparkles,
   HeartOff,
@@ -47,6 +41,7 @@ import {
 // Import Context and Types
 import { useStorefrontContext } from "../../..";
 import { ProductForCustomer } from "../../../types";
+import { ProfessionalProductCard } from "../shared/ProfessionalProductCard";
 
 // Define interface for wishlist filters
 interface WishlistFilters {
@@ -88,6 +83,7 @@ const WishlistTab: React.FC = () => {
     wishlist,
     // ✅ REMOVED: customer, products, featuredProducts (no longer needed)
     openLoginModal,
+    openProductQuickView,
   } = useStorefrontContext();
 
   // 🔍 DEBUG: Log wishlist data
@@ -224,11 +220,8 @@ const WishlistTab: React.FC = () => {
         return wishlistProduct;
       })
       .filter(
-        (
-          product
-        ): product is ProductForCustomer & { dateAddedToWishlist: Date } =>
-          product !== null
-      ); // Remove null entries with type guard
+        (product) => product !== null && product.isWishlisted === true
+      ) as (ProductForCustomer & { dateAddedToWishlist: Date })[];
 
     console.log("📋 [WISHLIST PRODUCTS] Final result:", {
       inputWishlistItems: wishlist?.length || 0,
@@ -236,9 +229,9 @@ const WishlistTab: React.FC = () => {
       outputProducts: result.length,
       successRate: `${result.length}/${realWishlistItems.length}`,
       productsFound: result.map((p) => ({
-        id: p?.id,
-        name: p?.name?.slice(0, 30),
-        isWishlisted: p?.isWishlisted,
+        id: p.id,
+        name: p.name.slice(0, 30),
+        isWishlisted: p.isWishlisted,
       })),
       missingProducts: realWishlistItems.length - result.length,
     });
@@ -252,7 +245,7 @@ const WishlistTab: React.FC = () => {
       inputWishlistProducts: wishlistProducts.length,
       inputProductIds: wishlistProducts.map((p) => ({
         id: p.id,
-        name: p.name?.slice(0, 30),
+        name: p.name.slice(0, 30),
       })),
       localSearchTerm,
       filters,
@@ -266,11 +259,12 @@ const WishlistTab: React.FC = () => {
       const searchLower = localSearchTerm.toLowerCase();
       results = results.filter(
         (product) =>
-          product &&
-          (product.name?.toLowerCase().includes(searchLower) ||
-            product.description?.toLowerCase().includes(searchLower) ||
-            product.category?.toLowerCase().includes(searchLower) ||
-            product.brand?.toLowerCase().includes(searchLower))
+          product.name.toLowerCase().includes(searchLower) ||
+          (product.description &&
+            product.description.toLowerCase().includes(searchLower)) ||
+          (product.category &&
+            product.category.toLowerCase().includes(searchLower)) ||
+          (product.brand && product.brand.toLowerCase().includes(searchLower))
       );
       console.log("🔍 [PROCESSED PRODUCTS] After search filter:", {
         searchTerm: localSearchTerm,
@@ -299,8 +293,8 @@ const WishlistTab: React.FC = () => {
     const beforePrice = results.length;
     results = results.filter(
       (product) =>
-        product.currentPrice >= filters.priceRange[0] &&
-        product.currentPrice <= filters.priceRange[1]
+        (product.currentPrice || 0) >= filters.priceRange[0] &&
+        (product.currentPrice || 0) <= filters.priceRange[1]
     );
     console.log("💰 [PROCESSED PRODUCTS] After price filter:", {
       priceRange: filters.priceRange,
@@ -309,10 +303,13 @@ const WishlistTab: React.FC = () => {
       rejectedPrices: wishlistProducts
         .filter(
           (p) =>
-            p.currentPrice < filters.priceRange[0] ||
-            p.currentPrice > filters.priceRange[1]
+            (p.currentPrice || 0) < filters.priceRange[0] ||
+            (p.currentPrice || 0) > filters.priceRange[1]
         )
-        .map((p) => ({ name: p.name?.slice(0, 30), price: p.currentPrice })),
+        .map((p) => ({
+          name: p.name.slice(0, 30),
+          price: p.currentPrice || 0,
+        })),
     });
 
     // Apply sale filter
@@ -343,10 +340,10 @@ const WishlistTab: React.FC = () => {
         results.sort((a, b) => a.name.localeCompare(b.name));
         break;
       case "price_asc":
-        results.sort((a, b) => a.currentPrice - b.currentPrice);
+        results.sort((a, b) => (a.currentPrice || 0) - (b.currentPrice || 0));
         break;
       case "price_desc":
-        results.sort((a, b) => b.currentPrice - a.currentPrice);
+        results.sort((a, b) => (b.currentPrice || 0) - (a.currentPrice || 0));
         break;
       case "rating":
         results.sort((a, b) => (b.rating || 0) - (a.rating || 0));
@@ -354,8 +351,8 @@ const WishlistTab: React.FC = () => {
       default: // date_added
         results.sort(
           (a, b) =>
-            new Date(b.dateAddedToWishlist || "").getTime() -
-            new Date(a.dateAddedToWishlist || "").getTime()
+            new Date(b.dateAddedToWishlist).getTime() -
+            new Date(a.dateAddedToWishlist).getTime()
         );
         break;
     }
@@ -365,8 +362,8 @@ const WishlistTab: React.FC = () => {
       outputCount: results.length,
       finalProducts: results.map((p) => ({
         id: p.id,
-        name: p.name?.slice(0, 30),
-        price: p.currentPrice,
+        name: p.name.slice(0, 30),
+        price: p.currentPrice || 0,
         isWishlisted: p.isWishlisted,
       })),
       allFiltersApplied: {
@@ -579,12 +576,12 @@ const WishlistTab: React.FC = () => {
         allowAnimations={allowAnimations}
       />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-6">
         {/* Wishlist Stats */}
         <WishlistStats
           totalItems={processedProducts.length}
           totalValue={processedProducts.reduce(
-            (sum, p) => sum + p.currentPrice,
+            (sum, p) => sum + (p.currentPrice || 0),
             0
           )}
           onSaleItems={processedProducts.filter((p) => p.isOnSale).length}
@@ -595,7 +592,11 @@ const WishlistTab: React.FC = () => {
           {/* Filters Sidebar */}
           <WishlistFilters
             filters={filters}
-            categories={categories || []}
+            categories={(categories || []).map((cat) => ({
+              id: cat.id,
+              name: cat.name,
+              slug: cat.slug || cat.name.toLowerCase().replace(/\s+/g, "-"),
+            }))}
             onCategoryFilter={handleCategoryFilter}
             onPriceRangeFilter={handlePriceRangeFilter}
             onSpecialFilterChange={handleSpecialFilterChange}
@@ -665,6 +666,7 @@ const WishlistTab: React.FC = () => {
               onRemoveFromWishlist={handleRemoveFromWishlist}
               onAddToCart={handleAddToCart}
               onMoveToCart={handleMoveToCart}
+              onQuickView={openProductQuickView}
               allowAnimations={allowAnimations}
             />
 
@@ -780,7 +782,7 @@ const WishlistHeader: React.FC<WishlistHeaderProps> = ({
 }) => {
   return (
     <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-6">
         <div
           className={cn(
             "space-y-4",
@@ -1181,7 +1183,7 @@ const WishlistFilters: React.FC<WishlistFiltersProps> = ({
   );
 };
 
-// 🛍️ Wishlist Grid Component
+// 🛍️ Wishlist Grid Component - Using Professional Product Cards
 interface WishlistGridProps {
   products: ProductForCustomer[];
   viewMode: "grid" | "list";
@@ -1190,6 +1192,7 @@ interface WishlistGridProps {
   onRemoveFromWishlist: (product: ProductForCustomer) => void;
   onAddToCart: (product: ProductForCustomer) => void;
   onMoveToCart: (product: ProductForCustomer) => void;
+  onQuickView: (product: ProductForCustomer) => void;
   allowAnimations: boolean;
 }
 
@@ -1201,8 +1204,24 @@ const WishlistGrid: React.FC<WishlistGridProps> = ({
   onRemoveFromWishlist,
   onAddToCart,
   onMoveToCart,
+  onQuickView,
   allowAnimations,
 }) => {
+  // Use unused parameters to avoid lint warnings
+  void selectedItems;
+  void onSelectItem;
+  void onMoveToCart;
+
+  // 💖 Wishlist Actions - Convert to ProductsTab format
+  const onAddToWishlist = useCallback(
+    async (product: ProductForCustomer) => {
+      // Remove from wishlist when clicked in wishlist
+      await onRemoveFromWishlist(product);
+      return { success: true, message: "Producto eliminado de favoritos" };
+    },
+    [onRemoveFromWishlist]
+  );
+
   if (products.length === 0) {
     return (
       <div
@@ -1227,361 +1246,42 @@ const WishlistGrid: React.FC<WishlistGridProps> = ({
   return (
     <div id="wishlist-grid">
       {viewMode === "grid" ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {products.map((product, index) => (
-            <WishlistProductCard
+            <ProfessionalProductCard
               key={product.id}
               product={product}
-              isSelected={selectedItems.has(product.id)}
-              onSelect={() => onSelectItem(product.id)}
-              onRemoveFromWishlist={() => onRemoveFromWishlist(product)}
-              onAddToCart={() => onAddToCart(product)}
-              onMoveToCart={() => onMoveToCart(product)}
+              onAddToCart={onAddToCart}
+              onAddToWishlist={onAddToWishlist} // Pass the adapted handler
+              onQuickView={onQuickView}
+              isAddingToWishlist={false} // Assuming no separate loading state for wishlist removal
+              variant="grid"
               className={cn(
-                allowAnimations && `customer-stagger-${(index % 4) + 1}`
+                allowAnimations && `customer-stagger-${(index % 4) + 1}`,
+                "transform-gpu will-change-transform"
               )}
             />
           ))}
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {products.map((product, index) => (
-            <WishlistProductCardList
+            <ProfessionalProductCard
               key={product.id}
               product={product}
-              isSelected={selectedItems.has(product.id)}
-              onSelect={() => onSelectItem(product.id)}
-              onRemoveFromWishlist={() => onRemoveFromWishlist(product)}
-              onAddToCart={() => onAddToCart(product)}
-              onMoveToCart={() => onMoveToCart(product)}
+              onAddToCart={onAddToCart}
+              onAddToWishlist={onAddToWishlist} // Pass the adapted handler
+              onQuickView={onQuickView}
+              isAddingToWishlist={false}
+              variant="list"
               className={cn(
-                allowAnimations && `customer-stagger-${(index % 3) + 1}`
+                allowAnimations && `customer-stagger-${(index % 3) + 1}`,
+                "transform-gpu will-change-transform"
               )}
             />
           ))}
         </div>
       )}
-    </div>
-  );
-};
-
-// 💝 Wishlist Product Card (Grid Version)
-interface WishlistProductCardProps {
-  product: ProductForCustomer;
-  isSelected: boolean;
-  onSelect: () => void;
-  onRemoveFromWishlist: () => void;
-  onAddToCart: () => void;
-  onMoveToCart: () => void;
-  className?: string;
-}
-
-const WishlistProductCard: React.FC<WishlistProductCardProps> = ({
-  product,
-  isSelected,
-  onSelect,
-  onRemoveFromWishlist,
-  onAddToCart,
-  onMoveToCart,
-  className,
-}) => {
-  const formattedDate = product.dateAddedToWishlist
-    ? new Date(product.dateAddedToWishlist).toLocaleDateString("es-ES", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      })
-    : "";
-
-  return (
-    <div
-      className={cn(
-        "group bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 dark:border-gray-700",
-        "hover:border-gray-200 dark:hover:border-gray-600 hover:scale-105",
-        isSelected && "ring-2 ring-pink-500 border-pink-300",
-        className
-      )}
-    >
-      {/* Selection Checkbox */}
-      <div className="absolute top-3 left-3 z-10">
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={onSelect}
-          className="w-5 h-5 rounded border-gray-300 text-pink-600 focus:ring-pink-500 bg-white dark:bg-gray-800 shadow-lg"
-        />
-      </div>
-
-      {/* Product Image */}
-      <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600">
-        {/* Sale Badge */}
-        {product.isOnSale && (
-          <div className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
-            -{product.discountPercentage}%
-          </div>
-        )}
-
-        {/* Wishlist Date */}
-        {formattedDate && (
-          <div className="absolute bottom-3 left-3 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded z-10">
-            <Calendar className="w-3 h-3 inline mr-1" />
-            {formattedDate}
-          </div>
-        )}
-
-        {/* Product Image Placeholder */}
-        <div className="w-full h-full flex items-center justify-center">
-          <div className="w-20 h-20 bg-gradient-to-br from-pink-400 to-red-400 rounded-2xl flex items-center justify-center">
-            <Package className="w-10 h-10 text-white" />
-          </div>
-        </div>
-
-        {/* Hover Overlay with Actions */}
-        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
-          <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-200">
-            <button
-              onClick={onMoveToCart}
-              className="bg-pink-600 hover:bg-pink-700 text-white p-2 rounded-lg shadow-lg transition-colors"
-              title="Mover al carrito"
-            >
-              <ArrowRight className="w-4 h-4" />
-            </button>
-            <button
-              className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 p-2 rounded-lg shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              title="Vista rápida"
-            >
-              <Eye className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Product Info */}
-      <div className="p-4">
-        {/* Brand/Category */}
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
-          {product.brand} • {product.category}
-        </p>
-
-        {/* Product Name */}
-        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2 line-clamp-2 group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
-          {product.name}
-        </h3>
-
-        {/* Rating */}
-        <div className="flex items-center space-x-2 mb-3">
-          <div className="flex items-center">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Star
-                key={i}
-                className={cn(
-                  "w-4 h-4",
-                  i < Math.floor(product.rating)
-                    ? "text-yellow-400 fill-current"
-                    : "text-gray-300 dark:text-gray-600"
-                )}
-              />
-            ))}
-          </div>
-          <span className="text-sm text-gray-600 dark:text-gray-400">
-            {product.rating} ({product.reviewCount})
-          </span>
-        </div>
-
-        {/* Price */}
-        <div className="flex items-center space-x-2 mb-4">
-          <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
-            ${product.currentPrice.toLocaleString()}
-          </span>
-          {product.isOnSale && product.originalPrice && (
-            <span className="text-sm text-gray-500 dark:text-gray-400 line-through">
-              ${product.originalPrice.toLocaleString()}
-            </span>
-          )}
-        </div>
-
-        {/* Stock Status */}
-        <div className="mb-4">
-          {product.stock > 0 ? (
-            <span className="text-sm text-green-600 dark:text-green-400 flex items-center">
-              <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-              En stock ({product.stock} disponibles)
-            </span>
-          ) : (
-            <span className="text-sm text-red-600 dark:text-red-400 flex items-center">
-              <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
-              Agotado
-            </span>
-          )}
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex space-x-2">
-          <button
-            onClick={onAddToCart}
-            disabled={product.stock === 0}
-            className="flex-1 bg-pink-600 hover:bg-pink-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-2 px-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2"
-          >
-            <ShoppingCart className="w-4 h-4" />
-            <span className="text-sm">Agregar</span>
-          </button>
-          <button
-            onClick={onRemoveFromWishlist}
-            className="bg-gray-200 dark:bg-gray-700 hover:bg-red-100 dark:hover:bg-red-900/20 text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 p-2 rounded-lg transition-all duration-200"
-            title="Remover del wishlist"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// 📋 Wishlist Product Card (List Version)
-const WishlistProductCardList: React.FC<WishlistProductCardProps> = ({
-  product,
-  isSelected,
-  onSelect,
-  onRemoveFromWishlist,
-  onAddToCart,
-  onMoveToCart,
-  className,
-}) => {
-  const formattedDate = product.dateAddedToWishlist
-    ? new Date(product.dateAddedToWishlist).toLocaleDateString("es-ES", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      })
-    : "";
-
-  return (
-    <div
-      className={cn(
-        "bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border border-gray-100 dark:border-gray-700",
-        "hover:border-gray-200 dark:hover:border-gray-600",
-        isSelected && "ring-2 ring-pink-500 border-pink-300",
-        className
-      )}
-    >
-      <div className="flex">
-        {/* Selection Checkbox */}
-        <div className="p-4 flex items-center">
-          <input
-            type="checkbox"
-            checked={isSelected}
-            onChange={onSelect}
-            className="w-5 h-5 rounded border-gray-300 text-pink-600 focus:ring-pink-500"
-          />
-        </div>
-
-        {/* Product Image */}
-        <div className="relative w-24 h-24 flex-shrink-0 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600">
-          {/* Sale Badge */}
-          {product.isOnSale && (
-            <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full z-10">
-              -{product.discountPercentage}%
-            </div>
-          )}
-
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="w-12 h-12 bg-gradient-to-br from-pink-400 to-red-400 rounded-lg flex items-center justify-center">
-              <Package className="w-6 h-6 text-white" />
-            </div>
-          </div>
-        </div>
-
-        {/* Product Info */}
-        <div className="flex-1 p-4">
-          <div className="flex items-start justify-between">
-            <div className="flex-1 min-w-0">
-              {/* Brand/Category & Date */}
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                  {product.brand} • {product.category}
-                </p>
-                {formattedDate && (
-                  <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
-                    <Calendar className="w-3 h-3 mr-1" />
-                    {formattedDate}
-                  </div>
-                )}
-              </div>
-
-              {/* Product Name & Rating */}
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate mr-4">
-                  {product.name}
-                </h3>
-                <div className="flex items-center space-x-1 flex-shrink-0">
-                  <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {product.rating}
-                  </span>
-                </div>
-              </div>
-
-              {/* Description */}
-              <p className="text-gray-600 dark:text-gray-400 mb-3 line-clamp-2 text-sm">
-                {product.description}
-              </p>
-
-              {/* Price & Stock */}
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-2">
-                  <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                    ${product.currentPrice.toLocaleString()}
-                  </span>
-                  {product.isOnSale && product.originalPrice && (
-                    <span className="text-sm text-gray-500 dark:text-gray-400 line-through">
-                      ${product.originalPrice.toLocaleString()}
-                    </span>
-                  )}
-                </div>
-                <div className="text-sm">
-                  {product.stock > 0 ? (
-                    <span className="text-green-600 dark:text-green-400">
-                      ✓ En stock
-                    </span>
-                  ) : (
-                    <span className="text-red-600 dark:text-red-400">
-                      ✗ Agotado
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="ml-4 flex flex-col space-y-2">
-              <button
-                onClick={onMoveToCart}
-                disabled={product.stock === 0}
-                className="bg-pink-600 hover:bg-pink-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 text-sm"
-              >
-                <ArrowRight className="w-4 h-4" />
-                <span>Mover</span>
-              </button>
-              <button
-                onClick={onAddToCart}
-                disabled={product.stock === 0}
-                className="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 text-sm"
-              >
-                <ShoppingCart className="w-4 h-4" />
-                <span>Agregar</span>
-              </button>
-              <button
-                onClick={onRemoveFromWishlist}
-                className="text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 p-2 transition-all duration-200 flex items-center justify-center"
-                title="Remover del wishlist"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
