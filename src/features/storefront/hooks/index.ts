@@ -29,5 +29,5 @@ export { useWishlistActions } from "./useWishlistActions";
 // export { useCustomerRegistration } from "./useCustomerRegistration";
 // export { useCustomerLogin } from "./useCustomerLogin";
 
-// 🗂️ Query keys for external invalidation (TODO: Create these)
-// export { STOREFRONT_QUERY_KEYS } from "./useStorefrontQuery";
+// 🗂️ Query keys for external invalidation
+export { STOREFRONT_QUERY_KEYS } from "./useStorefrontQuery";

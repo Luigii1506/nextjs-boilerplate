@@ -64,8 +64,11 @@ export async function getPublicProductsService(
     // ✅ Public endpoint - no auth required
     validateStorefrontAccess(); // Basic rate limiting, feature flag check
 
-    // 📊 Get raw products from database
-    const rawProducts = await getPublicProductsQuery(options);
+    // 📊 Get raw products from database with wishlist context
+    const rawProducts = await getPublicProductsQuery(
+      options,
+      session?.user?.id
+    );
 
     // 🔄 Transform to customer-facing format
     const products = rawProducts.data.map((product) =>
@@ -96,7 +99,10 @@ export async function getFeaturedProductsService(
   try {
     validateStorefrontAccess();
 
-    const rawProducts = await getFeaturedProductsQuery(limit);
+    const rawProducts = await getFeaturedProductsQuery(
+      limit,
+      session?.user?.id
+    );
 
     return rawProducts.map((product) =>
       mapProductToCustomer(product, {
@@ -249,12 +255,26 @@ export async function addToWishlistService(
     console.log("➕ [SERVICE] Creating new wishlist item...");
     // 💾 Create wishlist item
     const rawWishlistItem = await addWishlistItemQuery(userId, productId);
-    console.log("✅ [SERVICE] Wishlist item created:", {
+    console.log("✅ [SERVICE] Raw wishlist item received from query:", {
       id: rawWishlistItem.id,
       userId: rawWishlistItem.userId,
       productId: rawWishlistItem.productId,
+      hasProduct: !!rawWishlistItem.product,
+      productName: rawWishlistItem.product?.name,
+      rawProductKeys: rawWishlistItem.product
+        ? Object.keys(rawWishlistItem.product)
+        : [],
     });
-    const wishlistItem = mapWishlistToCustomer([rawWishlistItem])[0];
+
+    console.log("🔄 [SERVICE] Mapping raw wishlist item to customer format...");
+    const mappedItems = mapWishlistToCustomer([rawWishlistItem]);
+    const wishlistItem = mappedItems[0];
+
+    console.log("✅ [SERVICE] Mapped wishlist item result:", {
+      hasMappedProduct: !!wishlistItem.product,
+      mappedProductName: wishlistItem.product?.name,
+      mappingSuccess: !!wishlistItem.product,
+    });
 
     // 📝 Audit Log
     console.log(

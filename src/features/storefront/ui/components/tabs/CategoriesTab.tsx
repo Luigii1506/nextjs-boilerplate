@@ -43,6 +43,7 @@ import {
 // Import Context and Types
 import { useStorefrontContext } from "../../..";
 import { CategoryForCustomer } from "../../../types";
+import { CategoriesPageSkeleton } from "../shared/ProductSkeleton";
 
 // Define interface for category filters
 interface CategoryFilters {
@@ -249,23 +250,9 @@ const CategoriesTab: React.FC = () => {
     [setActiveTab]
   );
 
-  // Loading State for empty first render
+  // Loading State with elegant skeleton
   if (isFirstRender) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh] bg-gray-50 dark:bg-gray-900">
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 bg-gradient-to-r from-green-600 to-blue-600 rounded-full animate-spin flex items-center justify-center mx-auto">
-            <Layers className="w-8 h-8 text-white" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Cargando Categorías...
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400">
-            Organizando el catálogo para ti
-          </p>
-        </div>
-      </div>
-    );
+    return <CategoriesPageSkeleton />;
   }
 
   return (

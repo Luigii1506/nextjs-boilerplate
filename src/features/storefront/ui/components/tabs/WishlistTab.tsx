@@ -85,10 +85,19 @@ const WishlistTab: React.FC = () => {
     categories,
     globalSearchTerm,
     setGlobalSearchTerm,
-    customer,
     wishlist,
+    // ✅ REMOVED: customer, products, featuredProducts (no longer needed)
     openLoginModal,
   } = useStorefrontContext();
+
+  // 🔍 DEBUG: Log wishlist data
+  console.log("💖 [WISHLIST TAB] Component render with data:", {
+    isAuthenticated,
+    wishlistCount: wishlist?.length || 0,
+    wishlistItems: wishlist,
+    firstFewItems: wishlist?.slice(0, 3),
+    timestamp: new Date().toISOString(),
+  });
 
   // 🎯 Component State
   const [isFirstRender, setIsFirstRender] = useState(true);
@@ -103,10 +112,10 @@ const WishlistTab: React.FC = () => {
   const [filters, setFilters] = useState<WishlistFilters>({
     searchTerm: "",
     sortBy: "date_added",
-    priceRange: [0, 10000],
+    priceRange: [0, 1000000], // ✅ FIX: Rango de precio mucho más alto
     categories: [],
     onSale: false,
-    inStock: true,
+    inStock: false, // ✅ FIX: No filtrar por stock (mostrar todo)
   });
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -132,54 +141,200 @@ const WishlistTab: React.FC = () => {
     setFilters((prev) => ({ ...prev, searchTerm: globalSearchTerm }));
   }, [globalSearchTerm]);
 
-  // 📊 Real wishlist products from context
+  // 📊 Real wishlist products from context with enhanced debugging
   const wishlistProducts = useMemo(() => {
-    // Convert wishlist items to ProductForCustomer format
-    return (wishlist || []).map((item) => ({
-      ...item.product,
-      dateAddedToWishlist: item.addedAt,
-      isWishlisted: true, // All items in wishlist are wishlisted
-    }));
-  }, [wishlist]);
+    console.log("🔍 [WISHLIST PRODUCTS] Converting wishlist to products:", {
+      wishlistLength: wishlist?.length || 0,
+      wishlistItems: wishlist?.map((item) => ({
+        id: item.id,
+        productId: item.productId,
+        addedAt: item.addedAt,
+        hasProductIncluded: !!item.product,
+        productName: item.product?.name?.slice(0, 30),
+      })),
+      // ✅ NEW: No longer need to check products/featuredProducts arrays
+      approach: "using-included-products", // Direct from wishlist
+    });
 
-  // 📊 Processed Products with Filtering & Sorting
+    // 🔍 FILTER OUT TEMP ITEMS: Remove temporary optimistic items that don't have products
+    const realWishlistItems = (wishlist || []).filter((item) => {
+      const isTemp = item.id.startsWith("temp-");
+      if (isTemp && !item.product) {
+        console.log(
+          "🚮 [WISHLIST PRODUCTS] Filtering out temp item without product:",
+          {
+            itemId: item.id,
+            productId: item.productId,
+            hasProduct: !!item.product,
+          }
+        );
+        return false;
+      }
+      return true;
+    });
+
+    console.log("🧹 [WISHLIST PRODUCTS] After filtering temp items:", {
+      originalCount: (wishlist || []).length,
+      filteredCount: realWishlistItems.length,
+      removedTempItems: (wishlist || []).length - realWishlistItems.length,
+    });
+
+    // ✅ NEW APPROACH: Use the product that comes WITH the wishlist item
+    const result = realWishlistItems
+      .map((item, index) => {
+        console.log(`🔍 [WISHLIST PRODUCTS] Processing item ${index + 1}:`, {
+          wishlistItemId: item.id,
+          productId: item.productId,
+          addedAt: item.addedAt,
+          hasProductIncluded: !!item.product,
+          productName: item.product?.name?.slice(0, 30),
+          // 🔍 DEBUG: Full item structure
+          fullItem: item,
+          itemKeys: Object.keys(item),
+        });
+
+        // ✅ USE DIRECT PRODUCT: The wishlist already includes complete product data
+        if (!item.product) {
+          console.error(
+            "❌ [WISHLIST PRODUCTS] No product included in wishlist item:",
+            {
+              searchingFor: item.productId,
+              wishlistItemId: item.id,
+              itemKeys: Object.keys(item),
+              // This should not happen if the backend is working correctly
+            }
+          );
+          return null;
+        }
+
+        const wishlistProduct = {
+          ...item.product,
+          dateAddedToWishlist: item.addedAt,
+          isWishlisted: true, // Ensure it's marked as wishlisted
+        };
+
+        console.log("✅ [WISHLIST PRODUCTS] Using included product:", {
+          productId: item.product.id,
+          productName: item.product.name,
+          source: "wishlist-included", // ← New: comes directly from wishlist
+          originalIsWishlisted: item.product.isWishlisted,
+          finalIsWishlisted: true,
+        });
+
+        return wishlistProduct;
+      })
+      .filter(
+        (
+          product
+        ): product is ProductForCustomer & { dateAddedToWishlist: Date } =>
+          product !== null
+      ); // Remove null entries with type guard
+
+    console.log("📋 [WISHLIST PRODUCTS] Final result:", {
+      inputWishlistItems: wishlist?.length || 0,
+      filteredWishlistItems: realWishlistItems.length,
+      outputProducts: result.length,
+      successRate: `${result.length}/${realWishlistItems.length}`,
+      productsFound: result.map((p) => ({
+        id: p?.id,
+        name: p?.name?.slice(0, 30),
+        isWishlisted: p?.isWishlisted,
+      })),
+      missingProducts: realWishlistItems.length - result.length,
+    });
+
+    return result;
+  }, [wishlist]); // ✅ Only depends on wishlist now, not on products/featuredProducts
+
+  // 📊 Processed Products with Filtering & Sorting and DEBUGGING
   const processedProducts = useMemo(() => {
+    console.log("🔄 [PROCESSED PRODUCTS] Starting processing:", {
+      inputWishlistProducts: wishlistProducts.length,
+      inputProductIds: wishlistProducts.map((p) => ({
+        id: p.id,
+        name: p.name?.slice(0, 30),
+      })),
+      localSearchTerm,
+      filters,
+    });
+
     let results = [...wishlistProducts];
 
     // Apply search filter
     if (localSearchTerm.trim()) {
+      const beforeSearch = results.length;
       const searchLower = localSearchTerm.toLowerCase();
       results = results.filter(
         (product) =>
-          product.name.toLowerCase().includes(searchLower) ||
-          product.description.toLowerCase().includes(searchLower) ||
-          product.category.toLowerCase().includes(searchLower) ||
-          product.brand?.toLowerCase().includes(searchLower)
+          product &&
+          (product.name?.toLowerCase().includes(searchLower) ||
+            product.description?.toLowerCase().includes(searchLower) ||
+            product.category?.toLowerCase().includes(searchLower) ||
+            product.brand?.toLowerCase().includes(searchLower))
       );
+      console.log("🔍 [PROCESSED PRODUCTS] After search filter:", {
+        searchTerm: localSearchTerm,
+        before: beforeSearch,
+        after: results.length,
+      });
     }
 
     // Apply category filter
     if (filters.categories.length > 0) {
-      results = results.filter((product) =>
-        filters.categories.includes(product.category)
+      const beforeCategory = results.length;
+      results = results.filter(
+        (product) =>
+          product &&
+          product.category &&
+          filters.categories.includes(product.category)
       );
+      console.log("🏷️ [PROCESSED PRODUCTS] After category filter:", {
+        categoryFilters: filters.categories,
+        before: beforeCategory,
+        after: results.length,
+      });
     }
 
     // Apply price range filter
+    const beforePrice = results.length;
     results = results.filter(
       (product) =>
         product.currentPrice >= filters.priceRange[0] &&
         product.currentPrice <= filters.priceRange[1]
     );
+    console.log("💰 [PROCESSED PRODUCTS] After price filter:", {
+      priceRange: filters.priceRange,
+      before: beforePrice,
+      after: results.length,
+      rejectedPrices: wishlistProducts
+        .filter(
+          (p) =>
+            p.currentPrice < filters.priceRange[0] ||
+            p.currentPrice > filters.priceRange[1]
+        )
+        .map((p) => ({ name: p.name?.slice(0, 30), price: p.currentPrice })),
+    });
 
     // Apply sale filter
     if (filters.onSale) {
+      const beforeSale = results.length;
       results = results.filter((product) => product.isOnSale);
+      console.log("🏷️ [PROCESSED PRODUCTS] After sale filter:", {
+        onSale: filters.onSale,
+        before: beforeSale,
+        after: results.length,
+      });
     }
 
     // Apply stock filter
     if (filters.inStock) {
+      const beforeStock = results.length;
       results = results.filter((product) => product.stock > 0);
+      console.log("📦 [PROCESSED PRODUCTS] After stock filter:", {
+        inStock: filters.inStock,
+        before: beforeStock,
+        after: results.length,
+      });
     }
 
     // Apply sorting
@@ -194,7 +349,7 @@ const WishlistTab: React.FC = () => {
         results.sort((a, b) => b.currentPrice - a.currentPrice);
         break;
       case "rating":
-        results.sort((a, b) => b.rating - a.rating);
+        results.sort((a, b) => (b.rating || 0) - (a.rating || 0));
         break;
       default: // date_added
         results.sort(
@@ -204,6 +359,25 @@ const WishlistTab: React.FC = () => {
         );
         break;
     }
+
+    console.log("✅ [PROCESSED PRODUCTS] Final result:", {
+      inputCount: wishlistProducts.length,
+      outputCount: results.length,
+      finalProducts: results.map((p) => ({
+        id: p.id,
+        name: p.name?.slice(0, 30),
+        price: p.currentPrice,
+        isWishlisted: p.isWishlisted,
+      })),
+      allFiltersApplied: {
+        search: !!localSearchTerm.trim(),
+        categories: filters.categories.length > 0,
+        priceRange: `${filters.priceRange[0]}-${filters.priceRange[1]}`,
+        onSale: filters.onSale,
+        inStock: filters.inStock,
+        sortBy: filters.sortBy,
+      },
+    });
 
     return results;
   }, [wishlistProducts, localSearchTerm, filters]);
@@ -255,10 +429,10 @@ const WishlistTab: React.FC = () => {
     setFilters({
       searchTerm: "",
       sortBy: "date_added",
-      priceRange: [0, 10000],
+      priceRange: [0, 1000000], // ✅ FIX: Mantener rango alto
       categories: [],
       onSale: false,
-      inStock: true,
+      inStock: false, // ✅ FIX: No filtrar por stock
     });
     setLocalSearchTerm("");
     setGlobalSearchTerm("");
@@ -350,12 +524,40 @@ const WishlistTab: React.FC = () => {
     );
   }
 
+  // 🔍 CRITICAL DEBUG: Why EmptyWishlist is showing
+  console.log("🚨 [EMPTY WISHLIST CHECK] Deciding what to render:", {
+    rawWishlistCount: wishlist?.length || 0,
+    wishlistProductsCount: wishlistProducts.length,
+    processedProductsCount: processedProducts.length,
+    localSearchTerm,
+    categoryFiltersCount: filters.categories.length,
+    shouldShowEmpty:
+      processedProducts.length === 0 &&
+      !localSearchTerm &&
+      filters.categories.length === 0,
+    rawWishlistItems: wishlist?.map((item) => ({
+      id: item.id,
+      productId: item.productId,
+    })),
+    wishlistProductIds: wishlistProducts.map((p) => ({
+      id: p.id,
+      name: p.name?.slice(0, 30),
+    })),
+    processedProductIds: processedProducts.map((p) => ({
+      id: p.id,
+      name: p.name?.slice(0, 30),
+    })),
+  });
+
   // Empty Wishlist State
   if (
     processedProducts.length === 0 &&
     !localSearchTerm &&
     filters.categories.length === 0
   ) {
+    console.log(
+      "❌ [EMPTY WISHLIST] Rendering EmptyWishlist component - no products found after processing"
+    );
     return <EmptyWishlist />;
   }
 
@@ -817,9 +1019,10 @@ const WishlistFilters: React.FC<WishlistFiltersProps> = ({
   const priceRanges = [
     { label: "Menos de $500", min: 0, max: 500 },
     { label: "$500 - $1,000", min: 500, max: 1000 },
-    { label: "$1,000 - $2,500", min: 1000, max: 2500 },
-    { label: "$2,500 - $5,000", min: 2500, max: 5000 },
-    { label: "Más de $5,000", min: 5000, max: 10000 },
+    { label: "$1,000 - $5,000", min: 1000, max: 5000 },
+    { label: "$5,000 - $15,000", min: 5000, max: 15000 },
+    { label: "$15,000 - $50,000", min: 15000, max: 50000 },
+    { label: "Más de $50,000", min: 50000, max: 1000000 },
   ];
 
   const activeFiltersCount =

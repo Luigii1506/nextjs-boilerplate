@@ -56,6 +56,14 @@ export interface RawProductQueryResult {
   rating?: number | null;
   reviewCount?: number | null;
   salesCount?: number | null;
+
+  // 💖 Wishlist relation (included when userId is provided)
+  wishlistItems?: Array<{
+    id: string;
+    userId: string;
+    productId: string;
+    addedAt: Date;
+  }>;
 }
 
 export interface RawCategoryQueryResult {
@@ -110,7 +118,8 @@ export interface RawCartQueryResult {
 // ==================
 
 export async function getPublicProductsQuery(
-  options: Partial<ProductQueryOptions> = {}
+  options: Partial<ProductQueryOptions> = {},
+  userId?: string
 ): Promise<PaginatedResponse<RawProductQueryResult>> {
   const {
     query,
@@ -226,6 +235,18 @@ export async function getPublicProductsQuery(
               name: true,
             },
           },
+          // 💖 Include wishlist status for specific user
+          ...(userId && {
+            wishlistItems: {
+              where: { userId },
+              select: {
+                id: true,
+                userId: true,
+                productId: true,
+                addedAt: true,
+              },
+            },
+          }),
           // TODO: Add reviews aggregation when implemented
         },
       }),
@@ -259,7 +280,8 @@ export async function getPublicProductsQuery(
 }
 
 export async function getFeaturedProductsQuery(
-  limit: number = 8
+  limit: number = 8,
+  userId?: string
 ): Promise<RawProductQueryResult[]> {
   try {
     const products = await prisma.product.findMany({
@@ -283,6 +305,18 @@ export async function getFeaturedProductsQuery(
             name: true,
           },
         },
+        // 💖 Include wishlist status for specific user
+        ...(userId && {
+          wishlistItems: {
+            where: { userId },
+            select: {
+              id: true,
+              userId: true,
+              productId: true,
+              addedAt: true,
+            },
+          },
+        }),
       },
     });
 
@@ -435,6 +469,8 @@ export async function getWishlistQuery(
   userId: string
 ): Promise<RawWishlistQueryResult[]> {
   try {
+    console.log("🔍 [QUERIES] getWishlistQuery called for userId:", userId);
+
     const wishlistItems = await prisma.wishlistItem.findMany({
       where: {
         userId,
@@ -460,6 +496,19 @@ export async function getWishlistQuery(
           },
         },
       },
+    });
+
+    console.log("✅ [QUERIES] getWishlistQuery results:", {
+      userId,
+      totalItems: wishlistItems.length,
+      itemsWithProduct: wishlistItems.filter((item) => !!item.product).length,
+      itemsWithoutProduct: wishlistItems.filter((item) => !item.product).length,
+      sampleItems: wishlistItems.slice(0, 3).map((item) => ({
+        id: item.id,
+        productId: item.productId,
+        hasProduct: !!item.product,
+        productName: item.product?.name,
+      })),
     });
 
     return wishlistItems as RawWishlistQueryResult[];
@@ -510,6 +559,17 @@ export async function addWishlistItemQuery(
       userId: wishlistItem.userId,
       productId: wishlistItem.productId,
       addedAt: wishlistItem.addedAt,
+      hasProduct: !!wishlistItem.product,
+      productName: wishlistItem.product?.name,
+      productDetails: wishlistItem.product
+        ? {
+            id: wishlistItem.product.id,
+            name: wishlistItem.product.name,
+            price: wishlistItem.product.price,
+            hasCategory: !!wishlistItem.product.category,
+            categoryName: wishlistItem.product.category?.name,
+          }
+        : null,
     });
 
     return wishlistItem as RawWishlistQueryResult;

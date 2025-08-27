@@ -78,6 +78,9 @@ export interface WishlistItem {
   userId: string;
   productId: string;
   addedAt: Date;
+
+  // 🛍️ Complete product data (included from mapper)
+  product: ProductForCustomer | null;
 }
 
 export interface Order {

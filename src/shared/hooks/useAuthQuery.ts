@@ -65,12 +65,35 @@ export interface AuthHookReturn extends AuthState, AuthActions {
   requiresAuth: boolean;
 }
 
-// 🔍 Session fetcher
+// 🔍 Session fetcher with timeout and detailed logging
 async function fetchSession(): Promise<SessionData | null> {
   try {
-    console.log("🔍 [useAuthQuery] Fetching session...");
-    const session = await authClient.getSession();
-    console.log("📋 [useAuthQuery] Raw session from authClient:", session);
+    console.log("🔍 [useAuthQuery] Fetching session...", {
+      timestamp: new Date().toISOString(),
+      url: window.location.href,
+    });
+
+    // ⏱️ Add timeout to prevent hanging
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error("Session fetch timeout after 10s")),
+        10000
+      )
+    );
+
+    const sessionPromise = authClient.getSession();
+
+    console.log("⏳ [useAuthQuery] Calling authClient.getSession()...");
+    const startTime = performance.now();
+
+    const session = await Promise.race([sessionPromise, timeoutPromise]);
+
+    const endTime = performance.now();
+    console.log("📋 [useAuthQuery] Raw session from authClient:", {
+      session,
+      fetchDuration: `${Math.round(endTime - startTime)}ms`,
+      timestamp: new Date().toISOString(),
+    });
 
     const sessionData = (session.data as SessionData) || null;
     console.log("✅ [useAuthQuery] Processed session data:", {
@@ -78,11 +101,21 @@ async function fetchSession(): Promise<SessionData | null> {
       user: sessionData?.user,
       userId: sessionData?.user?.id,
       userEmail: sessionData?.user?.email,
+      userRole: sessionData?.user?.role,
+      sessionKeys: sessionData ? Object.keys(sessionData) : [],
+      rawSessionKeys: session ? Object.keys(session) : [],
+      success: !!sessionData?.user,
     });
 
     return sessionData;
   } catch (error) {
-    console.error("❌ [useAuthQuery] Error fetching session:", error);
+    console.error("❌ [useAuthQuery] Error fetching session:", {
+      error,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      errorStack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString(),
+      url: window.location.href,
+    });
     throw error;
   }
 }
@@ -117,25 +150,26 @@ export function useAuthQuery(
   } = {}
 ): AuthHookReturn {
   const {
-    staleTime = 30 * 1000, // 30s - sessions are relatively stable
-    gcTime = 5 * 60 * 1000, // 5 min
+    staleTime = 10 * 1000, // 10s - shorter for debugging
+    gcTime = 2 * 60 * 1000, // 2 min - shorter garbage collection
     refetchOnWindowFocus = true, // Important for security
     refetchOnReconnect = true,
-    retry = 2,
-    retryDelay = 1000,
+    retry = 3, // More aggressive retries
+    retryDelay = 500, // Faster retries
   } = config;
 
   const queryClient = useQueryClient();
   const router = useRouter();
   const { error: notifyError, success: notifySuccess } = useNotifications();
 
-  // 📊 SESSION QUERY
+  // 📊 SESSION QUERY with enhanced error handling
   const {
     data: sessionData,
     isLoading,
     isFetching: isRefreshing,
     error,
     refetch: refetchSession,
+    isError,
   } = useQuery({
     queryKey: AUTH_QUERY_KEYS.session(),
     queryFn: fetchSession,
@@ -143,13 +177,43 @@ export function useAuthQuery(
     gcTime,
     refetchOnWindowFocus,
     refetchOnReconnect,
-    retry,
-    retryDelay,
-    // Don't retry on 401/403 errors (auth errors)
+    retry: (failureCount, error) => {
+      // Don't retry on auth errors or timeout errors
+      if (
+        error?.message?.includes("timeout") ||
+        error?.message?.includes("401") ||
+        error?.message?.includes("403")
+      ) {
+        console.warn(
+          `🚫 [useAuthQuery] Not retrying auth error:`,
+          error?.message
+        );
+        return false;
+      }
+      return failureCount < retry;
+    },
+    retryDelay: (attemptIndex) =>
+      Math.min(500 * Math.pow(2, attemptIndex), 2000), // Exponential backoff
     retryOnMount: true,
     refetchOnMount: true,
     networkMode: "always", // Always try to fetch, important for auth
+    meta: {
+      errorMessage: "Failed to fetch session",
+    },
   });
+
+  // 🚨 Enhanced error logging
+  if (error) {
+    console.error("🔥 [useAuthQuery] Session query error:", {
+      error,
+      isError,
+      isLoading,
+      isRefreshing,
+      errorMessage: error?.message,
+      queryKey: AUTH_QUERY_KEYS.session(),
+      timestamp: new Date().toISOString(),
+    });
+  }
 
   // 🚪 LOGOUT MUTATION
   const logoutMutation = useMutation<boolean, Error, void>({
@@ -170,14 +234,30 @@ export function useAuthQuery(
     },
   });
 
-  // 🧮 Computed Auth State
+  // 🧮 Computed Auth State with detailed logging
   const authState = useMemo((): AuthState => {
     const user = sessionData?.user ?? null;
     const isAuthenticated = !!user;
     const isAdmin = user?.role === "admin" || user?.role === "super_admin";
     const isSuperAdmin = user?.role === "super_admin";
 
-    return {
+    console.log("🧮 [useAuthQuery] Computing auth state:", {
+      hasSessionData: !!sessionData,
+      sessionDataKeys: sessionData ? Object.keys(sessionData) : [],
+      hasUser: !!user,
+      userId: user?.id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      isAuthenticated,
+      isAdmin,
+      isSuperAdmin,
+      isLoading,
+      isError,
+      errorMessage: error?.message,
+      timestamp: new Date().toISOString(),
+    });
+
+    const computedState = {
       isLoading,
       isAuthenticated,
       user,
@@ -185,7 +265,11 @@ export function useAuthQuery(
       isSuperAdmin,
       error: error?.message || null,
     };
-  }, [sessionData, isLoading, error]);
+
+    console.log("✅ [useAuthQuery] Final auth state:", computedState);
+
+    return computedState;
+  }, [sessionData, isLoading, error, isError]);
 
   // 🔄 Auto-redirect logic with useEffect
   useEffect(() => {

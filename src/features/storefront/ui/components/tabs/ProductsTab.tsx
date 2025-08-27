@@ -42,6 +42,9 @@ import {
 // Import Context and Types
 import { useStorefrontContext } from "../../..";
 import { ProductForCustomer, CategoryForCustomer } from "../../../types";
+import { AnimatedHeartButton } from "../shared/AnimatedHeartButton";
+import { ProfessionalProductCard } from "../shared/ProfessionalProductCard";
+import { StorefrontPageSkeleton } from "../shared/ProductSkeleton";
 
 // Define interface for filters
 interface ProductFilters {
@@ -105,11 +108,13 @@ const ProductsTab: React.FC = () => {
         isWishlisted: product.isWishlisted,
       });
 
-      const result = await addToWishlist(product);
+      const result = await toggleWishlist(product);
 
-      console.log("❤️ [ProductsTab] addToWishlist result:", result);
+      console.log("❤️ [ProductsTab] toggleWishlist result:", result);
+
+      return result; // Return the result for AnimatedHeartButton
     },
-    [addToWishlist]
+    [toggleWishlist]
   );
 
   const onQuickView = useCallback(
@@ -344,22 +349,14 @@ const ProductsTab: React.FC = () => {
     });
   }, []);
 
-  // Loading State for empty first render
+  // Loading State with elegant skeleton
   if (isFirstRender) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh] bg-gray-50 dark:bg-gray-900">
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full animate-spin flex items-center justify-center mx-auto">
-            <Package className="w-8 h-8 text-white" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Cargando Productos...
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400">
-            Preparando el catálogo para ti
-          </p>
-        </div>
-      </div>
+      <StorefrontPageSkeleton
+        showFilters={true}
+        productCount={12}
+        variant={viewMode}
+      />
     );
   }
 
@@ -379,7 +376,7 @@ const ProductsTab: React.FC = () => {
         allowAnimations={allowAnimations}
       />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-6">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Filters Sidebar */}
           <ProductsFilters
@@ -493,7 +490,7 @@ const ProductsHeader: React.FC<ProductsHeaderProps> = ({
 }) => {
   return (
     <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-6">
         <div
           className={cn(
             "space-y-4",
@@ -855,7 +852,9 @@ interface ProductsGridProps {
   products: ProductForCustomer[];
   viewMode: "grid" | "list";
   onAddToCart: (product: ProductForCustomer) => void;
-  onAddToWishlist: (product: ProductForCustomer) => void;
+  onAddToWishlist: (
+    product: ProductForCustomer
+  ) => Promise<{ success: boolean; message: string }>;
   onQuickView: (product: ProductForCustomer) => void;
   isAddingToWishlist?: boolean;
   allowAnimations: boolean;
@@ -894,33 +893,37 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
   return (
     <div id="products-grid">
       {viewMode === "grid" ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {products.map((product, index) => (
-            <CustomerProductCard
+            <ProfessionalProductCard
               key={product.id}
               product={product}
               onAddToCart={onAddToCart}
               onAddToWishlist={onAddToWishlist}
               onQuickView={onQuickView}
               isAddingToWishlist={isAddingToWishlist}
+              variant="grid"
               className={cn(
-                allowAnimations && `customer-stagger-${(index % 4) + 1}`
+                allowAnimations && `customer-stagger-${(index % 4) + 1}`,
+                "transform-gpu will-change-transform"
               )}
             />
           ))}
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {products.map((product, index) => (
-            <CustomerProductCardList
+            <ProfessionalProductCard
               key={product.id}
               product={product}
               onAddToCart={onAddToCart}
               onAddToWishlist={onAddToWishlist}
               onQuickView={onQuickView}
               isAddingToWishlist={isAddingToWishlist}
+              variant="list"
               className={cn(
-                allowAnimations && `customer-stagger-${(index % 3) + 1}`
+                allowAnimations && `customer-stagger-${(index % 3) + 1}`,
+                "transform-gpu will-change-transform"
               )}
             />
           ))}
@@ -1067,13 +1070,13 @@ const CustomerProductCard: React.FC<CustomerProductCardProps> = ({
   return (
     <div
       className={cn(
-        "group bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 dark:border-gray-700",
+        "group bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 dark:border-gray-700",
         "hover:border-gray-200 dark:hover:border-gray-600",
         className
       )}
     >
       {/* Product Image */}
-      <div className="relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-700">
+      <div className="relative aspect-square bg-gray-100 dark:bg-gray-700 rounded-t-xl">
         {/* Sale Badge */}
         {product.isOnSale && (
           <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
@@ -1081,27 +1084,28 @@ const CustomerProductCard: React.FC<CustomerProductCardProps> = ({
           </div>
         )}
 
-        {/* Wishlist Button */}
-        <button
-          onClick={() => onAddToWishlist(product)}
-          disabled={isAddingToWishlist}
+        {/* Animated Wishlist Button */}
+        <div
           className={cn(
-            "absolute top-3 right-3 w-8 h-8 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-all duration-200 z-10",
-            isAddingToWishlist && "animate-pulse"
+            "transition-opacity duration-300 z-50",
+            product.isWishlisted
+              ? "opacity-100"
+              : "opacity-0 group-hover:opacity-100"
           )}
         >
-          <Heart
-            className={cn(
-              "w-4 h-4 transition-colors",
-              product.isWishlisted
-                ? "text-red-500 fill-current animate-heartBeat"
-                : "text-gray-600 dark:text-gray-400"
-            )}
+          <AnimatedHeartButton
+            product={product}
+            isWishlisted={product.isWishlisted}
+            isLoading={isAddingToWishlist}
+            onToggle={onAddToWishlist}
+            size="sm"
+            variant="overlay"
+            showSparkles={true}
           />
-        </button>
+        </div>
 
         {/* Product Image Placeholder */}
-        <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center">
+        <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center rounded-t-xl overflow-hidden">
           <Package className="w-12 h-12 text-gray-400" />
         </div>
 
@@ -1277,23 +1281,16 @@ const CustomerProductCardList: React.FC<CustomerProductCardProps> = ({
 
             {/* Actions */}
             <div className="flex flex-col space-y-2 ml-6">
-              <button
-                onClick={() => onAddToWishlist(product)}
-                disabled={isAddingToWishlist}
-                className={cn(
-                  "p-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors",
-                  isAddingToWishlist && "animate-pulse"
-                )}
-              >
-                <Heart
-                  className={cn(
-                    "w-5 h-5",
-                    product.isWishlisted
-                      ? "text-red-500 fill-current animate-heartBeat"
-                      : "text-gray-600 dark:text-gray-400"
-                  )}
-                />
-              </button>
+              <AnimatedHeartButton
+                product={product}
+                isWishlisted={product.isWishlisted}
+                isLoading={isAddingToWishlist}
+                onToggle={onAddToWishlist}
+                size="md"
+                variant="inline"
+                showSparkles={true}
+                className="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
+              />
               <button
                 onClick={() => onQuickView(product)}
                 className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"

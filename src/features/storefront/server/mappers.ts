@@ -54,7 +54,12 @@ interface RawProduct {
   salesCount?: number | null;
 
   // Wishlist status (joined from user context)
-  wishlistItem?: RawWishlistItem | null;
+  wishlistItems?: Array<{
+    id: string;
+    userId: string;
+    productId: string;
+    addedAt: Date;
+  }>;
 }
 
 interface RawCategory {
@@ -154,9 +159,27 @@ export function mapProductToCustomer(
   // 🏷️ Category mapping
   const categoryName = rawProduct.category?.name || null;
 
-  // 💖 Wishlist status
+  // 💖 Wishlist status - check if user has this product in wishlist
   const isWishlisted =
-    includeWishlistStatus && userId ? !!rawProduct.wishlistItem : false;
+    includeWishlistStatus && userId
+      ? rawProduct.wishlistItems && rawProduct.wishlistItems.length > 0
+      : false;
+
+  // 🔍 DEBUG: Log wishlist mapping for troubleshooting
+  if (includeWishlistStatus && userId) {
+    console.log("🔍 [MAPPER] Wishlist status for product:", {
+      productId: rawProduct.id,
+      productName: rawProduct.name?.slice(0, 30),
+      userId,
+      includeWishlistStatus,
+      wishlistItemsCount: rawProduct.wishlistItems?.length || 0,
+      wishlistItems: rawProduct.wishlistItems?.map((w) => ({
+        id: w.id,
+        addedAt: w.addedAt,
+      })),
+      finalIsWishlisted: isWishlisted,
+    });
+  }
 
   // 📦 Stock availability
   const isAvailable = rawProduct.isActive && rawProduct.stock > 0;
@@ -282,19 +305,56 @@ export function mapCategoryToCustomer(
 export function mapWishlistToCustomer(
   rawWishlist: RawWishlistItem[]
 ): WishlistItem[] {
-  return rawWishlist.map((item) => ({
-    id: item.id,
-    productId: item.productId,
-    addedAt: item.addedAt,
+  console.log("🔄 [MAPPER] mapWishlistToCustomer called:", {
+    inputItemCount: rawWishlist.length,
+    firstFewItems: rawWishlist.slice(0, 3).map((item) => ({
+      id: item.id,
+      productId: item.productId,
+      hasProduct: !!item.product,
+      productName: item.product?.name,
+    })),
+  });
 
-    // Include full product data if available
-    product: item.product
-      ? mapProductToCustomer(item.product, {
-          includeWishlistStatus: true,
-          userId: item.userId,
-        })
-      : null,
-  }));
+  const result = rawWishlist.map((item, index) => {
+    console.log(`🔄 [MAPPER] Processing wishlist item ${index + 1}:`, {
+      wishlistItemId: item.id,
+      productId: item.productId,
+      hasProduct: !!item.product,
+      productName: item.product?.name,
+      userId: item.userId,
+    });
+
+    const mappedItem = {
+      id: item.id,
+      productId: item.productId,
+      addedAt: item.addedAt,
+
+      // Include full product data if available
+      product: item.product
+        ? mapProductToCustomer(item.product, {
+            includeWishlistStatus: true,
+            userId: item.userId,
+          })
+        : null,
+    };
+
+    console.log(`✅ [MAPPER] Mapped wishlist item ${index + 1}:`, {
+      id: mappedItem.id,
+      hasProduct: !!mappedItem.product,
+      productName: mappedItem.product?.name,
+    });
+
+    return mappedItem;
+  });
+
+  console.log("📋 [MAPPER] mapWishlistToCustomer result:", {
+    inputCount: rawWishlist.length,
+    outputCount: result.length,
+    itemsWithProduct: result.filter((item) => !!item.product).length,
+    itemsWithoutProduct: result.filter((item) => !item.product).length,
+  });
+
+  return result;
 }
 
 // 🛒 CART MAPPING

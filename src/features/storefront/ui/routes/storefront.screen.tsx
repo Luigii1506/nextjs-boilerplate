@@ -44,6 +44,7 @@ import {
   AccountTab,
   SupportTab,
 } from "../components";
+import { WishlistDebugPanel } from "../components/debug/WishlistDebugPanel";
 
 // 🎨 Icon mapping for tabs
 const ICON_MAP = {
@@ -119,7 +120,7 @@ const CustomerHeader: React.FC<CustomerHeaderProps> = ({
       </div>
 
       {/* Main Header */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto px-3 sm:px-4 lg:px-6 xl:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo Section */}
           <div className="flex items-center">
@@ -278,7 +279,7 @@ const CustomerTabNavigation: React.FC = () => {
 
   return (
     <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto px-3 sm:px-4 lg:px-6 xl:px-8">
         <div className="flex space-x-0 overflow-x-auto scrollbar-hide">
           {STOREFRONT_TABS.map((tab) => {
             const IconComponent =
@@ -603,6 +604,9 @@ const StorefrontSPAContent: React.FC = () => {
           </div>
         </div>
       </footer>
+
+      {/* 🔍 DEBUG PANEL - Only in development */}
+      {process.env.NODE_ENV === "development" && <WishlistDebugPanel />}
     </div>
   );
 };

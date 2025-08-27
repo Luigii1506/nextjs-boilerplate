@@ -23,6 +23,9 @@ import {
   Filter,
   Search,
 } from "lucide-react";
+import { AnimatedHeartButton } from "../shared/AnimatedHeartButton";
+import { ProfessionalProductCard } from "../shared/ProfessionalProductCard";
+import { OverviewPageSkeleton } from "../shared/ProductSkeleton";
 import { cn } from "@/shared/utils";
 import { useStorefrontContext } from "../../../context";
 import { PriceDisplay } from "../shared";
@@ -33,7 +36,9 @@ import { PRODUCT_BADGES, AVAILABILITY_STATUS } from "../../../constants";
 interface CustomerProductCardProps {
   product: ProductForCustomer;
   onAddToCart?: (product: ProductForCustomer) => void;
-  onAddToWishlist?: (product: ProductForCustomer) => void;
+  onAddToWishlist?: (
+    product: ProductForCustomer
+  ) => Promise<{ success: boolean; message: string }>;
   onQuickView?: (product: ProductForCustomer) => void;
   className?: string;
 }
@@ -69,13 +74,13 @@ const CustomerProductCard: React.FC<CustomerProductCardProps> = ({
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Product Image */}
-      <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl">
+      <div className="relative aspect-[4/3] rounded-t-xl">
         <img
           src={placeholderImage}
           alt={product.name}
           onLoad={() => setImageLoaded(true)}
           className={cn(
-            "w-full h-full object-cover transition-all duration-500",
+            "w-full h-full object-cover transition-all duration-500 rounded-t-xl overflow-hidden",
             imageLoaded ? "opacity-100" : "opacity-0",
             isHovered && "scale-110"
           )}
@@ -111,27 +116,22 @@ const CustomerProductCard: React.FC<CustomerProductCardProps> = ({
         {/* Quick Actions on Hover */}
         <div
           className={cn(
-            "absolute top-3 right-3 flex flex-col space-y-2 transition-all duration-300",
-            isHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+            "absolute top-3 right-3 flex flex-col space-y-2 transition-all duration-300 z-50",
+            isHovered || product.isWishlisted
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-2"
           )}
         >
-          {/* Wishlist Button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onAddToWishlist?.(product);
-            }}
-            className={cn(
-              "w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200",
-              product.isWishlisted
-                ? "bg-red-500 text-white animate-heartFill"
-                : "bg-white/90 dark:bg-gray-800/90 text-gray-600 dark:text-gray-300 hover:bg-red-50 hover:text-red-500"
-            )}
-          >
-            <Heart
-              className={cn("w-4 h-4", product.isWishlisted && "fill-current")}
-            />
-          </button>
+          {/* Animated Wishlist Button */}
+          <AnimatedHeartButton
+            product={product}
+            isWishlisted={product.isWishlisted}
+            isLoading={false}
+            onToggle={onAddToWishlist}
+            size="sm"
+            variant="inline"
+            showSparkles={true}
+          />
 
           {/* Quick View Button */}
           <button
@@ -317,19 +317,7 @@ const OverviewTab: React.FC = () => {
   }, []);
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen p-6">
-        <div className="max-w-7xl mx-auto space-y-8">
-          {/* Loading State */}
-          <div className="text-center py-12">
-            <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-gray-600 dark:text-gray-400">
-              Cargando productos...
-            </p>
-          </div>
-        </div>
-      </div>
-    );
+    return <OverviewPageSkeleton />;
   }
 
   if (isError) {
@@ -351,7 +339,7 @@ const OverviewTab: React.FC = () => {
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto">
+      <div className="mx-auto px-2 sm:px-4 lg:px-6 xl:px-8">
         {/* Professional Hero Section */}
         <section className="relative bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 dark:from-gray-900 dark:via-blue-900 dark:to-indigo-900 overflow-hidden">
           {/* Background Pattern */}
@@ -621,16 +609,17 @@ const OverviewTab: React.FC = () => {
             </div>
 
             {/* Products Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               {(featuredProducts || []).map((product, index) => (
-                <CustomerProductCard
+                <ProfessionalProductCard
                   key={product.id}
                   product={product}
                   onAddToCart={(product) => addToCartOptimistic(product, 1)}
                   onAddToWishlist={(product) => toggleWishlist(product)}
                   onQuickView={(product) => openProductQuickView(product)}
+                  variant="grid"
                   className={cn(
-                    "transform hover:scale-105 transition-all duration-300",
+                    "transform-gpu will-change-transform",
                     allowAnimations && `customer-stagger-${(index % 5) + 1}`
                   )}
                 />
