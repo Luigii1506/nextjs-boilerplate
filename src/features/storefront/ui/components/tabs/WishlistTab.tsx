@@ -666,7 +666,7 @@ const WishlistTab: React.FC = () => {
               onRemoveFromWishlist={handleRemoveFromWishlist}
               onAddToCart={handleAddToCart}
               onMoveToCart={handleMoveToCart}
-              onQuickView={openProductQuickView}
+              onQuickView={(product) => openProductQuickView(product, true)} // ✅ Auto-close when removing from wishlist
               allowAnimations={allowAnimations}
             />
 

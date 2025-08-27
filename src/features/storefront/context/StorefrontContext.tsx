@@ -215,7 +215,10 @@ interface StorefrontContextType {
   clearAllFilters: () => void;
 
   // Product Interaction Actions
-  openProductQuickView: (product: ProductForCustomer) => void;
+  openProductQuickView: (
+    product: ProductForCustomer,
+    autoCloseOnRemove?: boolean
+  ) => void;
   closeProductQuickView: () => void;
   addToRecentlyViewed: (product: ProductForCustomer) => void;
 
@@ -268,6 +271,8 @@ export const StorefrontProvider: React.FC<StorefrontProviderProps> = ({
   // 🛒 Product States
   const [viewingProduct, setViewingProduct] =
     useState<ProductForCustomer | null>(null);
+  const [quickViewAutoCloseOnRemove, setQuickViewAutoCloseOnRemove] =
+    useState(false);
 
   // ⏳ Loading States
   const [isAddingToCart, setIsAddingToCart] = useState(false);
@@ -828,6 +833,25 @@ export const StorefrontProvider: React.FC<StorefrontProviderProps> = ({
       updateProductWishlistStatus(product.id, false);
       success("💔 Removed from wishlist!");
 
+      // 🔄 AUTO-CLOSE QUICKVIEW: If we're removing the currently viewed product, close modal (only if enabled)
+      if (
+        quickViewAutoCloseOnRemove &&
+        viewingProduct &&
+        viewingProduct.id === product.id
+      ) {
+        console.log(
+          "🔄 [AUTO-CLOSE] Closing QuickView modal - product removed from wishlist:",
+          {
+            productId: product.id,
+            productName: product.name,
+            viewingProductId: viewingProduct.id,
+            autoCloseEnabled: quickViewAutoCloseOnRemove,
+          }
+        );
+        setViewingProduct(null);
+        setIsProductQuickViewOpen(false);
+      }
+
       // 🔄 Background server sync (non-blocking)
       syncRemoveFromWishlistMutation.mutate({
         userId: authUser.id,
@@ -842,6 +866,10 @@ export const StorefrontProvider: React.FC<StorefrontProviderProps> = ({
       success,
       updateProductWishlistStatus,
       syncRemoveFromWishlistMutation,
+      viewingProduct,
+      setViewingProduct,
+      setIsProductQuickViewOpen,
+      quickViewAutoCloseOnRemove,
     ]
   );
 
@@ -939,10 +967,17 @@ export const StorefrontProvider: React.FC<StorefrontProviderProps> = ({
   }, []);
 
   const openProductQuickView = useCallback(
-    (product: ProductForCustomer) => {
+    (product: ProductForCustomer, autoCloseOnRemove = false) => {
       setViewingProduct(product);
       setIsProductQuickViewOpen(true);
+      setQuickViewAutoCloseOnRemove(autoCloseOnRemove);
       addToRecentlyViewed(product);
+
+      console.log("👁️ [QUICK VIEW] Opening product quick view:", {
+        productId: product.id,
+        productName: product.name,
+        autoCloseOnRemove,
+      });
     },
     [addToRecentlyViewed]
   );
