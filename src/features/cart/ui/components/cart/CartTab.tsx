@@ -96,11 +96,28 @@ export function CartTab({
 
       // Find product ID from cart item
       const cartItem = cart?.items.find((item) => item.id === itemId);
+
+      console.log("🔍 [CART TAB] Looking for cart item:", {
+        searchItemId: itemId,
+        foundCartItem: !!cartItem,
+        cartItemProductId: cartItem?.productId,
+        productIdType: typeof cartItem?.productId,
+        productIdValid: !!cartItem?.productId,
+        allCartItemIds:
+          cart?.items.map((item) => ({
+            id: item.id,
+            productId: item.productId,
+            productName: item.product?.name,
+          })) || [],
+      });
+
       if (!cartItem?.productId) {
-        console.error(
-          "❌ [CART TAB] Could not find product ID for item:",
-          itemId
-        );
+        console.error("❌ [CART TAB] Could not find product ID for item:", {
+          searchItemId: itemId,
+          foundCartItem: !!cartItem,
+          cartItemProductId: cartItem?.productId,
+          cartItem: cartItem,
+        });
         return false;
       }
 

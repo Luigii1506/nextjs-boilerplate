@@ -37,17 +37,8 @@ import {
 // 🎯 QUERY KEYS
 // =============
 
-const CART_QUERY_KEYS = {
-  all: ["cart"] as const,
-  byUser: (userId: string) => ["cart", "user", userId] as const,
-  bySession: (sessionId: string) => ["cart", "session", sessionId] as const,
-  current: (userId?: string, sessionId?: string) =>
-    userId
-      ? ["cart", "user", userId]
-      : sessionId
-      ? ["cart", "session", sessionId]
-      : (["cart", "guest"] as const),
-};
+// Import the canonical CART_QUERY_KEYS from types
+import { CART_QUERY_KEYS } from "../../types/api";
 
 // 🪝 MAIN HOOK
 // ============
@@ -68,6 +59,18 @@ export function useCartActions(
     onError,
     enableOptimisticUpdates = true,
   } = props;
+
+  // 🚨 CRITICAL: Prevent hook execution with undefined userId
+  const isReady = userId !== undefined;
+
+  console.log("⚡ [CART ACTIONS] Hook initialization check:", {
+    userId,
+    sessionId,
+    hasUserId: !!userId,
+    hasSessionId: !!sessionId,
+    isReady,
+    enableOptimisticUpdates,
+  });
 
   const queryClient = useQueryClient();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -120,18 +123,11 @@ export function useCartActions(
           onItemRemoved?.(result.data.removedItemId);
         }
 
-        // Invalidate relevant queries
-        queryClient.invalidateQueries({ queryKey: CART_QUERY_KEYS.all });
-        if (userId) {
-          queryClient.invalidateQueries({
-            queryKey: CART_QUERY_KEYS.byUser(userId),
-          });
-        }
-        if (sessionId) {
-          queryClient.invalidateQueries({
-            queryKey: CART_QUERY_KEYS.bySession(sessionId),
-          });
-        }
+        // ✅ FIXED: Use setQueryData directly instead of invalidating to prevent infinite loops
+        queryClient.setQueryData(
+          CART_QUERY_KEYS.current(userId, sessionId),
+          result.data.cart
+        );
 
         console.log(`✅ [CART ACTIONS] ${actionType} successful:`, {
           productId,
@@ -233,11 +229,15 @@ export function useCartActions(
 
       handleMutationError(error, "ADD", variables.productId);
     },
-    onSettled: () => {
+    onSettled: (data, error, variables, context) => {
       // Always refetch for consistency
-      queryClient.invalidateQueries({
-        queryKey: CART_QUERY_KEYS.current(userId, sessionId),
-      });
+      // ✅ FIXED: Use setQueryData instead of invalidating to prevent loops
+      if (context?.updatedCart) {
+        queryClient.setQueryData(
+          CART_QUERY_KEYS.current(userId, sessionId),
+          context.updatedCart
+        );
+      }
     },
   });
 
@@ -311,6 +311,17 @@ export function useCartActions(
     },
     onSuccess: (result, variables) => {
       console.log("✅ [OPTIMISTIC] Server confirmed update");
+
+      console.log("📨 [CART ACTIONS] UPDATE result received:", {
+        success: result?.success,
+        hasData: !!result?.data,
+        hasCart: !!result?.data?.cart,
+        cartId: result?.data?.cart?.id,
+        itemsCount: result?.data?.cart?.items?.length,
+        resultKeys: result ? Object.keys(result) : null,
+        fullResult: result,
+      });
+
       handleMutationSuccess(result, "UPDATE", variables.cartItemId);
     },
     onError: (error, variables, context) => {
@@ -326,11 +337,15 @@ export function useCartActions(
 
       handleMutationError(error, "UPDATE", variables.cartItemId);
     },
-    onSettled: () => {
+    onSettled: (data, error, variables, context) => {
       // Always refetch to ensure data consistency
-      queryClient.invalidateQueries({
-        queryKey: CART_QUERY_KEYS.current(userId, sessionId),
-      });
+      // ✅ FIXED: Use setQueryData instead of invalidating to prevent loops
+      if (context?.updatedCart) {
+        queryClient.setQueryData(
+          CART_QUERY_KEYS.current(userId, sessionId),
+          context.updatedCart
+        );
+      }
     },
   });
 
@@ -403,10 +418,14 @@ export function useCartActions(
 
       handleMutationError(error, "REMOVE", variables.cartItemId);
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({
-        queryKey: CART_QUERY_KEYS.current(userId, sessionId),
-      });
+    onSettled: (data, error, variables, context) => {
+      // ✅ FIXED: Use setQueryData instead of invalidating to prevent loops
+      if (context?.updatedCart) {
+        queryClient.setQueryData(
+          CART_QUERY_KEYS.current(userId, sessionId),
+          context.updatedCart
+        );
+      }
     },
   });
 
@@ -457,12 +476,31 @@ export function useCartActions(
       input: Omit<AddToCartInput, "userId" | "sessionId">
     ): Promise<boolean> => {
       try {
-        console.log("➕ [CART ACTIONS] Adding to cart:", input);
+        console.log("➕ [CART ACTIONS] Adding to cart:", {
+          ...input,
+          currentUserId: userId,
+          currentSessionId: sessionId,
+          hasUserId: !!userId,
+          hasSessionId: !!sessionId,
+        });
 
-        const result = await addToCartMutation.mutateAsync({
+        const finalInput = {
           ...input,
           userId,
           sessionId,
+        };
+
+        console.log(
+          "🚀 [CART ACTIONS] Final input to server action:",
+          finalInput
+        );
+
+        const result = await addToCartMutation.mutateAsync(finalInput);
+
+        console.log("📨 [CART ACTIONS] Server response:", {
+          success: result.success,
+          hasData: !!result.data,
+          message: result.message,
         });
 
         return result.success;
@@ -484,11 +522,39 @@ export function useCartActions(
       try {
         console.log("🔄 [CART ACTIONS] Updating cart item:", input);
 
-        const result = await updateCartItemMutation.mutateAsync({
+        // 🚨 CRITICAL: Guard against stale closure with undefined values
+        if (!userId) {
+          console.error(
+            "❌ [CART ACTIONS] STALE CLOSURE in updateCartItem: userId is undefined"
+          );
+          console.log("🐛 [UPDATE STALE CLOSURE DEBUG]:", {
+            userId,
+            sessionId,
+            userIdType: typeof userId,
+            sessionIdType: typeof sessionId,
+          });
+          return false;
+        }
+
+        const finalInput = {
           ...input,
           userId,
           sessionId,
+        };
+
+        console.log("📤 [CART ACTIONS] Sending UPDATE to server action:", {
+          cartItemId: finalInput.cartItemId,
+          quantity: finalInput.quantity,
+          userId: finalInput.userId,
+          sessionId: finalInput.sessionId,
+          hasUserId: !!finalInput.userId,
+          hasSessionId: !!finalInput.sessionId,
+          userIdType: typeof finalInput.userId,
+          sessionIdType: typeof finalInput.sessionId,
+          userIdLength: finalInput.userId?.length,
         });
+
+        const result = await updateCartItemMutation.mutateAsync(finalInput);
 
         return result.success;
       } catch (error) {
@@ -650,21 +716,134 @@ export function useCartActions(
           quantity,
         });
 
+        // 🚨 CRITICAL: Guard against stale closure with undefined values
+        if (!userId) {
+          console.error(
+            "❌ [CART ACTIONS] STALE CLOSURE: userId is undefined, aborting update"
+          );
+          console.log("🐛 [STALE CLOSURE DEBUG]:", {
+            userId,
+            sessionId,
+            userIdType: typeof userId,
+            sessionIdType: typeof sessionId,
+            hasUserId: !!userId,
+            hasSessionId: !!sessionId,
+          });
+          return false;
+        }
+
         // Find current cart item to get cartItemId
-        const currentCart = queryClient.getQueryData<CartWithItems>([
-          "cart",
-          userId ? "user" : "session",
-          userId || sessionId,
-        ]);
+        const queryKey = CART_QUERY_KEYS.current(userId, sessionId);
+
+        console.log("🔍 [CART ACTIONS] Searching cart with query key:", {
+          queryKey,
+          userId,
+          sessionId,
+          hasUserId: !!userId,
+          hasSessionId: !!sessionId,
+        });
+
+        let currentCart = queryClient.getQueryData<CartWithItems>(queryKey);
+
+        console.log("🛒 [CART ACTIONS] Current cart data:", {
+          hasCart: !!currentCart,
+          itemsCount: currentCart?.items?.length || 0,
+          itemIds:
+            currentCart?.items?.map((item) => ({
+              id: item.id,
+              productId: item.productId,
+              productName: item.product?.name,
+            })) || [],
+          searchingForProductId: productId,
+        });
+
+        // 🔧 SMART FALLBACK: If cart not found, search in all cache keys
+        if (!currentCart) {
+          console.log(
+            "🔧 [CART ACTIONS] SMART FALLBACK: Searching all cache keys for cart data..."
+          );
+
+          const queryCache = queryClient.getQueryCache();
+          queryCache.findAll().forEach((query) => {
+            if (query.queryKey[0] === "cart" && query.state.data) {
+              const data = query.state.data as CartWithItems;
+              if (data?.items?.length > 0) {
+                console.log(
+                  `🎯 [CART ACTIONS] FOUND CART: Using cache key ${JSON.stringify(
+                    query.queryKey
+                  )} with ${data.items.length} items`
+                );
+                currentCart = data;
+                return; // Found it, use this one
+              }
+            }
+          });
+        }
+
+        // 🔍 DEBUGGING: Check if cart exists with different query keys
+        if (!currentCart) {
+          console.log("🔍 [CART ACTIONS] Checking alternative query keys:");
+          const altKeys = [
+            CART_QUERY_KEYS.byUser(userId || ""),
+            CART_QUERY_KEYS.bySession(sessionId || ""),
+            ["cart", "user", userId],
+            ["cart", "session", sessionId],
+            ["cart", "guest"],
+          ];
+
+          altKeys.forEach((key, index) => {
+            const altCart = queryClient.getQueryData(key);
+            console.log(
+              `  Alternative key ${index + 1}:`,
+              key,
+              "->",
+              !!altCart
+            );
+            if (altCart) {
+              console.log(
+                `    📦 Found cart with ${
+                  (altCart as any)?.items?.length || 0
+                } items`
+              );
+            }
+          });
+
+          // 🔍 DEBUG: Check ALL query cache keys
+          console.log("🔍 [CART ACTIONS] ALL Cache Keys:");
+          const queryCache = queryClient.getQueryCache();
+          queryCache.findAll().forEach((query) => {
+            if (query.queryKey[0] === "cart") {
+              const data = query.state.data;
+              console.log(
+                `    ${JSON.stringify(query.queryKey)} ->`,
+                !!data,
+                data ? `(${(data as any)?.items?.length || 0} items)` : ""
+              );
+            }
+          });
+        }
 
         const currentItem = currentCart?.items.find(
           (item) => item.productId === productId
         );
+
         if (!currentItem) {
+          const errorDetails = {
+            searchProductId: productId,
+            productIdType: typeof productId,
+            productIdLength: productId?.length,
+            availableProductIds:
+              currentCart?.items?.map((item) => item.productId) || [],
+            hasCart: !!currentCart,
+            cartItemsCount: currentCart?.items?.length || 0,
+          };
+
           console.error(
-            "❌ [CART ACTIONS] Item not found for quantity update:",
-            productId
+            "❌ [CART ACTIONS] Item not found for quantity update:"
           );
+          console.error("Details:", errorDetails);
+          console.error("Full currentCart:", currentCart);
+
           return false;
         }
 
@@ -768,6 +947,14 @@ export function useCartActions(
         let allSuccessful = true;
 
         for (const update of updates) {
+          console.log("🔄 [CART ACTIONS] Processing bulk update:", {
+            productId: update.productId,
+            productIdType: typeof update.productId,
+            productIdValid: !!update.productId,
+            quantity: update.quantity,
+            updateObject: update,
+          });
+
           const success = await setItemQuantity(
             update.productId,
             update.quantity
@@ -867,20 +1054,10 @@ export function useCartActions(
     try {
       console.log("🔄 [CART ACTIONS] Refreshing cart data");
 
-      // Invalidate and refetch cart queries
-      await queryClient.invalidateQueries({ queryKey: CART_QUERY_KEYS.all });
-
-      if (userId) {
-        await queryClient.refetchQueries({
-          queryKey: CART_QUERY_KEYS.byUser(userId),
-        });
-      }
-
-      if (sessionId) {
-        await queryClient.refetchQueries({
-          queryKey: CART_QUERY_KEYS.bySession(sessionId),
-        });
-      }
+      // ✅ FIXED: Only refetch the current specific query, not all queries
+      await queryClient.refetchQueries({
+        queryKey: CART_QUERY_KEYS.current(userId, sessionId),
+      });
     } catch (error) {
       console.error("❌ [CART ACTIONS] Refresh cart failed:", error);
     }
@@ -919,6 +1096,54 @@ export function useCartActions(
 
   // 📤 RETURN INTERFACE
   // ===================
+
+  // 🚨 CRITICAL: Return stub functions when userId is undefined (prevents stale closures)
+  if (!isReady) {
+    console.warn(
+      "⚠️ [CART ACTIONS] Hook not ready (userId undefined), returning stub functions"
+    );
+
+    const stubFunction = async () => {
+      console.warn("⚠️ [CART ACTIONS] Stub function called - hook not ready");
+      return false;
+    };
+
+    const stubVoidFunction = async () => {
+      console.warn(
+        "⚠️ [CART ACTIONS] Stub void function called - hook not ready"
+      );
+    };
+
+    return {
+      // Primary actions
+      addToCart: stubFunction,
+      updateCartItem: stubFunction,
+      removeFromCart: stubFunction,
+      clearCart: stubVoidFunction,
+
+      // Convenience actions
+      incrementItem: stubFunction,
+      decrementItem: stubFunction,
+      setItemQuantity: stubFunction,
+      removeItem: stubFunction,
+
+      // Bulk actions
+      addMultipleItems: stubFunction,
+      updateMultipleItems: stubFunction,
+
+      // Cart management
+      validateAndFixCart: stubVoidFunction,
+      syncCart: stubVoidFunction,
+      refreshCart: stubVoidFunction,
+
+      // Guest/User transitions
+      migrateGuestCart: stubFunction,
+
+      // States
+      isProcessing: false,
+      lastAction: undefined,
+    };
+  }
 
   return {
     // Primary actions

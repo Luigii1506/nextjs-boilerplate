@@ -356,9 +356,40 @@ export const useStorefrontQuery = (
           return { success: false, message: "Authentication required" };
         }
 
-        return product.isWishlisted
-          ? await actions.removeFromWishlist(product.id)
-          : await actions.addToWishlist(product.id);
+        // ✅ Direct calls to mutations to avoid circular reference
+        if (product.isWishlisted) {
+          try {
+            const result = await removeFromWishlistMutation.mutateAsync({
+              userId,
+              productId: product.id,
+            });
+            return result;
+          } catch (error) {
+            return {
+              success: false,
+              message:
+                error instanceof Error
+                  ? error.message
+                  : "Failed to remove from wishlist",
+            };
+          }
+        } else {
+          try {
+            const result = await addToWishlistMutation.mutateAsync({
+              userId,
+              productId: product.id,
+            });
+            return result;
+          } catch (error) {
+            return {
+              success: false,
+              message:
+                error instanceof Error
+                  ? error.message
+                  : "Failed to add to wishlist",
+            };
+          }
+        }
       },
 
       // TODO: Implement cart actions

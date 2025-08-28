@@ -172,6 +172,12 @@ export const CART_QUERY_KEYS = {
   all: ["cart"] as const,
   byUser: (userId: string) => ["cart", "user", userId] as const,
   bySession: (sessionId: string) => ["cart", "session", sessionId] as const,
+  current: (userId?: string, sessionId?: string) =>
+    userId
+      ? (["cart", "user", userId] as const)
+      : sessionId
+      ? (["cart", "session", sessionId] as const)
+      : (["cart", "guest"] as const),
   summary: (cartId: string) => ["cart", "summary", cartId] as const,
   validation: (cartId: string) => ["cart", "validation", cartId] as const,
   analytics: (userId?: string, sessionId?: string) =>
@@ -238,5 +244,3 @@ export interface OptimisticUpdateResult {
 }
 
 export default {};
-
-

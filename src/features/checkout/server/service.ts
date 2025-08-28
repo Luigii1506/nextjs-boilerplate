@@ -63,7 +63,10 @@ export async function createOrderService(
 
   try {
     // 1. Get and validate cart
-    const cart = await getCartService(input.cartId, input.userId);
+    const cart = await getCartService({
+      userId: input.userId,
+      sessionId: input.cartId, // Use cartId as sessionId for guest users
+    });
     if (!cart || !cart.items || cart.items.length === 0) {
       throw new Error("Cart is empty or not found");
     }

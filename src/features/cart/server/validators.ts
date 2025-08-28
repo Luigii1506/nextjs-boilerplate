@@ -255,7 +255,9 @@ export function validateCartItemInput(
     const result = addToCartSchema.safeParse(input);
 
     if (!result.success) {
-      const errors = result.error.errors.map((err) => ({
+      // ✅ Safe access to errors array to prevent undefined errors
+      const zodErrors = result.error?.errors || [];
+      const errors = zodErrors.map((err) => ({
         type: "INVALID_QUANTITY" as const,
         message: err.message,
         productId: input.productId,
@@ -321,7 +323,9 @@ export function validateUpdateCartItemInput(
     const result = updateCartItemSchema.safeParse(input);
 
     if (!result.success) {
-      const errors = result.error.errors.map((err) => ({
+      // ✅ Safe access to errors array to prevent undefined errors
+      const zodErrors = result.error?.errors || [];
+      const errors = zodErrors.map((err) => ({
         type: "INVALID_QUANTITY" as const,
         message: err.message,
         cartItemId: input.cartItemId,
@@ -377,7 +381,9 @@ export function validateRemoveFromCartInput(
     const result = removeFromCartSchema.safeParse(input);
 
     if (!result.success) {
-      const errors = result.error.errors.map((err) => ({
+      // ✅ Safe access to errors array to prevent undefined errors
+      const zodErrors = result.error?.errors || [];
+      const errors = zodErrors.map((err) => ({
         type: "VALIDATION_ERROR" as const,
         message: err.message,
         cartItemId: input.cartItemId,
@@ -504,5 +510,3 @@ export function getValidationSummaryMessage(
 }
 
 export default {};
-
-

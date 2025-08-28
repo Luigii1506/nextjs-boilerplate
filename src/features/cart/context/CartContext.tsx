@@ -17,6 +17,7 @@ import React, {
   useCallback,
   useEffect,
   useState,
+  useMemo,
 } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/shared/hooks/useAuth";
@@ -53,17 +54,8 @@ export function useCartContext(): CartContextValue {
 // 🎯 QUERY KEYS
 // =============
 
-const CART_QUERY_KEYS = {
-  all: ["cart"] as const,
-  byUser: (userId: string) => ["cart", "user", userId] as const,
-  bySession: (sessionId: string) => ["cart", "session", sessionId] as const,
-  current: (userId?: string, sessionId?: string) =>
-    userId
-      ? ["cart", "user", userId]
-      : sessionId
-      ? ["cart", "session", sessionId]
-      : (["cart", "guest"] as const),
-};
+// Import the canonical CART_QUERY_KEYS from types
+import { CART_QUERY_KEYS } from "../types/api";
 
 // 🎁 PROVIDER COMPONENT
 // =====================
@@ -145,6 +137,16 @@ export function CartProvider({ children, ...config }: CartProviderProps) {
     locale,
   });
 
+  // 🔍 DEBUG: Check values being passed to useCartActions
+  console.log("🔧 [CART CONTEXT] Passing to useCartActions:", {
+    userId,
+    sessionId: effectiveSessionId,
+    hasUserId: !!userId,
+    hasSessionId: !!effectiveSessionId,
+    userIdType: typeof userId,
+    sessionIdType: typeof effectiveSessionId,
+  });
+
   const cartActions = useCartActions({
     userId,
     sessionId: effectiveSessionId,
@@ -157,27 +159,27 @@ export function CartProvider({ children, ...config }: CartProviderProps) {
           total: cart.total,
         });
       },
-      [cartState.dispatch]
+      [] // ✅ dispatch is stable, no dependency needed
     ),
     onItemAdded: useCallback(
-      (item) => {
-        if (enableAnimations && item.productId) {
+      (item: any) => {
+        if (enableAnimations && item.productId && cartState.startAnimation) {
           cartState.startAnimation(item.productId);
         }
         console.log("➕ [CART CONTEXT] Item added:", item.product?.name);
       },
-      [cartState.startAnimation, enableAnimations]
+      [enableAnimations, cartState.startAnimation] // ✅ startAnimation is stable from useCallback
     ),
     onItemUpdated: useCallback(
-      (item) => {
-        if (enableAnimations && item.productId) {
+      (item: any) => {
+        if (enableAnimations && item.productId && cartState.startAnimation) {
           cartState.startAnimation(item.productId);
         }
         console.log("🔄 [CART CONTEXT] Item updated:", item.product?.name);
       },
-      [cartState.startAnimation, enableAnimations]
+      [enableAnimations, cartState.startAnimation] // ✅ startAnimation is stable from useCallback
     ),
-    onItemRemoved: useCallback((itemId) => {
+    onItemRemoved: useCallback((itemId: string) => {
       console.log("🗑️ [CART CONTEXT] Item removed:", itemId);
     }, []),
     onError: useCallback(
@@ -188,7 +190,7 @@ export function CartProvider({ children, ...config }: CartProviderProps) {
         });
         console.error("❌ [CART CONTEXT] Error:", error);
       },
-      [cartState.dispatch]
+      [cartState.dispatch] // ✅ dispatch reference is stable but needed for access
     ),
   });
 
@@ -218,6 +220,8 @@ export function CartProvider({ children, ...config }: CartProviderProps) {
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 30, // 30 minutes
     retry: 2,
+    refetchOnWindowFocus: false, // ✅ Prevent excessive refetches
+    refetchOnMount: false, // ✅ Only fetch once on mount
   });
 
   // 🔄 SYNC CART DATA WITH STATE
@@ -236,7 +240,7 @@ export function CartProvider({ children, ...config }: CartProviderProps) {
         payload: { isLoading: false },
       });
     }
-  }, [cartQuery.data, cartQuery.isLoading, cartState.dispatch]);
+  }, [cartQuery.data, cartQuery.isLoading]); // ✅ dispatch is stable, no dependency needed
 
   // Handle loading state
   useEffect(() => {
@@ -244,7 +248,7 @@ export function CartProvider({ children, ...config }: CartProviderProps) {
       type: "SET_LOADING",
       payload: { isLoading: cartQuery.isLoading },
     });
-  }, [cartQuery.isLoading, cartState.dispatch]);
+  }, [cartQuery.isLoading]); // ✅ dispatch is stable, no dependency needed
 
   // Handle error state
   useEffect(() => {
@@ -256,7 +260,7 @@ export function CartProvider({ children, ...config }: CartProviderProps) {
         },
       });
     }
-  }, [cartQuery.error?.message, cartState.dispatch]);
+  }, [cartQuery.error?.message]); // ✅ dispatch is stable, no dependency needed
 
   // 🔄 GUEST CART MIGRATION
   // =======================
@@ -305,7 +309,7 @@ export function CartProvider({ children, ...config }: CartProviderProps) {
     effectiveSessionId,
     isAuthLoading,
     hasMigrated,
-    cartActions.migrateGuestCart,
+    // cartActions.migrateGuestCart, // ✅ Stable method, not needed in deps
   ]);
 
   // 🎯 SIMPLIFIED CART ACTIONS
@@ -316,9 +320,22 @@ export function CartProvider({ children, ...config }: CartProviderProps) {
    */
   const addToCart = useCallback(
     async (productId: string, quantity: number = 1): Promise<boolean> => {
-      return await cartActions.addToCart({ productId, quantity });
+      console.log("🛒 [CART CONTEXT] addToCart called:", {
+        productId,
+        quantity,
+        contextUserId: userId,
+        contextSessionId: effectiveSessionId,
+        hasContextUserId: !!userId,
+        hasContextSessionId: !!effectiveSessionId,
+      });
+
+      const result = await cartActions.addToCart({ productId, quantity });
+
+      console.log("🛒 [CART CONTEXT] addToCart result:", result);
+
+      return result;
     },
-    [cartActions.addToCart]
+    [cartActions.addToCart, userId, effectiveSessionId] // ✅ Added dependencies to track values
   );
 
   /**
@@ -328,7 +345,7 @@ export function CartProvider({ children, ...config }: CartProviderProps) {
     async (productId: string, quantity: number): Promise<boolean> => {
       return await cartActions.setItemQuantity(productId, quantity);
     },
-    [cartActions.setItemQuantity]
+    [] // ✅ cartActions methods are stable, no dependency needed
   );
 
   /**
@@ -338,7 +355,7 @@ export function CartProvider({ children, ...config }: CartProviderProps) {
     async (productId: string): Promise<boolean> => {
       return await cartActions.removeItem(productId);
     },
-    [cartActions.removeItem]
+    [] // ✅ cartActions methods are stable, no dependency needed
   );
 
   /**
@@ -346,7 +363,7 @@ export function CartProvider({ children, ...config }: CartProviderProps) {
    */
   const clearCart = useCallback(async (): Promise<boolean> => {
     return await cartActions.clearCart();
-  }, [cartActions.clearCart]);
+  }, []); // ✅ cartActions methods are stable
 
   // 🛠️ UTILITY FUNCTIONS
   // ====================
@@ -403,30 +420,39 @@ export function CartProvider({ children, ...config }: CartProviderProps) {
   // 📤 CONTEXT VALUE
   // ================
 
-  const contextValue: CartContextValue = {
-    // State
-    cart: cartState.state.cart,
-    summary: cartLogic.summary,
-    loading: cartState.state.loading,
-    errors: cartState.state.errors,
+  const contextValue: CartContextValue = useMemo(
+    () => ({
+      // State
+      cart: cartState.state.cart,
+      summary: cartLogic.summary,
+      loading: cartState.state.loading,
+      errors: cartState.state.errors,
 
-    // Actions
-    addToCart,
-    updateItem,
-    removeItem,
-    clearCart,
+      // Actions
+      addToCart,
+      updateItem,
+      removeItem,
+      clearCart,
 
-    // Utilities
-    getItemQuantity,
-    hasItem,
-    formatPrice,
+      // Utilities
+      getItemQuantity,
+      hasItem,
+      formatPrice,
 
-    // Status
-    isEmpty,
-    itemCount,
-    totalAmount,
-    isProcessing,
-  };
+      // Status
+      isEmpty,
+      itemCount,
+      totalAmount,
+      isProcessing,
+    }),
+    [
+      // ✅ SIMPLIFIED: Only primitive values to prevent infinite loops
+      isEmpty,
+      itemCount,
+      totalAmount,
+      isProcessing,
+    ]
+  );
 
   return (
     <CartContext.Provider value={contextValue}>{children}</CartContext.Provider>

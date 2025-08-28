@@ -171,7 +171,7 @@ interface StorefrontContextType {
   setIsMobileMenuOpen: (open: boolean) => void;
 
   // Loading States
-  isAddingToCart: boolean;
+  // isAddingToCart: boolean; // ✅ Removed - handled by CartContext
   isUpdatingCart: boolean;
   isAddingToWishlist: boolean;
 
@@ -218,10 +218,7 @@ interface StorefrontContextType {
   ) => Promise<{ success: boolean; message: string }>;
 
   // Cart Quick Actions
-  addToCartOptimistic: (
-    product: ProductForCustomer,
-    quantity: number
-  ) => Promise<void>;
+  // addToCartOptimistic: ✅ Removed - use CartContext instead
   showCartPreview: () => void;
 
   // Navigation Actions (OBLIGATORIO)
@@ -289,7 +286,7 @@ export const StorefrontProvider: React.FC<StorefrontProviderProps> = ({
     useState(false);
 
   // ⏳ Loading States
-  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  // ✅ Removed isAddingToCart state - now handled by CartContext
   const [isUpdatingCart] = useState(false);
 
   // 🔐 Real Authentication Integration
@@ -728,32 +725,32 @@ export const StorefrontProvider: React.FC<StorefrontProviderProps> = ({
     }
 
     previousAuthState.current = currentAuthState;
-  }, [isAuthenticated, authUser?.id, isAuthLoading, initialDataQuery]);
+  }, [isAuthenticated, authUser?.id, isAuthLoading]); // ✅ Removed initialDataQuery to prevent infinite loop
 
   // 🧮 Computed Values from MEMORY state (not queries)
   const cartItemsCount = storefrontData.cart?.items?.length || 0;
   const wishlistCount = storefrontData.wishlist.length;
 
-  // 🔍 DEBUG: Log state changes
-  useEffect(() => {
-    console.log("📊 [STATE MONITOR] Storefront data updated:", {
-      productsCount: storefrontData.products.length,
-      featuredProductsCount: storefrontData.featuredProducts.length,
-      wishlistCount: storefrontData.wishlist.length,
-      wishlistItems: storefrontData.wishlist.map((item) => ({
-        id: item.id,
-        productId: item.productId,
-      })),
-      productsWithWishlistTrue: storefrontData.products.filter(
-        (p) => p.isWishlisted
-      ).length,
-      featuredWithWishlistTrue: storefrontData.featuredProducts.filter(
-        (p) => p.isWishlisted
-      ).length,
-      isInitialized: storefrontData.isInitialized,
-      timestamp: new Date().toISOString(),
-    });
-  }, [storefrontData]);
+  // 🔍 DEBUG: Log state changes (DISABLED TO PREVENT INFINITE LOOPS)
+  // useEffect(() => {
+  //   console.log("📊 [STATE MONITOR] Storefront data updated:", {
+  //     productsCount: storefrontData.products.length,
+  //     featuredProductsCount: storefrontData.featuredProducts.length,
+  //     wishlistCount: storefrontData.wishlist.length,
+  //     wishlistItems: storefrontData.wishlist.map((item) => ({
+  //       id: item.id,
+  //       productId: item.productId,
+  //     })),
+  //     productsWithWishlistTrue: storefrontData.products.filter(
+  //       (p) => p.isWishlisted
+  //     ).length,
+  //     featuredWithWishlistTrue: storefrontData.featuredProducts.filter(
+  //       (p) => p.isWishlisted
+  //     ).length,
+  //     isInitialized: storefrontData.isInitialized,
+  //     timestamp: new Date().toISOString(),
+  //   });
+  // }, [storefrontData]); // ✅ Commented out to prevent infinite loops
 
   // 👤 Simplified: No need for separate Customer model anymore
   // We use authUser directly for all user-related operations
@@ -919,54 +916,9 @@ export const StorefrontProvider: React.FC<StorefrontProviderProps> = ({
     [isAuthenticated, addToWishlist, removeFromWishlist, authUser?.id]
   );
 
-  // 🚀 Quick Actions - Optimistic Cart Implementation
-  const addToCartOptimistic = useCallback(
-    async (product: ProductForCustomer, quantity: number) => {
-      if (!isAuthenticated) {
-        notify(
-          async () => Promise.resolve(),
-          "Inicia sesión para agregar productos al carrito"
-        );
-        return;
-      }
-
-      // Set loading state
-      setIsAddingToCart(true);
-
-      try {
-        console.log("Adding to cart:", product.id, quantity);
-
-        // Show immediate feedback
-        notify(
-          async () => Promise.resolve(),
-          `${product.name} agregado al carrito`,
-          `${product.name} agregado al carrito`
-        );
-
-        // TODO: Call actual cart server action when implemented
-        // const { addToCartAction } = await import("../server/actions");
-        // const result = await addToCartAction({ productId: product.id, quantity });
-        const result = { success: true }; // Mock for now
-
-        if (result && !result.success) {
-          // If server action failed, show error
-          notify(
-            async () => Promise.resolve(),
-            "Error al agregar al carrito. Intenta de nuevo."
-          );
-        }
-      } catch (error) {
-        console.error("Error adding to cart:", error);
-        notify(
-          async () => Promise.resolve(),
-          "Error al agregar al carrito. Intenta de nuevo."
-        );
-      } finally {
-        setIsAddingToCart(false);
-      }
-    },
-    [isAuthenticated, notify]
-  );
+  // 🚀 ELIMINATED DUPLICATE CART IMPLEMENTATION
+  // All cart operations now use the dedicated CartContext with TanStack Query
+  // This was causing conflicts with the real cart implementation
 
   const showCartPreview = useCallback(() => {
     setIsCartModalOpen(true);
@@ -1086,7 +1038,7 @@ export const StorefrontProvider: React.FC<StorefrontProviderProps> = ({
     setViewingProduct,
 
     // Loading States - TRUE SPA (no constant loading)
-    isAddingToCart,
+    // isAddingToCart, // ✅ Removed - now handled by CartContext
     isUpdatingCart,
     isAddingToWishlist: isAddingToWishlistLocal,
 
@@ -1130,7 +1082,6 @@ export const StorefrontProvider: React.FC<StorefrontProviderProps> = ({
     toggleWishlist,
 
     // Quick Actions
-    addToCartOptimistic,
     showCartPreview,
 
     // Navigation Actions
@@ -1160,7 +1111,9 @@ export const StorefrontProvider: React.FC<StorefrontProviderProps> = ({
         product={viewingProduct}
         isOpen={isProductQuickViewOpen}
         onClose={closeProductQuickView}
-        onAddToCart={addToCartOptimistic}
+        onAddToCart={() => {
+          /* TODO: integrate CartContext */
+        }}
         onAddToWishlist={toggleWishlist}
         isAddingToWishlist={isAddingToWishlistLocal}
         isAddingToCart={false}
@@ -1200,21 +1153,13 @@ export const useTabTransition = () => {
 };
 
 export const useShoppingActions = () => {
-  const {
-    addToCart,
-    addToWishlist,
-    toggleWishlist,
-    addToCartOptimistic,
-    isAddingToCart,
-    isAddingToWishlist,
-  } = useStorefrontContext();
+  const { addToCart, addToWishlist, toggleWishlist, isAddingToWishlist } =
+    useStorefrontContext();
 
   return {
     addToCart,
     addToWishlist,
     toggleWishlist,
-    addToCartOptimistic,
-    isAddingToCart,
     isAddingToWishlist,
   };
 };

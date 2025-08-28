@@ -12,7 +12,7 @@
 
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef } from "react";
 import { useStorefrontContext } from "@/features/storefront/context";
 import { useCartContext } from "@/features/cart";
 import { useNotifications } from "@/shared/hooks/useNotifications";
@@ -29,10 +29,9 @@ export function useProductsActions() {
   // 🔔 NOTIFICATIONS
   const { success, error } = useNotifications();
 
-  // 🔄 LOADING STATES - Track individual products being added to cart
-  const [addingToCartProducts, setAddingToCartProducts] = useState<Set<string>>(
-    new Set()
-  );
+  // 🔄 LOADING STATES - Track individual products being added to cart (ONLY ref to avoid re-renders)
+  const addingToCartProductsRef = useRef<Set<string>>(new Set());
+  // ✅ Removed useState to prevent infinite loops from new Set() objects
 
   // 💖 WISHLIST ACTIONS
   const onAddToWishlist = useCallback(
@@ -58,7 +57,7 @@ export function useProductsActions() {
   const onAddToCart = useCallback(
     async (product: ProductForCustomer) => {
       // Avoid adding if already in progress
-      if (addingToCartProducts.has(product.id)) {
+      if (addingToCartProductsRef.current.has(product.id)) {
         console.log(
           "🔄 [useProductsActions] Product already being added:",
           product.name
@@ -71,11 +70,19 @@ export function useProductsActions() {
         productName: product.name,
       });
 
-      // Set loading state
-      setAddingToCartProducts((prev) => new Set([...prev, product.id]));
+      // Set loading state (only ref to avoid re-renders)
+      addingToCartProductsRef.current.add(product.id);
 
       try {
+        console.log("🛒 [useProductsActions] Calling cartAddToCart with:", {
+          productId: product.id,
+          productName: product.name,
+          quantity: 1,
+        });
+
         const isSuccess = await cartAddToCart(product.id, 1);
+
+        console.log("🛒 [useProductsActions] cartAddToCart result:", isSuccess);
 
         if (isSuccess) {
           console.log(
@@ -95,15 +102,11 @@ export function useProductsActions() {
         error(`Error al agregar ${product.name} al carrito`);
         return false;
       } finally {
-        // Clear loading state
-        setAddingToCartProducts((prev) => {
-          const next = new Set(prev);
-          next.delete(product.id);
-          return next;
-        });
+        // Clear loading state (only ref to avoid re-renders)
+        addingToCartProductsRef.current.delete(product.id);
       }
     },
-    [cartAddToCart, success, error, addingToCartProducts]
+    [cartAddToCart, success, error] // ✅ Removed addingToCartProducts dependency to prevent infinite loop
   );
 
   // 👁️ QUICK VIEW ACTIONS
@@ -170,9 +173,9 @@ export function useProductsActions() {
   // 📊 UTILITY FUNCTIONS
   const isAddingToCart = useCallback(
     (productId: string) => {
-      return addingToCartProducts.has(productId);
+      return addingToCartProductsRef.current.has(productId);
     },
-    [addingToCartProducts]
+    [] // ✅ No dependencies needed since we use ref
   );
 
   return {

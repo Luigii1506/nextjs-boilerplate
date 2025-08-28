@@ -63,6 +63,7 @@ export function CheckoutTab({ className = "" }: CheckoutTabProps) {
     createOrder,
     setCustomerInfo,
     setShippingAddress,
+    setBillingAddress,
     setShippingMethod,
     setPaymentMethod,
     shippingMethods,
@@ -317,12 +318,334 @@ export function CheckoutTab({ className = "" }: CheckoutTabProps) {
           </div>
         );
 
+      case "shipping-address":
+        return (
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm border">
+            <h3 className="text-xl font-semibold mb-6 text-gray-900 dark:text-gray-100">
+              Shipping Address
+            </h3>
+
+            <div className="space-y-6">
+              {/* Address Form */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Street Address
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="123 Main Street"
+                    value={session.shippingAddress?.addressLine1 || ""}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      setShippingAddress({
+                        ...(session.shippingAddress || {
+                          firstName: session.customerInfo.firstName || "",
+                          lastName: session.customerInfo.lastName || "",
+                          addressLine1: "",
+                          city: "",
+                          state: "",
+                          postalCode: "",
+                          country: "US",
+                        }),
+                        addressLine1: e.target.value,
+                      });
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Apartment/Suite (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Apt 2B"
+                    value={session.shippingAddress?.addressLine2 || ""}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      setShippingAddress({
+                        ...(session.shippingAddress || {
+                          firstName: session.customerInfo.firstName || "",
+                          lastName: session.customerInfo.lastName || "",
+                          addressLine1: "",
+                          city: "",
+                          state: "",
+                          postalCode: "",
+                          country: "US",
+                        }),
+                        addressLine2: e.target.value,
+                      });
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">City</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="New York"
+                    value={session.shippingAddress?.city || ""}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      setShippingAddress({
+                        ...(session.shippingAddress || {
+                          firstName: session.customerInfo.firstName || "",
+                          lastName: session.customerInfo.lastName || "",
+                          addressLine1: "",
+                          city: "",
+                          state: "",
+                          postalCode: "",
+                          country: "US",
+                        }),
+                        city: e.target.value,
+                      });
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    State/Province
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="NY"
+                    value={session.shippingAddress?.state || ""}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      setShippingAddress({
+                        ...(session.shippingAddress || {
+                          firstName: session.customerInfo.firstName || "",
+                          lastName: session.customerInfo.lastName || "",
+                          addressLine1: "",
+                          city: "",
+                          state: "",
+                          postalCode: "",
+                          country: "US",
+                        }),
+                        state: e.target.value,
+                      });
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    ZIP/Postal Code
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="10001"
+                    value={session.shippingAddress?.postalCode || ""}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      setShippingAddress({
+                        ...(session.shippingAddress || {
+                          firstName: session.customerInfo.firstName || "",
+                          lastName: session.customerInfo.lastName || "",
+                          addressLine1: "",
+                          city: "",
+                          state: "",
+                          postalCode: "",
+                          country: "US",
+                        }),
+                        postalCode: e.target.value,
+                      });
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Country
+                </label>
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  value={session.shippingAddress?.country || "US"}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                    setShippingAddress({
+                      ...(session.shippingAddress || {
+                        firstName: session.customerInfo.firstName || "",
+                        lastName: session.customerInfo.lastName || "",
+                        addressLine1: "",
+                        city: "",
+                        state: "",
+                        postalCode: "",
+                        country: "US",
+                      }),
+                      country: e.target.value,
+                    });
+                  }}
+                >
+                  <option value="US">United States</option>
+                  <option value="CA">Canada</option>
+                  <option value="MX">Mexico</option>
+                  <option value="GB">United Kingdom</option>
+                  <option value="DE">Germany</option>
+                  <option value="FR">France</option>
+                </select>
+              </div>
+
+              {/* Same as Billing Checkbox */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="sameAsBilling"
+                  className="rounded border-gray-300"
+                  checked={!session.billingAddress}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    if (e.target.checked) {
+                      setBillingAddress(null);
+                    }
+                  }}
+                />
+                <label htmlFor="sameAsBilling" className="text-sm">
+                  Billing address is the same as shipping address
+                </label>
+              </div>
+            </div>
+          </div>
+        );
+
+      case "shipping-method":
+        return (
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm border">
+            <h3 className="text-xl font-semibold mb-6 text-gray-900 dark:text-gray-100">
+              Shipping Method
+            </h3>
+
+            <div className="space-y-4">
+              {shippingMethods.map((method) => (
+                <div
+                  key={method.id}
+                  className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                    session.shippingMethodId === method.id
+                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                      : "border-gray-300 hover:border-gray-400"
+                  }`}
+                  onClick={() => setShippingMethod(method.id)}
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h4 className="font-semibold">{method.name}</h4>
+                      <p className="text-gray-600 text-sm">
+                        {method.description}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {method.estimatedDays} business days
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold">
+                        ${(method.price / 100).toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case "payment-method":
+        return (
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm border">
+            <h3 className="text-xl font-semibold mb-6 text-gray-900 dark:text-gray-100">
+              Payment Method
+            </h3>
+
+            <div className="space-y-4">
+              {paymentMethods.map((method) => (
+                <div
+                  key={method.id}
+                  className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                    session.paymentMethodId === method.id
+                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                      : "border-gray-300 hover:border-gray-400"
+                  }`}
+                  onClick={() => setPaymentMethod(method.id)}
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h4 className="font-semibold">{method.name}</h4>
+                      <p className="text-gray-600 text-sm">
+                        {method.description}
+                      </p>
+                    </div>
+                    <div className="flex items-center">
+                      {method.type === "credit_card" && (
+                        <div className="text-blue-600 mr-2">💳</div>
+                      )}
+                      {method.type === "paypal" && (
+                        <div className="text-blue-600 mr-2">🏦</div>
+                      )}
+                      {method.type === "bank_transfer" && (
+                        <div className="text-green-600 mr-2">🏛️</div>
+                      )}
+                      {method.type === "cash_on_delivery" && (
+                        <div className="text-orange-600 mr-2">💰</div>
+                      )}
+                      <input
+                        type="radio"
+                        checked={session.paymentMethodId === method.id}
+                        readOnly
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case "processing":
+        return (
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-8 shadow-sm border text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">
+              Processing Your Order
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400">
+              Please wait while we process your payment and prepare your
+              order...
+            </p>
+          </div>
+        );
+
+      case "completed":
+        return (
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-8 shadow-sm border text-center">
+            <div className="text-green-600 mb-4">
+              <svg
+                className="w-16 h-16 mx-auto"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">
+              Order Completed!
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              Thank you for your purchase. Your order has been placed
+              successfully.
+            </p>
+            <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+              View Order Details
+            </button>
+          </div>
+        );
+
       default:
         return (
           <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm border">
-            <h3 className="text-lg font-semibold mb-4">
-              {CHECKOUT_STEP_LABELS[currentStep]}
-            </h3>
+            <h3 className="text-lg font-semibold mb-4">{currentStep}</h3>
             <p className="text-gray-600 dark:text-gray-400">
               This step is not yet implemented. Coming soon!
             </p>

@@ -10,7 +10,7 @@
 
 "use client";
 
-import { useReducer, useEffect, useCallback } from "react";
+import { useReducer, useEffect, useCallback, useMemo } from "react";
 import type {
   CartState,
   CartStateAction,
@@ -303,27 +303,41 @@ export function useCartState(props?: UseCartStateProps): UseCartStateReturn {
   // 📤 RETURN INTERFACE
   // ===================
 
-  return {
-    // State
-    state,
+  return useMemo(
+    () => ({
+      // State
+      state,
 
-    // Dispatch
-    dispatch,
+      // Dispatch
+      dispatch,
 
-    // Computed values
-    isEmpty,
-    itemCount,
-    uniqueItemCount,
-    totalAmount,
+      // Computed values
+      isEmpty,
+      itemCount,
+      uniqueItemCount,
+      totalAmount,
 
-    // Quick accessors
-    isLoading,
-    hasErrors,
-    isOptimistic,
+      // Quick accessors
+      isLoading,
+      hasErrors,
+      isOptimistic,
 
-    // Animation helpers
-    startAnimation,
-  };
+      // Animation helpers
+      startAnimation,
+    }),
+    [
+      state,
+      dispatch,
+      isEmpty,
+      itemCount,
+      uniqueItemCount,
+      totalAmount,
+      isLoading,
+      hasErrors,
+      isOptimistic,
+      startAnimation,
+    ]
+  );
 }
 
 // 🛠️ UTILITY FUNCTIONS
@@ -362,5 +376,3 @@ export function useIsItemAnimating(
 }
 
 export default useCartState;
-
-

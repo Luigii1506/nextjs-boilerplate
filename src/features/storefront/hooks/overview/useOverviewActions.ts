@@ -14,6 +14,7 @@
 
 import { useCallback } from "react";
 import { useStorefrontContext } from "@/features/storefront/context";
+import { useCartContext } from "@/features/cart";
 import {
   ProductForCustomer,
   CategoryForCustomer,
@@ -23,11 +24,13 @@ import {
 export function useOverviewActions() {
   const {
     toggleWishlist,
-    addToCartOptimistic,
     openProductQuickView,
     setActiveTab,
     setGlobalSearchTerm,
   } = useStorefrontContext();
+
+  // 🛒 CART CONTEXT
+  const { addToCart: cartAddToCart } = useCartContext();
 
   // 💖 WISHLIST ACTIONS
   const onAddToWishlist = useCallback(
@@ -62,15 +65,26 @@ export function useOverviewActions() {
 
   // 🛒 CART ACTIONS
   const onAddToCart = useCallback(
-    (product: ProductForCustomer) => {
+    async (product: ProductForCustomer) => {
       console.log("🛒 [useOverviewActions] onAddToCart:", {
         productId: product.id,
         productName: product.name,
       });
 
-      addToCartOptimistic(product, 1);
+      try {
+        const isSuccess = await cartAddToCart(product.id, 1);
+        if (!isSuccess) {
+          console.error(
+            "❌ [useOverviewActions] Failed to add product to cart"
+          );
+        }
+        return isSuccess;
+      } catch (err) {
+        console.error("❌ [useOverviewActions] Error adding to cart:", err);
+        return false;
+      }
     },
-    [addToCartOptimistic]
+    [cartAddToCart]
   );
 
   // 👁️ QUICK VIEW ACTIONS

@@ -14,17 +14,20 @@
 
 import { useCallback } from "react";
 import { useStorefrontContext } from "@/features/storefront/context";
+import { useCartContext } from "@/features/cart";
 import { ProductForCustomer } from "@/features/storefront/types";
 
 // 🎯 MAIN HOOK
 export function useWishlistActions() {
   const {
     toggleWishlist,
-    addToCartOptimistic,
     openProductQuickView,
     openLoginModal,
     setGlobalSearchTerm,
   } = useStorefrontContext();
+
+  // 🛒 CART CONTEXT - Use real CartContext instead of mock
+  const { addToCart: cartAddToCart } = useCartContext();
 
   // 💖 WISHLIST ACTIONS
   const onRemoveFromWishlist = useCallback(
@@ -57,10 +60,12 @@ export function useWishlistActions() {
       product: ProductForCustomer
     ): Promise<{ success: boolean; message: string }> => {
       try {
-        const result = addToCartOptimistic(product, 1);
+        const isSuccess = await cartAddToCart(product.id, 1);
         return {
-          success: true,
-          message: "Producto agregado al carrito",
+          success: isSuccess,
+          message: isSuccess
+            ? "Producto agregado al carrito"
+            : "Error al agregar producto al carrito",
         };
       } catch (error) {
         console.error("❌ [useWishlistActions] Add to cart error:", error);
@@ -70,7 +75,7 @@ export function useWishlistActions() {
         };
       }
     },
-    [addToCartOptimistic]
+    [cartAddToCart]
   );
 
   const onMoveToCart = useCallback(
@@ -79,10 +84,17 @@ export function useWishlistActions() {
     ): Promise<{ success: boolean; message: string }> => {
       try {
         // Add to cart and remove from wishlist
-        addToCartOptimistic(product, 1);
+        const cartSuccess = await cartAddToCart(product.id, 1);
+        if (!cartSuccess) {
+          return {
+            success: false,
+            message: "Error al agregar producto al carrito",
+          };
+        }
+
         const wishlistResult = await toggleWishlist(product);
         return {
-          success: wishlistResult.success,
+          success: wishlistResult.success && cartSuccess,
           message: "Producto movido al carrito",
         };
       } catch (error) {
@@ -93,7 +105,7 @@ export function useWishlistActions() {
         };
       }
     },
-    [addToCartOptimistic, toggleWishlist]
+    [cartAddToCart, toggleWishlist]
   );
 
   // 👁️ QUICK VIEW ACTIONS
@@ -115,8 +127,10 @@ export function useWishlistActions() {
         let successCount = 0;
         for (const product of products) {
           if (selectedItems.has(product.id)) {
-            await addToCartOptimistic(product, 1);
-            successCount++;
+            const success = await cartAddToCart(product.id, 1);
+            if (success) {
+              successCount++;
+            }
           }
         }
         return {
@@ -133,7 +147,7 @@ export function useWishlistActions() {
         };
       }
     },
-    [addToCartOptimistic]
+    [cartAddToCart]
   );
 
   const onBulkRemoveFromWishlist = useCallback(

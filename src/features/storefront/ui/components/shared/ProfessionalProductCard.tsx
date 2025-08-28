@@ -21,9 +21,8 @@ import {
   Truck,
   Shield,
   Zap,
-  Award,
 } from "lucide-react";
-import type { ProductForCustomer } from "../../types/shared";
+import type { ProductForCustomer } from "@/features/storefront/types";
 import { ProductSkeleton } from "./ProductSkeleton";
 
 interface ProfessionalProductCardProps {
@@ -52,7 +51,7 @@ export const ProfessionalProductCard: React.FC<
   variant = "grid",
 }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageLoaded] = useState(false);
   const [heartAnimating, setHeartAnimating] = useState(false);
   const [localAddingToWishlist, setLocalAddingToWishlist] = useState(false);
   const [optimisticWishlisted, setOptimisticWishlisted] = useState(
@@ -97,7 +96,7 @@ export const ProfessionalProductCard: React.FC<
       }
     },
     [
-      product,
+      product, // ✅ Incluir producto completo porque lo usamos en onAddToWishlist
       onAddToWishlist,
       isAddingToWishlist,
       localAddingToWishlist,
@@ -114,7 +113,7 @@ export const ProfessionalProductCard: React.FC<
         onAddToCart(product);
       }
     },
-    [product, onAddToCart, isAddingToCart]
+    [product, isAddingToCart, onAddToCart]
   );
 
   // Handle quick view
@@ -126,7 +125,7 @@ export const ProfessionalProductCard: React.FC<
         onQuickView(product);
       }
     },
-    [product, onQuickView]
+    [product, onQuickView] // ✅ Incluir producto completo porque lo usamos en onQuickView
   );
 
   // Generate rating stars
@@ -193,7 +192,7 @@ export const ProfessionalProductCard: React.FC<
             <div className="w-full h-full bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900 dark:to-indigo-800 flex items-center justify-center">
               <Package className="w-8 h-8 text-gray-400" />
             </div>
-            {product.isOnSale && product.discountPercentage > 0 && (
+            {product.isOnSale && (product.discountPercentage || 0) > 0 && (
               <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
                 -{Math.round(product.discountPercentage || 0)}%
               </div>
@@ -333,7 +332,7 @@ export const ProfessionalProductCard: React.FC<
       {/* Product Image Container */}
       <div className="relative aspect-square rounded-t-2xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600">
         {/* Sale Badge */}
-        {product.isOnSale && product.discountPercentage > 0 && (
+        {product.isOnSale && (product.discountPercentage || 0) > 0 && (
           <div className="absolute top-3 left-3 bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm font-bold px-3 py-1 rounded-full shadow-lg z-20">
             -{Math.round(product.discountPercentage || 0)}%
           </div>
@@ -344,7 +343,7 @@ export const ProfessionalProductCard: React.FC<
           Array.isArray(product.badges) &&
           product.badges.length > 0 && (
             <div className="absolute top-3 left-3 flex flex-col space-y-1 z-20">
-              {product.badges.map((badge, index) => (
+              {product.badges.map((badge: string, index: number) => (
                 <span
                   key={index}
                   className={cn(
