@@ -80,6 +80,13 @@ export const STOREFRONT_TABS = [
     color: "red",
   },
   {
+    id: "cart",
+    label: "Carrito",
+    icon: "ShoppingCart",
+    description: "Tu carrito de compras",
+    color: "cyan",
+  },
+  {
     id: "account",
     label: "Mi Cuenta",
     icon: "User",
@@ -92,6 +99,13 @@ export const STOREFRONT_TABS = [
     icon: "HelpCircle",
     description: "Soporte y contacto",
     color: "orange",
+  },
+  {
+    id: "checkout",
+    label: "Checkout",
+    icon: "ShoppingCart",
+    description: "Proceso de compra",
+    color: "emerald",
   },
 ] as const;
 

@@ -1,33 +1,27 @@
 /**
- * 🛒 STOREFRONT HOOKS - BARREL EXPORTS
- * ====================================
+ * 📦 STOREFRONT HOOKS MAIN INDEX
+ * ==============================
  *
- * Exportaciones centralizadas para todos los hooks del módulo storefront
+ * Centralized exports for ALL storefront hooks organized by feature.
+ * Nueva estructura de "Fase Futura" - Organización por Feature.
  *
- * Created: 2025-01-17 - Storefront Hooks Module
+ * 📍 Estructura refactorizada: /hooks/[feature]/
+ *
+ * @version 3.0.0 - Feature-First Architecture
  */
 
-// 🔄 Data Query hooks
+// 📦 PRODUCTS HOOKS
+export * from "./products";
+
+// ❤️ WISHLIST HOOKS
+export * from "./wishlist";
+
+// 🏠 OVERVIEW HOOKS
+export * from "./overview";
+
+// 🔧 SHARED HOOKS
+export * from "./shared";
+
+// 🌐 EXISTING GLOBAL HOOKS (mantener compatibilidad)
 export { useStorefrontQuery } from "./useStorefrontQuery";
-
-// 💖 Wishlist hooks - ✅ IMPLEMENTED
 export { useWishlistActions } from "./useWishlistActions";
-
-// TODO: Create these additional hooks
-// export { useProductsQuery } from "./useProductsQuery";
-// export { useCategoriesQuery } from "./useCategoriesQuery";
-
-// 🛒 Shopping hooks (TODO: Create these hooks)
-// export { useCart } from "./useCart";
-// export { useCustomerActions } from "./useCustomerActions";
-
-// 🎯 UI Interaction hooks (TODO: Create these hooks)
-// export { useProductSearch } from "./useProductSearch";
-// export { useScrollHeader } from "./useScrollHeader";
-
-// 📝 Form and Mutation hooks (TODO: Create these hooks)
-// export { useCustomerRegistration } from "./useCustomerRegistration";
-// export { useCustomerLogin } from "./useCustomerLogin";
-
-// 🗂️ Query keys for external invalidation
-export { STOREFRONT_QUERY_KEYS } from "./useStorefrontQuery";

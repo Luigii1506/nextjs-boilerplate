@@ -101,7 +101,7 @@ const ProductsTab: React.FC = () => {
 
   // 💖 Wishlist Actions
   const onAddToWishlist = useCallback(
-    async (product: ProductForCustomer) => {
+    async (product: ProductForCustomer): Promise<{ success: boolean; message: string }> => {
       console.log("❤️ [ProductsTab] onAddToWishlist clicked", {
         productId: product.id,
         productName: product.name,

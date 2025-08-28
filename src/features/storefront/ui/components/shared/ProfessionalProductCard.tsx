@@ -24,6 +24,7 @@ import {
   Award,
 } from "lucide-react";
 import type { ProductForCustomer } from "../../types/shared";
+import { ProductSkeleton } from "./ProductSkeleton";
 
 interface ProfessionalProductCardProps {
   product: ProductForCustomer;
@@ -177,6 +178,12 @@ export const ProfessionalProductCard: React.FC<
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
+        {/* 💀 SKELETON OVERLAY - Add to Cart Loading */}
+        {isAddingToCart && (
+          <div className="absolute inset-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl z-10 flex items-center justify-center">
+            <ProductSkeleton variant="list" className="opacity-60" />
+          </div>
+        )}
         <div className="flex items-start space-x-6">
           {/* Product Image */}
           <div className="relative flex-shrink-0 w-32 h-32 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700">
@@ -281,11 +288,7 @@ export const ProfessionalProductCard: React.FC<
                 )}
               >
                 <div className="flex items-center justify-center space-x-2">
-                  {isAddingToCart ? (
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <ShoppingCart className="w-5 h-5" />
-                  )}
+                  <ShoppingCart className="w-5 h-5" />
                   <span>
                     {(product.stock || 0) > 0
                       ? "Agregar al carrito"
@@ -321,6 +324,12 @@ export const ProfessionalProductCard: React.FC<
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
+      {/* 💀 SKELETON OVERLAY - Add to Cart Loading */}
+      {isAddingToCart && (
+        <div className="absolute inset-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl z-30 flex items-center justify-center">
+          <ProductSkeleton variant="grid" className="opacity-60" />
+        </div>
+      )}
       {/* Product Image Container */}
       <div className="relative aspect-square rounded-t-2xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600">
         {/* Sale Badge */}
@@ -493,17 +502,9 @@ export const ProfessionalProductCard: React.FC<
           )}
         >
           <div className="flex items-center justify-center space-x-2">
-            {isAddingToCart ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <ShoppingCart className="w-5 h-5" />
-            )}
+            <ShoppingCart className="w-5 h-5" />
             <span>
-              {(product.stock || 0) === 0
-                ? "Agotado"
-                : isAddingToCart
-                ? "Agregando..."
-                : "Agregar al carrito"}
+              {(product.stock || 0) === 0 ? "Agotado" : "Agregar al carrito"}
             </span>
           </div>
         </button>

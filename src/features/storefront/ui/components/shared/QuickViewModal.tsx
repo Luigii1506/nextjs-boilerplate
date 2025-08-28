@@ -420,16 +420,10 @@ export const QuickViewModal: React.FC<QuickViewModalProps> = ({
                       )}
                     >
                       <div className="flex items-center justify-center space-x-2">
-                        {isAddingToCart ? (
-                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <ShoppingCart className="w-5 h-5" />
-                        )}
+                        <ShoppingCart className="w-5 h-5" />
                         <span>
                           {(product.stock || 0) === 0
                             ? "Agotado"
-                            : isAddingToCart
-                            ? "Agregando..."
                             : `Agregar${
                                 quantity > 1 ? ` ${quantity}` : ""
                               } al carrito`}

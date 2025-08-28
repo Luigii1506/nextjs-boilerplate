@@ -15,6 +15,7 @@
 import "../styles/animations.css";
 
 import React, { useMemo } from "react";
+import { useAuth } from "../../../../shared/hooks/useAuth";
 import {
   Home,
   Package,
@@ -34,6 +35,8 @@ import {
   STOREFRONT_TABS,
   type TabId,
 } from "../../context";
+import { CartProvider } from "@/features/cart";
+import { CheckoutProvider, CheckoutTab } from "@/features/checkout";
 // import { ReusableTabs, type TabItem } from "@/shared/ui/components";
 import { useScrollHeader } from "../../../../shared/hooks";
 import {
@@ -44,7 +47,13 @@ import {
   AccountTab,
   SupportTab,
 } from "../components";
-import { WishlistDebugPanel } from "../components/debug/WishlistDebugPanel";
+import {
+  CartTab,
+  CartBadge,
+  CartDebugPanel,
+  useCartContext,
+} from "@/features/cart";
+// import { WishlistDebugPanel } from "../components/debug/WishlistDebugPanel";
 
 // 🎨 Icon mapping for tabs
 const ICON_MAP = {
@@ -52,34 +61,36 @@ const ICON_MAP = {
   Package,
   Grid3X3,
   Heart,
+  ShoppingCart,
   User,
   HelpCircle,
 } as const;
 
 // 🛒 Professional E-commerce Header (Amazon/eBay inspired)
 interface CustomerHeaderProps {
-  isHeaderVisible: boolean;
   scrollY: number;
   isPastThreshold: boolean;
 }
 
 const CustomerHeader: React.FC<CustomerHeaderProps> = ({
-  isHeaderVisible,
   scrollY,
   isPastThreshold,
 }) => {
   const {
     globalSearchTerm,
     setGlobalSearchTerm,
-    cartItemsCount,
-    showCartPreview,
     openLoginModal,
-    customer,
     isMobileMenuOpen,
     setIsMobileMenuOpen,
     stats,
     setActiveTab,
   } = useStorefrontContext();
+
+  // Use auth hook directly since customer is deprecated
+  const { user: authUser, isAuthenticated } = useAuth();
+
+  // 🛒 CART CONTEXT
+  const { itemCount, formatPrice, totalAmount } = useCartContext();
 
   return (
     <header
@@ -180,15 +191,14 @@ const CustomerHeader: React.FC<CustomerHeaderProps> = ({
             {/* Account */}
             <button
               onClick={
-                customer ? () => setActiveTab("account") : openLoginModal
+                isAuthenticated ? () => setActiveTab("account") : openLoginModal
               }
               className="flex items-center space-x-2 px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
             >
               <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                {customer ? (
+                {isAuthenticated && authUser ? (
                   <span className="text-sm font-semibold text-white">
-                    {customer.firstName?.[0]}
-                    {customer.lastName?.[0]}
+                    {authUser.name?.[0] || authUser.email?.[0]?.toUpperCase()}
                   </span>
                 ) : (
                   <User className="w-4 h-4 text-white" />
@@ -196,33 +206,36 @@ const CustomerHeader: React.FC<CustomerHeaderProps> = ({
               </div>
               <div className="hidden lg:block text-left">
                 <div className="text-xs text-gray-500 dark:text-gray-400">
-                  {customer ? "Mi cuenta" : "Iniciar sesión"}
+                  {isAuthenticated ? "Mi cuenta" : "Iniciar sesión"}
                 </div>
                 <div className="text-sm font-medium text-gray-900 dark:text-gray-100 -mt-0.5">
-                  {customer ? customer.firstName : "Cuenta"}
+                  {isAuthenticated && authUser
+                    ? authUser.name || authUser.email
+                    : "Cuenta"}
                 </div>
               </div>
             </button>
 
             {/* Cart */}
             <button
-              onClick={showCartPreview}
+              onClick={() => setActiveTab("cart")}
               className="relative flex items-center space-x-2 px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
             >
-              <div className="relative">
-                <ShoppingCart className="w-6 h-6 text-gray-700 dark:text-gray-300" />
-                {cartItemsCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse shadow-lg">
-                    {cartItemsCount}
-                  </span>
-                )}
-              </div>
+              <CartBadge
+                itemCount={itemCount}
+                formattedTotal={formatPrice(totalAmount)}
+                showIcon={true}
+                showAmount={false}
+                size="md"
+                variant="primary"
+                animate={true}
+              />
               <div className="hidden lg:block text-left">
                 <div className="text-xs text-gray-500 dark:text-gray-400">
                   Carrito
                 </div>
                 <div className="text-sm font-medium text-gray-900 dark:text-gray-100 -mt-0.5">
-                  {cartItemsCount} items
+                  {itemCount} items
                 </div>
               </div>
             </button>
@@ -258,8 +271,11 @@ const CustomerHeader: React.FC<CustomerHeaderProps> = ({
 
 // 🛒 Professional E-commerce Navigation
 const CustomerTabNavigation: React.FC = () => {
-  const { activeTab, setActiveTab, wishlistCount, cartItemsCount, stats } =
+  const { activeTab, setActiveTab, wishlistCount, stats } =
     useStorefrontContext();
+
+  // 🛒 CART CONTEXT
+  const { itemCount: cartItemCount } = useCartContext();
 
   // Calculate notification counts for each tab
   const notificationCounts = useMemo(
@@ -271,10 +287,12 @@ const CustomerTabNavigation: React.FC = () => {
       products: 0,
       categories: 0,
       wishlist: wishlistCount || 0,
+      cart: cartItemCount || 0,
       account: 0,
       support: 0,
+      checkout: 0,
     }),
-    [stats, wishlistCount]
+    [stats, wishlistCount, cartItemCount]
   );
 
   return (
@@ -329,7 +347,7 @@ const CustomerTabNavigation: React.FC = () => {
 
 // 🎯 TRUE SPA TAB CONTENT - TODOS LOS TABS MONTADOS (OBLIGATORIO)
 const TabContent: React.FC = () => {
-  const { activeTab, isTabChanging } = useStorefrontContext();
+  const { activeTab, setActiveTab, isTabChanging } = useStorefrontContext();
 
   // 🚨 PATRÓN SPA OBLIGATORIO: Renderizar TODOS los tabs pero solo mostrar el activo
   // Esto previene unmounting/remounting que causaba el comportamiento de "refresh"
@@ -407,6 +425,43 @@ const TabContent: React.FC = () => {
         <WishlistTab />
       </div>
 
+      {/* Cart Tab - Always mounted */}
+      <div
+        className={cn(
+          "transition-all duration-300 ease-out",
+          activeTab === "cart"
+            ? "opacity-100 visible relative z-0"
+            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
+        )}
+        style={{
+          transform:
+            activeTab === "cart" ? "translateY(0)" : "translateY(20px)",
+        }}
+      >
+        <CartTab
+          onCheckout={async () => {
+            setActiveTab("checkout");
+            return true;
+          }}
+        />
+      </div>
+
+      {/* Checkout Tab - Always mounted */}
+      <div
+        className={cn(
+          "transition-all duration-300 ease-out",
+          activeTab === "checkout"
+            ? "opacity-100 visible relative z-0"
+            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
+        )}
+        style={{
+          transform:
+            activeTab === "checkout" ? "translateY(0)" : "translateY(20px)",
+        }}
+      >
+        <CheckoutTab />
+      </div>
+
       {/* Account Tab - Always mounted */}
       <div
         className={cn(
@@ -445,7 +500,7 @@ const TabContent: React.FC = () => {
 // 🎯 Main SPA Component (without Provider)
 const StorefrontSPAContent: React.FC = () => {
   // ✨ Enhanced Scroll Detection Hook (customer-optimized)
-  const { scrollY, isHeaderVisible, isPastThreshold } = useScrollHeader({
+  const { scrollY, isPastThreshold } = useScrollHeader({
     threshold: 20, // Slightly higher for customer experience
     wheelSensitivity: 0.6, // More sensitive
     useWheelFallback: true,
@@ -455,11 +510,7 @@ const StorefrontSPAContent: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 customer-scrollbar">
       {/* Professional Header */}
-      <CustomerHeader
-        isHeaderVisible={isHeaderVisible}
-        scrollY={scrollY}
-        isPastThreshold={isPastThreshold}
-      />
+      <CustomerHeader scrollY={scrollY} isPastThreshold={isPastThreshold} />
 
       {/* Professional Navigation */}
       <CustomerTabNavigation />
@@ -605,8 +656,13 @@ const StorefrontSPAContent: React.FC = () => {
         </div>
       </footer>
 
-      {/* 🔍 DEBUG PANEL - Only in development */}
-      {process.env.NODE_ENV === "development" && <WishlistDebugPanel />}
+      {/* 🔍 DEBUG PANELS - Only in development */}
+      {process.env.NODE_ENV === "development" && (
+        <>
+          <CartDebugPanel />
+          {/* <WishlistDebugPanel /> */}
+        </>
+      )}
     </div>
   );
 };
@@ -619,9 +675,13 @@ interface StorefrontScreenProps {
 const StorefrontScreen: React.FC<StorefrontScreenProps> = ({ className }) => {
   return (
     <div className={cn("w-full", className)}>
-      <StorefrontProvider>
-        <StorefrontSPAContent />
-      </StorefrontProvider>
+      <CartProvider>
+        <CheckoutProvider>
+          <StorefrontProvider>
+            <StorefrontSPAContent />
+          </StorefrontProvider>
+        </CheckoutProvider>
+      </CartProvider>
     </div>
   );
 };

@@ -1,23 +1,19 @@
 /**
- * 🛒 STOREFRONT TABS - BARREL EXPORTS
- * ===================================
+ * 📦 STOREFRONT TABS BARREL EXPORT
+ * ===============================
  *
- * Exportaciones centralizadas para todos los tabs del storefront SPA
+ * Simplified barrel exports for all tab components.
+ * Feature-First architecture v3.0.0 - Components organized by feature.
  *
- * Created: 2025-01-17 - Storefront SPA Tabs
+ * @version 3.0.0 - Feature-First Architecture
  */
 
-// Export tabs
-export { default as OverviewTab } from "./OverviewTab";
-export { default as ProductsTab } from "./ProductsTab";
+// ✅ REFACTORED TABS (Feature-First v3.0.0)
+export { ProductsTab } from "../products";
+export { WishlistTab } from "../wishlist";
+export { OverviewTab } from "../overview";
+
+// ⏳ LEGACY TABS (To be refactored)
 export { default as CategoriesTab } from "./CategoriesTab";
-export { default as WishlistTab } from "./WishlistTab";
 export { default as AccountTab } from "./AccountTab";
 export { default as SupportTab } from "./SupportTab";
-
-// TODO: Export remaining tabs as they're created
-// export { default as ProductsTab } from "./ProductsTab";
-// export { default as CategoriesTab } from "./CategoriesTab";
-// export { default as WishlistTab } from "./WishlistTab";
-// export { default as AccountTab } from "./AccountTab";
-// export { default as SupportTab } from "./SupportTab";
