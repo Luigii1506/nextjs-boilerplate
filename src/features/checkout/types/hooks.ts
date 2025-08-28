@@ -16,6 +16,8 @@ import {
   OrderCalculation,
   CheckoutMetrics,
 } from "./models";
+import type { PaymentData } from "./payment-data";
+import type { StripeInstance, StripeElements } from "./stripe";
 import { CartWithItems } from "@/features/cart/types";
 
 // 🎯 CHECKOUT STATE HOOKS
@@ -72,8 +74,8 @@ export interface UsePaymentReturn {
 }
 
 export interface UseStripePaymentReturn {
-  stripe: any; // Stripe instance
-  elements: any; // Stripe elements
+  stripe: StripeInstance | null;
+  elements: StripeElements | null;
   isLoading: boolean;
   error: string | null;
 
@@ -110,17 +112,24 @@ export interface UseCheckoutActionsReturn {
   createOrder: (
     session: CheckoutSession,
     cart: CartWithItems
-  ) => Promise<Order>;
+  ) => Promise<Order | null>;
   processPayment: (
     order: Order,
-    paymentData: any
+    paymentData: PaymentData
   ) => Promise<{ success: boolean; error?: string }>;
-  confirmOrder: (orderId: string) => Promise<Order>;
+  confirmOrder: (orderId: string) => Promise<Order | null>;
+  calculateOrder: (
+    cartId: string,
+    shippingAddress?: Address,
+    shippingMethodId?: string,
+    discountCodes?: string[]
+  ) => Promise<void>;
 
   // States
   isCreatingOrder: boolean;
   isProcessingPayment: boolean;
   isConfirmingOrder: boolean;
+  isCalculatingOrder: boolean;
 
   // Error handling
   lastError: string | null;
@@ -219,7 +228,7 @@ export interface CheckoutContextType {
   calculateOrder: () => Promise<void>;
   createOrder: () => Promise<Order | null>;
   processPayment: (
-    paymentData: any
+    paymentData: PaymentData
   ) => Promise<{ success: boolean; error?: string }>;
   resetCheckout: () => void;
 

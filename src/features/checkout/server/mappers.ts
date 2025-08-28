@@ -11,6 +11,8 @@ import type {
   Address,
   OrderCalculation,
   CheckoutSession,
+  PrismaOrder,
+  PrismaOrderItem,
 } from "../types";
 import type { CartWithItems, CartItem } from "@/features/cart/types";
 import { TAX_RATES, FREE_SHIPPING_THRESHOLD } from "../constants";
@@ -146,7 +148,7 @@ export function calculateOrderTotals(
 /**
  * Map Prisma order to API order
  */
-export function mapPrismaOrderToOrder(prismaOrder: any): Order {
+export function mapPrismaOrderToOrder(prismaOrder: PrismaOrder): Order {
   console.log("🔄 [CHECKOUT MAPPER] Mapping Prisma order to API order:", {
     orderId: prismaOrder.id,
     orderNumber: prismaOrder.number,
@@ -214,7 +216,7 @@ export function mapPrismaOrderToOrder(prismaOrder: any): Order {
 /**
  * Map Prisma order item to API order item
  */
-export function mapPrismaOrderItemToOrderItem(prismaOrderItem: any): OrderItem {
+export function mapPrismaOrderItemToOrderItem(prismaOrderItem: PrismaOrderItem): OrderItem {
   return {
     id: prismaOrderItem.id,
     orderId: prismaOrderItem.orderId,

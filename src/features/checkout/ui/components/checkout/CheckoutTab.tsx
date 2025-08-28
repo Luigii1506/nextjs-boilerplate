@@ -10,6 +10,7 @@
 import React from "react";
 import { useCheckoutContext } from "../../../context/CheckoutContext";
 import { CHECKOUT_STEP_LABELS } from "../../../constants";
+import type { CheckoutStep } from "../../../types";
 import {
   ShoppingCart,
   User,
@@ -60,6 +61,12 @@ export function CheckoutTab({ className = "" }: CheckoutTabProps) {
     goToNextStep,
     goToPreviousStep,
     createOrder,
+    setCustomerInfo,
+    setShippingAddress,
+    setShippingMethod,
+    setPaymentMethod,
+    shippingMethods,
+    paymentMethods,
   } = useCheckoutContext();
 
   // 🔒 EARLY RETURNS
@@ -111,7 +118,7 @@ export function CheckoutTab({ className = "" }: CheckoutTabProps) {
         <div className="flex items-center justify-between">
           {visibleSteps.map((step, index) => {
             const StepIcon = STEP_ICONS[step as keyof typeof STEP_ICONS];
-            const isCompleted = completedSteps.includes(step as any);
+            const isCompleted = completedSteps.includes(step as CheckoutStep);
             const isCurrent = currentStep === step;
             const isActive = isCompleted || isCurrent;
 
@@ -152,7 +159,9 @@ export function CheckoutTab({ className = "" }: CheckoutTabProps) {
                 {index < visibleSteps.length - 1 && (
                   <div
                     className={`flex-1 h-0.5 mx-4 ${
-                      completedSteps.includes(visibleSteps[index + 1] as any)
+                      completedSteps.includes(
+                        visibleSteps[index + 1] as CheckoutStep
+                      )
                         ? "bg-blue-600"
                         : "bg-gray-300"
                     }`}
@@ -185,9 +194,11 @@ export function CheckoutTab({ className = "" }: CheckoutTabProps) {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="your@email.com"
                   value={session.customerInfo.email}
-                  onChange={(e) => {
-                    // This would be connected to the setCustomerInfo action
-                    console.log("Email changed:", e.target.value);
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    setCustomerInfo({
+                      ...session.customerInfo,
+                      email: e.target.value,
+                    });
                   }}
                 />
               </div>
@@ -200,6 +211,13 @@ export function CheckoutTab({ className = "" }: CheckoutTabProps) {
                     type="text"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="John"
+                    value={session.customerInfo.firstName || ""}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      setCustomerInfo({
+                        ...session.customerInfo,
+                        firstName: e.target.value,
+                      });
+                    }}
                   />
                 </div>
                 <div>
@@ -210,6 +228,13 @@ export function CheckoutTab({ className = "" }: CheckoutTabProps) {
                     type="text"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Doe"
+                    value={session.customerInfo.lastName || ""}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      setCustomerInfo({
+                        ...session.customerInfo,
+                        lastName: e.target.value,
+                      });
+                    }}
                   />
                 </div>
               </div>
@@ -269,7 +294,14 @@ export function CheckoutTab({ className = "" }: CheckoutTabProps) {
 
             {/* Place Order Button */}
             <button
-              onClick={() => createOrder()}
+              onClick={async () => {
+                const order = await createOrder();
+                if (order) {
+                  console.log("Order created successfully:", order.id);
+                } else {
+                  console.error("Order creation failed");
+                }
+              }}
               disabled={isCreatingOrder}
               className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >

@@ -10,8 +10,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-// TODO: Replace with actual auth implementation when needed
-// import { getServerSession } from "next-auth";
+import { getServerSession } from "@/core/auth/server";
 import type {
   CreateOrderResponse,
   CalculateOrderResponse,
@@ -289,10 +288,9 @@ export async function processPaymentAction(
     }
 
     // 2. Get current session for user validation
-    // TODO: Implement better-auth server session validation
-    // const session = await getServerSession();
-    // const userId = session?.user?.id;
-    const userId = input.userId; // Use provided userId for MVP
+    // Server session validation with better-auth
+    const session = await getServerSession();
+    const userId = session?.user?.id;
 
     // 3. Validate order access
     const accessValidation = await validateOrderAccess(
@@ -454,10 +452,9 @@ export async function getOrderAction(orderId: string) {
   });
 
   try {
-    // TODO: Implement better-auth server session validation
-    // const session = await getServerSession();
-    // const userId = session?.user?.id;
-    const userId = undefined; // Skip server auth for MVP
+    // Server session validation with better-auth
+    const session = await getServerSession();
+    const userId = session?.user?.id;
 
     const order = await getOrderService(orderId, userId);
 
@@ -572,15 +569,21 @@ export async function updateOrderStatusAction(
   });
 
   try {
-    // TODO: Add admin permission check with better-auth
-    // const session = await getServerSession();
-    // if (!session?.user?.id) {
-    if (false) { // Temporarily disable auth check for MVP
+    // Admin permission check with better-auth
+    const session = await getServerSession();
+    if (!session?.user?.id) {
       return {
         success: false,
         error: "Authentication required",
       };
     }
+
+    // TODO: Add proper admin role check with hasPermission when needed
+    // For now, allowing all authenticated users to update order status
+    // const hasAdminPermission = hasPermission(session.user, 'orders:update');
+    // if (!hasAdminPermission) { 
+    //   return { success: false, error: "Admin permission required" };
+    // }
 
     const order = await updateOrderStatusService(orderId, status, notes);
 

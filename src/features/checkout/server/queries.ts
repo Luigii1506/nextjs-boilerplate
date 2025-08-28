@@ -13,6 +13,7 @@ import type {
   OrderStatus,
   PaymentStatus,
   FulfillmentStatus,
+  PrismaOrderWhereClause,
 } from "../types";
 
 // 📦 ORDER QUERIES
@@ -117,7 +118,7 @@ export async function getOrderQuery(orderId: string, userId?: string) {
   console.log("🔍 [CHECKOUT QUERY] Getting order:", { orderId, userId });
 
   try {
-    const whereClause: any = { id: orderId };
+    const whereClause: PrismaOrderWhereClause = { id: orderId };
     if (userId) {
       whereClause.OR = [
         { userId: userId },
@@ -188,7 +189,7 @@ export async function getUserOrdersQuery(
   });
 
   try {
-    const whereClause: any = { userId };
+    const whereClause: PrismaOrderWhereClause = { customerId: userId };
     if (status && status.length > 0) {
       whereClause.status = { in: status };
     }

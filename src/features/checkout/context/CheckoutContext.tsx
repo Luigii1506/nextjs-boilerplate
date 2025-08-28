@@ -9,7 +9,6 @@
 
 import React, { createContext, useContext, useEffect, useMemo } from "react";
 import type { CheckoutContextType } from "../types";
-import type { CartWithItems } from "@/features/cart/types";
 import { useCheckoutState } from "../hooks/checkout/useCheckoutState";
 import { useCheckoutActions } from "../hooks/checkout/useCheckoutActions";
 import { useCartContext } from "@/features/cart/context";
@@ -32,10 +31,10 @@ export interface CheckoutProviderProps {
 
 export function CheckoutProvider({ children }: CheckoutProviderProps) {
   // Get cart data from cart context
-  const { cart, itemCount, totalAmount } = useCartContext();
+  const { cart } = useCartContext();
 
   // Initialize checkout state with cart info
-  const checkoutState = useCheckoutState(cart?.id, cart?.userId);
+  const checkoutState = useCheckoutState(cart?.id, cart?.userId || undefined);
   const checkoutActions = useCheckoutActions();
 
   // 🧮 DERIVED STATE
@@ -47,7 +46,7 @@ export function CheckoutProvider({ children }: CheckoutProviderProps) {
     // Basic calculation - in real app this would come from server
     return {
       subtotal: cart.subtotal || 0,
-      shipping: 0, // TODO: Calculate based on selected shipping method
+      shipping: 0, // Will be calculated when shipping method is selected
       tax: Math.round((cart.subtotal || 0) * 0.08), // 8% tax
       discount: 0,
       total: (cart.subtotal || 0) + Math.round((cart.subtotal || 0) * 0.08),
@@ -125,7 +124,7 @@ export function CheckoutProvider({ children }: CheckoutProviderProps) {
     }
   };
 
-  const processPayment = async (paymentData: any) => {
+  const processPayment = async () => {
     // This would be called after order is created
     return { success: true }; // Placeholder
   };
@@ -138,7 +137,7 @@ export function CheckoutProvider({ children }: CheckoutProviderProps) {
     session: checkoutState.session,
     cart,
     calculation,
-    metrics: null, // TODO: Implement checkout analytics
+    metrics: null, // Analytics will be implemented in Phase 2
 
     // Current step info
     currentStep: checkoutState.currentStep,

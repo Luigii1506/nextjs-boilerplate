@@ -6,8 +6,7 @@
  * Contains all core business rules and calculations.
  */
 
-// TODO: Replace with actual auth implementation when needed
-// import { getServerSession } from "next-auth";
+import { getServerSession } from "@/core/auth/server";
 import type {
   Order,
   OrderCalculation,
@@ -17,7 +16,11 @@ import type {
   ShippingMethod,
   PaymentMethod,
   CreateOrderInput,
+  PaymentData,
+  PaymentResult,
 } from "../types";
+import { calculateTaxRate, calculateTaxAmount } from "./tax-calculator";
+import { calculateDiscountAmount } from "./discount-calculator";
 import type { CartWithItems } from "@/features/cart/types";
 import {
   createOrderQuery,
@@ -100,11 +103,12 @@ export async function createOrderService(
       input.shippingMethodId
     );
 
-    // 6. Calculate totals
+    // 6. Calculate totals with address-based tax
+    const taxRate = calculateTaxRate(input.shippingAddress);
     const calculation = calculateOrderTotals(
       cart,
       shippingCost,
-      TAX_RATES.DEFAULT, // TODO: Calculate based on address
+      taxRate, // Tax rate based on shipping address
       0 // No discount for now
     );
 
@@ -150,8 +154,18 @@ export async function createOrderService(
 
     const createdOrder = await createOrderQuery(orderData);
 
-    // 10. TODO: Clear cart after successful order creation
-    // await clearCartService(input.cartId);
+    // 10. Clear cart after successful order creation
+    try {
+      const { clearCartService } = await import("@/features/cart/server/service");
+      await clearCartService({ 
+        userId: input.userId, 
+        sessionId: input.sessionId 
+      });
+      console.log("✅ [CHECKOUT SERVICE] Cart cleared after order creation");
+    } catch (cartError) {
+      console.warn("⚠️ [CHECKOUT SERVICE] Failed to clear cart:", cartError);
+      // Don't fail the order creation if cart clearing fails
+    }
 
     // 11. Map to business object
     const order = mapPrismaOrderToOrder(createdOrder);
@@ -208,14 +222,15 @@ export async function calculateOrderService(
       );
     }
 
-    // 3. Calculate discount (simplified - would normally validate codes)
-    const discountAmount = 0; // TODO: Implement discount calculation
+    // 3. Calculate discount
+    const discountAmount = await calculateDiscountAmount(cart, discountCodes);
 
-    // 4. Calculate totals
+    // 4. Calculate totals with address-based tax
+    const taxRate = shippingAddress ? calculateTaxRate(shippingAddress) : TAX_RATES.DEFAULT;
     const calculation = calculateOrderTotals(
       cart,
       shippingCost,
-      TAX_RATES.DEFAULT, // TODO: Calculate based on address
+      taxRate, // Tax rate based on shipping address or default
       discountAmount
     );
 
@@ -242,8 +257,8 @@ export async function calculateOrderService(
 export async function processOrderPaymentService(
   orderId: string,
   paymentMethodId: string,
-  paymentData?: any
-): Promise<{ success: boolean; error?: string; requiresAction?: boolean }> {
+  paymentData?: PaymentData
+): Promise<PaymentResult> {
   console.log("💳 [CHECKOUT SERVICE] Processing payment:", {
     orderId,
     paymentMethodId,
@@ -334,38 +349,53 @@ export async function processOrderPaymentService(
 // =================================
 
 async function processCreditCardPayment(
-  order: any,
-  paymentData: any
-): Promise<{ success: boolean; error?: string; requiresAction?: boolean }> {
+  order: Order,
+  paymentData: PaymentData
+): Promise<PaymentResult> {
   console.log("💳 [CHECKOUT SERVICE] Processing credit card payment");
 
-  // TODO: Implement Stripe integration
-  // For now, simulate successful payment
+  // Stripe integration placeholder
+  // TODO: Replace with actual Stripe payment processing when Stripe is configured
+  console.log("💳 [CHECKOUT SERVICE] Processing credit card payment via Stripe");
+  
+  // Simulate Stripe payment processing
   return new Promise((resolve) => {
     setTimeout(() => {
-      resolve({ success: true });
-    }, 1000);
+      resolve({ 
+        success: true,
+        transactionId: `stripe_${Date.now()}`,
+        providerResponse: { status: 'succeeded' }
+      });
+    }, 1500);
   });
 }
 
 async function processPayPalPayment(
-  order: any,
-  paymentData: any
-): Promise<{ success: boolean; error?: string; requiresAction?: boolean }> {
+  order: Order,
+  paymentData: PaymentData
+): Promise<PaymentResult> {
   console.log("💳 [CHECKOUT SERVICE] Processing PayPal payment");
 
-  // TODO: Implement PayPal integration
+  // PayPal integration placeholder  
+  // TODO: Replace with actual PayPal payment processing when PayPal is configured
+  console.log("💳 [CHECKOUT SERVICE] Processing PayPal payment");
+  
+  // Simulate PayPal payment processing
   return new Promise((resolve) => {
     setTimeout(() => {
-      resolve({ success: true });
-    }, 1000);
+      resolve({ 
+        success: true,
+        transactionId: `paypal_${Date.now()}`,
+        providerResponse: { status: 'approved' }
+      });
+    }, 2000);
   });
 }
 
 async function processBankTransferPayment(
-  order: any,
-  paymentData: any
-): Promise<{ success: boolean; error?: string }> {
+  order: Order,
+  paymentData: PaymentData
+): Promise<PaymentResult> {
   console.log("💳 [CHECKOUT SERVICE] Processing bank transfer payment");
 
   // Bank transfers are typically manual verification
@@ -374,8 +404,8 @@ async function processBankTransferPayment(
 }
 
 async function processCashOnDeliveryPayment(
-  order: any
-): Promise<{ success: boolean; error?: string }> {
+  order: Order
+): Promise<PaymentResult> {
   console.log("💳 [CHECKOUT SERVICE] Processing cash on delivery");
 
   // COD doesn't require immediate payment processing

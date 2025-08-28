@@ -385,12 +385,23 @@ export function useCheckoutState(
 
   React.useEffect(() => {
     if (state.session) {
-      // TODO: Auto-save session to localStorage or server
-      console.log("💾 [CHECKOUT STATE] Session updated:", {
-        sessionId: state.session.id,
-        currentStep: state.currentStep,
-        completedSteps: state.completedSteps.length,
-      });
+      try {
+        // Save session to localStorage for persistence
+        const sessionData = {
+          ...state.session,
+          currentStep: state.currentStep,
+          completedSteps: state.completedSteps,
+        };
+        
+        localStorage.setItem(
+          `checkout-session-${state.session.cartId}`, 
+          JSON.stringify(sessionData)
+        );
+        
+        console.log("💾 [CHECKOUT STATE] Session auto-saved to localStorage");
+      } catch (error) {
+        console.warn("⚠️ [CHECKOUT STATE] Failed to save session:", error);
+      }
     }
   }, [state.session, state.currentStep, state.completedSteps]);
 

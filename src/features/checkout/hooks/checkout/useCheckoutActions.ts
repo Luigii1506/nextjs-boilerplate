@@ -15,6 +15,8 @@ import type {
   Order,
   CreateOrderInput,
   ProcessPaymentInput,
+  PaymentData,
+  Address,
 } from "../../types";
 import type { CartWithItems } from "@/features/cart/types";
 import {
@@ -207,7 +209,7 @@ export function useCheckoutActions(): UseCheckoutActionsReturn {
   const processPayment = useCallback(
     async (
       order: Order,
-      paymentData: any
+      paymentData: PaymentData
     ): Promise<{ success: boolean; error?: string }> => {
       const paymentInput: ProcessPaymentInput = {
         orderId: order.id,
@@ -268,7 +270,7 @@ export function useCheckoutActions(): UseCheckoutActionsReturn {
   const calculateOrder = useCallback(
     async (
       cartId: string,
-      shippingAddress?: any,
+      shippingAddress?: Address,
       shippingMethodId?: string,
       discountCodes?: string[]
     ) => {
