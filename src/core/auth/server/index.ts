@@ -1,4 +1,3 @@
-import { headers, cookies } from "next/headers";
 import { auth } from "./auth";
 
 // Re-export auth for direct access
@@ -19,6 +18,10 @@ export type Session = { user: SessionUser } | null;
  * Funciona tanto si headers()/cookies() son sync como async (Next 14/15).
  */
 export async function getServerSession(): Promise<Session> {
+  // Importación dinámica para evitar problemas client-side
+  const { headers } = await import("next/headers");
+  const { cookies } = await import("next/headers");
+
   // 1) Intenta obtener la cookie directo de los headers
   const h = await headers(); // si es sync, await lo envuelve sin problema
   let cookieHeader = h.get("cookie") ?? "";
