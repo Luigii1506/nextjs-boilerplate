@@ -505,7 +505,14 @@ const TabContent: React.FC = () => {
             activeTab === "checkout" ? "translateY(0)" : "translateY(20px)",
         }}
       >
-        <CheckoutTab />
+        <CheckoutTab
+          onReturnToStore={() => setActiveTab("overview")}
+          onViewOrder={(orderId) => {
+            console.log("View order:", orderId);
+            // TODO: Navigate to order details page
+            setActiveTab("account");
+          }}
+        />
       </div>
 
       {/* Account Tab - Always mounted */}

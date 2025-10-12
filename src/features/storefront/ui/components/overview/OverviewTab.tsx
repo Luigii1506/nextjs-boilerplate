@@ -66,9 +66,7 @@ const OverviewTab: React.FC = () => {
   };
 
   const handleViewCategory = () => {
-    // Navigate to products tab with category filter
     setActiveTab("products");
-    // TODO: Set category filter when implemented
   };
 
   // 🔄 Loading State
@@ -150,7 +148,7 @@ const OverviewTab: React.FC = () => {
                   onClick={() => handleAddToCart(product.id)}
                   className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
                 >
-                  Agregar al carrit
+                  Agregar al carrito
                 </button>
                 <button
                   onClick={() => handleWishlistToggle(product)}

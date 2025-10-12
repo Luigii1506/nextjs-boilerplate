@@ -31,10 +31,25 @@ export interface CheckoutProviderProps {
 
 export function CheckoutProvider({ children }: CheckoutProviderProps) {
   // Get cart data from cart context
-  const { cart } = useCartContext();
+  const cartContext = useCartContext();
+  const { items, summary, totalAmount } = cartContext;
+
+  // Build a cart object compatible with checkout
+  const cart = useMemo(() => {
+    if (!items || items.length === 0) return null;
+
+    return {
+      id: `cart-${Date.now()}`, // TODO: Get from server if persisted
+      items,
+      subtotal: summary?.subtotal || totalAmount || 0,
+      total: summary?.total || totalAmount || 0,
+      userId: undefined, // Will be set by auth
+      sessionId: undefined,
+    };
+  }, [items, summary, totalAmount]);
 
   // Initialize checkout state with cart info
-  const checkoutState = useCheckoutState(cart?.id, cart?.userId || undefined);
+  const checkoutState = useCheckoutState(cart?.id, cart?.userId);
   const checkoutActions = useCheckoutActions();
 
   // 🧮 DERIVED STATE

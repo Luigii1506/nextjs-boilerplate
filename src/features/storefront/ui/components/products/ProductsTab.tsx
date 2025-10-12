@@ -280,26 +280,12 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ onAddToCart }) => {
     [addToWishlist, removeFromWishlist]
   );
 
-  // 🚫 REMOVED: handleAddToCart - No more cart operations at ProductsTab level
-
   const handleQuickView = useCallback(
     (product: ProductForCustomer) => {
       setViewingProduct(product);
     },
     [setViewingProduct]
   );
-
-  // 🚫 REMOVED: handleProductCardAddToCart - Cart operations now handled directly in ProfessionalProductCard
-
-  // 🚀 NO LOADING STATES - SUPER FAST UX!
-
-  console.log("🔄 [PRODUCTS TAB] Component re-rendering:", {
-    timestamp: Date.now(),
-    productsCount: paginatedProducts.length,
-    reason:
-      "ProductsTab is now pure UI component - receives onAddToCart prop from StorefrontScreen (SPA pattern)",
-    hasOnAddToCartProp: !!onAddToCart,
-  });
 
   // 🔄 Loading State
   if (isLoading) {

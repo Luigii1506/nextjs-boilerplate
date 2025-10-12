@@ -28,6 +28,8 @@ import {
 
 export interface CheckoutTabProps {
   className?: string;
+  onReturnToStore?: () => void;
+  onViewOrder?: (orderId: string) => void;
 }
 
 // 🎨 STEP ICONS
@@ -46,7 +48,9 @@ const STEP_ICONS = {
 // 🚀 MAIN COMPONENT
 // ==================
 
-export function CheckoutTab({ className = "" }: CheckoutTabProps) {
+export function CheckoutTab({ className = "", onReturnToStore, onViewOrder }: CheckoutTabProps) {
+  const [createdOrderId, setCreatedOrderId] = React.useState<string | null>(null);
+
   const {
     session,
     cart,
@@ -254,12 +258,24 @@ export function CheckoutTab({ className = "" }: CheckoutTabProps) {
               <div className="space-y-4 mb-6">
                 {cart.items.map((item) => (
                   <div key={item.id} className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-gray-100 rounded-lg flex-shrink-0"></div>
+                    <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-lg flex-shrink-0 overflow-hidden">
+                      {item.product?.images?.[0] ? (
+                        <img
+                          src={item.product.images[0]}
+                          alt={item.product?.name || "Product"}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                          📦
+                        </div>
+                      )}
+                    </div>
                     <div className="flex-1">
                       <h4 className="font-medium">
                         {item.product?.name || "Product"}
                       </h4>
-                      <p className="text-gray-600">Qty: {item.quantity}</p>
+                      <p className="text-gray-600 dark:text-gray-400">Qty: {item.quantity}</p>
                     </div>
                     <div className="text-right">
                       <p className="font-semibold">
@@ -293,14 +309,43 @@ export function CheckoutTab({ className = "" }: CheckoutTabProps) {
               )}
             </div>
 
+            {/* Customer & Shipping Info Review */}
+            <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm border">
+              <h3 className="text-lg font-semibold mb-4">Delivery Information</h3>
+
+              <div className="space-y-4">
+                {/* Customer */}
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Customer</p>
+                  <p className="font-medium">
+                    {session.customerInfo.firstName} {session.customerInfo.lastName}
+                  </p>
+                  <p className="text-gray-600">{session.customerInfo.email}</p>
+                </div>
+
+                {/* Shipping Address */}
+                {session.shippingAddress && (
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Shipping Address</p>
+                    <p className="font-medium">
+                      {session.shippingAddress.addressLine1}
+                      {session.shippingAddress.addressLine2 && `, ${session.shippingAddress.addressLine2}`}
+                    </p>
+                    <p className="text-gray-600">
+                      {session.shippingAddress.city}, {session.shippingAddress.state} {session.shippingAddress.postalCode}
+                    </p>
+                    <p className="text-gray-600">{session.shippingAddress.country}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Place Order Button */}
             <button
               onClick={async () => {
                 const order = await createOrder();
                 if (order) {
-                  console.log("Order created successfully:", order.id);
-                } else {
-                  console.error("Order creation failed");
+                  setCreatedOrderId(order.id);
                 }
               }}
               disabled={isCreatingOrder}
@@ -629,16 +674,35 @@ export function CheckoutTab({ className = "" }: CheckoutTabProps) {
                 />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">
+            <h3 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
               Order Completed!
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Thank you for your purchase. Your order has been placed
-              successfully.
+              Thank you for your purchase. Your order has been placed successfully.
             </p>
-            <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
-              View Order Details
-            </button>
+            {createdOrderId && (
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                Order ID: <span className="font-mono font-semibold">{createdOrderId}</span>
+              </p>
+            )}
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              {createdOrderId && onViewOrder && (
+                <button
+                  onClick={() => onViewOrder(createdOrderId)}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  View Order Details
+                </button>
+              )}
+              {onReturnToStore && (
+                <button
+                  onClick={onReturnToStore}
+                  className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-6 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Continue Shopping
+                </button>
+              )}
+            </div>
           </div>
         );
 

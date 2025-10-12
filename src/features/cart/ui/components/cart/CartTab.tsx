@@ -12,6 +12,7 @@
 
 import React, { useCallback } from "react";
 import { useCartContext } from "../../../context";
+import { useWishlist } from "@/features/storefront/hooks";
 import CartEmpty from "./CartEmpty";
 import CartItem from "./CartItem";
 import CartSummary from "./CartSummary";
@@ -50,9 +51,7 @@ export function CartTab({
   onViewProduct,
   onCheckout,
 }: CartTabProps) {
-  // 🛒 USE CART CONTEXT (Simple, Stable Interface)
-  // ===============================================
-
+  // 🛒 Context & Hooks
   const {
     items,
     summary,
@@ -63,79 +62,56 @@ export function CartTab({
     formatPrice,
   } = useCartContext();
 
-  // 🚀 SUPER FAST - No logging needed for production speed
+  const { addToWishlist } = useWishlist();
 
-  // 🔄 ITEM HANDLERS
-  // ================
-
-  /**
-   * Handle quantity change for cart item
-   */
+  // 🔄 Handlers
   const handleQuantityChange = useCallback(
     async (itemId: string, newQuantity: number): Promise<boolean> => {
       try {
         await updateQuantity(itemId, newQuantity);
         return true;
       } catch (error) {
-        console.error("❌ [CART TAB] Update quantity failed:", error);
+        console.error("Update quantity failed:", error);
         return false;
       }
     },
     [updateQuantity]
   );
 
-  /**
-   * Handle remove item from cart
-   */
   const handleRemoveItem = useCallback(
     async (itemId: string): Promise<boolean> => {
       try {
         await removeItem(itemId);
         return true;
       } catch (error) {
-        console.error("❌ [CART TAB] Remove item failed:", error);
+        console.error("Remove item failed:", error);
         return false;
       }
     },
     [removeItem]
   );
 
-  /**
-   * Handle add to wishlist from cart
-   */
   const handleAddToWishlist = useCallback(
     async (productId: string): Promise<boolean> => {
-      // 🚀 SUPER FAST - Wishlist integration
-      // TODO: Integrate with wishlist when implemented
-      console.log("🤍 [CART TAB] Add to wishlist:", { productId });
-      return true;
+      try {
+        await addToWishlist(productId);
+        return true;
+      } catch (error) {
+        console.error("Add to wishlist failed:", error);
+        return false;
+      }
     },
-    []
+    [addToWishlist]
   );
 
-  /**
-   * Handle checkout process
-   */
   const handleCheckout = useCallback(async (): Promise<boolean> => {
-    console.log("💳 [CART TAB] Starting checkout process");
-
-    // Custom checkout handler or default
     if (onCheckout) {
       return await onCheckout();
     }
-
-    // Default checkout behavior
-    console.log("🚀 [CART TAB] Proceeding to default checkout");
     return true;
   }, [onCheckout]);
 
-  // 🚀 SUPER FAST - No complex computations needed
-
-  // 🚀 NO LOADING STATES - SUPER FAST UX!
-
-  // 📭 EMPTY STATE
-  // ==============
-
+  // 📭 Empty State
   if (items.length === 0) {
     return (
       <div className={`${className}`}>
@@ -159,12 +135,10 @@ export function CartTab({
     );
   }
 
-  // 🛒 CART WITH ITEMS
-  // ==================
-
+  // 🛒 Cart with Items
   return (
     <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${className}`}>
-      {/* 🛒 CART HEADER - Consistent with other tabs */}
+      {/* Cart Header */}
       {showHeader && !compact && (
         <div className="mb-8">
           <div className="flex items-center justify-between">
@@ -206,11 +180,11 @@ export function CartTab({
         </div>
       )}
 
-      {/* 📱 CART LAYOUT */}
+      {/* Cart Layout */}
       <div
         className={`grid gap-6 ${compact ? "grid-cols-1" : "lg:grid-cols-3"}`}
       >
-        {/* 🛍️ MODERN CART ITEMS */}
+        {/* Cart Items */}
         <div className={`${compact ? "" : "lg:col-span-2"}`}>
           <div className="space-y-3">
             {items.map((item, index) => (
@@ -237,7 +211,7 @@ export function CartTab({
             ))}
           </div>
 
-          {/* Modern Continue shopping button for mobile */}
+          {/* Continue Shopping - Mobile */}
           {onContinueShopping && compact && (
             <div className="mt-6">
               <button
@@ -260,11 +234,11 @@ export function CartTab({
           )}
         </div>
 
-        {/* 💰 CART SUMMARY */}
+        {/* Cart Summary */}
         <div className={`${compact ? "mt-6" : ""}`}>
           <CartSummary
             summary={summary}
-            priceBreakdown={null} // TODO: Add price breakdown if needed
+            priceBreakdown={null}
             onCheckout={handleCheckout}
             compact={compact}
             showCouponInput={!compact}
@@ -274,32 +248,15 @@ export function CartTab({
         </div>
       </div>
 
-      {/* 🎯 CART ACTIONS - Mobile */}
+      {/* Cart Actions - Mobile */}
       {compact && (
         <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
           <div className="flex gap-3">
             <button
-              onClick={() => {
-                /* TODO: Implement clear cart */
-              }}
-              disabled={true}
-              className="
-                flex-1 py-2 px-4
-                border border-gray-200 dark:border-gray-800
-                text-gray-400 dark:text-gray-600
-                rounded-lg font-medium
-                opacity-50 cursor-not-allowed
-                transition-colors duration-200
-              "
-            >
-              Clear Cart
-            </button>
-
-            <button
               onClick={handleCheckout}
               disabled={!summary?.total}
               className="
-                flex-1 py-2 px-4
+                w-full py-2 px-4
                 bg-blue-600 hover:bg-blue-700
                 text-white rounded-lg font-medium
                 disabled:opacity-50 disabled:cursor-not-allowed
