@@ -1,38 +1,23 @@
 "use client";
 
-import { useProtectedPage } from "@/shared/hooks/useAuth";
+import { useProtectedPage, useLogout } from "@/shared/hooks/useAuth";
+import { LoadingScreen } from "@/shared/components";
 import Image from "next/image";
-import { authClient } from "@/core/auth/auth-client";
 import { useRouter } from "next/navigation";
 
 export default function UserDashboardPage() {
   const { isLoading, isAuthenticated, user, isAdmin } = useProtectedPage();
+  const { logout, isLoggingOut } = useLogout();
   const router = useRouter();
 
   const handleLogout = async () => {
-    try {
-      await authClient.signOut({
-        fetchOptions: {
-          onSuccess: () => {
-            router.push("/login");
-          },
-        },
-      });
-    } catch (error) {
-      console.error("Error during logout:", error);
-    }
+    await logout();
+    router.push("/login");
   };
 
   // Loading state
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-screen bg-gray-100">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="text-gray-600">Verificando autenticación...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="Verificando autenticación..." />;
   }
 
   // Si es admin, redirigir al dashboard de admin
@@ -74,9 +59,10 @@ export default function UserDashboardPage() {
 
               <button
                 onClick={handleLogout}
-                className="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 transition-colors"
+                disabled={isLoggingOut}
+                className="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Cerrar Sesión
+                {isLoggingOut ? "Cerrando..." : "Cerrar Sesión"}
               </button>
             </div>
           </div>

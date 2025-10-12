@@ -13,10 +13,26 @@
 import React, { useState, useEffect } from "react";
 import { cn } from "@/shared/utils";
 import { Heart, RefreshCw, CheckCircle, AlertCircle } from "lucide-react";
-import { useStorefrontContext } from "../../../context";
+// TODO: Update this example to use new TanStack Query hooks
+// import { useStorefrontUI } from "../../../context";
+// import { useStorefrontData, useWishlist } from "../../../hooks";
 import { ProfessionalProductCard } from "../shared/ProfessionalProductCard";
 
 export const WishlistSyncTest: React.FC = () => {
+  // TEMPORARILY DISABLED - Needs migration to new architecture
+  return (
+    <div className="p-8 text-center">
+      <h2 className="text-xl font-bold mb-4">Wishlist Sync Test</h2>
+      <p className="text-gray-600">
+        This component needs to be migrated to the new TanStack Query architecture.
+      </p>
+      <p className="text-sm text-gray-500 mt-2">
+        See MIGRATION_GUIDE.md for details.
+      </p>
+    </div>
+  );
+
+  /*
   const {
     products,
     featuredProducts,
@@ -177,7 +193,7 @@ export const WishlistSyncTest: React.FC = () => {
                         {product.name}
                       </h4>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        ${product.currentPrice.toFixed(2)}
+                        ${(product.currentPrice || 0).toFixed(2)}
                       </p>
                     </div>
                     <button
@@ -220,7 +236,7 @@ export const WishlistSyncTest: React.FC = () => {
                         {product.name}
                       </h4>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        ${product.currentPrice.toFixed(2)}
+                        ${(product.currentPrice || 0).toFixed(2)}
                       </p>
                     </div>
                     <button

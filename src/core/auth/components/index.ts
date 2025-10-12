@@ -1,5 +1,4 @@
 // 🎨 Auth UI Components
-export { default as AuthContainer } from "./AuthContainer";
 export { default as InputField } from "./InputField";
 export { default as Button } from "./Button";
 export { default as SocialButton } from "./SocialButton";

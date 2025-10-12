@@ -41,7 +41,8 @@ import {
 } from "lucide-react";
 
 // Import Context and Types
-import { useStorefrontContext } from "../../..";
+import { useStorefrontUI } from "@/features/storefront/context";
+import { useStorefrontData } from "@/features/storefront/hooks";
 import { CategoryForCustomer } from "../../../types";
 import { CategoriesPageSkeleton } from "../shared/ProductSkeleton";
 
@@ -77,13 +78,19 @@ const ITEMS_PER_PAGE_OPTIONS = [12, 24, 48];
  * 🛒 Main CategoriesTab Component
  */
 const CategoriesTab: React.FC = () => {
+  // 🎨 UI State
   const {
-    categories,
-    stats,
     setActiveTab,
     globalSearchTerm,
     setGlobalSearchTerm,
-  } = useStorefrontContext();
+  } = useStorefrontUI();
+
+  // 📊 Data (TanStack Query)
+  const { data, isLoading } = useStorefrontData();
+
+  // Extract data
+  const categories = data?.categories || [];
+  const stats = undefined; // TODO: Implement stats if needed
 
   // 🎯 Component State
   const [isFirstRender, setIsFirstRender] = useState(true);

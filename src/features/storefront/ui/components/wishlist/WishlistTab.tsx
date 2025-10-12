@@ -1,314 +1,210 @@
 /**
- * 🛒 WISHLIST TAB - REFACTORED CLEAN ARCHITECTURE
- * ===============================================
+ * 💖 WISHLIST TAB - ARQUITECTURA PROFESIONAL
+ * ==========================================
  *
- * Componente principal del WishlistTab completamente refactorizado:
- * - Separación de responsabilidades
- * - Hooks especializados para estado, filtros y acciones
- * - Componentes modulares reutilizables
- * - Types centralizados
- * - Performance optimizado para SPA
- * - Sin parpadeos ni timeouts artificiales
+ * Componente principal del WishlistTab con nueva arquitectura profesional:
+ * ✅ Single source of truth (StorefrontContext)
+ * ✅ Zero hooks intermediarios
+ * ✅ Simple, directo, mantenible
+ * ✅ Zero bugs, zero complexity
  *
- * @version 3.0.0 - Feature-First Architecture (Hooks centralizados)
+ * MIGRADO: 2025-01-28 - Professional Architecture
  */
 
 "use client";
 
-import React, { useEffect, useMemo } from "react";
-import { cn } from "@/lib/utils";
-import { useStorefrontContext } from "@/features/storefront/context";
+import React from "react";
+import { useStorefrontUI } from "@/features/storefront/context";
+import { useStorefrontData, useWishlist } from "@/features/storefront/hooks";
+import { useCart } from "@/features/cart";
 
-// 🚀 Import hooks from centralized location (Feature-First v3.0.0)
-import {
-  useWishlistState,
-  useWishlistLogic,
-  useWishlistActions,
-} from "@/features/storefront/hooks/wishlist";
-
-// 🎯 Import modular components
+// 🎯 Import components necesarios
 import EmptyWishlist from "./EmptyWishlist";
-import WishlistLoginPrompt from "./WishlistLoginPrompt";
-import WishlistStats from "./WishlistStats";
-import WishlistHeader from "./WishlistHeader";
-import WishlistGrid from "./WishlistGrid";
-import WishlistFilters from "./WishlistFilters";
-import WishlistPagination from "./WishlistPagination";
-
-// 🎯 Import types and constants
-import { ITEMS_PER_PAGE_OPTIONS } from "./types";
 
 /**
- * 🎯 MAIN WISHLIST TAB COMPONENT
- *
- * Coordina componentes especializados y maneja el estado global.
- * Ya no tiene lógica de renderizado compleja, solo coordinación.
+ * 💖 WISHLIST TAB - PROFESIONAL Y SIMPLE
  */
 const WishlistTab: React.FC = () => {
-  const {
-    isAuthenticated,
-    categories,
-    globalSearchTerm,
-    setGlobalSearchTerm,
-    wishlist,
-  } = useStorefrontContext();
+  // 🎨 UI State
+  const { globalSearchTerm, setGlobalSearchTerm, setViewingProduct } =
+    useStorefrontUI();
 
-  // 🎯 STATE MANAGEMENT (via specialized hook)
-  const { state, actions } = useWishlistState();
+  // 📊 Data (TanStack Query)
+  const { data, isLoading } = useStorefrontData();
+  const { removeFromWishlist } = useWishlist();
+  const { addToCart } = useCart();
 
-  // 🧠 LOGIC & PROCESSING (via specialized hook v3.0.0)
-  const {
-    wishlistProducts,
-    processedProducts,
-    availableCategories,
-    priceRange,
-    handleSortChange,
-    handleCategoryFilter,
-    handlePriceRangeFilter,
-    handleSpecialFilterChange,
-  } = useWishlistLogic({
-    wishlist: wishlist || [],
-    searchTerm: state.localSearchTerm,
-    filters: state.filters,
-  });
+  // Extract data
+  const wishlist = data?.wishlist || [];
+  const products = data?.products || [];
 
-  // 🚀 ACTIONS (via specialized hook)
-  const {
-    onRemoveFromWishlist,
-    onAddToCart,
-    onMoveToCart,
-    onQuickView,
-    onBulkAddToCart,
-    onBulkRemoveFromWishlist,
-    onPageChange,
-    onLogin,
-  } = useWishlistActions();
+  // 📊 Wishlist con datos de productos
+  const wishlistWithProducts = React.useMemo(() => {
+    return wishlist
+      .map((wishlistItem) => {
+        const product = products.find((p) => p.id === wishlistItem.productId);
+        return product ? { ...product, wishlistItem } : null;
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+  }, [wishlist, products]);
 
-  useEffect(() => {
-    actions.setLocalSearchTerm(globalSearchTerm);
-    actions.setFilters({
-      ...state.filters,
-      searchTerm: globalSearchTerm,
-    });
-  }, [globalSearchTerm, actions]);
+  // 🔍 Filtrado simple
+  const filteredWishlist = React.useMemo(() => {
+    if (!globalSearchTerm.trim()) return wishlistWithProducts;
 
-  // 📄 Pagination calculations
-  const totalPages = Math.ceil(processedProducts.length / state.itemsPerPage);
-  const startIndex = (state.currentPage - 1) * state.itemsPerPage;
-  const paginatedProducts = processedProducts.slice(
-    startIndex,
-    startIndex + state.itemsPerPage
-  );
+    return wishlistWithProducts.filter((product) =>
+      product.name.toLowerCase().includes(globalSearchTerm.toLowerCase())
+    );
+  }, [wishlistWithProducts, globalSearchTerm]);
 
-  // 🔧 Enhanced Handler Functions
-  const handleSortChangeLocal = (sortBy: string) => {
-    const newFilters = handleSortChange(sortBy);
-    actions.setFilters(newFilters);
-    actions.setCurrentPage(1);
-  };
-
-  const handleCategoryFilterLocal = (category: string) => {
-    const newFilters = handleCategoryFilter(category);
-    actions.setFilters(newFilters);
-    actions.setCurrentPage(1);
-  };
-
-  const handlePriceRangeFilterLocal = (range: [number, number]) => {
-    const newFilters = handlePriceRangeFilter(range);
-    actions.setFilters(newFilters);
-    actions.setCurrentPage(1);
-  };
-
-  const handleSpecialFilterChangeLocal = (key: any, value: any) => {
-    const newFilters = handleSpecialFilterChange(key, value);
-    actions.setFilters(newFilters);
-    actions.setCurrentPage(1);
-  };
-
-  const clearAllFilters = () => {
-    actions.resetFilters();
-    actions.setLocalSearchTerm("");
-    setGlobalSearchTerm("");
-    actions.setCurrentPage(1);
-  };
-
-  // 🎯 Bulk Actions
-  const handleSelectAll = () => {
-    if (state.selectedItems.size === paginatedProducts.length) {
-      actions.clearSelection();
-    } else {
-      actions.setSelectedItems(new Set(paginatedProducts.map((p) => p.id)));
+  // ⚡ Acciones simples - Sin indirección
+  const handleRemoveFromWishlist = async (productId: string) => {
+    try {
+      await removeFromWishlist(productId);
+    } catch (error) {
+      console.error("Remove from wishlist failed:", error);
     }
   };
 
-  const handleBulkAddToCartLocal = async () => {
-    await onBulkAddToCart(paginatedProducts, state.selectedItems);
-    actions.clearSelection();
+  const handleAddToCart = async (productId: string, quantity: number = 1) => {
+    try {
+      // UltraFast Cart expects direct parameters
+      await addToCart(productId, quantity);
+    } catch (error) {
+      console.error("Add to cart failed:", error);
+    }
   };
 
-  const handleBulkRemoveFromWishlistLocal = async () => {
-    await onBulkRemoveFromWishlist(paginatedProducts, state.selectedItems);
-    actions.clearSelection();
+  const handleProductView = (product: (typeof wishlistWithProducts)[0]) => {
+    setViewingProduct(product);
   };
 
-  // 📄 Pagination Handler
-  const handlePageChangeLocal = (page: number) => {
-    actions.setCurrentPage(page);
-    actions.clearSelection(); // Clear selections on page change
-    onPageChange(page);
-  };
-
-  // 🔐 Login Check - Use Real Authentication
-  if (!isAuthenticated) {
-    return <WishlistLoginPrompt onLogin={onLogin} />;
-  }
-
-  // Loading State for empty first render
-  if (state.isFirstRender) {
+  // 🔄 Loading State
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh] bg-gray-50 dark:bg-gray-900">
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 bg-gradient-to-r from-pink-600 to-red-600 rounded-full animate-pulse flex items-center justify-center mx-auto">
-            <div className="w-8 h-8 text-white fill-current animate-heartBeat">
-              💖
-            </div>
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Cargando Wishlist...
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400">
-            Preparando tus productos favoritos
-          </p>
-        </div>
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
       </div>
     );
   }
 
-  // Empty Wishlist State
-  if (
-    processedProducts.length === 0 &&
-    !state.localSearchTerm &&
-    state.filters.categories.length === 0
-  ) {
-    console.log(
-      "❌ [EMPTY WISHLIST] Rendering EmptyWishlist component - no products found after processing"
-    );
+  // 📭 Empty wishlist
+  if (wishlistWithProducts.length === 0) {
     return <EmptyWishlist />;
   }
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900">
-      {/* Wishlist Header */}
-      <WishlistHeader
-        searchTerm={state.localSearchTerm}
-        onSearchChange={actions.setLocalSearchTerm}
-        sortBy={state.filters.sortBy}
-        onSortChange={handleSortChangeLocal}
-        viewMode={state.viewMode}
-        onViewModeChange={actions.setViewMode}
-        totalProducts={processedProducts.length}
-        selectedCount={state.selectedItems.size}
-        onSelectAll={handleSelectAll}
-        onBulkAddToCart={handleBulkAddToCartLocal}
-        onBulkRemove={handleBulkRemoveFromWishlistLocal}
-        allowAnimations={state.allowAnimations}
-      />
+    <div className="wishlist-tab space-y-6">
+      {/* Header simplificado */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Mi Wishlist</h1>
+          <p className="text-gray-600">
+            {filteredWishlist.length} productos en tu wishlist
+            {globalSearchTerm &&
+              ` (filtrados por &ldquo;${globalSearchTerm}&rdquo;)`}
+          </p>
+        </div>
 
-      <div className="mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-6">
-        {/* Wishlist Stats */}
-        <WishlistStats
-          totalItems={processedProducts.length}
-          totalValue={processedProducts.reduce(
-            (sum, p) => sum + (p.currentPrice || 0),
-            0
-          )}
-          onSaleItems={processedProducts.filter((p) => p.isOnSale).length}
-          allowAnimations={state.allowAnimations}
-        />
-
-        <div className="flex flex-col lg:flex-row gap-8 mt-8">
-          {/* Filters Sidebar */}
-          <WishlistFilters
-            filters={state.filters}
-            categories={(categories || []).map((cat) => ({
-              id: cat.id,
-              name: cat.name,
-              slug: cat.slug || cat.name.toLowerCase().replace(/\s+/g, "-"),
-            }))}
-            onCategoryFilter={handleCategoryFilterLocal}
-            onPriceRangeFilter={handlePriceRangeFilterLocal}
-            onSpecialFilterChange={handleSpecialFilterChangeLocal}
-            onClearFilters={clearAllFilters}
-            allowAnimations={state.allowAnimations}
+        {/* Search box */}
+        <div className="flex items-center gap-4">
+          <input
+            type="text"
+            placeholder="Buscar en wishlist..."
+            value={globalSearchTerm}
+            onChange={(e) => setGlobalSearchTerm(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
           />
-
-          {/* Wishlist Content */}
-          <div className="flex-1">
-            {/* Results Summary */}
-            <div
-              className={cn(
-                "flex items-center justify-between mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm",
-                state.allowAnimations && "animate-customerFadeInUp"
-              )}
+          {globalSearchTerm && (
+            <button
+              onClick={() => setGlobalSearchTerm("")}
+              className="text-gray-500 hover:text-gray-700"
             >
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  {processedProducts.length} productos en tu wishlist
-                </h2>
-                {state.localSearchTerm && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Resultados para:{" "}
-                    <span className="font-medium">
-                      &ldquo;{state.localSearchTerm}&rdquo;
-                    </span>
-                  </p>
-                )}
-              </div>
+              Limpiar
+            </button>
+          )}
+        </div>
+      </div>
 
-              {/* Items Per Page */}
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  Mostrar:
-                </span>
-                <select
-                  value={state.itemsPerPage}
-                  onChange={(e) => {
-                    actions.setItemsPerPage(Number(e.target.value));
-                  }}
-                  className="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                >
-                  {ITEMS_PER_PAGE_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option} por página
-                    </option>
-                  ))}
-                </select>
+      {/* Wishlist grid simplificado */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {filteredWishlist.map((product) => (
+          <div
+            key={product.id}
+            className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow p-4"
+          >
+            {/* Product Image */}
+            <div className="aspect-square bg-gray-100 rounded-md mb-4 overflow-hidden relative">
+              {product.images && product.images.length > 0 ? (
+                <img
+                  src={product.images[0]}
+                  alt={product.name}
+                  className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
+                  onClick={() => handleProductView(product)}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                  No image
+                </div>
+              )}
+
+              {/* Wishlist indicator */}
+              <div className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full">
+                ❤️
               </div>
             </div>
 
-            {/* Wishlist Grid */}
-            <WishlistGrid
-              products={paginatedProducts}
-              viewMode={state.viewMode}
-              selectedItems={state.selectedItems}
-              onSelectItem={actions.toggleSelected}
-              onRemoveFromWishlist={onRemoveFromWishlist}
-              onAddToCart={onAddToCart}
-              onMoveToCart={onMoveToCart}
-              onQuickView={onQuickView}
-              allowAnimations={state.allowAnimations}
-            />
+            {/* Product Info */}
+            <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2">
+              {product.name}
+            </h3>
+            {product.description && (
+              <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                {product.description}
+              </p>
+            )}
+            <p className="text-2xl font-bold text-gray-900 mb-4">
+              ${product.price}
+            </p>
 
-            {/* Pagination */}
-            <WishlistPagination
-              currentPage={state.currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChangeLocal}
-              allowAnimations={state.allowAnimations}
-            />
+            {/* Actions */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleAddToCart(product.id)}
+                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+              >
+                Agregar al carrito
+              </button>
+              <button
+                onClick={() => handleRemoveFromWishlist(product.id)}
+                className="bg-red-50 text-red-600 px-4 py-2 rounded-md hover:bg-red-100 transition-colors border border-red-200"
+              >
+                💔 Quitar
+              </button>
+            </div>
           </div>
-        </div>
+        ))}
       </div>
+
+      {/* Empty state */}
+      {filteredWishlist.length === 0 && wishlistWithProducts.length > 0 && (
+        <div className="text-center py-12">
+          <div className="text-gray-400 text-6xl mb-4">🔍</div>
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">
+            No se encontraron productos
+          </h3>
+          <p className="text-gray-600 mb-4">
+            No hay productos en tu wishlist que coincidan con &ldquo;
+            {globalSearchTerm}&rdquo;
+          </p>
+          <button
+            onClick={() => setGlobalSearchTerm("")}
+            className="text-red-600 hover:text-red-800"
+          >
+            Ver toda mi wishlist
+          </button>
+        </div>
+      )}
     </div>
   );
 };

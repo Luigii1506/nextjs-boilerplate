@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { User, Mail, Lock } from "lucide-react";
 import { authClient } from "@/core/auth/auth-client";
-import AuthContainer from "./AuthContainer";
 import InputField from "./InputField";
 import Button from "./Button";
 import SocialButton from "./SocialButton";
@@ -155,159 +154,179 @@ const RegisterView: React.FC<RegisterViewProps> = ({
   // Si el registro fue exitoso, mostrar mensaje de confirmación
   if (success) {
     return (
-      <AuthContainer title="¡Registro Exitoso!" subtitle="">
-        <div className="text-center space-y-6">
-          <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
-            <svg
-              className="w-8 h-8 text-green-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-          </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                ¡Registro Exitoso!
+              </h2>
+            </div>
 
-          <div className="space-y-3">
-            <p className="text-gray-600">
-              Tu cuenta ha sido creada exitosamente.
-            </p>
-            <p className="text-sm text-gray-500">
-              Revisa tu correo electrónico para verificar tu cuenta y completar
-              el registro.
-            </p>
-          </div>
+            <div className="text-center space-y-6">
+              <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
+                <svg
+                  className="w-8 h-8 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
 
-          <div className="space-y-3">
-            <Button onClick={onSwitchToLogin} variant="primary">
-              Ir al Login
-            </Button>
+              <div className="space-y-3">
+                <p className="text-gray-600">
+                  Tu cuenta ha sido creada exitosamente.
+                </p>
+                <p className="text-sm text-gray-500">
+                  Revisa tu correo electrónico para verificar tu cuenta y
+                  completar el registro.
+                </p>
+              </div>
 
-            <button
-              onClick={handleBackToRegister}
-              className="w-full text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200 hover:underline"
-            >
-              Registrar otra cuenta
-            </button>
+              <div className="space-y-3">
+                <Button onClick={onSwitchToLogin} variant="primary">
+                  Ir al Login
+                </Button>
+
+                <button
+                  onClick={handleBackToRegister}
+                  className="w-full text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200 hover:underline"
+                >
+                  Registrar otra cuenta
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </AuthContainer>
+      </div>
     );
   }
 
   return (
-    <AuthContainer
-      title="Crear cuenta"
-      subtitle="Regístrate para comenzar tu experiencia"
-    >
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Error general */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-2">
-            <svg
-              className="w-5 h-5 flex-shrink-0"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <span>{error}</span>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              Crear cuenta
+            </h2>
+            <p className="text-sm text-gray-600">
+              Regístrate para comenzar tu experiencia
+            </p>
           </div>
-        )}
 
-        {showSocialLogin && (
-          <>
-            <SocialButton
-              provider="google"
-              onClick={handleGoogleRegister}
-              loading={googleLoading}
-              disabled={loading}
-              text="Registrarse con Google"
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Error general */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-2">
+                <svg
+                  className="w-5 h-5 flex-shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span>{error}</span>
+              </div>
+            )}
+
+            {showSocialLogin && (
+              <>
+                <SocialButton
+                  provider="google"
+                  onClick={handleGoogleRegister}
+                  loading={googleLoading}
+                  disabled={loading}
+                  text="Registrarse con Google"
+                />
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-300"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-white text-slate-500">
+                      o regístrate con email
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
+
+            <InputField
+              type="text"
+              placeholder="Nombre completo"
+              value={formData.name}
+              onChange={(value) => handleChange("name", value)}
+              icon={<User size={20} />}
+              error={errors.name}
+              required
+              disabled={loading || googleLoading}
             />
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-300"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-slate-500">
-                  o regístrate con email
-                </span>
-              </div>
-            </div>
-          </>
-        )}
 
-        <InputField
-          type="text"
-          placeholder="Nombre completo"
-          value={formData.name}
-          onChange={(value) => handleChange("name", value)}
-          icon={<User size={20} />}
-          error={errors.name}
-          required
-          disabled={loading || googleLoading}
-        />
+            <InputField
+              type="email"
+              placeholder="Correo electrónico"
+              value={formData.email}
+              onChange={(value) => handleChange("email", value)}
+              icon={<Mail size={20} />}
+              error={errors.email}
+              required
+              disabled={loading || googleLoading}
+            />
 
-        <InputField
-          type="email"
-          placeholder="Correo electrónico"
-          value={formData.email}
-          onChange={(value) => handleChange("email", value)}
-          icon={<Mail size={20} />}
-          error={errors.email}
-          required
-          disabled={loading || googleLoading}
-        />
+            <InputField
+              type="password"
+              placeholder="Contraseña (mínimo 6 caracteres)"
+              value={formData.password}
+              onChange={(value) => handleChange("password", value)}
+              icon={<Lock size={20} />}
+              error={errors.password}
+              required
+              disabled={loading || googleLoading}
+            />
 
-        <InputField
-          type="password"
-          placeholder="Contraseña (mínimo 6 caracteres)"
-          value={formData.password}
-          onChange={(value) => handleChange("password", value)}
-          icon={<Lock size={20} />}
-          error={errors.password}
-          required
-          disabled={loading || googleLoading}
-        />
+            <InputField
+              type="password"
+              placeholder="Confirmar contraseña"
+              value={formData.confirmPassword}
+              onChange={(value) => handleChange("confirmPassword", value)}
+              icon={<Lock size={20} />}
+              error={errors.confirmPassword}
+              required
+              disabled={loading || googleLoading}
+            />
 
-        <InputField
-          type="password"
-          placeholder="Confirmar contraseña"
-          value={formData.confirmPassword}
-          onChange={(value) => handleChange("confirmPassword", value)}
-          icon={<Lock size={20} />}
-          error={errors.confirmPassword}
-          required
-          disabled={loading || googleLoading}
-        />
+            <Button type="submit" loading={loading} disabled={googleLoading}>
+              Crear Cuenta
+            </Button>
+          </form>
 
-        <Button type="submit" loading={loading} disabled={googleLoading}>
-          Crear Cuenta
-        </Button>
-      </form>
-
-      <div className="mt-6 text-center">
-        <p className="text-sm text-slate-600">
-          ¿Ya tienes una cuenta?{" "}
-          <button
-            onClick={onSwitchToLogin}
-            className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200 hover:underline"
-            disabled={loading || googleLoading}
-          >
-            Inicia sesión aquí
-          </button>
-        </p>
+          <div className="mt-6 text-center">
+            <p className="text-sm text-slate-600">
+              ¿Ya tienes una cuenta?{" "}
+              <button
+                onClick={onSwitchToLogin}
+                className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200 hover:underline"
+                disabled={loading || googleLoading}
+              >
+                Inicia sesión aquí
+              </button>
+            </p>
+          </div>
+        </div>
       </div>
-    </AuthContainer>
+    </div>
   );
 };
 

@@ -20,7 +20,7 @@ import { ProfessionalProductCard } from "@/features/storefront/ui/components/sha
 const ProductsGrid: React.FC<ProductsGridProps> = memo(function ProductsGrid({
   products,
   viewMode,
-  onAddToCart,
+  onAddToCart, // ✅ ADDED BACK - Stable prop passed to ProfessionalProductCard
   onAddToWishlist,
   onQuickView,
   isAddingToWishlist = false,
@@ -58,7 +58,7 @@ const ProductsGrid: React.FC<ProductsGridProps> = memo(function ProductsGrid({
             <ProfessionalProductCard
               key={product.id}
               product={product}
-              onAddToCart={onAddToCart}
+              onAddToCart={onAddToCart} // ✅ ADDED BACK - Stable prop from ProductsTab
               onAddToWishlist={onAddToWishlist}
               onQuickView={onQuickView}
               isAddingToWishlist={isAddingToWishlist}
@@ -83,7 +83,7 @@ const ProductsGrid: React.FC<ProductsGridProps> = memo(function ProductsGrid({
           <ProfessionalProductCard
             key={product.id}
             product={product}
-            onAddToCart={onAddToCart}
+            onAddToCart={onAddToCart} // ✅ ADDED BACK - Stable prop from ProductsTab
             onAddToWishlist={onAddToWishlist}
             onQuickView={onQuickView}
             isAddingToWishlist={isAddingToWishlist}

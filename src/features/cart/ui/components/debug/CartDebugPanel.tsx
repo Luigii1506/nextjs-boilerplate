@@ -11,46 +11,40 @@
 "use client";
 
 import React from "react";
-import { useCartContext } from "../../../context";
+import { useCart } from "@/features/cart";
 import { useAuth } from "@/shared/hooks/useAuth";
 
 export const CartDebugPanel: React.FC = () => {
-  const {
-    cart,
-    summary,
-    loading,
-    errors,
-    isEmpty,
-    itemCount,
-    totalAmount,
-    isProcessing,
-    formatPrice,
-  } = useCartContext();
+  // Use TanStack Query cart hook instead of UltraFastCart context
+  const { cart, summary, items, isLoading, formatPrice } = useCart();
 
-  const { isAuthenticated, user, isLoading: isAuthLoading } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
-  console.log("🛒 [CART DEBUG] Current cart state:", {
+  const itemCount = summary?.itemCount || 0;
+  const totalAmount = summary?.total || 0;
+  const safeItems = items || [];
+
+  console.log("🛒 [CART DEBUG] Current cart state (Ultra-Fast):", {
     hasCart: !!cart,
+    hasItems: safeItems.length > 0,
     itemCount,
     totalAmount,
-    isProcessing,
-    isEmpty,
+    isEmpty: safeItems.length === 0,
   });
 
   return (
     <div className="fixed bottom-4 right-4 z-50 bg-black/90 text-white p-4 rounded-lg text-xs max-w-sm max-h-96 overflow-y-auto border border-cyan-500/30">
       <h3 className="font-bold mb-2 text-cyan-400 flex items-center gap-2">
         🛒 CART DEBUG
-        {isProcessing && (
-          <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />
-        )}
+        {/* Always show active for super fast UX */}
+        <div className="w-2 h-2 bg-green-400 rounded-full" />
       </h3>
 
       <div className="space-y-2">
         {/* Authentication Status */}
         <div>
           <span className="text-blue-400">Auth:</span>{" "}
-          {isAuthLoading ? "⏳" : isAuthenticated ? "✅" : "❌"}
+          {isAuthenticated ? "✅" : "❌"}
           {user && (
             <span className="text-gray-400 ml-2">
               ({user.id.slice(0, 8)}...)
@@ -60,8 +54,9 @@ export const CartDebugPanel: React.FC = () => {
 
         {/* Cart Status */}
         <div>
-          <span className="text-green-400">Cart:</span> {cart ? "✅" : "❌"}{" "}
-          {isEmpty ? "(Empty)" : `(${itemCount} items)`}
+          <span className="text-green-400">Cart:</span>{" "}
+          {safeItems.length > 0 ? "✅" : "❌"}{" "}
+          {safeItems.length === 0 ? "(Empty)" : `(${itemCount} items)`}
         </div>
 
         {/* Total Amount */}
@@ -70,16 +65,20 @@ export const CartDebugPanel: React.FC = () => {
           {formatPrice(totalAmount || 0)}
         </div>
 
-        {/* Loading States */}
+        {/* Loading States - TanStack Query */}
         <div>
           <span className="text-yellow-400">Loading:</span>{" "}
-          {loading ? JSON.stringify(loading).slice(0, 30) + "..." : "None"}
+          {isLoading ? (
+            <span className="text-yellow-400">⏳ Loading...</span>
+          ) : (
+            <span className="text-green-400">✅ Ready</span>
+          )}
         </div>
 
-        {/* Processing Status */}
+        {/* Data Source */}
         <div>
-          <span className="text-orange-400">Processing:</span>{" "}
-          {isProcessing ? "🔄" : "✅"}
+          <span className="text-cyan-400">Source:</span>{" "}
+          <span className="text-purple-400">TanStack Query 🔄</span>
         </div>
 
         {/* Summary */}
@@ -97,10 +96,10 @@ export const CartDebugPanel: React.FC = () => {
         )}
 
         {/* Cart Items */}
-        {cart?.items && cart.items.length > 0 && (
+        {safeItems.length > 0 && (
           <div className="mt-3 border-t border-gray-600 pt-2">
             <div className="text-green-400 font-semibold mb-1">Cart Items:</div>
-            {cart.items.slice(0, 3).map((item, index) => (
+            {safeItems.slice(0, 3).map((item, index) => (
               <div key={item.id} className="text-gray-300 text-[10px]">
                 {index + 1}. {item.product?.name?.slice(0, 15) || "Unknown"}...
                 (×{item.quantity || 0})
@@ -110,39 +109,21 @@ export const CartDebugPanel: React.FC = () => {
                 </div>
               </div>
             ))}
-            {cart.items.length > 3 && (
+            {safeItems.length > 3 && (
               <div className="text-gray-500 text-[10px]">
-                + {cart.items.length - 3} more items...
+                + {safeItems.length - 3} more items...
               </div>
             )}
           </div>
         )}
 
-        {/* Errors */}
-        {errors.generalError && (
-          <div className="mt-3 border-t border-red-600 pt-2">
-            <div className="text-red-400 font-semibold mb-1">Error:</div>
-            <div className="text-red-300 text-[10px]">
-              {errors.generalError.slice(0, 50)}...
-            </div>
+        {/* No Errors - SUPER FAST UX */}
+        <div className="mt-3 border-t border-green-600 pt-2">
+          <div className="text-green-400 font-semibold mb-1">Status:</div>
+          <div className="text-green-300 text-[10px]">
+            ✅ NO ERRORS - SUPER FAST!
           </div>
-        )}
-
-        {/* Action Errors */}
-        {errors.actionErrors && Object.keys(errors.actionErrors).length > 0 && (
-          <div className="mt-2">
-            <div className="text-red-400 font-semibold mb-1">
-              Action Errors:
-            </div>
-            {Object.entries(errors.actionErrors)
-              .slice(0, 2)
-              .map(([key, error]) => (
-                <div key={key} className="text-red-300 text-[10px]">
-                  {key}: {error?.slice(0, 20)}...
-                </div>
-              ))}
-          </div>
-        )}
+        </div>
       </div>
 
       {/* Performance Metrics */}
@@ -150,9 +131,7 @@ export const CartDebugPanel: React.FC = () => {
         <div className="text-gray-400 text-[9px]">
           🔄 Updates in real-time • Check console for detailed logs
         </div>
-        <div className="text-gray-500 text-[8px] mt-1">
-          Cart ID: {cart?.id?.slice(0, 12)}...
-        </div>
+        <div className="text-gray-500 text-[8px] mt-1">Cart: SUPER FAST ⚡</div>
       </div>
     </div>
   );

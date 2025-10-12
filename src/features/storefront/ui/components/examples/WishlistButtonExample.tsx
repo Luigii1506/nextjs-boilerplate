@@ -1,11 +1,13 @@
 /**
- * 💖 WISHLIST BUTTON EXAMPLE COMPONENT
- * =====================================
+ * 💖 WISHLIST BUTTON EXAMPLE - ARQUITECTURA PROFESIONAL
+ * =====================================================
  *
- * Ejemplo de cómo usar addToWishlist implementado
- * Demuestra diferentes patrones de uso del wishlist
+ * Ejemplo de cómo usar wishlist con nueva arquitectura profesional:
+ * ✅ Single source of truth (StorefrontContext)
+ * ✅ Zero hooks intermediarios
+ * ✅ Simple, directo, mantenible
  *
- * Created: 2025-01-17 - AddToWishlist Implementation Example
+ * MIGRADO: 2025-01-28 - Professional Architecture
  */
 
 "use client";
@@ -13,279 +15,229 @@
 import React, { useState } from "react";
 import { Heart, Plus, Minus, ShoppingHeart } from "lucide-react";
 import { cn } from "@/shared/utils";
-import { useWishlistActions } from "../../hooks/useWishlistActions";
+// TODO: Update this example to use new TanStack Query hooks
+// import { useWishlist } from "../../../hooks";
 import type { ProductForCustomer } from "../../types";
 
 interface WishlistButtonExampleProps {
   product: ProductForCustomer;
-  variant?: "heart" | "button" | "floating";
-  size?: "sm" | "md" | "lg";
-  className?: string;
+  variant?: "default" | "compact" | "icon-only" | "with-counter";
+  showLabel?: boolean;
 }
 
 /**
- * 🎯 EJEMPLO 1: Botón específico para AGREGAR (sin toggle)
+ * 💖 WISHLIST BUTTON - PROFESIONAL Y SIMPLE
+ * TODO: This component needs migration to new TanStack Query architecture
  */
-export const AddToWishlistButton: React.FC<WishlistButtonExampleProps> = ({
+const WishlistButtonExample: React.FC<WishlistButtonExampleProps> = ({
   product,
-  variant = "button",
-  size = "md",
-  className,
+  variant = "default",
+  showLabel = true,
 }) => {
-  const { addToWishlist, isLoading, isProductWishlisted } =
-    useWishlistActions();
-  const [localLoading, setLocalLoading] = useState(false);
-
-  // Ya está en wishlist - no mostrar botón
-  if (isProductWishlisted(product.id)) {
-    return null;
-  }
-
-  const handleAdd = async () => {
-    setLocalLoading(true);
-
-    // ✅ USANDO addToWishlist IMPLEMENTADO - NO toggleWishlist
-    const result = await addToWishlist(product);
-
-    if (result.success) {
-      console.log("✅ Successfully added using addToWishlist:", product.name);
-    } else {
-      console.error("❌ Failed to add:", result.message);
-    }
-
-    setLocalLoading(false);
-  };
-
-  const isProcessing = isLoading || localLoading;
-
-  if (variant === "heart") {
-    return (
-      <button
-        onClick={handleAdd}
-        disabled={isProcessing}
-        className={cn(
-          "p-2 rounded-full bg-white shadow-md hover:shadow-lg transition-all duration-200",
-          isProcessing && "animate-pulse",
-          className
-        )}
-        title="Agregar a lista de deseos"
-      >
-        <Heart className="w-5 h-5 text-gray-600 hover:text-red-500" />
-      </button>
-    );
-  }
-
-  if (variant === "floating") {
-    return (
-      <button
-        onClick={handleAdd}
-        disabled={isProcessing}
-        className={cn(
-          "fixed bottom-20 right-6 bg-red-500 hover:bg-red-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 z-50",
-          isProcessing && "animate-bounce",
-          className
-        )}
-        title="Agregar a wishlist"
-      >
-        <Plus className="w-6 h-6" />
-      </button>
-    );
-  }
-
+  // TEMPORARILY DISABLED - Needs migration
   return (
-    <button
-      onClick={handleAdd}
-      disabled={isProcessing}
-      className={cn(
-        "flex items-center space-x-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 rounded-lg transition-colors duration-200",
-        isProcessing && "opacity-50 cursor-not-allowed",
-        size === "sm" && "px-3 py-1 text-sm",
-        size === "lg" && "px-6 py-3 text-lg",
-        className
-      )}
-    >
-      {isProcessing ? (
-        <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
-      ) : (
-        <Heart className="w-4 h-4" />
-      )}
-      <span>Agregar a Wishlist</span>
-    </button>
+    <div className="p-4 border-2 border-dashed border-gray-300 rounded-lg">
+      <p className="text-sm text-gray-600">
+        WishlistButtonExample - Needs TanStack Query migration
+      </p>
+    </div>
   );
-};
 
-/**
- * 🎯 EJEMPLO 2: Botón específico para REMOVER (sin toggle)
- */
-export const RemoveFromWishlistButton: React.FC<WishlistButtonExampleProps> = ({
-  product,
-  variant = "button",
-  size = "md",
-  className,
-}) => {
-  const { removeFromWishlist, isLoading, isProductWishlisted } =
-    useWishlistActions();
-  const [localLoading, setLocalLoading] = useState(false);
+  /*
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  // No está en wishlist - no mostrar botón
-  if (!isProductWishlisted(product.id)) {
-    return null;
-  }
+  // 🏪 Wishlist actions - Directo desde contexto
+  const { addToWishlist, removeFromWishlist } = useWishlist();
 
-  const handleRemove = async () => {
-    setLocalLoading(true);
+  // ⚡ Handle wishlist toggle - Simple
+  const handleToggle = async () => {
+    if (isProcessing) return;
 
-    // ✅ USANDO removeFromWishlist IMPLEMENTADO - NO toggleWishlist
-    const result = await removeFromWishlist(product);
-
-    if (result.success) {
-      console.log(
-        "✅ Successfully removed using removeFromWishlist:",
-        product.name
-      );
-    } else {
-      console.error("❌ Failed to remove:", result.message);
+    setIsProcessing(true);
+    try {
+      if (product.isWishlisted) {
+        await removeFromWishlist(product.id);
+      } else {
+        await addToWishlist(product.id);
+      }
+    } catch (error) {
+      console.error("Wishlist action failed:", error);
+    } finally {
+      setIsProcessing(false);
     }
-
-    setLocalLoading(false);
   };
 
-  const isProcessing = isLoading || localLoading;
+  // 🎨 Variant styles
+  const getButtonStyles = () => {
+    const baseStyles =
+      "inline-flex items-center gap-2 transition-all duration-200 disabled:opacity-50";
 
-  return (
-    <button
-      onClick={handleRemove}
-      disabled={isProcessing}
-      className={cn(
-        "flex items-center space-x-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-700 rounded-lg transition-colors duration-200",
-        isProcessing && "opacity-50 cursor-not-allowed",
-        size === "sm" && "px-3 py-1 text-sm",
-        size === "lg" && "px-6 py-3 text-lg",
-        className
-      )}
-    >
-      {isProcessing ? (
-        <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
-      ) : (
-        <Minus className="w-4 h-4" />
-      )}
-      <span>Remover de Wishlist</span>
-    </button>
-  );
-};
+    switch (variant) {
+      case "compact":
+        return cn(
+          baseStyles,
+          "px-2 py-1 text-sm rounded-md border",
+          product.isWishlisted
+            ? "bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
+            : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
+        );
 
-/**
- * 🎯 EJEMPLO 3: Componente completo que muestra diferentes usos
- */
-export const WishlistExampleShowcase: React.FC<{
-  products: ProductForCustomer[];
-}> = ({ products }) => {
-  const {
-    addToWishlist,
-    removeFromWishlist,
-    toggleWishlist,
-    addMultipleToWishlist,
-    getWishlistCount,
-    isLoading,
-  } = useWishlistActions();
+      case "icon-only":
+        return cn(
+          baseStyles,
+          "p-2 rounded-full border",
+          product.isWishlisted
+            ? "bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
+            : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
+        );
 
-  const handleBulkAdd = async () => {
-    if (products.length === 0) return;
+      case "with-counter":
+        return cn(
+          baseStyles,
+          "px-4 py-2 rounded-lg border bg-white shadow-sm hover:shadow-md",
+          product.isWishlisted
+            ? "text-red-600 border-red-200"
+            : "text-gray-600 border-gray-200"
+        );
 
-    console.log("🎯 Adding multiple products using addToWishlist");
-    const result = await addMultipleToWishlist(products.slice(0, 3));
-
-    console.log("Bulk add result:", result);
+      default:
+        return cn(
+          baseStyles,
+          "px-4 py-2 rounded-lg border",
+          product.isWishlisted
+            ? "bg-red-500 text-white border-red-500 hover:bg-red-600"
+            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+        );
+    }
   };
 
-  const handleIndividualAdd = async (product: ProductForCustomer) => {
-    console.log("🎯 Using individual addToWishlist for:", product.name);
-    const result = await addToWishlist(product);
-    console.log("Individual add result:", result);
+  // 🎨 Icon styles
+  const getIconStyles = () => {
+    return cn(
+      "transition-all duration-200",
+      variant === "icon-only" ? "w-5 h-5" : "w-4 h-4",
+      isProcessing && "animate-pulse"
+    );
   };
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow-sm border">
-      <div className="mb-6">
-        <h3 className="text-lg font-semibold mb-2">
-          🎯 AddToWishlist Implementation Examples
-        </h3>
-        <p className="text-gray-600">
-          Wishlist Count:{" "}
-          <span className="font-medium">{getWishlistCount()}</span>
-          {isLoading && (
-            <span className="ml-2 text-blue-600">Processing...</span>
-          )}
-        </p>
-      </div>
+    <div className="wishlist-button-example">
+      <button
+        onClick={handleToggle}
+        disabled={isProcessing}
+        className={getButtonStyles()}
+        title={
+          product.isWishlisted ? "Quitar de wishlist" : "Agregar a wishlist"
+        }
+      >
+        {/* Icon */}
+        {variant === "with-counter" ? (
+          <ShoppingHeart className={getIconStyles()} />
+        ) : (
+          <Heart
+            className={cn(
+              getIconStyles(),
+              product.isWishlisted && "fill-current"
+            )}
+          />
+        )}
 
-      <div className="space-y-4">
-        {/* Individual Actions */}
-        <div>
-          <h4 className="font-medium mb-2">Individual Actions:</h4>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {products.slice(0, 3).map((product) => (
-              <div key={product.id} className="p-4 border rounded-lg">
-                <h5 className="font-medium truncate mb-2">{product.name}</h5>
-                <div className="space-y-2">
-                  <AddToWishlistButton product={product} size="sm" />
-                  <RemoveFromWishlistButton product={product} size="sm" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* Label */}
+        {showLabel && variant !== "icon-only" && (
+          <span>
+            {isProcessing
+              ? "Procesando..."
+              : product.isWishlisted
+              ? "En Wishlist"
+              : "Agregar a Wishlist"}
+          </span>
+        )}
 
-        {/* Bulk Actions */}
-        <div>
-          <h4 className="font-medium mb-2">Bulk Actions:</h4>
-          <button
-            onClick={handleBulkAdd}
-            disabled={isLoading}
-            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg disabled:opacity-50"
-          >
-            <ShoppingHeart className="w-4 h-4 inline mr-2" />
-            Add First 3 Products to Wishlist
-          </button>
-        </div>
-
-        {/* Direct Usage Examples */}
-        <div>
-          <h4 className="font-medium mb-2">Direct Usage:</h4>
-          <div className="space-x-2">
+        {/* Counter for with-counter variant */}
+        {variant === "with-counter" && (
+          <div className="flex items-center gap-2 ml-2">
             <button
-              onClick={() => products[0] && handleIndividualAdd(products[0])}
-              disabled={isLoading || !products[0]}
-              className="px-3 py-2 bg-green-500 hover:bg-green-600 text-white text-sm rounded"
+              onClick={(e) => {
+                e.stopPropagation();
+                console.log("Decrement wishlist priority");
+              }}
+              className="p-1 rounded hover:bg-gray-100"
+              disabled={isProcessing}
             >
-              Add First Product
+              <Minus className="w-3 h-3" />
+            </button>
+            <span className="text-sm font-medium px-2">1</span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                console.log("Increment wishlist priority");
+              }}
+              className="p-1 rounded hover:bg-gray-100"
+              disabled={isProcessing}
+            >
+              <Plus className="w-3 h-3" />
             </button>
           </div>
+        )}
+      </button>
+
+      {/* Status indicator */}
+      {isProcessing && (
+        <div className="mt-2 text-sm text-gray-500">
+          Actualizando wishlist...
+        </div>
+      )}
+    </div>
+  );
+};
+
+// 🎯 Example usage
+export const WishlistButtonExamples: React.FC = () => {
+  // Mock product para ejemplos
+  const mockProduct: ProductForCustomer = {
+    id: "example-product",
+    name: "Producto de Ejemplo",
+    price: 99,
+    isWishlisted: false,
+    description: "Producto para demostrar el wishlist",
+    imageUrl: null,
+    category: null,
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  return (
+    <div className="space-y-6 p-6">
+      <h2 className="text-2xl font-bold mb-4">Ejemplos de Wishlist Button</h2>
+
+      <div className="grid gap-6">
+        {/* Default variant */}
+        <div>
+          <h3 className="font-semibold mb-2">Default</h3>
+          <WishlistButtonExample product={mockProduct} />
+        </div>
+
+        {/* Compact variant */}
+        <div>
+          <h3 className="font-semibold mb-2">Compact</h3>
+          <WishlistButtonExample product={mockProduct} variant="compact" />
+        </div>
+
+        {/* Icon only variant */}
+        <div>
+          <h3 className="font-semibold mb-2">Icon Only</h3>
+          <WishlistButtonExample product={mockProduct} variant="icon-only" />
+        </div>
+
+        {/* With counter variant */}
+        <div>
+          <h3 className="font-semibold mb-2">With Counter</h3>
+          <WishlistButtonExample product={mockProduct} variant="with-counter" />
         </div>
       </div>
     </div>
   );
 };
 
-// 📝 Usage Example in Comments:
-/*
-// In your component:
-import { AddToWishlistButton, useWishlistActions } from "@/features/storefront";
-
-const MyComponent = ({ product }) => {
-  const { addToWishlist } = useWishlistActions();
-  
-  // Option 1: Use the pre-built component
-  return <AddToWishlistButton product={product} variant="heart" />;
-  
-  // Option 2: Use the hook directly
-  const handleCustomAdd = async () => {
-    const result = await addToWishlist(product);
-    if (result.success) {
-      // Handle success
-    }
-  };
-  
-  return <button onClick={handleCustomAdd}>Custom Add</button>;
-};
-*/
+export default WishlistButtonExample;

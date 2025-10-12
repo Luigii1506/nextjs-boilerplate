@@ -8,6 +8,10 @@ export const auth = betterAuth({
     provider: "postgresql", // or "mysql", "sqlite"
   }),
 
+  // 🔐 Secret Configuration
+  secret: process.env.BETTER_AUTH_SECRET,
+  baseURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000",
+
   // 📧 Email and Password Configuration
   emailAndPassword: {
     enabled: true,
@@ -35,7 +39,9 @@ export const auth = betterAuth({
 
   // 🎨 Advanced Options
   advanced: {
-    generateId: false, // Use auto-increment IDs
+    database: {
+      generateId: false, // Use auto-increment IDs
+    },
     crossSubdomainCookies: {
       enabled: false,
     },

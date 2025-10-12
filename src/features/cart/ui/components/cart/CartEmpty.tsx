@@ -48,37 +48,28 @@ export function CartEmpty({
   className = "",
   animate = true,
 }: CartEmptyProps) {
-  console.log("📭 [CART EMPTY] Rendering empty cart state");
+  // 🚀 SUPER FAST - No logging for production speed
 
   const handleContinueShopping = () => {
-    console.log("🛍️ [CART EMPTY] Continue shopping clicked");
     onContinueShopping?.();
   };
 
   const handleBrowseWishlist = () => {
-    console.log("💖 [CART EMPTY] Browse wishlist clicked");
     onBrowseWishlist?.();
   };
 
   return (
     <div
-      className={`
-        flex flex-col items-center justify-center 
-        p-8 text-center space-y-6 
-        min-h-[400px]
-        ${animate ? "animate-fadeIn" : ""}
-        ${className}
-      `}
+      className={`flex flex-col items-center justify-center p-8 text-center space-y-6 min-h-[400px] ${
+        animate ? "animate-fadeIn" : ""
+      } ${className}`}
     >
       {/* 🛒 Empty Cart Icon */}
       <div className="relative">
         <div
-          className={`
-            w-24 h-24 rounded-full 
-            bg-gray-100 dark:bg-gray-800 
-            flex items-center justify-center
-            ${animate ? "animate-pulse" : ""}
-          `}
+          className={`w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center ${
+            animate ? "animate-pulse" : ""
+          }`}
         >
           <ShoppingBag className="w-12 h-12 text-gray-400 dark:text-gray-500" />
         </div>
@@ -101,14 +92,7 @@ export function CartEmpty({
       <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
         <button
           onClick={handleContinueShopping}
-          className="
-            flex items-center justify-center gap-2
-            px-6 py-3 
-            bg-blue-600 hover:bg-blue-700
-            text-white font-medium rounded-lg
-            transition-colors duration-200
-            group
-          "
+          className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200 group"
         >
           <ShoppingBag className="w-4 h-4" />
           Continue Shopping
@@ -118,15 +102,7 @@ export function CartEmpty({
         {onBrowseWishlist && (
           <button
             onClick={handleBrowseWishlist}
-            className="
-              flex items-center justify-center gap-2
-              px-6 py-3 
-              border border-gray-300 dark:border-gray-600
-              text-gray-700 dark:text-gray-300 
-              font-medium rounded-lg
-              hover:bg-gray-50 dark:hover:bg-gray-800
-              transition-colors duration-200
-            "
+            className="flex items-center justify-center gap-2 px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200"
           >
             <Heart className="w-4 h-4" />
             View Wishlist
@@ -173,5 +149,3 @@ export function CartEmpty({
 }
 
 export default CartEmpty;
-
-

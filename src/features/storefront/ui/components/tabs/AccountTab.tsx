@@ -52,7 +52,7 @@ import {
 } from "lucide-react";
 
 // Import Context and Types
-import { useStorefrontContext } from "../../..";
+import { useStorefrontUI } from "../../../context";
 
 // Define interfaces for account management
 interface AccountSection {
@@ -123,7 +123,12 @@ const ACCOUNT_SECTIONS: AccountSection[] = [
  * 👤 Main AccountTab Component
  */
 const AccountTab: React.FC = () => {
-  const { customer, openLoginModal } = useStorefrontContext();
+  // Note: customer and openLoginModal are not available in the new architecture
+  // TODO: Implement authentication check and login modal trigger via proper auth hooks
+  const customer = null; // Placeholder - replace with proper auth hook
+  const openLoginModal = () => {
+    console.log("Login modal trigger - implement via auth system");
+  };
 
   // 🎯 Component State
   const [isFirstRender, setIsFirstRender] = useState(true);

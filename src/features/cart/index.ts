@@ -23,6 +23,9 @@ export * from "./ui/components";
 // 🌍 Context Layer
 export * from "./context";
 
+// 🔗 Compatibility alias: useCart → useCartContext
+export { useCartContext as useCart } from "./context";
+
 // 🛠️ Utilities Layer
 export * from "./utils";
 

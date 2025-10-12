@@ -68,7 +68,7 @@ export interface ProductsFiltersProps {
 export interface ProductsGridProps {
   products: ProductForCustomer[];
   viewMode: "grid" | "list";
-  onAddToCart: (product: ProductForCustomer) => void;
+  onAddToCart: (productId: string, quantity?: number) => Promise<void>; // ✅ ADDED BACK - Stable prop from ProductsTab
   onAddToWishlist: (
     product: ProductForCustomer
   ) => Promise<{ success: boolean; message: string }>;

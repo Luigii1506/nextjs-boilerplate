@@ -200,19 +200,30 @@ export async function addToCartQuery(input: AddToCartInput): Promise<{
       const totalPrice = unitPrice * quantity;
 
       // 2. Find or create cart
-      let cart = await tx.cart.findFirst({
-        where: {
-          OR: [
-            ...(userId ? [{ userId }] : []),
-            ...(sessionId ? [{ sessionId }] : []),
-          ],
-          expiresAt: {
-            gt: new Date(),
-          },
+      // Build where clause - prioritize userId over sessionId
+      const whereClause: any = {
+        expiresAt: {
+          gt: new Date(),
         },
+      };
+
+      if (userId) {
+        whereClause.userId = userId;
+      } else if (sessionId) {
+        whereClause.sessionId = sessionId;
+      }
+
+      let cart = await tx.cart.findFirst({
+        where: whereClause,
         include: {
           items: true,
         },
+      });
+
+      console.log("🔍 [ADD TO CART] Cart search result:", {
+        found: !!cart,
+        cartId: cart?.id,
+        whereClause,
       });
 
       let isNewCart = false;
@@ -222,15 +233,23 @@ export async function addToCartQuery(input: AddToCartInput): Promise<{
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 30); // 30 days expiry
 
+        // Only include userId OR sessionId, not both (due to @unique constraints)
+        const cartData: any = {
+          subtotal: totalPrice,
+          taxAmount: 0, // Will be calculated in service layer
+          total: totalPrice,
+          expiresAt,
+        };
+
+        // Prefer userId over sessionId if both are provided
+        if (userId) {
+          cartData.userId = userId;
+        } else if (sessionId) {
+          cartData.sessionId = sessionId;
+        }
+
         cart = await tx.cart.create({
-          data: {
-            userId,
-            sessionId,
-            subtotal: totalPrice,
-            taxAmount: 0, // Will be calculated in service layer
-            total: totalPrice,
-            expiresAt,
-          },
+          data: cartData,
           include: {
             items: true,
           },

@@ -9,9 +9,21 @@
 "use client";
 
 import React from "react";
-import { useStorefrontContext } from "../../../context/StorefrontContext";
+// TODO: Update this debug panel to use new TanStack Query hooks
+// import { useStorefrontData, useWishlist } from "../../../hooks";
 
 export const WishlistDebugPanel: React.FC = () => {
+  // TEMPORARILY DISABLED - Needs migration to new architecture
+  return (
+    <div className="fixed bottom-4 right-4 z-50 bg-black/90 text-white p-4 rounded-lg text-xs max-w-sm">
+      <h3 className="font-bold mb-2 text-yellow-400">🔍 WISHLIST DEBUG</h3>
+      <p className="text-gray-400">
+        Debug panel disabled. Needs migration to TanStack Query.
+      </p>
+    </div>
+  );
+
+  /*
   const { isAuthenticated, wishlist, products, featuredProducts } =
     useStorefrontContext();
 

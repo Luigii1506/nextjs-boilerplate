@@ -1,27 +1,25 @@
 /**
- * 📦 STOREFRONT HOOKS MAIN INDEX
- * ==============================
+ * 🎣 STOREFRONT HOOKS - EXPORTS
+ * =============================
  *
- * Centralized exports for ALL storefront hooks organized by feature.
- * Nueva estructura de "Fase Futura" - Organización por Feature.
+ * Clean exports para todos los hooks de TanStack Query.
  *
- * 📍 Estructura refactorizada: /hooks/[feature]/
- *
- * @version 3.0.0 - Feature-First Architecture
+ * @version 3.0.0 - TanStack Query Migration
  */
 
-// 📦 PRODUCTS HOOKS
-export * from "./products";
+// 🔑 Query Keys
+export { storefrontKeys } from "./queryKeys";
 
-// ❤️ WISHLIST HOOKS
-export * from "./wishlist";
+// 📊 Data Hooks
+export {
+  useStorefrontData,
+  useStorefrontProducts,
+  useStorefrontCategories,
+  useFeaturedContent,
+} from "./useStorefrontData";
 
-// 🏠 OVERVIEW HOOKS
-export * from "./overview";
+// 💖 Wishlist Hooks
+export { useWishlist, useWishlistToggle } from "./useWishlist";
 
-// 🔧 SHARED HOOKS
-export * from "./shared";
-
-// 🌐 EXISTING GLOBAL HOOKS (mantener compatibilidad)
-export { useStorefrontQuery } from "./useStorefrontQuery";
-export { useWishlistActions } from "./useWishlistActions";
+// 🛒 Cart Hooks - REMOVED: Using UltraFast Cart Context instead
+// export { useCart } from "./useCart";

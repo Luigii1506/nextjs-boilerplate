@@ -1,13 +1,21 @@
 services:
   db:
-    image: postgres:16-alpine
+    image: postgres:15-alpine
     restart: unless-stopped
-    env_file:
-      - .env
+    environment:
+      POSTGRES_USER: nextjs_user
+      POSTGRES_PASSWORD: nextjs_password
+      POSTGRES_DB: nextjs_boilerplate
+      POSTGRES_INITDB_ARGS: "--auth-host=trust"
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nextjs_user -d nextjs_boilerplate"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:

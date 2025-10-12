@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/shared/hooks/useAuth";
 import { useRouter } from "next/navigation";
+import { LoadingScreen } from "@/shared/components";
 import ForgotPasswordView from "@/core/auth/components/ForgotPasswordView";
 
 export default function ForgotPasswordPage() {
@@ -12,16 +13,8 @@ export default function ForgotPasswordPage() {
     router.push("/login");
   };
 
-  // Loading state
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="text-gray-600">Verificando autenticación...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="Verificando autenticación..." />;
   }
 
   return <ForgotPasswordView onBackToLogin={handleBackToLogin} />;

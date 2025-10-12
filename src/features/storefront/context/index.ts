@@ -4,12 +4,17 @@
  *
  * Exportaciones centralizadas para el context del storefront SPA
  *
- * Created: 2025-01-17 - Storefront Context Module
+ * @version 3.0.0 - TanStack Query Migration
  */
 
+// 🎨 UI Context (Nuevo - Solo UI State)
 export {
-  StorefrontProvider,
-  useStorefrontContext,
+  StorefrontUIProvider,
+  useStorefrontUI,
   STOREFRONT_TABS,
   type TabId,
-} from "./StorefrontContext";
+} from "./StorefrontUIContext";
+
+// 📝 Nota: El antiguo StorefrontContext.tsx con data management
+// fue reemplazado por TanStack Query hooks.
+// Ver: src/features/storefront/hooks/

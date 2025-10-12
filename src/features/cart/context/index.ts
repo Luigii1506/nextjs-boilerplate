@@ -2,12 +2,12 @@
  * 🌍 CART CONTEXT - BARREL EXPORTS
  * =================================
  *
- * Cart global state context exports.
+ * Simple, stable cart context without over-engineering.
  *
- * @version 1.0.0 - Cart Feature
+ * @version 1.0.0 - Back to basics
  */
 
-// 🎁 Cart Context Provider and Hook
+// ✅ STABLE Cart Context (DEFAULT)
 export { CartProvider, useCartContext } from "./CartContext";
 
 // 🏷️ Context types re-export

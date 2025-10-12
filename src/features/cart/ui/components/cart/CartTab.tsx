@@ -10,13 +10,12 @@
 
 "use client";
 
-import React, { useMemo, useCallback } from "react";
-import { useAuth } from "@/shared/hooks/useAuth";
+import React, { useCallback } from "react";
 import { useCartContext } from "../../../context";
 import CartEmpty from "./CartEmpty";
 import CartItem from "./CartItem";
 import CartSummary from "./CartSummary";
-import { Loader2, ShoppingCart, AlertTriangle, ArrowRight } from "lucide-react";
+import { ShoppingCart, ArrowRight } from "lucide-react";
 
 // 🏷️ COMPONENT PROPS
 // ===================
@@ -51,38 +50,20 @@ export function CartTab({
   onViewProduct,
   onCheckout,
 }: CartTabProps) {
-  // 🔐 AUTH STATE
-  const { isAuthenticated, user, isLoading: isAuthLoading } = useAuth();
-  const userId = user?.id;
-
-  // 🛒 USE CART CONTEXT (Global state)
-  // ==================================
+  // 🛒 USE CART CONTEXT (Simple, Stable Interface)
+  // ===============================================
 
   const {
-    cart,
+    items,
     summary,
-    loading,
-    errors,
-    isEmpty,
     itemCount,
     totalAmount,
-    isProcessing,
-    updateItem,
+    updateQuantity,
     removeItem,
-    clearCart,
-    getItemQuantity,
-    hasItem,
     formatPrice,
   } = useCartContext();
 
-  console.log("🛒 [CART TAB] Rendering cart tab:", {
-    isAuthenticated,
-    userId,
-    hasCart: !!cart,
-    itemCount,
-    isEmpty,
-    isLoading: loading.isLoading,
-  });
+  // 🚀 SUPER FAST - No logging needed for production speed
 
   // 🔄 ITEM HANDLERS
   // ================
@@ -92,42 +73,15 @@ export function CartTab({
    */
   const handleQuantityChange = useCallback(
     async (itemId: string, newQuantity: number): Promise<boolean> => {
-      console.log("🔢 [CART TAB] Quantity change:", { itemId, newQuantity });
-
-      // Find product ID from cart item
-      const cartItem = cart?.items.find((item) => item.id === itemId);
-
-      console.log("🔍 [CART TAB] Looking for cart item:", {
-        searchItemId: itemId,
-        foundCartItem: !!cartItem,
-        cartItemProductId: cartItem?.productId,
-        productIdType: typeof cartItem?.productId,
-        productIdValid: !!cartItem?.productId,
-        allCartItemIds:
-          cart?.items.map((item) => ({
-            id: item.id,
-            productId: item.productId,
-            productName: item.product?.name,
-          })) || [],
-      });
-
-      if (!cartItem?.productId) {
-        console.error("❌ [CART TAB] Could not find product ID for item:", {
-          searchItemId: itemId,
-          foundCartItem: !!cartItem,
-          cartItemProductId: cartItem?.productId,
-          cartItem: cartItem,
-        });
+      try {
+        await updateQuantity(itemId, newQuantity);
+        return true;
+      } catch (error) {
+        console.error("❌ [CART TAB] Update quantity failed:", error);
         return false;
       }
-
-      if (newQuantity === 0) {
-        return await removeItem(cartItem.productId);
-      }
-
-      return await updateItem(cartItem.productId, newQuantity);
     },
-    [cart?.items, updateItem, removeItem]
+    [updateQuantity]
   );
 
   /**
@@ -135,21 +89,15 @@ export function CartTab({
    */
   const handleRemoveItem = useCallback(
     async (itemId: string): Promise<boolean> => {
-      console.log("🗑️ [CART TAB] Removing item:", itemId);
-
-      // Find product ID from cart item
-      const cartItem = cart?.items.find((item) => item.id === itemId);
-      if (!cartItem?.productId) {
-        console.error(
-          "❌ [CART TAB] Could not find product ID for item:",
-          itemId
-        );
+      try {
+        await removeItem(itemId);
+        return true;
+      } catch (error) {
+        console.error("❌ [CART TAB] Remove item failed:", error);
         return false;
       }
-
-      return await removeItem(cartItem.productId);
     },
-    [cart?.items, removeItem]
+    [removeItem]
   );
 
   /**
@@ -157,8 +105,9 @@ export function CartTab({
    */
   const handleAddToWishlist = useCallback(
     async (productId: string): Promise<boolean> => {
-      console.log("💖 [CART TAB] Adding to wishlist:", productId);
+      // 🚀 SUPER FAST - Wishlist integration
       // TODO: Integrate with wishlist when implemented
+      console.log("🤍 [CART TAB] Add to wishlist:", { productId });
       return true;
     },
     []
@@ -180,66 +129,14 @@ export function CartTab({
     return true;
   }, [onCheckout]);
 
-  // 🧮 COMPUTED VALUES
-  // ==================
+  // 🚀 SUPER FAST - No complex computations needed
 
-  const hasErrors = useMemo(() => {
-    return !!(
-      errors.generalError || Object.keys(errors.actionErrors || {}).length > 0
-    );
-  }, [errors]);
-
-  // 🎨 LOADING STATE
-  // ================
-
-  if (isAuthLoading || loading.isLoading) {
-    return (
-      <div
-        className={`flex items-center justify-center min-h-[400px] ${className}`}
-      >
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          <p className="text-gray-500 dark:text-gray-400">
-            Loading your cart...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // 🚨 ERROR STATE
-  // ==============
-
-  if (hasErrors) {
-    return (
-      <div
-        className={`flex items-center justify-center min-h-[400px] ${className}`}
-      >
-        <div className="flex flex-col items-center gap-3 text-center">
-          <AlertTriangle className="w-8 h-8 text-red-500" />
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              Cart Error
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">
-              {errors.generalError || "Something went wrong"}
-            </p>
-          </div>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // 🚀 NO LOADING STATES - SUPER FAST UX!
 
   // 📭 EMPTY STATE
   // ==============
 
-  if (isEmpty) {
+  if (items.length === 0) {
     return (
       <div className={`${className}`}>
         {showHeader && !compact && (
@@ -316,7 +213,7 @@ export function CartTab({
         {/* 🛍️ MODERN CART ITEMS */}
         <div className={`${compact ? "" : "lg:col-span-2"}`}>
           <div className="space-y-3">
-            {cart?.items.map((item, index) => (
+            {items.map((item, index) => (
               <div
                 key={item.id}
                 className="group transform transition-all duration-300 hover:scale-[1.01]"
@@ -333,8 +230,8 @@ export function CartTab({
                   compact={compact}
                   animate={true}
                   isAnimating={false}
-                  isUpdating={loading.isUpdating}
-                  isRemoving={loading.isRemoving}
+                  isUpdating={false}
+                  isRemoving={false}
                 />
               </div>
             ))}
@@ -372,7 +269,7 @@ export function CartTab({
             compact={compact}
             showCouponInput={!compact}
             showSecurityBadges={!compact}
-            isProcessingCheckout={loading.isUpdating}
+            isProcessingCheckout={false}
           />
         </div>
       </div>
@@ -382,13 +279,16 @@ export function CartTab({
         <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
           <div className="flex gap-3">
             <button
-              onClick={() => clearCart()}
+              onClick={() => {
+                /* TODO: Implement clear cart */
+              }}
+              disabled={true}
               className="
                 flex-1 py-2 px-4
-                border border-red-200 dark:border-red-800
-                text-red-600 dark:text-red-400
+                border border-gray-200 dark:border-gray-800
+                text-gray-400 dark:text-gray-600
                 rounded-lg font-medium
-                hover:bg-red-50 dark:hover:bg-red-900/20
+                opacity-50 cursor-not-allowed
                 transition-colors duration-200
               "
             >
@@ -397,7 +297,7 @@ export function CartTab({
 
             <button
               onClick={handleCheckout}
-              disabled={!summary?.total || loading.isUpdating}
+              disabled={!summary?.total}
               className="
                 flex-1 py-2 px-4
                 bg-blue-600 hover:bg-blue-700

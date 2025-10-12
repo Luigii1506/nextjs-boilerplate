@@ -60,13 +60,13 @@ import {
 } from "lucide-react";
 
 // Import Context and Types
-import { useStorefrontContext } from "../../..";
+import { useStorefrontUI } from "../../../context";
 
 // Define interfaces for support system
 interface SupportSection {
   id: "faq" | "chat" | "tickets" | "categories" | "contact";
   label: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   badge?: number;
 }
 
@@ -107,7 +107,7 @@ interface HelpCategory {
   id: string;
   name: string;
   description: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   articleCount: number;
   color: string;
   popular: boolean;
@@ -125,7 +125,12 @@ const SUPPORT_SECTIONS: SupportSection[] = [
  * 🛠️ Main SupportTab Component
  */
 const SupportTab: React.FC = () => {
-  const { customer, openLoginModal } = useStorefrontContext();
+  // Note: customer and openLoginModal are not available in the new architecture
+  // TODO: Implement authentication check and login modal trigger via proper auth hooks
+  const customer = null; // Placeholder - replace with proper auth hook
+  const openLoginModal = () => {
+    console.log("Login modal trigger - implement via auth system");
+  };
 
   // 🎯 Component State
   const [isFirstRender, setIsFirstRender] = useState(true);
@@ -761,7 +766,7 @@ interface SupportContentProps {
   faqs: FAQItem[];
   tickets: SupportTicket[];
   categories: HelpCategory[];
-  customer: any;
+  customer: null | Record<string, unknown>; // TODO: Replace with proper User type from auth
   onLoginPrompt: () => void;
   allowAnimations: boolean;
 }
@@ -1005,7 +1010,7 @@ const FAQSection: React.FC<FAQSectionProps> = ({
 
 // 💬 Chat Section Component
 interface ChatSectionProps {
-  customer: any;
+  customer: null | Record<string, unknown>; // TODO: Replace with proper User type from auth
   onLoginPrompt: () => void;
   allowAnimations: boolean;
 }
@@ -1194,7 +1199,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({
 // 🎫 Tickets Section Component
 interface TicketsSectionProps {
   tickets: SupportTicket[];
-  customer: any;
+  customer: null | Record<string, unknown>; // TODO: Replace with proper User type from auth
   onLoginPrompt: () => void;
   allowAnimations: boolean;
 }

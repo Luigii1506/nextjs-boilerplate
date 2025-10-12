@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { Mail, Lock } from "lucide-react";
 
 import { authClient } from "@/core/auth/auth-client";
-import AuthContainer from "./AuthContainer";
 import InputField from "./InputField";
 import Button from "./Button";
 import SocialButton from "./SocialButton";
@@ -116,101 +115,111 @@ const LoginView: React.FC<LoginViewProps> = ({
   };
 
   return (
-    <AuthContainer
-      title="Bienvenido de vuelta"
-      subtitle="Ingresa a tu cuenta para continuar"
-    >
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Error general */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-2">
-            <svg
-              className="w-5 h-5 flex-shrink-0"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <span>{error}</span>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              Bienvenido de vuelta
+            </h2>
+            <p className="text-sm text-gray-600">
+              Ingresa a tu cuenta para continuar
+            </p>
           </div>
-        )}
 
-        {showSocialLogin && (
-          <>
-            <SocialButton
-              provider="google"
-              onClick={handleGoogleLogin}
-              loading={googleLoading}
-              disabled={loading}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Error general */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-2">
+                <svg
+                  className="w-5 h-5 flex-shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span>{error}</span>
+              </div>
+            )}
+
+            {showSocialLogin && (
+              <>
+                <SocialButton
+                  provider="google"
+                  onClick={handleGoogleLogin}
+                  loading={googleLoading}
+                  disabled={loading}
+                />
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-300"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-white text-slate-500">
+                      o continúa con email
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
+
+            <InputField
+              type="email"
+              placeholder="Correo electrónico"
+              value={email}
+              onChange={setEmail}
+              icon={<Mail size={20} />}
+              error={errors.email}
+              required
+              disabled={loading || googleLoading}
             />
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-300"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-slate-500">
-                  o continúa con email
-                </span>
-              </div>
+
+            <InputField
+              type="password"
+              placeholder="Contraseña"
+              value={password}
+              onChange={setPassword}
+              icon={<Lock size={20} />}
+              error={errors.password}
+              required
+              disabled={loading || googleLoading}
+            />
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={onSwitchToForgotPassword}
+                className="text-sm text-blue-600 hover:text-blue-700 transition-colors duration-200 hover:underline"
+                disabled={loading || googleLoading}
+              >
+                ¿Olvidaste tu contraseña?
+              </button>
             </div>
-          </>
-        )}
 
-        <InputField
-          type="email"
-          placeholder="Correo electrónico"
-          value={email}
-          onChange={setEmail}
-          icon={<Mail size={20} />}
-          error={errors.email}
-          required
-          disabled={loading || googleLoading}
-        />
+            <Button type="submit" loading={loading} disabled={googleLoading}>
+              Iniciar Sesión
+            </Button>
+          </form>
 
-        <InputField
-          type="password"
-          placeholder="Contraseña"
-          value={password}
-          onChange={setPassword}
-          icon={<Lock size={20} />}
-          error={errors.password}
-          required
-          disabled={loading || googleLoading}
-        />
-
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={onSwitchToForgotPassword}
-            className="text-sm text-blue-600 hover:text-blue-700 transition-colors duration-200 hover:underline"
-            disabled={loading || googleLoading}
-          >
-            ¿Olvidaste tu contraseña?
-          </button>
+          <div className="mt-6 text-center">
+            <p className="text-sm text-slate-600">
+              ¿No tienes una cuenta?{" "}
+              <button
+                onClick={onSwitchToRegister}
+                className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200 hover:underline"
+                disabled={loading || googleLoading}
+              >
+                Regístrate aquí
+              </button>
+            </p>
+          </div>
         </div>
-
-        <Button type="submit" loading={loading} disabled={googleLoading}>
-          Iniciar Sesión
-        </Button>
-      </form>
-
-      <div className="mt-6 text-center">
-        <p className="text-sm text-slate-600">
-          ¿No tienes una cuenta?{" "}
-          <button
-            onClick={onSwitchToRegister}
-            className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200 hover:underline"
-            disabled={loading || googleLoading}
-          >
-            Regístrate aquí
-          </button>
-        </p>
       </div>
-    </AuthContainer>
+    </div>
   );
 };
 
