@@ -44,6 +44,7 @@ import {
   validateCheckoutRateLimit,
 } from "./validators";
 import { clearCartAction } from "@/features/cart/server/actions";
+import { createPaymentIntent, retrievePaymentIntent } from "@/core/payments";
 
 // 🎯 ORDER CREATION ACTIONS
 // =========================
@@ -613,6 +614,132 @@ export async function updateOrderStatusAction(
         error instanceof Error
           ? error.message
           : "Failed to update order status",
+    };
+  }
+}
+
+// 💳 PAYMENT INTENT ACTIONS
+// =========================
+
+/**
+ * Create a payment intent for checkout
+ */
+export async function createCheckoutPaymentIntentAction(
+  amount: number, // in dollars
+  currency: string = "usd",
+  metadata?: {
+    orderId?: string;
+    cartId?: string;
+    userId?: string;
+    customerEmail?: string;
+  }
+): Promise<{ success: boolean; clientSecret?: string; error?: string }> {
+  const requestId = `createPaymentIntent-${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2, 8)}`;
+
+  console.log("💳 [CHECKOUT ACTION] Creating payment intent:", {
+    requestId,
+    amount,
+    currency,
+    metadata,
+  });
+
+  try {
+    const result = await createPaymentIntent({
+      amount,
+      currency,
+      metadata,
+    });
+
+    if (!result.success || result.error) {
+      console.error("❌ [CHECKOUT ACTION] Payment intent creation failed:", {
+        requestId,
+        error: result.error,
+      });
+
+      return {
+        success: false,
+        error: result.error,
+      };
+    }
+
+    console.log("✅ [CHECKOUT ACTION] Payment intent created:", {
+      requestId,
+      hasClientSecret: !!result.clientSecret,
+    });
+
+    return {
+      success: true,
+      clientSecret: result.clientSecret,
+    };
+  } catch (error) {
+    console.error("❌ [CHECKOUT ACTION] Error creating payment intent:", {
+      requestId,
+      error: error instanceof Error ? error.message : error,
+    });
+
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to create payment intent",
+    };
+  }
+}
+
+/**
+ * Retrieve a payment intent status
+ */
+export async function retrievePaymentIntentAction(
+  paymentIntentId: string
+): Promise<{ success: boolean; status?: string; error?: string }> {
+  const requestId = `retrievePaymentIntent-${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2, 8)}`;
+
+  console.log("💳 [CHECKOUT ACTION] Retrieving payment intent:", {
+    requestId,
+    paymentIntentId,
+  });
+
+  try {
+    const result = await retrievePaymentIntent(paymentIntentId);
+
+    if (result.error) {
+      console.error("❌ [CHECKOUT ACTION] Payment intent retrieval failed:", {
+        requestId,
+        error: result.error,
+      });
+
+      return {
+        success: false,
+        error: result.error,
+      };
+    }
+
+    console.log("✅ [CHECKOUT ACTION] Payment intent retrieved:", {
+      requestId,
+      status: result.paymentIntent?.status,
+    });
+
+    return {
+      success: true,
+      status: result.paymentIntent?.status,
+    };
+  } catch (error) {
+    console.error("❌ [CHECKOUT ACTION] Error retrieving payment intent:", {
+      requestId,
+      error: error instanceof Error ? error.message : error,
+    });
+
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to retrieve payment intent",
     };
   }
 }

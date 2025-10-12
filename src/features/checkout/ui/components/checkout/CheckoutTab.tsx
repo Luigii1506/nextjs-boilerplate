@@ -7,7 +7,7 @@
 
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useCheckoutContext } from "../../../context/CheckoutContext";
 import { CHECKOUT_STEP_LABELS } from "../../../constants";
 import type { CheckoutStep } from "../../../types";
@@ -22,6 +22,8 @@ import {
   ArrowLeft,
   ArrowRight,
 } from "lucide-react";
+import { StripeElementsWrapper, StripePaymentForm } from "@/core/payments";
+import { createCheckoutPaymentIntentAction } from "../../../server/actions";
 
 // 🎯 COMPONENT PROPS
 // ==================
@@ -50,6 +52,9 @@ const STEP_ICONS = {
 
 export function CheckoutTab({ className = "", onReturnToStore, onViewOrder }: CheckoutTabProps) {
   const [createdOrderId, setCreatedOrderId] = React.useState<string | null>(null);
+  const [paymentClientSecret, setPaymentClientSecret] = useState<string | null>(null);
+  const [isCreatingPaymentIntent, setIsCreatingPaymentIntent] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   const {
     session,
@@ -73,6 +78,43 @@ export function CheckoutTab({ className = "", onReturnToStore, onViewOrder }: Ch
     shippingMethods,
     paymentMethods,
   } = useCheckoutContext();
+
+  // 💳 Create payment intent when reaching payment step
+  useEffect(() => {
+    if (currentStep === "payment-method" && !paymentClientSecret && calculation?.total) {
+      const initializePayment = async () => {
+        setIsCreatingPaymentIntent(true);
+        setPaymentError(null);
+
+        try {
+          const totalInDollars = calculation.total / 100; // Convert cents to dollars
+
+          const result = await createCheckoutPaymentIntentAction(
+            totalInDollars,
+            "usd",
+            {
+              cartId: cart?.id,
+              userId: cart?.userId,
+              customerEmail: session?.customerInfo.email,
+            }
+          );
+
+          if (result.success && result.clientSecret) {
+            setPaymentClientSecret(result.clientSecret);
+          } else {
+            setPaymentError(result.error || "Failed to initialize payment");
+          }
+        } catch (error) {
+          console.error("Error creating payment intent:", error);
+          setPaymentError("Failed to initialize payment");
+        } finally {
+          setIsCreatingPaymentIntent(false);
+        }
+      };
+
+      initializePayment();
+    }
+  }, [currentStep, paymentClientSecret, calculation, cart, session]);
 
   // 🔒 EARLY RETURNS
   // ================
@@ -594,53 +636,107 @@ export function CheckoutTab({ className = "", onReturnToStore, onViewOrder }: Ch
         );
 
       case "payment-method":
+        // Show loading state while creating payment intent
+        if (isCreatingPaymentIntent) {
+          return (
+            <div className="bg-white dark:bg-gray-900 rounded-lg p-12 shadow-sm border text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                Initializing Payment
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Please wait while we prepare your payment form...
+              </p>
+            </div>
+          );
+        }
+
+        // Show error state if payment intent creation failed
+        if (paymentError || !paymentClientSecret) {
+          return (
+            <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm border">
+              <div className="text-center py-6">
+                <div className="text-red-500 mb-4">
+                  <svg
+                    className="w-12 h-12 mx-auto"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                  Payment Initialization Failed
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  {paymentError || "Unable to initialize payment. Please try again."}
+                </p>
+                <button
+                  onClick={() => {
+                    setPaymentError(null);
+                    setPaymentClientSecret(null);
+                  }}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          );
+        }
+
+        // Show Stripe payment form
         return (
           <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm border">
-            <h3 className="text-xl font-semibold mb-6 text-gray-900 dark:text-gray-100">
-              Payment Method
-            </h3>
+            <StripeElementsWrapper
+              clientSecret={paymentClientSecret}
+              amount={calculation?.total ? calculation.total / 100 : 0}
+              currency="usd"
+            >
+              <StripePaymentForm
+                amount={calculation?.total ? calculation.total / 100 : 0}
+                currency="usd"
+                customerEmail={session.customerInfo.email}
+                customerName={
+                  session.customerInfo.firstName && session.customerInfo.lastName
+                    ? `${session.customerInfo.firstName} ${session.customerInfo.lastName}`
+                    : undefined
+                }
+                onPaymentSuccess={async (paymentIntentId) => {
+                  console.log("✅ Payment succeeded:", paymentIntentId);
+                  // Payment succeeded, now create the order
+                  try {
+                    const order = await createOrder();
+                    if (order) {
+                      setCreatedOrderId(order.id);
+                      // Context will automatically move to "processing" step
+                    }
+                  } catch (error) {
+                    console.error("Order creation failed:", error);
+                    setPaymentError("Payment succeeded but order creation failed. Please contact support.");
+                  }
+                }}
+                onPaymentError={(error) => {
+                  console.error("❌ Payment failed:", error);
+                  setPaymentError(error);
+                }}
+                usePaymentElement={true}
+              />
+            </StripeElementsWrapper>
 
-            <div className="space-y-4">
-              {paymentMethods.map((method) => (
-                <div
-                  key={method.id}
-                  className={`border rounded-lg p-4 cursor-pointer transition-colors ${
-                    session.paymentMethodId === method.id
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                      : "border-gray-300 hover:border-gray-400"
-                  }`}
-                  onClick={() => setPaymentMethod(method.id)}
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h4 className="font-semibold">{method.name}</h4>
-                      <p className="text-gray-600 text-sm">
-                        {method.description}
-                      </p>
-                    </div>
-                    <div className="flex items-center">
-                      {method.type === "credit_card" && (
-                        <div className="text-blue-600 mr-2">💳</div>
-                      )}
-                      {method.type === "paypal" && (
-                        <div className="text-blue-600 mr-2">🏦</div>
-                      )}
-                      {method.type === "bank_transfer" && (
-                        <div className="text-green-600 mr-2">🏛️</div>
-                      )}
-                      {method.type === "cash_on_delivery" && (
-                        <div className="text-orange-600 mr-2">💰</div>
-                      )}
-                      <input
-                        type="radio"
-                        checked={session.paymentMethodId === method.id}
-                        readOnly
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {paymentError && (
+              <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-sm text-red-600 dark:text-red-300">
+                  {paymentError}
+                </p>
+              </div>
+            )}
           </div>
         );
 
