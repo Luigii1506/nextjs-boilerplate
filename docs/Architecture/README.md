@@ -25,6 +25,40 @@
 
 ---
 
+## 🔴 **CRITICAL: State Management & Bug Prevention**
+
+### 🐛 **[Infinite Loop Post-Mortem](./INFINITE_LOOP_POST_MORTEM.md)** ⚠️ **REQUIRED READING**
+
+**Análisis completo del bug de loop infinito del carrito - Semanas de debugging documentadas**
+
+- 🔍 **Root Cause Analysis**: Bidirectional state sync sin tracking de origen
+- 🎯 **The Fatal Flow**: Diagrama completo del ciclo infinito
+- ✅ **The Solution**: Edit Mode Pattern con refs
+- 📚 **Lessons Learned**: Las 5 Leyes del React State
+- 🛡️ **Prevention Guidelines**: Checklist para futuros módulos
+
+### 🎯 **[State Management Guidelines](./STATE_MANAGEMENT_GUIDELINES.md)** 📖 **MANDATORY**
+
+**Guía profesional de arquitectura de estado en React**
+
+- 🏛️ **Core Principles**: Las 5 Leyes del React State
+- 🌳 **Decision Tree**: Dónde colocar cada tipo de estado
+- 🎨 **Context Best Practices**: Patrón profesional con memoización
+- ❌ **Anti-Patterns**: 6 errores comunes que causan loops
+- ✅ **Code Review Checklist**: Qué verificar en cada PR
+
+### ⚡ **[Optimistic Updates Pattern](./OPTIMISTIC_UPDATES_PATTERN.md)** 🚀 **COPY & PASTE**
+
+**Patrón battle-tested para updates optimistas sin loops**
+
+- 🎯 **Edit Mode Pattern**: Hook reutilizable completo
+- 📝 **Usage Examples**: Cart, Wishlist, Auto-save
+- 🧪 **Testing Guide**: Unit e Integration tests
+- 🐛 **Debugging Checklist**: Cómo detectar y resolver loops
+- 🎬 **Component Pattern**: Implementación exacta del CartItem fix
+
+---
+
 ## 🎯 **Quick Start Guide**
 
 ### **Para Módulos Simples** (Settings, Feature Flags, Audit)

@@ -18,7 +18,6 @@ import {
   Trash2,
   Heart,
   AlertTriangle,
-  Loader2,
   ExternalLink,
 } from "lucide-react";
 import type { CartItemWithProduct } from "../../../types";
@@ -76,19 +75,19 @@ export function CartItem({
   isRemoving = false,
 }: CartItemProps) {
   const [localQuantity, setLocalQuantity] = useState(item.quantity);
-  const [isProcessing, setIsProcessing] = useState(false);
 
   // 🚀 DEBOUNCING: Evita múltiples requests en rapid clicking
-  const [debouncedQuantity, setDebouncedQuantity] = useState(item.quantity);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastServerQuantityRef = useRef(item.quantity);
+  const isUserEditingRef = useRef(false);
 
   const { product } = item;
 
   console.log("🛍️ [CART ITEM] Rendering item:", {
     productName: product.name,
-    quantity: item.quantity,
+    serverQuantity: item.quantity,
     localQuantity,
-    debouncedQuantity,
+    isUserEditing: isUserEditingRef.current,
     total: item.total,
     isUpdating,
     isRemoving,
@@ -97,15 +96,34 @@ export function CartItem({
   // 🚀 DEBOUNCED SERVER SYNC
   // ========================
   useEffect(() => {
-    // Clear previous timeout
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
+    // Only sync if local quantity differs from server quantity
+    // AND user is actively editing (has made changes)
+    if (localQuantity !== item.quantity && isUserEditingRef.current) {
+      // Clear previous timeout
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
 
-    // Only sync if quantities are different
-    if (localQuantity !== debouncedQuantity) {
+      console.log("🔄 [DEBOUNCE] Starting debounce timer:", {
+        productName: product.name,
+        from: item.quantity,
+        to: localQuantity,
+      });
+
       debounceTimeoutRef.current = setTimeout(() => {
-        setDebouncedQuantity(localQuantity);
+        console.log("🔄 [DEBOUNCED] Syncing to server:", {
+          productName: product.name,
+          from: item.quantity,
+          to: localQuantity,
+        });
+
+        // Direct server sync
+        if (onQuantityChange) {
+          onQuantityChange(item.id, localQuantity);
+        }
+
+        // Mark that we're no longer in user editing mode
+        isUserEditingRef.current = false;
       }, 400); // 400ms debounce - optimal UX balance
     }
 
@@ -114,40 +132,29 @@ export function CartItem({
         clearTimeout(debounceTimeoutRef.current);
       }
     };
-  }, [localQuantity, debouncedQuantity]);
+  }, [localQuantity, item.quantity, item.id, onQuantityChange, product.name]);
 
-  // Sync to server when debouncedQuantity changes
+  // 💫 SYNC ITEM QUANTITY FROM SERVER
+  // ==================================
   useEffect(() => {
-    if (debouncedQuantity !== item.quantity && debouncedQuantity > 0) {
-      console.log("🔄 [DEBOUNCED] Syncing to server:", {
+    // Only sync from server if:
+    // 1. Server quantity actually changed (not just a re-render with same value)
+    // 2. User is NOT currently editing (no pending changes)
+    if (
+      item.quantity !== lastServerQuantityRef.current &&
+      !isUserEditingRef.current
+    ) {
+      console.log("🔄 [SYNC] Server updated quantity, syncing to UI:", {
         productName: product.name,
-        from: item.quantity,
-        to: debouncedQuantity,
-      });
-
-      // Direct server sync - no local state management needed
-      onQuantityChange(item.id, debouncedQuantity);
-    }
-  }, [
-    debouncedQuantity,
-    item.quantity,
-    product.name,
-    onQuantityChange,
-    item.id,
-  ]);
-
-  // 💫 SYNC ITEM QUANTITY FROM PROPS
-  // =================================
-  useEffect(() => {
-    // Sync local state with server state when item updates
-    if (item.quantity !== localQuantity && !debounceTimeoutRef.current) {
-      console.log("🔄 [SYNC] Server updated quantity:", {
-        productName: product.name,
-        serverQuantity: item.quantity,
-        localQuantity,
+        prevServerQuantity: lastServerQuantityRef.current,
+        newServerQuantity: item.quantity,
+        prevLocalQuantity: localQuantity,
       });
       setLocalQuantity(item.quantity);
-      setDebouncedQuantity(item.quantity);
+      lastServerQuantityRef.current = item.quantity;
+    } else {
+      // Still update the ref to track latest server value
+      lastServerQuantityRef.current = item.quantity;
     }
   }, [item.quantity, localQuantity, product.name]);
 
@@ -159,6 +166,7 @@ export function CartItem({
         from: localQuantity,
         to: newQuantity,
       });
+      isUserEditingRef.current = true; // Mark as user-initiated change
       setLocalQuantity(newQuantity); // INSTANT UI update
     }
   }, [localQuantity, product.stock, product.name]);
@@ -171,6 +179,7 @@ export function CartItem({
         from: localQuantity,
         to: newQuantity,
       });
+      isUserEditingRef.current = true; // Mark as user-initiated change
       setLocalQuantity(newQuantity); // INSTANT UI update
     }
   }, [localQuantity, product.name]);
@@ -178,15 +187,12 @@ export function CartItem({
   const handleRemove = useCallback(async () => {
     if (!onRemove) return;
 
-    setIsProcessing(true);
     console.log("🗑️ [CART ITEM] Removing item:", product.name);
 
     try {
       await onRemove(item.id);
     } catch (error) {
       console.error("❌ [CART ITEM] Remove failed:", error);
-    } finally {
-      setIsProcessing(false);
     }
   }, [item.id, product.name, onRemove]);
 
@@ -322,23 +328,29 @@ export function CartItem({
 
                   {product.category && (
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Category: {product.category.name}
+                      Category:{" "}
+                      {typeof product.category === "string"
+                        ? product.category
+                        : (product.category as { name?: string })?.name ||
+                          "N/A"}
                     </p>
                   )}
-                </div>
-              )}
 
-              {/* Warnings */}
-              {hasStockIssue && (
-                <div className="mt-2 flex items-center gap-1 text-xs text-red-600 dark:text-red-400">
-                  <AlertTriangle className="w-3 h-3" />
-                  {isOutOfStock ? "Out of stock" : `Only ${product.stock} left`}
-                </div>
-              )}
+                  {/* Warnings */}
+                  {hasStockIssue && (
+                    <div className="mt-2 flex items-center gap-1 text-xs text-red-600 dark:text-red-400">
+                      <AlertTriangle className="w-3 h-3" />
+                      {isOutOfStock
+                        ? "Out of stock"
+                        : `Only ${product.stock} left`}
+                    </div>
+                  )}
 
-              {isPriceChanged && (
-                <div className="mt-1 text-xs text-amber-600 dark:text-amber-400">
-                  Price updated: ${product.price.toFixed(2)}
+                  {isPriceChanged && (
+                    <div className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                      Price updated: ${(product.price || 0).toFixed(2)}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -351,11 +363,11 @@ export function CartItem({
                     compact ? "text-sm" : "text-base"
                   }`}
                 >
-                  ${item.total.toFixed(2)}
+                  ${(item.total || 0).toFixed(2)}
                 </div>
                 {!compact && (
                   <div className="text-xs text-gray-500 dark:text-gray-400">
-                    ${item.unitPrice.toFixed(2)} each
+                    ${(item.unitPrice || 0).toFixed(2)} each
                   </div>
                 )}
               </div>
