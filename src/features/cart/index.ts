@@ -5,7 +5,7 @@
  * Cart feature entry point following Feature-First v3.0.0 architecture.
  * Independent, reusable cart functionality for e-commerce.
  *
- * @version 1.0.0 - Cart Feature
+ * @version 2.0.0 - Cart Feature (Cleaned & Optimized)
  */
 
 // 📋 Types
@@ -14,13 +14,10 @@ export * from "./types";
 // 🎬 Server Layer (Actions, Services, Queries)
 export * from "./server";
 
-// 🪝 Hooks Layer (State, Logic, Actions)
-export * from "./hooks";
-
 // 🎨 UI Components Layer
 export * from "./ui/components";
 
-// 🌍 Context Layer
+// 🌍 Context Layer (Primary state management)
 export * from "./context";
 
 // 🔗 Compatibility alias: useCart → useCartContext
@@ -52,10 +49,7 @@ export {
   clearCartAction,
 } from "./server";
 
-// 🪝 Main Hooks (commonly used)
-export { useCartState, useCartLogic, useCartActions } from "./hooks";
-
-// 🌍 Context (commonly used)
+// 🌍 Context (primary state management)
 export { CartProvider, useCartContext } from "./context";
 
 // 🎨 Main Components (commonly used)

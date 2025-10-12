@@ -5,34 +5,11 @@
  * Central export point for all Cart hooks.
  * Following Feature-First v3.0.0 architecture.
  *
- * @version 1.0.0 - Cart Feature
+ * @version 2.0.0 - Cart Feature (Cleaned)
  */
 
-// 🛒 Cart-specific hooks (State + Logic + Actions)
-export {
-  useCartState,
-  useCartLogic,
-  useCartActions,
-  createOptimisticUpdate,
-  useIsItemAnimating,
-} from "./cart";
+// Note: Cart uses Context API directly (useCartContext)
+// Custom hooks have been removed as they were not being used
+// and added unnecessary complexity.
 
-// 💾 Persistence hooks (TODO)
-export * from "./persistence";
-
-// 🔧 Shared hooks (TODO)
-export * from "./shared";
-
-// 🏷️ Hook types re-export
-export type {
-  UseCartStateProps,
-  UseCartStateReturn,
-  UseCartLogicProps,
-  UseCartLogicReturn,
-  UseCartActionsProps,
-  UseCartActionsReturn,
-  CartState,
-  CartStateAction,
-} from "../types/hooks";
-
-export default {};
+export {};
