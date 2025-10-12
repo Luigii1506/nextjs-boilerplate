@@ -52,7 +52,8 @@ import {
 } from "lucide-react";
 
 // Import Context and Types
-import { useStorefrontUI } from "../../../context";
+import { useAuth } from "@/shared/hooks/useAuth";
+import { useOrders } from "@/features/orders";
 
 // Define interfaces for account management
 interface AccountSection {
@@ -123,12 +124,8 @@ const ACCOUNT_SECTIONS: AccountSection[] = [
  * 👤 Main AccountTab Component
  */
 const AccountTab: React.FC = () => {
-  // Note: customer and openLoginModal are not available in the new architecture
-  // TODO: Implement authentication check and login modal trigger via proper auth hooks
-  const customer = null; // Placeholder - replace with proper auth hook
-  const openLoginModal = () => {
-    console.log("Login modal trigger - implement via auth system");
-  };
+  // 🔐 Auth Hook - Better Auth Integration
+  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
 
   // 🎯 Component State
   const [isFirstRender, setIsFirstRender] = useState(true);
@@ -154,10 +151,27 @@ const AccountTab: React.FC = () => {
     };
   }, [isFirstRender]);
 
-  // 📊 Mock user data for demonstration
-  const mockUser: UserProfile = useMemo(
-    () => ({
-      id: "user-1",
+  // 📊 User Profile Data - Real or Mock
+  const userProfile: UserProfile = useMemo(() => {
+    if (user) {
+      // Use real user data from Better Auth
+      const [firstName, ...lastNameParts] = (user.name || "Usuario").split(" ");
+      return {
+        id: user.id,
+        firstName: firstName || "Usuario",
+        lastName: lastNameParts.join(" ") || "",
+        email: user.email,
+        phone: user.phone || undefined,
+        birthDate: undefined, // Not available in Better Auth by default
+        gender: undefined, // Not available in Better Auth by default
+        joinDate: user.createdAt ? new Date(user.createdAt) : new Date(),
+        tier: "bronze", // Default tier, can be fetched from user metadata
+      };
+    }
+
+    // Fallback mock data for development
+    return {
+      id: "mock-user-1",
       firstName: "Ana",
       lastName: "García",
       email: "ana.garcia@email.com",
@@ -166,11 +180,69 @@ const AccountTab: React.FC = () => {
       gender: "female",
       joinDate: new Date("2023-01-15"),
       tier: "gold",
-    }),
-    []
-  );
+    };
+  }, [user]);
 
-  // 📊 Mock orders data
+  // 📦 Fetch Real Orders
+  const {
+    data: ordersData,
+    isLoading: ordersLoading,
+  } = useOrders({
+    userId: user?.id || "",
+    enabled: !!user?.id,
+  });
+
+  // 🔄 Map API orders to AccountTab Order format
+  const orders: Order[] = useMemo(() => {
+    if (!ordersData?.orders || ordersData.orders.length === 0) {
+      // Return empty array if no orders, mock data will be used as fallback if needed
+      return [];
+    }
+
+    // Map OrderSummary to AccountTab Order interface
+    return ordersData.orders.map((apiOrder) => {
+      // Map status from database enum to AccountTab status
+      const statusMap: Record<
+        string,
+        "pending" | "processing" | "shipped" | "delivered" | "cancelled"
+      > = {
+        PENDING: "pending",
+        CONFIRMED: "processing",
+        PROCESSING: "processing",
+        SHIPPED: "shipped",
+        DELIVERED: "delivered",
+        CANCELLED: "cancelled",
+        REFUNDED: "cancelled",
+      };
+
+      return {
+        id: apiOrder.id,
+        number: apiOrder.number,
+        date: new Date(apiOrder.placedAt),
+        status: statusMap[apiOrder.status] || "pending",
+        total: apiOrder.total,
+        items: [], // Summary doesn't include items, will be loaded on demand
+        shippingAddress: {
+          id: "temp",
+          type: "shipping",
+          label: "Dirección de envío",
+          firstName: userProfile.firstName,
+          lastName: userProfile.lastName,
+          street: "",
+          city: "",
+          state: "",
+          zipCode: "",
+          country: "",
+          isDefault: false,
+        },
+        estimatedDelivery: apiOrder.estimatedDelivery
+          ? new Date(apiOrder.estimatedDelivery)
+          : undefined,
+      };
+    });
+  }, [ordersData, userProfile]);
+
+  // 📊 Mock orders data (fallback for development/empty state)
   const mockOrders: Order[] = useMemo(
     () => [
       {
@@ -320,9 +392,28 @@ const AccountTab: React.FC = () => {
     setIsEditing(false); // Reset editing state when changing sections
   }, []);
 
-  // 🔐 Login Check
-  if (!customer) {
-    return <AccountLoginPrompt onLogin={openLoginModal} />;
+  // 🔐 Auth Loading State
+  if (isAuthLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] bg-gray-50 dark:bg-gray-900">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 bg-gradient-to-r from-orange-600 to-amber-600 rounded-full animate-pulse flex items-center justify-center mx-auto">
+            <User className="w-8 h-8 text-white" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            Verificando sesión...
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400">
+            Por favor espera un momento
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // 🔐 Login Required Check
+  if (!isAuthenticated || !user) {
+    return <AccountLoginPrompt />;
   }
 
   // Loading State for empty first render
@@ -344,17 +435,20 @@ const AccountTab: React.FC = () => {
     );
   }
 
+  // 📊 Determine which orders to display (real or mock)
+  const displayOrders = orders.length > 0 ? orders : mockOrders;
+
   return (
     <div className="bg-gray-50 dark:bg-gray-900">
       {/* Account Header */}
-      <AccountHeader user={mockUser} allowAnimations={allowAnimations} />
+      <AccountHeader user={userProfile} allowAnimations={allowAnimations} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Account Stats */}
         <AccountStats
-          orders={mockOrders}
+          orders={displayOrders}
           addresses={mockAddresses}
-          user={mockUser}
+          user={userProfile}
           allowAnimations={allowAnimations}
         />
 
@@ -369,15 +463,26 @@ const AccountTab: React.FC = () => {
 
           {/* Account Content */}
           <div className="flex-1">
-            <AccountContent
-              activeSection={activeSection}
-              user={mockUser}
-              orders={mockOrders}
-              addresses={mockAddresses}
-              isEditing={isEditing}
-              onEditToggle={setIsEditing}
-              allowAnimations={allowAnimations}
-            />
+            {ordersLoading && activeSection === "orders" ? (
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-sm">
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-gray-600 dark:text-gray-400">
+                    Cargando pedidos...
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <AccountContent
+                activeSection={activeSection}
+                user={userProfile}
+                orders={displayOrders}
+                addresses={mockAddresses}
+                isEditing={isEditing}
+                onEditToggle={setIsEditing}
+                allowAnimations={allowAnimations}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -386,11 +491,12 @@ const AccountTab: React.FC = () => {
 };
 
 // 🔐 Account Login Prompt Component
-interface AccountLoginPromptProps {
-  onLogin: () => void;
-}
+const AccountLoginPrompt: React.FC = () => {
+  const handleLogin = () => {
+    // Redirect to login page
+    window.location.href = "/login";
+  };
 
-const AccountLoginPrompt: React.FC<AccountLoginPromptProps> = ({ onLogin }) => {
   return (
     <div className="min-h-[60vh] bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
       <div className="text-center space-y-6 p-8">
@@ -407,7 +513,7 @@ const AccountLoginPrompt: React.FC<AccountLoginPromptProps> = ({ onLogin }) => {
           </p>
         </div>
         <button
-          onClick={onLogin}
+          onClick={handleLogin}
           className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-3 mx-auto shadow-lg hover:shadow-xl"
         >
           <User className="w-5 h-5" />
@@ -544,7 +650,7 @@ interface AccountStatsProps {
 const AccountStats: React.FC<AccountStatsProps> = ({
   orders,
   addresses,
-  user,
+  user: _user,
   allowAnimations,
 }) => {
   const stats = useMemo(() => {
