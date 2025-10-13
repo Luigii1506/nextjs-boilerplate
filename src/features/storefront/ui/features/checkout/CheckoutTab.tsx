@@ -1,34 +1,38 @@
 /**
- * 💳 CHECKOUT TAB
- * ==============
+ * 💳 OPTIMIZED CHECKOUT TAB - AMAZON-STYLE FAST CHECKOUT
+ * ========================================================
  *
- * Main checkout interface - integrated as a tab in the Storefront
+ * Super fast checkout flow leveraging:
+ * - Pre-filled user data from auth
+ * - Saved addresses from address feature
+ * - Combined steps for faster completion
+ * - Express checkout option
+ *
+ * @version 2.0.0 - Optimized for Speed
  */
 
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   useCheckoutContext,
-  CHECKOUT_STEP_LABELS,
 } from "@/features/storefront/checkout";
-import type { CheckoutStep } from "@/features/storefront/checkout";
 import {
   ShoppingCart,
-  User,
   MapPin,
   Truck,
   CreditCard,
-  FileText,
   CheckCircle,
-  ArrowLeft,
-  ArrowRight,
+  Plus,
+  Edit2,
+  Zap,
 } from "lucide-react";
 import { StripeElementsWrapper, StripePaymentForm } from "@/core/payments";
 import { createCheckoutPaymentIntentAction } from "@/features/storefront/checkout/server/actions";
-
-// 🎯 COMPONENT PROPS
-// ==================
+import { useAuth } from "@/shared/hooks/useAuth";
+import { useAddresses } from "@/features/storefront/addresses";
+import type { Address } from "@/features/storefront/addresses";
+import { cn } from "@/lib/utils";
 
 export interface CheckoutTabProps {
   className?: string;
@@ -36,80 +40,110 @@ export interface CheckoutTabProps {
   onViewOrder?: (orderId: string) => void;
 }
 
-// 🎨 STEP ICONS
-// =============
-
-const STEP_ICONS = {
-  "customer-info": User,
-  "shipping-address": MapPin,
-  "shipping-method": Truck,
-  "payment-method": CreditCard,
-  "review-order": FileText,
-  processing: ShoppingCart,
-  completed: CheckCircle,
-};
-
-// 🚀 MAIN COMPONENT
-// ==================
-
 export function CheckoutTab({
   className = "",
   onReturnToStore,
   onViewOrder,
 }: CheckoutTabProps) {
-  const [createdOrderId, setCreatedOrderId] = React.useState<string | null>(
-    null
-  );
-  const [paymentClientSecret, setPaymentClientSecret] = useState<string | null>(
-    null
-  );
+  const { user, isAuthenticated } = useAuth();
+  const { data: addressesData } = useAddresses();
+
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+  const [paymentClientSecret, setPaymentClientSecret] = useState<string | null>(null);
   const [isCreatingPaymentIntent, setIsCreatingPaymentIntent] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [checkoutStep, setCheckoutStep] = useState<"review" | "payment" | "processing" | "completed">("review");
 
   const {
-    session,
     cart,
     calculation,
-    currentStep,
-    completedSteps,
-    canProceedToNext,
-    canGoBack,
-    isLoading,
     isCreatingOrder,
-    errors,
-    goToNextStep,
-    goToPreviousStep,
     createOrder,
     setCustomerInfo,
     setShippingAddress,
-    setBillingAddress,
     setShippingMethod,
-    setPaymentMethod,
     shippingMethods,
-    paymentMethods,
   } = useCheckoutContext();
 
-  // 💳 Create payment intent when reaching payment step
+  const addresses = addressesData?.addresses || [];
+  const defaultAddress = addressesData?.defaultAddress;
+
+  // 🚀 Auto-fill customer info from auth
   useEffect(() => {
-    if (
-      currentStep === "payment-method" &&
-      !paymentClientSecret &&
-      calculation?.total
-    ) {
+    if (isAuthenticated && user) {
+      const [firstName, ...lastNameParts] = (user.name || "").split(" ");
+      setCustomerInfo({
+        email: user.email,
+        firstName: firstName || "",
+        lastName: lastNameParts.join(" ") || "",
+      });
+    }
+  }, [isAuthenticated, user, setCustomerInfo]);
+
+  // 🚀 Auto-select default address
+  useEffect(() => {
+    if (defaultAddress && !selectedAddressId) {
+      setSelectedAddressId(defaultAddress.id);
+      mapAddressToShipping(defaultAddress);
+    }
+  }, [defaultAddress, selectedAddressId]);
+
+  // 🚀 Auto-select cheapest shipping method
+  useEffect(() => {
+    if (shippingMethods.length > 0) {
+      const cheapest = shippingMethods.reduce((prev, current) =>
+        prev.price < current.price ? prev : current
+      );
+      setShippingMethod(cheapest.id);
+    }
+  }, [shippingMethods, setShippingMethod]);
+
+  const mapAddressToShipping = (address: Address) => {
+    setShippingAddress({
+      firstName: address.firstName,
+      lastName: address.lastName,
+      addressLine1: address.street,
+      addressLine2: address.street2 || undefined,
+      city: address.city,
+      state: address.state,
+      postalCode: address.zipCode,
+      country: address.country,
+    });
+  };
+
+  const handleAddressSelect = (address: Address) => {
+    setSelectedAddressId(address.id);
+    mapAddressToShipping(address);
+  };
+
+  // Check if ready for express checkout
+  const isReadyForExpressCheckout = useMemo(() => {
+    return (
+      isAuthenticated &&
+      selectedAddressId &&
+      shippingMethods.length > 0 &&
+      cart?.items && cart.items.length > 0
+    );
+  }, [isAuthenticated, selectedAddressId, shippingMethods, cart]);
+
+  // Create payment intent when moving to payment step
+  useEffect(() => {
+    if (checkoutStep === "payment" && !paymentClientSecret && calculation?.total) {
       const initializePayment = async () => {
         setIsCreatingPaymentIntent(true);
         setPaymentError(null);
 
         try {
-          const totalInDollars = calculation.total / 100; // Convert cents to dollars
-
+          const totalInDollars = calculation.total / 100;
           const result = await createCheckoutPaymentIntentAction(
             totalInDollars,
             "usd",
             {
               cartId: cart?.id,
-              userId: cart?.userId || undefined,
-              customerEmail: session?.customerInfo.email,
+              userId: user?.id,
+              customerEmail: user?.email,
             }
           );
 
@@ -128,826 +162,398 @@ export function CheckoutTab({
 
       initializePayment();
     }
-  }, [currentStep, paymentClientSecret, calculation, cart, session]);
+  }, [checkoutStep, paymentClientSecret, calculation, cart, user]);
 
-  // 🔒 EARLY RETURNS
-  // ================
-
+  // Empty cart check
   if (!cart || !cart.items || cart.items.length === 0) {
     return (
-      <div className={`max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 ${className}`}>
-        <div className="text-center py-12">
+      <div className={cn("max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8", className)}>
+        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-2xl shadow-sm">
           <ShoppingCart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-            Your cart is empty
+            Tu carrito está vacío
           </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Agrega productos para continuar con la compra
+          </p>
+          {onReturnToStore && (
+            <button
+              onClick={onReturnToStore}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Continuar Comprando
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Completed state
+  if (checkoutStep === "completed") {
+    return (
+      <div className={cn("max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8", className)}>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-12 text-center">
+          <div className="text-green-600 mb-6">
+            <CheckCircle className="w-24 h-24 mx-auto" />
+          </div>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-3">
+            ¡Pedido Completado!
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-8 text-lg">
+            Gracias por tu compra. Tu pedido ha sido procesado exitosamente.
+          </p>
+          {createdOrderId && (
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
+              Número de pedido:{" "}
+              <span className="font-mono font-semibold text-gray-900 dark:text-gray-100">
+                {createdOrderId}
+              </span>
+            </p>
+          )}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            {createdOrderId && onViewOrder && (
+              <button
+                onClick={() => onViewOrder(createdOrderId)}
+                className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+              >
+                Ver Detalles del Pedido
+              </button>
+            )}
+            {onReturnToStore && (
+              <button
+                onClick={onReturnToStore}
+                className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-8 py-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-semibold"
+              >
+                Continuar Comprando
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Processing state
+  if (checkoutStep === "processing") {
+    return (
+      <div className={cn("max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8", className)}>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-12 text-center">
+          <div className="animate-spin rounded-full h-20 w-20 border-b-4 border-blue-600 mx-auto mb-6"></div>
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">
+            Procesando tu Pedido
+          </h3>
           <p className="text-gray-600 dark:text-gray-400">
-            Add some items to your cart before checking out
+            Por favor espera mientras procesamos tu pago y preparamos tu pedido...
           </p>
         </div>
       </div>
     );
   }
 
-  if (!session) {
-    return (
-      <div className={`max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 ${className}`}>
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">
-            Initializing checkout...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // 🎯 STEP PROGRESS INDICATOR
-  // ==========================
-
-  const renderStepProgress = () => {
-    const visibleSteps = [
-      "customer-info",
-      "shipping-address",
-      "shipping-method",
-      "payment-method",
-      "review-order",
-    ];
-
-    return (
+  // Main checkout UI
+  return (
+    <div className={cn("max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8", className)}>
+      {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
-          {visibleSteps.map((step, index) => {
-            const StepIcon = STEP_ICONS[step as keyof typeof STEP_ICONS];
-            const isCompleted = completedSteps.includes(step as CheckoutStep);
-            const isCurrent = currentStep === step;
-            const isActive = isCompleted || isCurrent;
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+          Checkout
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400">
+          {checkoutStep === "review" ? "Revisa y confirma tu pedido" : "Completa tu pago"}
+        </p>
+      </div>
 
-            return (
-              <React.Fragment key={step}>
-                <div
-                  className={`flex flex-col items-center ${
-                    isActive ? "text-blue-600" : "text-gray-400"
-                  }`}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Column - Checkout Form */}
+        <div className="lg:col-span-2 space-y-6">
+          {checkoutStep === "review" ? (
+            <>
+              {/* Shipping Address Section */}
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                      <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      Dirección de Envío
+                    </h3>
+                  </div>
+                  {addresses.length > 0 && (
+                    <button
+                      onClick={() => setShowAddressForm(!showAddressForm)}
+                      className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Nueva Dirección
+                    </button>
+                  )}
+                </div>
+
+                {addresses.length === 0 ? (
+                  <div className="text-center py-8">
+                    <MapPin className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">
+                      No tienes direcciones guardadas
+                    </p>
+                    <button
+                      onClick={() => setShowAddressForm(true)}
+                      className="text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      Agregar dirección
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {addresses.map((address) => (
+                      <div
+                        key={address.id}
+                        onClick={() => handleAddressSelect(address)}
+                        className={cn(
+                          "border-2 rounded-lg p-4 cursor-pointer transition-all",
+                          selectedAddressId === address.id
+                            ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                            : "border-gray-200 dark:border-gray-700 hover:border-gray-300"
+                        )}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              {address.label && (
+                                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                  {address.label}
+                                </span>
+                              )}
+                              {address.isDefault && (
+                                <span className="text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded-full">
+                                  Predeterminada
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-900 dark:text-gray-100">
+                              {address.firstName} {address.lastName}
+                            </p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {address.street}
+                              {address.street2 && `, ${address.street2}`}
+                            </p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {address.city}, {address.state} {address.zipCode}
+                            </p>
+                          </div>
+                          {selectedAddressId === address.id && (
+                            <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Shipping Method Section */}
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                    <Truck className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    Método de Envío
+                  </h3>
+                </div>
+
+                <div className="space-y-3">
+                  {shippingMethods.map((method) => (
+                    <div
+                      key={method.id}
+                      onClick={() => setShippingMethod(method.id)}
+                      className="border-2 border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-gray-300 cursor-pointer transition-colors"
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h4 className="font-semibold text-gray-900 dark:text-gray-100">
+                            {method.name}
+                          </h4>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {method.description}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            {method.estimatedDays} días hábiles
+                          </p>
+                        </div>
+                        <p className="font-semibold text-gray-900 dark:text-gray-100">
+                          ${(method.price / 100).toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Express Checkout Button */}
+              {isReadyForExpressCheckout && (
+                <button
+                  onClick={() => setCheckoutStep("payment")}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-6 rounded-xl font-bold text-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3"
                 >
-                  <div
-                    className={`
-                    w-10 h-10 rounded-full flex items-center justify-center border-2
-                    ${
-                      isCompleted
-                        ? "bg-blue-600 border-blue-600 text-white"
-                        : isCurrent
-                        ? "border-blue-600 text-blue-600"
-                        : "border-gray-300 text-gray-400"
-                    }
-                  `}
+                  <Zap className="w-6 h-6" />
+                  Continuar al Pago
+                </button>
+              )}
+            </>
+          ) : (
+            /* Payment Section */
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                  <CreditCard className="w-5 h-5 text-green-600 dark:text-green-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  Información de Pago
+                </h3>
+              </div>
+
+              {isCreatingPaymentIntent ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Inicializando pago seguro...
+                  </p>
+                </div>
+              ) : paymentError || !paymentClientSecret ? (
+                <div className="text-center py-8">
+                  <div className="text-red-500 mb-4">⚠️</div>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    {paymentError || "Error al inicializar el pago"}
+                  </p>
+                  <button
+                    onClick={() => {
+                      setPaymentError(null);
+                      setPaymentClientSecret(null);
+                    }}
+                    className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
                   >
-                    {isCompleted ? (
-                      <CheckCircle className="w-5 h-5" />
+                    Intentar de Nuevo
+                  </button>
+                </div>
+              ) : (
+                <StripeElementsWrapper
+                  clientSecret={paymentClientSecret}
+                  amount={calculation?.total ? calculation.total / 100 : 0}
+                  currency="usd"
+                >
+                  <StripePaymentForm
+                    amount={calculation?.total ? calculation.total / 100 : 0}
+                    currency="usd"
+                    customerEmail={user?.email}
+                    customerName={user?.name}
+                    onPaymentSuccess={async (paymentIntentId) => {
+                      console.log("✅ Payment succeeded:", paymentIntentId);
+                      setCheckoutStep("processing");
+                      try {
+                        const order = await createOrder();
+                        if (order) {
+                          setCreatedOrderId(order.id);
+                          setCheckoutStep("completed");
+                        }
+                      } catch (error) {
+                        console.error("Order creation failed:", error);
+                        setPaymentError(
+                          "Pago exitoso pero error al crear el pedido. Contacta soporte."
+                        );
+                      }
+                    }}
+                    onPaymentError={(error) => {
+                      console.error("❌ Payment failed:", error);
+                      setPaymentError(error);
+                    }}
+                    usePaymentElement={true}
+                  />
+                </StripeElementsWrapper>
+              )}
+
+              <button
+                onClick={() => setCheckoutStep("review")}
+                className="mt-6 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 text-sm"
+              >
+                ← Volver a revisar pedido
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Right Column - Order Summary */}
+        <div className="lg:col-span-1">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700 sticky top-8">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              Resumen del Pedido
+            </h3>
+
+            {/* Cart Items */}
+            <div className="space-y-3 mb-6 max-h-64 overflow-y-auto">
+              {cart.items.map((item) => (
+                <div key={item.id} className="flex gap-3">
+                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
+                    {item.product?.images?.[0] ? (
+                      <img
+                        src={item.product.images[0]}
+                        alt={item.product.name || "Product"}
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
-                      <StepIcon className="w-5 h-5" />
+                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        📦
+                      </div>
                     )}
                   </div>
-                  <span className="text-xs mt-2 text-center max-w-20">
-                    {
-                      CHECKOUT_STEP_LABELS[
-                        step as keyof typeof CHECKOUT_STEP_LABELS
-                      ]
-                    }
-                  </span>
-                </div>
-
-                {index < visibleSteps.length - 1 && (
-                  <div
-                    className={`flex-1 h-0.5 mx-4 ${
-                      completedSteps.includes(
-                        visibleSteps[index + 1] as CheckoutStep
-                      )
-                        ? "bg-blue-600"
-                        : "bg-gray-300"
-                    }`}
-                  />
-                )}
-              </React.Fragment>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
-  // 🎯 CURRENT STEP CONTENT
-  // =======================
-
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case "customer-info":
-        return (
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm border">
-            <h3 className="text-lg font-semibold mb-4">Customer Information</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Email Address *
-                </label>
-                <input
-                  type="email"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="your@email.com"
-                  value={session.customerInfo.email}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    setCustomerInfo({
-                      ...session.customerInfo,
-                      email: e.target.value,
-                    });
-                  }}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    First Name
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="John"
-                    value={session.customerInfo.firstName || ""}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      setCustomerInfo({
-                        ...session.customerInfo,
-                        firstName: e.target.value,
-                      });
-                    }}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Last Name
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Doe"
-                    value={session.customerInfo.lastName || ""}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      setCustomerInfo({
-                        ...session.customerInfo,
-                        lastName: e.target.value,
-                      });
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-
-      case "review-order":
-        return (
-          <div className="space-y-6">
-            {/* Order Summary */}
-            <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm border">
-              <h3 className="text-lg font-semibold mb-4">Order Summary</h3>
-
-              {/* Items */}
-              <div className="space-y-4 mb-6">
-                {cart.items.map((item) => (
-                  <div key={item.id} className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-lg flex-shrink-0 overflow-hidden">
-                      {item.product?.images?.[0] ? (
-                        <img
-                          src={item.product.images[0]}
-                          alt={item.product?.name || "Product"}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400">
-                          📦
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-medium">
-                        {item.product?.name || "Product"}
-                      </h4>
-                      <p className="text-gray-600 dark:text-gray-400">
-                        Qty: {item.quantity}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold">
-                        ${(item.total / 100).toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Totals */}
-              {calculation && (
-                <div className="border-t pt-4 space-y-2">
-                  <div className="flex justify-between">
-                    <span>Subtotal</span>
-                    <span>${(calculation.subtotal / 100).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Shipping</span>
-                    <span>${(calculation.shipping / 100).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Tax</span>
-                    <span>${(calculation.tax / 100).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-lg font-semibold border-t pt-2">
-                    <span>Total</span>
-                    <span>${(calculation.total / 100).toFixed(2)}</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Customer & Shipping Info Review */}
-            <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm border">
-              <h3 className="text-lg font-semibold mb-4">
-                Delivery Information
-              </h3>
-
-              <div className="space-y-4">
-                {/* Customer */}
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Customer
-                  </p>
-                  <p className="font-medium">
-                    {session.customerInfo.firstName}{" "}
-                    {session.customerInfo.lastName}
-                  </p>
-                  <p className="text-gray-600">{session.customerInfo.email}</p>
-                </div>
-
-                {/* Shipping Address */}
-                {session.shippingAddress && (
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Shipping Address
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                      {item.product?.name || "Product"}
+                    </h4>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      Qty: {item.quantity}
                     </p>
-                    <p className="font-medium">
-                      {session.shippingAddress.addressLine1}
-                      {session.shippingAddress.addressLine2 &&
-                        `, ${session.shippingAddress.addressLine2}`}
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      ${(item.total / 100).toFixed(2)}
                     </p>
-                    <p className="text-gray-600">
-                      {session.shippingAddress.city},{" "}
-                      {session.shippingAddress.state}{" "}
-                      {session.shippingAddress.postalCode}
-                    </p>
-                    <p className="text-gray-600">
-                      {session.shippingAddress.country}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Place Order Button */}
-            <button
-              onClick={async () => {
-                const order = await createOrder();
-                if (order) {
-                  setCreatedOrderId(order.id);
-                }
-              }}
-              disabled={isCreatingOrder}
-              className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {isCreatingOrder ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  Processing...
-                </>
-              ) : (
-                "Place Order"
-              )}
-            </button>
-          </div>
-        );
-
-      case "shipping-address":
-        return (
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm border">
-            <h3 className="text-xl font-semibold mb-6 text-gray-900 dark:text-gray-100">
-              Shipping Address
-            </h3>
-
-            <div className="space-y-6">
-              {/* Address Form */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Street Address
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="123 Main Street"
-                    value={session.shippingAddress?.addressLine1 || ""}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      setShippingAddress({
-                        ...(session.shippingAddress || {
-                          firstName: session.customerInfo.firstName || "",
-                          lastName: session.customerInfo.lastName || "",
-                          addressLine1: "",
-                          city: "",
-                          state: "",
-                          postalCode: "",
-                          country: "US",
-                        }),
-                        addressLine1: e.target.value,
-                      });
-                    }}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Apartment/Suite (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Apt 2B"
-                    value={session.shippingAddress?.addressLine2 || ""}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      setShippingAddress({
-                        ...(session.shippingAddress || {
-                          firstName: session.customerInfo.firstName || "",
-                          lastName: session.customerInfo.lastName || "",
-                          addressLine1: "",
-                          city: "",
-                          state: "",
-                          postalCode: "",
-                          country: "US",
-                        }),
-                        addressLine2: e.target.value,
-                      });
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">City</label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="New York"
-                    value={session.shippingAddress?.city || ""}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      setShippingAddress({
-                        ...(session.shippingAddress || {
-                          firstName: session.customerInfo.firstName || "",
-                          lastName: session.customerInfo.lastName || "",
-                          addressLine1: "",
-                          city: "",
-                          state: "",
-                          postalCode: "",
-                          country: "US",
-                        }),
-                        city: e.target.value,
-                      });
-                    }}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    State/Province
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="NY"
-                    value={session.shippingAddress?.state || ""}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      setShippingAddress({
-                        ...(session.shippingAddress || {
-                          firstName: session.customerInfo.firstName || "",
-                          lastName: session.customerInfo.lastName || "",
-                          addressLine1: "",
-                          city: "",
-                          state: "",
-                          postalCode: "",
-                          country: "US",
-                        }),
-                        state: e.target.value,
-                      });
-                    }}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    ZIP/Postal Code
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="10001"
-                    value={session.shippingAddress?.postalCode || ""}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      setShippingAddress({
-                        ...(session.shippingAddress || {
-                          firstName: session.customerInfo.firstName || "",
-                          lastName: session.customerInfo.lastName || "",
-                          addressLine1: "",
-                          city: "",
-                          state: "",
-                          postalCode: "",
-                          country: "US",
-                        }),
-                        postalCode: e.target.value,
-                      });
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Country
-                </label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={session.shippingAddress?.country || "US"}
-                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                    setShippingAddress({
-                      ...(session.shippingAddress || {
-                        firstName: session.customerInfo.firstName || "",
-                        lastName: session.customerInfo.lastName || "",
-                        addressLine1: "",
-                        city: "",
-                        state: "",
-                        postalCode: "",
-                        country: "US",
-                      }),
-                      country: e.target.value,
-                    });
-                  }}
-                >
-                  <option value="US">United States</option>
-                  <option value="CA">Canada</option>
-                  <option value="MX">Mexico</option>
-                  <option value="GB">United Kingdom</option>
-                  <option value="DE">Germany</option>
-                  <option value="FR">France</option>
-                </select>
-              </div>
-
-              {/* Same as Billing Checkbox */}
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="sameAsBilling"
-                  className="rounded border-gray-300"
-                  checked={!session.billingAddress}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    if (e.target.checked) {
-                      setBillingAddress(null);
-                    }
-                  }}
-                />
-                <label htmlFor="sameAsBilling" className="text-sm">
-                  Billing address is the same as shipping address
-                </label>
-              </div>
-            </div>
-          </div>
-        );
-
-      case "shipping-method":
-        return (
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm border">
-            <h3 className="text-xl font-semibold mb-6 text-gray-900 dark:text-gray-100">
-              Shipping Method
-            </h3>
-
-            <div className="space-y-4">
-              {shippingMethods.map((method) => (
-                <div
-                  key={method.id}
-                  className={`border rounded-lg p-4 cursor-pointer transition-colors ${
-                    session.shippingMethodId === method.id
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                      : "border-gray-300 hover:border-gray-400"
-                  }`}
-                  onClick={() => setShippingMethod(method.id)}
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h4 className="font-semibold">{method.name}</h4>
-                      <p className="text-gray-600 text-sm">
-                        {method.description}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {method.estimatedDays} business days
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold">
-                        ${(method.price / 100).toFixed(2)}
-                      </p>
-                    </div>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
-        );
 
-      case "payment-method":
-        // Show loading state while creating payment intent
-        if (isCreatingPaymentIntent) {
-          return (
-            <div className="bg-white dark:bg-gray-900 rounded-lg p-12 shadow-sm border text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                Initializing Payment
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Please wait while we prepare your payment form...
-              </p>
-            </div>
-          );
-        }
-
-        // Show error state if payment intent creation failed
-        if (paymentError || !paymentClientSecret) {
-          return (
-            <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm border">
-              <div className="text-center py-6">
-                <div className="text-red-500 mb-4">
-                  <svg
-                    className="w-12 h-12 mx-auto"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
+            {/* Totals */}
+            {calculation && (
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Subtotal</span>
+                  <span className="text-gray-900 dark:text-gray-100">
+                    ${(calculation.subtotal / 100).toFixed(2)}
+                  </span>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                  Payment Initialization Failed
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  {paymentError ||
-                    "Unable to initialize payment. Please try again."}
-                </p>
-                <button
-                  onClick={() => {
-                    setPaymentError(null);
-                    setPaymentClientSecret(null);
-                  }}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Try Again
-                </button>
-              </div>
-            </div>
-          );
-        }
-
-        // Show Stripe payment form
-        return (
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm border">
-            <StripeElementsWrapper
-              clientSecret={paymentClientSecret}
-              amount={calculation?.total ? calculation.total / 100 : 0}
-              currency="usd"
-            >
-              <StripePaymentForm
-                amount={calculation?.total ? calculation.total / 100 : 0}
-                currency="usd"
-                customerEmail={session.customerInfo.email}
-                customerName={
-                  session.customerInfo.firstName &&
-                  session.customerInfo.lastName
-                    ? `${session.customerInfo.firstName} ${session.customerInfo.lastName}`
-                    : undefined
-                }
-                onPaymentSuccess={async (paymentIntentId) => {
-                  console.log("✅ Payment succeeded:", paymentIntentId);
-                  // Payment succeeded, now create the order
-                  try {
-                    const order = await createOrder();
-                    if (order) {
-                      setCreatedOrderId(order.id);
-                      // Context will automatically move to "processing" step
-                    }
-                  } catch (error) {
-                    console.error("Order creation failed:", error);
-                    setPaymentError(
-                      "Payment succeeded but order creation failed. Please contact support."
-                    );
-                  }
-                }}
-                onPaymentError={(error) => {
-                  console.error("❌ Payment failed:", error);
-                  setPaymentError(error);
-                }}
-                usePaymentElement={true}
-              />
-            </StripeElementsWrapper>
-
-            {paymentError && (
-              <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                <p className="text-sm text-red-600 dark:text-red-300">
-                  {paymentError}
-                </p>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Envío</span>
+                  <span className="text-gray-900 dark:text-gray-100">
+                    ${(calculation.shipping / 100).toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Impuestos</span>
+                  <span className="text-gray-900 dark:text-gray-100">
+                    ${(calculation.tax / 100).toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-lg font-bold border-t border-gray-200 dark:border-gray-700 pt-2 mt-2">
+                  <span className="text-gray-900 dark:text-gray-100">Total</span>
+                  <span className="text-gray-900 dark:text-gray-100">
+                    ${(calculation.total / 100).toFixed(2)}
+                  </span>
+                </div>
               </div>
             )}
           </div>
-        );
-
-      case "processing":
-        return (
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-8 shadow-sm border text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">
-              Processing Your Order
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              Please wait while we process your payment and prepare your
-              order...
-            </p>
-          </div>
-        );
-
-      case "completed":
-        return (
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-8 shadow-sm border text-center">
-            <div className="text-green-600 mb-4">
-              <svg
-                className="w-16 h-16 mx-auto"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <h3 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
-              Order Completed!
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Thank you for your purchase. Your order has been placed
-              successfully.
-            </p>
-            {createdOrderId && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                Order ID:{" "}
-                <span className="font-mono font-semibold">
-                  {createdOrderId}
-                </span>
-              </p>
-            )}
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              {createdOrderId && onViewOrder && (
-                <button
-                  onClick={() => onViewOrder(createdOrderId)}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  View Order Details
-                </button>
-              )}
-              {onReturnToStore && (
-                <button
-                  onClick={onReturnToStore}
-                  className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-6 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                >
-                  Continue Shopping
-                </button>
-              )}
-            </div>
-          </div>
-        );
-
-      default:
-        return (
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm border">
-            <h3 className="text-lg font-semibold mb-4">{currentStep}</h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              This step is not yet implemented. Coming soon!
-            </p>
-          </div>
-        );
-    }
-  };
-
-  // 🎯 NAVIGATION BUTTONS
-  // =====================
-
-  const renderNavigation = () => {
-    if (currentStep === "processing" || currentStep === "completed") {
-      return null;
-    }
-
-    return (
-      <div className="flex justify-between mt-8">
-        <button
-          onClick={goToPreviousStep}
-          disabled={!canGoBack}
-          className="flex items-center gap-2 px-6 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </button>
-
-        {currentStep !== "review-order" && (
-          <button
-            onClick={goToNextStep}
-            disabled={!canProceedToNext}
-            className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Next
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        )}
-      </div>
-    );
-  };
-
-  // 🎯 ERROR DISPLAY
-  // ================
-
-  const renderErrors = () => {
-    if (Object.keys(errors).length === 0) return null;
-
-    return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-        <h4 className="text-red-800 font-semibold mb-2">
-          Please fix the following errors:
-        </h4>
-        <ul className="text-red-700 text-sm space-y-1">
-          {Object.entries(errors).map(([field, message]) => (
-            <li key={field}>• {message}</li>
-          ))}
-        </ul>
-      </div>
-    );
-  };
-
-  // 🎯 MAIN RENDER
-  // ==============
-
-  return (
-    <div className={`max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 ${className}`}>
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-4">
-          <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-            <ShoppingCart className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-              Checkout
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Complete your purchase
-            </p>
-          </div>
         </div>
       </div>
-
-      {/* Step Progress */}
-      {renderStepProgress()}
-
-      {/* Errors */}
-      {renderErrors()}
-
-      {/* Step Content */}
-      {renderStepContent()}
-
-      {/* Navigation */}
-      {renderNavigation()}
-
-      {/* Loading Overlay */}
-      {(isLoading || isCreatingOrder) && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 shadow-xl">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">
-              {isCreatingOrder ? "Creating your order..." : "Loading..."}
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

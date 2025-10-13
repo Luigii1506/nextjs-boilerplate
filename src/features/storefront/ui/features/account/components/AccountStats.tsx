@@ -11,7 +11,8 @@ import React, { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { DollarSign, Clock, Check, MapPin } from "lucide-react";
 import type { OrderSummary } from "@/features/storefront/orders";
-import type { UserProfile, Address } from "../types";
+import type { Address } from "@/features/storefront/addresses";
+import type { UserProfile } from "../types";
 import { formatPrice } from "../utils/formatters";
 
 interface AccountStatsProps {

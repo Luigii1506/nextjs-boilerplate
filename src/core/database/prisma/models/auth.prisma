@@ -32,6 +32,7 @@ model User {
   wishlistItems WishlistItem[]  @relation("UserWishlist")   // MODULE: storefront
   orders        Order[]         @relation("UserOrders")     // MODULE: storefront
   reviews       ProductReview[] @relation("UserReviews")    // MODULE: storefront
+  addresses     Address[]       @relation("UserAddresses")  // MODULE: storefront
   // payments     Payment[]      // MODULE: stripe-payments
 
   @@map("user")

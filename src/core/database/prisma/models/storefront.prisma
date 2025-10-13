@@ -213,7 +213,52 @@ model ProductReview {
   @@map("product_reviews")
 }
 
+// 📍 USER ADDRESSES
+model Address {
+  id        String      @id @default(cuid())
+  userId    String
+
+  // 📋 Address Information
+  type         AddressType @default(SHIPPING)
+  label        String?              // e.g., "Casa", "Oficina", "Casa de mamá"
+  firstName    String
+  lastName     String
+  company      String?
+
+  // 📍 Location
+  street       String
+  street2      String?              // Apartment, suite, etc.
+  city         String
+  state        String
+  zipCode      String
+  country      String  @default("MX")
+
+  // 📞 Contact
+  phone        String
+
+  // ⚙️ Settings
+  isDefault    Boolean @default(false)
+  isVerified   Boolean @default(false)
+
+  // 📅 Timestamps
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // 🔗 Relations
+  user         User     @relation("UserAddresses", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isDefault])
+  @@map("addresses")
+}
+
 // 🏷️ ENUMS
+
+enum AddressType {
+  SHIPPING
+  BILLING
+  BOTH
+}
 
 enum OrderStatus {
   PENDING    // Order created, payment pending

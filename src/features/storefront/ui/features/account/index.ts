@@ -16,3 +16,5 @@ export { AccountHeader } from "./components/AccountHeader";
 export { AccountNavigation } from "./components/AccountNavigation";
 export { AccountStats } from "./components/AccountStats";
 export { OrdersSection } from "./components/OrdersSection";
+export { AddressSection } from "./components/AddressSection";
+export { AddressModal } from "./components/AddressModal";

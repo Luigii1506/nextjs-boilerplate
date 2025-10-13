@@ -17,6 +17,7 @@ import { User, Settings, ShoppingBag, MapPin, Shield } from "lucide-react";
 // Import Context and Hooks
 import { useAuth } from "@/shared/hooks/useAuth";
 import { useOrders, type OrderSummary } from "@/features/storefront/orders";
+import { useAddresses, type Address as AddressData } from "@/features/storefront/addresses";
 
 // Import extracted account components
 import {
@@ -24,9 +25,9 @@ import {
   AccountNavigation,
   AccountStats,
   OrdersSection,
+  AddressSection,
   type AccountSection,
   type UserProfile,
-  type Address,
 } from "../account";
 
 // Account sections configuration
@@ -36,24 +37,6 @@ const ACCOUNT_SECTIONS: AccountSection[] = [
   { id: "addresses", label: "Direcciones", icon: MapPin },
   { id: "settings", label: "Configuración", icon: Settings },
   { id: "security", label: "Seguridad", icon: Shield },
-];
-
-// Mock addresses data (TODO: Replace with real data from backend)
-const mockAddresses: Address[] = [
-  {
-    id: "1",
-    type: "shipping",
-    label: "Casa",
-    firstName: "Juan",
-    lastName: "Pérez",
-    street: "Calle Principal 123",
-    city: "Madrid",
-    state: "Madrid",
-    zipCode: "28001",
-    country: "España",
-    phone: "+34 600 000 000",
-    isDefault: true,
-  },
 ];
 
 /**
@@ -116,11 +99,7 @@ const AccountTab: React.FC = () => {
   }, [user]);
 
   // 📦 Orders Data
-  const {
-    data: ordersData,
-    isLoading: isLoadingOrders,
-    isError: isOrdersError,
-  } = useOrders({
+  const { data: ordersData } = useOrders({
     userId: user?.id || "",
     enabled: !!user?.id,
   });
@@ -128,6 +107,13 @@ const AccountTab: React.FC = () => {
   const orders: OrderSummary[] = useMemo(() => {
     return ordersData?.orders || [];
   }, [ordersData]);
+
+  // 📍 Addresses Data
+  const { data: addressesData } = useAddresses();
+
+  const addresses: AddressData[] = useMemo(() => {
+    return addressesData?.addresses || [];
+  }, [addressesData]);
 
   // 🚫 Show login prompt if not authenticated
   if (!isAuthenticated && !isAuthLoading) {
@@ -158,7 +144,7 @@ const AccountTab: React.FC = () => {
         {/* Stats Dashboard */}
         <AccountStats
           orders={orders}
-          addresses={mockAddresses}
+          addresses={addresses}
           user={userProfile}
           allowAnimations={allowAnimations}
         />
@@ -175,26 +161,15 @@ const AccountTab: React.FC = () => {
 
           {/* Content Area */}
           <div className="lg:col-span-3">
-            {isLoadingOrders && activeSection === "orders" ? (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-12">
-                <div className="text-center">
-                  <div className="w-12 h-12 border-4 border-orange-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                  <span className="text-gray-600 dark:text-gray-400">
-                    Cargando pedidos...
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <AccountContent
-                activeSection={activeSection}
-                user={userProfile}
-                orders={orders}
-                addresses={mockAddresses}
-                isEditing={isEditing}
-                onEditToggle={setIsEditing}
-                allowAnimations={allowAnimations}
-              />
-            )}
+            <AccountContent
+              activeSection={activeSection}
+              user={userProfile}
+              orders={orders}
+              addresses={addresses}
+              isEditing={isEditing}
+              onEditToggle={setIsEditing}
+              allowAnimations={allowAnimations}
+            />
           </div>
         </div>
       </div>
@@ -297,21 +272,7 @@ const AccountContent: React.FC<AccountContentProps> = ({
       return <OrdersSection orders={orders} allowAnimations={allowAnimations} />;
 
     case "addresses":
-      return (
-        <div
-          className={cn(
-            "bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8",
-            allowAnimations && "animate-customerFadeInUp"
-          )}
-        >
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
-            Mis Direcciones
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            Gestión de direcciones disponible próximamente
-          </p>
-        </div>
-      );
+      return <AddressSection addresses={addresses} allowAnimations={allowAnimations} />;
 
     case "settings":
       return (
