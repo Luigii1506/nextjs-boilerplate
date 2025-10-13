@@ -26,7 +26,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import type { ProductForCustomer } from "../../types/shared";
+import type { ProductForCustomer } from "@/features/storefront/types";
 
 interface QuickViewModalProps {
   product: ProductForCustomer | null;
@@ -212,11 +212,13 @@ export const QuickViewModal: React.FC<QuickViewModalProps> = ({
                 </div>
 
                 {/* Sale Badge */}
-                {product.isOnSale && product.discountPercentage > 0 && (
-                  <div className="absolute top-4 left-4 bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm font-bold px-3 py-2 rounded-full shadow-lg">
-                    -{Math.round(product.discountPercentage || 0)}%
-                  </div>
-                )}
+                {product.isOnSale &&
+                  product.discountPercentage &&
+                  product.discountPercentage > 0 && (
+                    <div className="absolute top-4 left-4 bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm font-bold px-3 py-2 rounded-full shadow-lg">
+                      -{Math.round(product.discountPercentage || 0)}%
+                    </div>
+                  )}
 
                 {/* Image Navigation Arrows */}
                 {productImages.length > 1 && (

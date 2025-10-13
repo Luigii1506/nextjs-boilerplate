@@ -13,7 +13,7 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { Heart, Sparkles } from "lucide-react";
 import { cn } from "@/shared/utils";
-import type { ProductForCustomer } from "../../types/shared";
+import type { ProductForCustomer } from "@/features/storefront/types";
 
 interface AnimatedHeartButtonProps {
   product: ProductForCustomer;

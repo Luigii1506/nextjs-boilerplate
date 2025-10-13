@@ -1,58 +1,27 @@
 /**
- * 🛒 CART FEATURE - MAIN EXPORTS
- * ==============================
+ * 🛒 CART - BACKWARD COMPATIBILITY WRAPPER
+ * =========================================
  *
- * Cart feature entry point following Feature-First v3.0.0 architecture.
- * Independent, reusable cart functionality for e-commerce.
+ * ⚠️ DEPRECATED: This module has been moved to @/features/storefront/cart
  *
- * @version 2.0.0 - Cart Feature (Cleaned & Optimized)
+ * This file provides backward compatibility for existing imports.
+ * Please update your imports to use the new location:
+ *
+ * OLD: import { useCart } from "@/features/cart";
+ * NEW: import { useCart } from "@/features/storefront/cart";
+ *
+ * This wrapper will be removed in a future version.
+ *
+ * @deprecated Use @/features/storefront/cart instead
  */
 
-// 📋 Types
-export * from "./types";
+// Re-export everything from the new location
+export * from "../storefront/cart";
 
-// 🎬 Server Layer (Actions, Services, Queries)
-export * from "./server";
-
-// 🎨 UI Components Layer
-export * from "./ui/components";
-
-// 🌍 Context Layer (Primary state management)
-export * from "./context";
-
-// 🔗 Compatibility alias: useCart → useCartContext
-export { useCartContext as useCart } from "./context";
-
-// 🛠️ Utilities Layer
-export * from "./utils";
-
-// 🎯 Quick Access Exports (commonly used items)
-export type {
-  CartWithItems,
-  CartItem,
-  CartItemWithProduct,
-  CartSummary,
-  AddToCartInput,
-  UpdateCartItemInput,
-  RemoveFromCartInput,
-  CartValidationResult,
-  CartState,
-  CartContextValue,
-} from "./types";
-
-// 🚀 Main Actions (most commonly used)
-export {
-  getCartAction,
-  addToCartAction,
-  updateCartItemAction,
-  removeFromCartAction,
-  clearCartAction,
-} from "./server";
-
-// 🌍 Context (primary state management)
-export { CartProvider, useCartContext } from "./context";
-
-// 🎨 Main Components (commonly used)
-export { CartTab, CartBadge, CartEmpty, CartDebugPanel } from "./ui/components";
-
-export default {};
+// Log deprecation warning in development
+if (process.env.NODE_ENV === "development") {
+  console.warn(
+    "⚠️ DEPRECATED: Importing from @/features/cart is deprecated. " +
+    "Please update to @/features/storefront/cart"
+  );
+}

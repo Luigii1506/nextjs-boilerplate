@@ -1,36 +1,27 @@
 /**
- * 📦 ORDERS - BARREL EXPORTS
- * ===========================
+ * 📦 ORDERS - BACKWARD COMPATIBILITY WRAPPER
+ * ==========================================
  *
- * Centralized exports for orders feature.
- * Clean API for consuming features.
+ * ⚠️ DEPRECATED: This module has been moved to @/features/storefront/orders
  *
- * @version 1.0.0 - Feature-First Architecture v3
+ * This file provides backward compatibility for existing imports.
+ * Please update your imports to use the new location:
+ *
+ * OLD: import { useOrders } from "@/features/orders";
+ * NEW: import { useOrders } from "@/features/storefront/orders";
+ *
+ * This wrapper will be removed in a future version.
+ *
+ * @deprecated Use @/features/storefront/orders instead
  */
 
-// 🎯 TYPES
-export * from "./types";
+// Re-export everything from the new location
+export * from "../storefront/orders";
 
-// 🔌 SERVER ACTIONS
-export {
-  getOrdersAction,
-  getOrderByIdAction,
-  createOrderAction,
-  cancelOrderAction,
-} from "./server/actions";
-
-// 🪝 HOOKS
-export {
-  useOrders,
-  useOrder,
-  useCreateOrder,
-  useCancelOrder,
-  useRefreshOrders,
-  ORDER_QUERY_KEYS,
-} from "./hooks/useOrders";
-
-// 🔧 UTILITIES
-export {
-  parseShippingAddress,
-  serializeShippingAddress,
-} from "./server/mappers";
+// Log deprecation warning in development
+if (process.env.NODE_ENV === "development") {
+  console.warn(
+    "⚠️ DEPRECATED: Importing from @/features/orders is deprecated. " +
+    "Please update to @/features/storefront/orders"
+  );
+}

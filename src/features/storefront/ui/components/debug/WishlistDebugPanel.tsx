@@ -95,4 +95,5 @@ export const WishlistDebugPanel: React.FC = () => {
       </div>
     </div>
   );
+  */
 };
