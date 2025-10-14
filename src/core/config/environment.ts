@@ -177,12 +177,40 @@ export const DEBUG_CONFIG = {
   debugMode: getBooleanEnv("NEXT_PUBLIC_DEBUG_MODE", false),
 } as const;
 
-// 💳 STRIPE CONFIGURATION (future use)
-export const STRIPE_CONFIG = {
-  secretKey: getOptionalEnv("STRIPE_SECRET_KEY", ""),
-  publishableKey: getOptionalEnv("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", ""),
-  webhookSecret: getOptionalEnv("STRIPE_WEBHOOK_SECRET", ""),
-} as const;
+// 💳 STRIPE CONFIGURATION
+export function getStripeEnvironmentConfig() {
+  // Client-side: only return publishable key (safe for client)
+  if (isClient) {
+    return {
+      secretKey: "",
+      publishableKey: getOptionalEnv("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", ""),
+      webhookSecret: "",
+    } as const;
+  }
+
+  // Server-side: return all keys
+  const config = {
+    secretKey: getOptionalEnv("STRIPE_SECRET_KEY", ""),
+    publishableKey: getOptionalEnv("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", ""),
+    webhookSecret: getOptionalEnv("STRIPE_WEBHOOK_SECRET", ""),
+  };
+
+  // Debug log only in development and server-side
+  if (process.env.NODE_ENV === "development") {
+    console.log("🔍 [STRIPE CONFIG] Loading configuration...", {
+      hasSecretKey: !!config.secretKey,
+      hasPublishableKey: !!config.publishableKey,
+      secretKeyLength: config.secretKey?.length || 0,
+      publishableKeyLength: config.publishableKey?.length || 0,
+      secretKeyPrefix: config.secretKey?.substring(0, 10) || "EMPTY",
+      publishableKeyPrefix: config.publishableKey?.substring(0, 10) || "EMPTY",
+      rawEnvSecretKey: process.env.STRIPE_SECRET_KEY?.substring(0, 10) || "MISSING",
+      rawEnvPublishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.substring(0, 10) || "MISSING",
+    });
+  }
+
+  return config as const;
+}
 
 // 🛍️ ECOMMERCE CONFIGURATION (future use)
 export const ECOMMERCE_CONFIG = {
@@ -193,6 +221,47 @@ export const ECOMMERCE_CONFIG = {
 
 // 🎯 EXPORT CONSOLIDADO
 export function getEnv() {
+  // Client-side: only return safe configs
+  if (isClient) {
+    return {
+      database: { url: "" },
+      auth: {
+        secret: "",
+        baseURL: getOptionalEnv("NEXT_PUBLIC_BETTER_AUTH_URL", "http://localhost:3000"),
+        trustedOrigins: getOptionalEnv("NEXT_PUBLIC_BETTER_AUTH_TRUSTED_ORIGINS", "http://localhost:3000"),
+      },
+      upload: {
+        provider: "local" as const,
+        localPath: "",
+        localBaseURL: "",
+        maxFileSize: 0,
+        allowedTypes: [],
+        s3: {
+          accessKeyId: "",
+          secretAccessKey: "",
+          region: "",
+          bucket: "",
+          endpoint: "",
+          forcePathStyle: false,
+        },
+        cloudinary: {
+          cloudName: "",
+          apiKey: "",
+          apiSecret: "",
+          folder: "",
+        },
+      },
+      features: getFeatureFlags(), // Safe: uses NEXT_PUBLIC_ variables
+      deployment: getDeploymentConfig(), // Safe: uses NEXT_PUBLIC_ variables
+      email: EMAIL_CONFIG,
+      analytics: ANALYTICS_CONFIG,
+      debug: DEBUG_CONFIG,
+      stripe: getStripeEnvironmentConfig(), // Safe: client-aware function
+      ecommerce: ECOMMERCE_CONFIG,
+    } as const;
+  }
+
+  // Server-side: return all configs
   return {
     database: getDatabaseConfig(),
     auth: getAuthConfig(),
@@ -202,7 +271,7 @@ export function getEnv() {
     email: EMAIL_CONFIG,
     analytics: ANALYTICS_CONFIG,
     debug: DEBUG_CONFIG,
-    stripe: STRIPE_CONFIG,
+    stripe: getStripeEnvironmentConfig(),
     ecommerce: ECOMMERCE_CONFIG,
   } as const;
 }

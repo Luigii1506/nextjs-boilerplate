@@ -28,12 +28,12 @@ model User {
   stockMovements StockMovement[] // MODULE: inventory
   
   // 🛒 STOREFRONT: E-commerce relations
-  cart          Cart?           @relation("UserCart")       // MODULE: storefront
-  wishlistItems WishlistItem[]  @relation("UserWishlist")   // MODULE: storefront
-  orders        Order[]         @relation("UserOrders")     // MODULE: storefront
-  reviews       ProductReview[] @relation("UserReviews")    // MODULE: storefront
-  addresses     Address[]       @relation("UserAddresses")  // MODULE: storefront
-  // payments     Payment[]      // MODULE: stripe-payments
+  cart           Cart?            @relation("UserCart")          // MODULE: storefront
+  wishlistItems  WishlistItem[]   @relation("UserWishlist")      // MODULE: storefront
+  orders         Order[]          @relation("UserOrders")        // MODULE: storefront
+  reviews        ProductReview[]  @relation("UserReviews")       // MODULE: storefront
+  addresses      Address[]        @relation("UserAddresses")     // MODULE: storefront
+  paymentMethods PaymentMethod[]  @relation("UserPaymentMethods") // MODULE: storefront + stripe
 
   @@map("user")
 }

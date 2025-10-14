@@ -32,8 +32,20 @@ const OverviewTab: React.FC = () => {
   const { addToCart } = useCart();
 
   // Extract data
-  const featuredProducts = data?.featuredProducts || [];
+  const rawFeaturedProducts = data?.featuredProducts || [];
   const categories = data?.categories || [];
+  const wishlist = data?.wishlist || [];
+
+  // 💖 SINGLE SOURCE OF TRUTH - Derive isWishlisted from wishlist array
+  const featuredProducts = React.useMemo(() => {
+    const wishlistProductIds = new Set(
+      wishlist.map((w: { productId: string }) => w.productId)
+    );
+    return rawFeaturedProducts.map((product: ProductForCustomer) => ({
+      ...product,
+      isWishlisted: wishlistProductIds.has(product.id),
+    }));
+  }, [rawFeaturedProducts, wishlist]);
 
   // ⚡ Acciones simples - Sin indirección
   const handleWishlistToggle = async (product: ProductForCustomer) => {

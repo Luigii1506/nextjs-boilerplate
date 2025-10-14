@@ -10,7 +10,7 @@
 
 "use server";
 
-import { auth } from "@/core/auth/server";
+import { getServerSession } from "@/core/auth/server";
 import type {
   GetOrdersRequest,
   GetOrdersResponse,
@@ -35,14 +35,28 @@ import { mapOrderToApi, mapOrderToSummary, serializeShippingAddress } from "./ma
 export async function getOrdersAction(
   request: GetOrdersRequest
 ): Promise<GetOrdersResponse> {
+  console.log("📦 [getOrdersAction] Fetching orders:", request);
+
   try {
     // Verify authentication
-    const session = await auth();
+    const session = await getServerSession();
+    console.log("🔐 [getOrdersAction] Session:", {
+      hasSession: !!session,
+      hasUser: !!session?.user,
+      userId: session?.user?.id,
+      requestUserId: request.userId,
+    });
+
     if (!session?.user || session.user.id !== request.userId) {
+      console.error("❌ [getOrdersAction] Unauthorized:", {
+        sessionUserId: session?.user?.id,
+        requestUserId: request.userId,
+      });
       throw new Error("Unauthorized");
     }
 
     // Fetch orders
+    console.log("🔍 [getOrdersAction] Fetching from database...");
     const { orders, total } = await getUserOrders({
       userId: request.userId,
       limit: request.limit,
@@ -50,8 +64,17 @@ export async function getOrdersAction(
       status: request.status,
     });
 
+    console.log("✅ [getOrdersAction] Fetched orders:", {
+      ordersCount: orders.length,
+      total,
+    });
+
     // Map to summaries
     const orderSummaries = orders.map(mapOrderToSummary);
+
+    console.log("📤 [getOrdersAction] Returning summaries:", {
+      summariesCount: orderSummaries.length,
+    });
 
     return {
       orders: orderSummaries,

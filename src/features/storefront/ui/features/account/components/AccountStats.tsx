@@ -9,22 +9,25 @@
 
 import React, { useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { DollarSign, Clock, Check, MapPin } from "lucide-react";
+import { DollarSign, Clock, Check, CreditCard } from "lucide-react";
 import type { OrderSummary } from "@/features/storefront/orders";
 import type { Address } from "@/features/storefront/addresses";
+import type { PaymentMethod } from "@/features/storefront/payment-methods";
 import type { UserProfile } from "../types";
 import { formatPrice } from "../utils/formatters";
 
 interface AccountStatsProps {
   orders: OrderSummary[];
   addresses: Address[];
+  paymentMethods: PaymentMethod[];
   user: UserProfile;
   allowAnimations: boolean;
 }
 
 export const AccountStats: React.FC<AccountStatsProps> = ({
   orders,
-  addresses,
+  addresses: _addresses,
+  paymentMethods,
   user: _user,
   allowAnimations,
 }) => {
@@ -41,9 +44,9 @@ export const AccountStats: React.FC<AccountStatsProps> = ({
       totalSpent,
       pendingOrders,
       completedOrders,
-      totalAddresses: addresses.length,
+      totalPaymentMethods: paymentMethods.length,
     };
-  }, [orders, addresses]);
+  }, [orders, paymentMethods]);
 
   return (
     <div
@@ -103,18 +106,18 @@ export const AccountStats: React.FC<AccountStatsProps> = ({
         </div>
       </div>
 
-      {/* Saved Addresses */}
+      {/* Saved Payment Methods */}
       <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-6 border border-purple-200 dark:border-purple-800">
         <div className="flex items-center space-x-3">
           <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center">
-            <MapPin className="w-6 h-6 text-white" />
+            <CreditCard className="w-6 h-6 text-white" />
           </div>
           <div>
             <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
-              {stats.totalAddresses}
+              {stats.totalPaymentMethods}
             </p>
             <p className="text-sm text-purple-700 dark:text-purple-300">
-              Direcciones Guardadas
+              Tarjetas Guardadas
             </p>
           </div>
         </div>

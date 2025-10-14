@@ -44,7 +44,7 @@ import {
   validateCheckoutRateLimit,
 } from "./validators";
 import { clearCartAction } from "@/features/storefront/cart/server/actions";
-import { createPaymentIntent, retrievePaymentIntent } from "@/core/payments";
+import { createPaymentIntent, retrievePaymentIntent, confirmPaymentIntent } from "@/core/payments";
 
 // 🎯 ORDER CREATION ACTIONS
 // =========================
@@ -632,8 +632,9 @@ export async function createCheckoutPaymentIntentAction(
     cartId?: string;
     userId?: string;
     customerEmail?: string;
+    stripeCustomerId?: string;
   }
-): Promise<{ success: boolean; clientSecret?: string; error?: string }> {
+): Promise<{ success: boolean; clientSecret?: string; paymentIntentId?: string; error?: string }> {
   const requestId = `createPaymentIntent-${Date.now()}-${Math.random()
     .toString(36)
     .slice(2, 8)}`;
@@ -643,14 +644,26 @@ export async function createCheckoutPaymentIntentAction(
     amount,
     currency,
     metadata,
+    customerId: metadata?.stripeCustomerId,
+    hasCustomerId: !!metadata?.stripeCustomerId,
   });
 
   try {
-    const result = await createPaymentIntent({
+    const paymentIntentParams = {
       amount,
       currency,
-      metadata,
-    });
+      customerId: metadata?.stripeCustomerId,
+      metadata: {
+        orderId: metadata?.orderId,
+        cartId: metadata?.cartId,
+        userId: metadata?.userId,
+        customerEmail: metadata?.customerEmail,
+      },
+    };
+
+    console.log("📤 [CHECKOUT ACTION] Calling createPaymentIntent with:", paymentIntentParams);
+
+    const result = await createPaymentIntent(paymentIntentParams);
 
     if (!result.success || result.error) {
       console.error("❌ [CHECKOUT ACTION] Payment intent creation failed:", {
@@ -667,11 +680,13 @@ export async function createCheckoutPaymentIntentAction(
     console.log("✅ [CHECKOUT ACTION] Payment intent created:", {
       requestId,
       hasClientSecret: !!result.clientSecret,
+      paymentIntentId: result.paymentIntentId,
     });
 
     return {
       success: true,
       clientSecret: result.clientSecret,
+      paymentIntentId: result.paymentIntentId,
     };
   } catch (error) {
     console.error("❌ [CHECKOUT ACTION] Error creating payment intent:", {
@@ -740,6 +755,104 @@ export async function retrievePaymentIntentAction(
         error instanceof Error
           ? error.message
           : "Failed to retrieve payment intent",
+    };
+  }
+}
+
+/**
+ * Confirm a payment intent with a saved payment method
+ * Used for one-click checkout with saved cards
+ */
+export async function confirmPaymentIntentAction(
+  paymentIntentId: string,
+  paymentMethodId: string,
+  customerId?: string
+): Promise<{ success: boolean; status?: string; error?: string }> {
+  const requestId = `confirmPaymentIntent-${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2, 8)}`;
+
+  console.log("💳 [CHECKOUT ACTION] Confirming payment intent with saved card:", {
+    requestId,
+    paymentIntentId,
+    paymentMethodId,
+    customerId,
+    hasCustomerId: !!customerId,
+  });
+
+  try {
+    // Validate authentication
+    const session = await getServerSession();
+    if (!session?.user?.id) {
+      console.error("❌ [CHECKOUT ACTION] User not authenticated:", {
+        requestId,
+      });
+
+      return {
+        success: false,
+        error: "Authentication required",
+      };
+    }
+
+    // If customerId is not provided, fetch it from the payment method in Stripe
+    let finalCustomerId = customerId;
+    if (!finalCustomerId) {
+      console.log("🔍 [CHECKOUT ACTION] No customerId provided, fetching from Stripe...");
+      try {
+        const stripe = await import("stripe").then((m) => m.default);
+        const stripeClient = new stripe(process.env.STRIPE_SECRET_KEY!, {
+          apiVersion: "2025-09-30.clover",
+        });
+        const pm = await stripeClient.paymentMethods.retrieve(paymentMethodId);
+        finalCustomerId =
+          typeof pm.customer === "string" ? pm.customer : undefined;
+
+        console.log("✅ [CHECKOUT ACTION] Fetched customerId from Stripe:", {
+          paymentMethodId,
+          customerId: finalCustomerId,
+        });
+      } catch (error) {
+        console.error("❌ [CHECKOUT ACTION] Failed to fetch customer from Stripe:", error);
+      }
+    }
+
+    // Confirm the payment with Stripe
+    const result = await confirmPaymentIntent(paymentIntentId, paymentMethodId, finalCustomerId);
+
+    if (!result.success || result.error) {
+      console.error("❌ [CHECKOUT ACTION] Payment confirmation failed:", {
+        requestId,
+        error: result.error,
+      });
+
+      return {
+        success: false,
+        error: result.error || "Payment confirmation failed",
+      };
+    }
+
+    console.log("✅ [CHECKOUT ACTION] Payment intent confirmed:", {
+      requestId,
+      status: result.status,
+    });
+
+    // The webhook will handle order creation when payment_intent.succeeded fires
+    return {
+      success: true,
+      status: result.status,
+    };
+  } catch (error) {
+    console.error("❌ [CHECKOUT ACTION] Error confirming payment intent:", {
+      requestId,
+      error: error instanceof Error ? error.message : error,
+    });
+
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to confirm payment intent",
     };
   }
 }

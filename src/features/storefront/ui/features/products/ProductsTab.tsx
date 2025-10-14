@@ -54,8 +54,21 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ onAddToCart }) => {
   const { addToWishlist, removeFromWishlist } = useWishlist();
 
   // Extract data
-  const products = data?.products || [];
+  const rawProducts = data?.products || [];
   const categories = data?.categories || [];
+  const wishlist = data?.wishlist || [];
+
+  // 💖 SINGLE SOURCE OF TRUTH - Derive isWishlisted from wishlist array
+  // This ensures perfect sync: if it's in wishlist array, button is on; if not, button is off
+  const products = useMemo(() => {
+    const wishlistProductIds = new Set(
+      wishlist.map((w: { productId: string }) => w.productId)
+    );
+    return rawProducts.map((product: ProductForCustomer) => ({
+      ...product,
+      isWishlisted: wishlistProductIds.has(product.id),
+    }));
+  }, [rawProducts, wishlist]);
 
   // 🎯 Component State - SUPER FAST!
   const [isFirstRender, setIsFirstRender] = useState(true);

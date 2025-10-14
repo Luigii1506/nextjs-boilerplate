@@ -260,6 +260,38 @@ enum AddressType {
   BOTH
 }
 
+// 💳 PAYMENT METHODS (Saved Cards)
+model PaymentMethod {
+  id        String   @id @default(cuid())
+  userId    String
+
+  // 🔐 Stripe Integration (PCI-Compliant - never store raw card data)
+  stripePaymentMethodId String  @unique  // Stripe PM ID (pm_xxx)
+  stripeCustomerId      String?          // Stripe Customer ID (cus_xxx)
+
+  // 💳 Card Information (from Stripe, safe to store)
+  brand         String           // visa, mastercard, amex, etc.
+  last4         String           // Last 4 digits
+  expiryMonth   Int              // 1-12
+  expiryYear    Int              // e.g., 2025
+
+  // 📋 Metadata
+  label         String?          // e.g., "Personal", "Business", "Main Card"
+  isDefault     Boolean @default(false)
+
+  // 📅 Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // 🔗 Relations
+  user          User     @relation("UserPaymentMethods", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isDefault])
+  @@index([stripePaymentMethodId])
+  @@map("payment_methods")
+}
+
 enum OrderStatus {
   PENDING    // Order created, payment pending
   CONFIRMED  // Payment confirmed, processing

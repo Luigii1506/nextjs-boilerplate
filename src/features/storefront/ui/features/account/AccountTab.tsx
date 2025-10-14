@@ -12,12 +12,13 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { User, Settings, ShoppingBag, MapPin, Shield } from "lucide-react";
+import { User, Settings, ShoppingBag, MapPin, Shield, CreditCard } from "lucide-react";
 
 // Import Context and Hooks
 import { useAuth } from "@/shared/hooks/useAuth";
 import { useOrders, type OrderSummary } from "@/features/storefront/orders";
 import { useAddresses, type Address as AddressData } from "@/features/storefront/addresses";
+import { usePaymentMethods, type PaymentMethod } from "@/features/storefront/payment-methods";
 
 // Import extracted account components
 import {
@@ -29,12 +30,14 @@ import {
   type AccountSection,
   type UserProfile,
 } from "../account";
+import { PaymentMethodsSection } from "./components/PaymentMethodsSection";
 
 // Account sections configuration
 const ACCOUNT_SECTIONS: AccountSection[] = [
   { id: "profile", label: "Mi Perfil", icon: User },
   { id: "orders", label: "Mis Pedidos", icon: ShoppingBag },
   { id: "addresses", label: "Direcciones", icon: MapPin },
+  { id: "payment-methods", label: "Métodos de Pago", icon: CreditCard },
   { id: "settings", label: "Configuración", icon: Settings },
   { id: "security", label: "Seguridad", icon: Shield },
 ];
@@ -105,8 +108,14 @@ const AccountTab: React.FC = () => {
   });
 
   const orders: OrderSummary[] = useMemo(() => {
+    console.log("🔍 [AccountTab] Orders data:", {
+      hasOrdersData: !!ordersData,
+      ordersData,
+      ordersCount: ordersData?.orders?.length || 0,
+      userId: user?.id,
+    });
     return ordersData?.orders || [];
-  }, [ordersData]);
+  }, [ordersData, user?.id]);
 
   // 📍 Addresses Data
   const { data: addressesData } = useAddresses();
@@ -114,6 +123,13 @@ const AccountTab: React.FC = () => {
   const addresses: AddressData[] = useMemo(() => {
     return addressesData?.addresses || [];
   }, [addressesData]);
+
+  // 💳 Payment Methods Data
+  const { data: paymentMethodsData } = usePaymentMethods();
+
+  const paymentMethods: PaymentMethod[] = useMemo(() => {
+    return paymentMethodsData?.paymentMethods || [];
+  }, [paymentMethodsData]);
 
   // 🚫 Show login prompt if not authenticated
   if (!isAuthenticated && !isAuthLoading) {
@@ -145,6 +161,7 @@ const AccountTab: React.FC = () => {
         <AccountStats
           orders={orders}
           addresses={addresses}
+          paymentMethods={paymentMethods}
           user={userProfile}
           allowAnimations={allowAnimations}
         />
@@ -166,6 +183,7 @@ const AccountTab: React.FC = () => {
               user={userProfile}
               orders={orders}
               addresses={addresses}
+              paymentMethods={paymentMethods}
               isEditing={isEditing}
               onEditToggle={setIsEditing}
               allowAnimations={allowAnimations}
@@ -218,6 +236,7 @@ interface AccountContentProps {
   user: UserProfile;
   orders: OrderSummary[];
   addresses: Address[];
+  paymentMethods: PaymentMethod[];
   isEditing: boolean;
   onEditToggle: (editing: boolean) => void;
   allowAnimations: boolean;
@@ -228,6 +247,7 @@ const AccountContent: React.FC<AccountContentProps> = ({
   user,
   orders,
   addresses,
+  paymentMethods,
   isEditing,
   onEditToggle,
   allowAnimations,
@@ -273,6 +293,9 @@ const AccountContent: React.FC<AccountContentProps> = ({
 
     case "addresses":
       return <AddressSection addresses={addresses} allowAnimations={allowAnimations} />;
+
+    case "payment-methods":
+      return <PaymentMethodsSection paymentMethods={paymentMethods} allowAnimations={allowAnimations} />;
 
     case "settings":
       return (

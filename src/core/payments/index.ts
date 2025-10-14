@@ -17,6 +17,7 @@ export {
   retrievePaymentIntent,
   updatePaymentIntent,
   cancelPaymentIntent,
+  confirmPaymentIntent,
   createStripeCustomer,
   retrieveStripeCustomer,
   attachPaymentMethod,
@@ -53,6 +54,7 @@ export * from "./types/stripe";
 // 🎯 PAYMENT COMPONENTS
 export { StripePaymentForm } from "./components/StripePaymentForm";
 export { StripeElementsWrapper } from "./components/StripeElementsWrapper";
+export { StripeSetupForm } from "./stripe/components/StripeSetupForm";
 export type { StripePaymentFormProps } from "./components/StripePaymentForm";
 export type { StripeElementsWrapperProps } from "./components/StripeElementsWrapper";
 

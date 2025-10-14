@@ -99,15 +99,7 @@ export async function createPaymentIntent(
     // Convert amount to cents
     const amountInCents = dollarsToCents(amount);
 
-    console.log("💳 [STRIPE SERVER] Creating payment intent:", {
-      amount: amountInCents,
-      currency,
-      customerId,
-      metadata,
-    });
-
-    // Create payment intent
-    const paymentIntent = await stripe.paymentIntents.create({
+    const createParams = {
       amount: amountInCents,
       currency: currency.toLowerCase(),
       ...PAYMENT_INTENT_CONFIG,
@@ -117,11 +109,25 @@ export async function createPaymentIntent(
         ...metadata,
         created_at: new Date().toISOString(),
       },
+    };
+
+    console.log("💳 [STRIPE SERVER] Creating payment intent:", {
+      amount: amountInCents,
+      currency,
+      customerId,
+      hasCustomerId: !!customerId,
+      metadata,
+      fullParams: createParams,
     });
 
-    console.log("✅ [STRIPE SERVER] Payment intent created:", {
+    // Create payment intent
+    const paymentIntent = await stripe.paymentIntents.create(createParams);
+
+    console.log("✅ [STRIPE SERVER] Payment intent created successfully:", {
       id: paymentIntent.id,
       status: paymentIntent.status,
+      customer: paymentIntent.customer,
+      hasCustomer: !!paymentIntent.customer,
     });
 
     return {
@@ -243,6 +249,93 @@ export async function cancelPaymentIntent(
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to cancel payment intent",
+    };
+  }
+}
+
+/**
+ * Confirm a payment intent with a saved payment method
+ */
+export async function confirmPaymentIntent(
+  paymentIntentId: string,
+  paymentMethodId: string,
+  customerId?: string
+): Promise<{ success: boolean; status?: string; error?: string }> {
+  try {
+    const stripe = getStripeServer();
+
+    if (!stripe) {
+      return {
+        success: false,
+        error: "Stripe not configured",
+      };
+    }
+
+    console.log("💳 [STRIPE SERVER] Confirming payment intent:", {
+      paymentIntentId,
+      paymentMethodId,
+      customerId,
+      hasCustomerId: !!customerId,
+    });
+
+    // If customerId is provided, first retrieve and check if we need to update the payment intent
+    if (customerId) {
+      console.log("🔍 [STRIPE SERVER] Retrieving existing payment intent...");
+      const existingIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+      console.log("📋 [STRIPE SERVER] Existing payment intent details:", {
+        id: existingIntent.id,
+        status: existingIntent.status,
+        customer: existingIntent.customer,
+        hasCustomer: !!existingIntent.customer,
+        customerMatch: existingIntent.customer === customerId,
+      });
+
+      // If payment intent doesn't have a customer, update it first
+      if (!existingIntent.customer) {
+        console.log("🔄 [STRIPE SERVER] Payment Intent has NO customer. Updating with:", customerId);
+        const updatedIntent = await stripe.paymentIntents.update(paymentIntentId, {
+          customer: customerId,
+        });
+        console.log("✅ [STRIPE SERVER] Payment Intent updated with customer:", {
+          id: updatedIntent.id,
+          customer: updatedIntent.customer,
+        });
+      } else if (existingIntent.customer !== customerId) {
+        console.warn("⚠️ [STRIPE SERVER] Payment Intent has different customer:", {
+          existingCustomer: existingIntent.customer,
+          providedCustomer: customerId,
+        });
+      } else {
+        console.log("✅ [STRIPE SERVER] Payment Intent already has correct customer");
+      }
+    } else {
+      console.warn("⚠️ [STRIPE SERVER] No customerId provided for confirmation");
+    }
+
+    // Now confirm with the payment method
+    console.log("🚀 [STRIPE SERVER] Confirming payment intent with payment method:", paymentMethodId);
+    const paymentIntent = await stripe.paymentIntents.confirm(paymentIntentId, {
+      payment_method: paymentMethodId,
+    });
+
+    console.log("✅ [STRIPE SERVER] Payment intent confirmed successfully:", {
+      id: paymentIntent.id,
+      status: paymentIntent.status,
+      customer: paymentIntent.customer,
+      payment_method: paymentIntent.payment_method,
+    });
+
+    return {
+      success: true,
+      status: paymentIntent.status,
+    };
+  } catch (error) {
+    console.error("❌ [STRIPE SERVER] Error confirming payment intent:", error);
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to confirm payment intent",
     };
   }
 }

@@ -17,11 +17,23 @@ import { ENV } from "@/core/config/environment";
  * Get Stripe configuration from environment
  */
 export const getStripeConfig = () => {
-  return {
+  const config = {
     publishableKey: ENV.stripe.publishableKey,
     secretKey: ENV.stripe.secretKey,
     webhookSecret: ENV.stripe.webhookSecret,
   };
+
+  // Debug log to trace config values
+  if (process.env.NODE_ENV === "development") {
+    console.log("🔍 [getStripeConfig] Called:", {
+      hasSecretKey: !!config.secretKey,
+      hasPublishableKey: !!config.publishableKey,
+      secretKeyPrefix: config.secretKey?.substring(0, 15) || "EMPTY",
+      publishableKeyPrefix: config.publishableKey?.substring(0, 15) || "EMPTY",
+    });
+  }
+
+  return config;
 };
 
 /**
@@ -29,7 +41,18 @@ export const getStripeConfig = () => {
  */
 export const isStripeConfigured = (): boolean => {
   const config = getStripeConfig();
-  return !!(config.publishableKey && config.secretKey);
+  const isConfigured = !!(config.publishableKey && config.secretKey);
+
+  // Debug log
+  if (process.env.NODE_ENV === "development") {
+    console.log("🔍 [isStripeConfigured] Result:", {
+      isConfigured,
+      hasSecretKey: !!config.secretKey,
+      hasPublishableKey: !!config.publishableKey,
+    });
+  }
+
+  return isConfigured;
 };
 
 /**
