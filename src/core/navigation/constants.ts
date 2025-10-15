@@ -19,6 +19,7 @@ import {
   CreditCard,
   ShoppingBag,
   Truck,
+  Store,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -201,6 +202,19 @@ export const NAVIGATION_REGISTRY: NavigationItem[] = [
     isCore: false,
     category: "admin",
     order: 23,
+  },
+  {
+    id: "seller-portal",
+    href: "/seller-portal",
+    icon: Store,
+    label: "Portal de Ventas",
+    description: "Gestión de órdenes, envíos y promociones",
+    requiresAuth: true,
+    requiredRole: null,
+    requiredFeature: "sellerPortal",
+    isCore: false,
+    category: "feature",
+    order: 24,
   },
 ];
 

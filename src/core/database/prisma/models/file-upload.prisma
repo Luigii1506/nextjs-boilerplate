@@ -4,60 +4,60 @@
 // ACTIVABLE: Se incluye solo si MODULE_FILE_UPLOAD=true
 
 model Upload {
-  id            String   @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // 📂 File Info
-  filename      String
-  originalName  String
-  mimeType      String
-  size          Int
-  
+  filename     String
+  originalName String
+  mimeType     String
+  size         Int
+
   // 🔗 Storage Info
-  provider      String   // "local" | "s3" | "cloudinary"
-  url           String
-  key           String?  // S3 key or storage identifier
-  bucket        String?  // S3 bucket name
-  
+  provider String // "local" | "s3" | "cloudinary"
+  url      String
+  key      String? // S3 key or storage identifier
+  bucket   String? // S3 bucket name
+
   // 👤 Relations
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  categoryId    String?
-  category      FileCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  categoryId String?
+  category   FileCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
   // 📝 Metadata
-  metadata      Json?    // Additional file metadata
-  isPublic      Boolean  @default(false)
-  tags          String[] // Array of tags for organization
-  
+  metadata Json? // Additional file metadata
+  isPublic Boolean  @default(false)
+  tags     String[] // Array of tags for organization
+
   // ⏰ Timestamps
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // 🗑️ Soft Delete
-  deletedAt     DateTime?
-  
-  @@map("uploads")
+  deletedAt DateTime?
+
   @@index([userId])
   @@index([provider])
   @@index([mimeType])
   @@index([createdAt])
+  @@map("uploads")
 }
 
 model FileCategory {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  description String?
-  icon        String?  // Icon identifier
-  maxSize     Int?     // Max file size in bytes
+  id           String   @id @default(cuid())
+  name         String   @unique
+  description  String?
+  icon         String? // Icon identifier
+  maxSize      Int? // Max file size in bytes
   allowedTypes String[] // Allowed MIME types
-  
+
   // 👤 Relations
-  uploads     Upload[]
-  
+  uploads Upload[]
+
   // ⏰ Timestamps
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("file_categories")
-} 
+}

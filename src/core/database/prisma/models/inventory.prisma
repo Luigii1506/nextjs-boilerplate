@@ -12,41 +12,52 @@ model Product {
   price       Decimal  @db.Decimal(10, 2) // Precio de venta
   cost        Decimal  @db.Decimal(10, 2) // Costo de adquisición
   stock       Int      @default(0)
-  minStock    Int      @default(0)        // Stock mínimo
-  maxStock    Int?                        // Stock máximo (opcional)
-  unit        String   @default("piece")  // unidad, kg, litro, etc.
-  barcode     String?  @unique           // Código de barras opcional
-  images      String[] @default([])       // Array de URLs de imágenes
+  minStock    Int      @default(0) // Stock mínimo
+  maxStock    Int? // Stock máximo (opcional)
+  unit        String   @default("piece") // unidad, kg, litro, etc.
+  barcode     String?  @unique // Código de barras opcional
+  images      String[] @default([]) // Array de URLs de imágenes
   isActive    Boolean  @default(true)
-  supplierId  String?                     // Proveedor opcional
-  tags        String[] @default([])       // Tags para filtrado
-  metadata    Json?                       // Metadata adicional flexible
+  supplierId  String? // Proveedor opcional
+  tags        String[] @default([]) // Tags para filtrado
+  metadata    Json? // Metadata adicional flexible
 
   // 📅 Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // 🔗 Relations
-  category      Category        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  supplier      Supplier?       @relation(fields: [supplierId], references: [id], onDelete: SetNull)
-  stockMovements StockMovement[] 
+  category       Category        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  supplier       Supplier?       @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  stockMovements StockMovement[]
 
   // 🧩 STOREFRONT RELATIONS (active when FEATURE_STOREFRONT=true)  
-  cartItems     CartItem[]     // MODULE: storefront
-  orderItems    OrderItem[]    // MODULE: storefront
+  cartItems     CartItem[] // MODULE: storefront
+  orderItems    OrderItem[] // MODULE: storefront
   wishlistItems WishlistItem[] // MODULE: storefront  
   reviews       ProductReview[] // MODULE: storefront
-  
+
   // 🛍️ STOREFRONT PUBLIC FIELDS
-  isPublic        Boolean  @default(false)  // Visible in storefront
-  publicPrice     Decimal? @db.Decimal(10, 2) // Public price (can be different from admin price)
-  publicDescription String?                   // Customer-facing description
-  publicImages    String[] @default([])       // Customer-facing images
-  seoTitle        String?                     // SEO optimized title
-  seoDescription  String?                     // SEO meta description
-  seoKeywords     String[] @default([])       // SEO keywords
-  featured        Boolean  @default(false)   // Featured product
-  
+  isPublic          Boolean  @default(false) // Visible in storefront
+  publicPrice       Decimal? @db.Decimal(10, 2) // Public price (can be different from admin price)
+  publicDescription String? // Customer-facing description
+  publicImages      String[] @default([]) // Customer-facing images
+  seoTitle          String? // SEO optimized title
+  seoDescription    String? // SEO meta description
+  seoKeywords       String[] @default([]) // SEO keywords
+  featured          Boolean  @default(false) // Featured product
+
+  // 🎯 PRODUCT LIFECYCLE (E-COMMERCE COMPLETE)
+  visibility        ProductVisibility @default(PUBLIC) // Visibility state
+  availableChannels SalesChannel[]    @default([]) // Where product can be sold
+
+  // 💰 ADVANCED PRICING (E-COMMERCE COMPLETE)
+  salePrice     Decimal?  @db.Decimal(10, 2) // Temporary sale price
+  saleStartAt   DateTime? // Sale start date
+  saleEndAt     DateTime? // Sale end date
+  volumePricing Json? // Volume discount tiers [{min: 10, price: 9.99}, ...]
+  channelConfig Json? // Channel-specific configs {ONLINE: {...}, POS: {...}}
+
   // 🧩 FUTURE: Other e-commerce relations
   // saleItems     SaleItem[]     // MODULE: pos
 
@@ -62,23 +73,23 @@ model Product {
 }
 
 model Category {
-  id          String   @id @default(cuid())
-  name        String   @unique
+  id          String  @id @default(cuid())
+  name        String  @unique
   description String?
-  parentId    String?                     // Para categorías anidadas
-  color       String?  @default("#6B7280") // Color hex para UI
-  icon        String?                      // Icono (lucide name o URL)
-  isActive    Boolean  @default(true)
-  sortOrder   Int      @default(0)        // Para ordenamiento custom
-  
+  parentId    String? // Para categorías anidadas
+  color       String? @default("#6B7280") // Color hex para UI
+  icon        String? // Icono (lucide name o URL)
+  isActive    Boolean @default(true)
+  sortOrder   Int     @default(0) // Para ordenamiento custom
+
   // 🛍️ STOREFRONT PUBLIC FIELDS
-  isPublic         Boolean  @default(false)  // Visible in storefront
-  publicDescription String?                   // Customer-facing description
-  publicImage      String?                    // Customer-facing banner image
-  seoTitle         String?                    // SEO optimized title
-  seoDescription   String?                    // SEO meta description
-  seoKeywords      String[] @default([])      // SEO keywords
-  featured         Boolean  @default(false)  // Featured category
+  isPublic          Boolean  @default(false) // Visible in storefront
+  publicDescription String? // Customer-facing description
+  publicImage       String? // Customer-facing banner image
+  seoTitle          String? // SEO optimized title
+  seoDescription    String? // SEO meta description
+  seoKeywords       String[] @default([]) // SEO keywords
+  featured          Boolean  @default(false) // Featured category
 
   // 📅 Timestamps
   createdAt DateTime @default(now())
@@ -98,25 +109,25 @@ model Category {
 }
 
 model Supplier {
-  id             String   @id @default(cuid())
-  name           String   @unique
-  contactPerson  String?
-  email          String?  @unique
-  phone          String?
-  website        String?
-  taxId          String?  @unique         // RFC, NIT, etc.
-  paymentTerms   Int      @default(30)    // días de crédito
-  isActive       Boolean  @default(true)
-  rating         Decimal? @db.Decimal(2, 1) // 1.0-5.0 estrellas
-  notes          String?
+  id            String   @id @default(cuid())
+  name          String   @unique
+  contactPerson String?
+  email         String?  @unique
+  phone         String?
+  website       String?
+  taxId         String?  @unique // RFC, NIT, etc.
+  paymentTerms  Int      @default(30) // días de crédito
+  isActive      Boolean  @default(true)
+  rating        Decimal? @db.Decimal(2, 1) // 1.0-5.0 estrellas
+  notes         String?
 
   // 📍 Address (embedded)
-  addressLine1   String?
-  addressLine2   String?
-  city           String?
-  state          String?
-  postalCode     String?
-  country        String?  @default("MX")
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  state        String?
+  postalCode   String?
+  country      String? @default("MX")
 
   // 📅 Timestamps
   createdAt DateTime @default(now())
@@ -131,16 +142,16 @@ model Supplier {
 }
 
 model StockMovement {
-  id            String              @id @default(cuid())
+  id            String            @id @default(cuid())
   productId     String
   type          StockMovementType
-  quantity      Int                 // Can be positive or negative
-  previousStock Int                 // Stock antes del movimiento
-  newStock      Int                 // Stock después del movimiento
+  quantity      Int // Can be positive or negative
+  previousStock Int // Stock antes del movimiento
+  newStock      Int // Stock después del movimiento
   reason        String
-  reference     String?             // Referencia externa (compra, venta, etc.)
-  userId        String              // Usuario que realizó el movimiento
-  
+  reference     String? // Referencia externa (compra, venta, etc.)
+  userId        String // Usuario que realizó el movimiento
+
   // 📅 Timestamps
   createdAt DateTime @default(now())
 
@@ -161,10 +172,24 @@ model StockMovement {
 
 // 📊 Enums
 enum StockMovementType {
-  IN          // Entrada de stock (compras, devoluciones)
-  OUT         // Salida de stock (ventas, pérdidas)
-  ADJUSTMENT  // Ajustes manuales de inventario
-  TRANSFER    // Transferencias entre ubicaciones (futuro)
+  IN // Entrada de stock (compras, devoluciones)
+  OUT // Salida de stock (ventas, pérdidas)
+  ADJUSTMENT // Ajustes manuales de inventario
+  TRANSFER // Transferencias entre ubicaciones (futuro)
+}
+
+// 🎯 PRODUCT LIFECYCLE ENUMS (E-COMMERCE COMPLETE)
+enum ProductVisibility {
+  HIDDEN // Not visible anywhere (draft, not ready)
+  PUBLIC // Visible to all customers (default)
+  INTERNAL // Only visible to staff (POS, inventory)
+  COMING_SOON // Visible but not purchasable yet (teaser)
+  DISCONTINUED // Product is discontinued (still visible for reference)
+}
+
+enum SalesChannel {
+  ONLINE // Available on storefront
+  POS // Available on point of sale
 }
 
 // 🧩 FUTURE: Additional models for advanced inventory features

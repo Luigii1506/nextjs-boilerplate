@@ -18,22 +18,22 @@ model User {
   banned     Boolean?
   banReason  String?
   banExpires DateTime?
-  
+
   // 🔗 Relations
-  sessions   Session[]
-  accounts   Account[]
+  sessions Session[]
+  accounts Account[]
 
   // 🧩 FUTURE: Modular relations (uncomment when modules are active)
-  uploads       Upload[]        // MODULE: file-upload
+  uploads        Upload[] // MODULE: file-upload
   stockMovements StockMovement[] // MODULE: inventory
-  
+
   // 🛒 STOREFRONT: E-commerce relations
-  cart           Cart?            @relation("UserCart")          // MODULE: storefront
-  wishlistItems  WishlistItem[]   @relation("UserWishlist")      // MODULE: storefront
-  orders         Order[]          @relation("UserOrders")        // MODULE: storefront
-  reviews        ProductReview[]  @relation("UserReviews")       // MODULE: storefront
-  addresses      Address[]        @relation("UserAddresses")     // MODULE: storefront
-  paymentMethods PaymentMethod[]  @relation("UserPaymentMethods") // MODULE: storefront + stripe
+  cart           Cart?           @relation("UserCart") // MODULE: storefront
+  wishlistItems  WishlistItem[]  @relation("UserWishlist") // MODULE: storefront
+  orders         Order[]         @relation("UserOrders") // MODULE: storefront
+  reviews        ProductReview[] @relation("UserReviews") // MODULE: storefront
+  addresses      Address[]       @relation("UserAddresses") // MODULE: storefront
+  paymentMethods PaymentMethod[] @relation("UserPaymentMethods") // MODULE: storefront + stripe
 
   @@map("user")
 }
@@ -83,4 +83,4 @@ model Verification {
   updatedAt  DateTime? @updatedAt
 
   @@map("verification")
-} 
+}

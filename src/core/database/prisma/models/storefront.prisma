@@ -4,30 +4,26 @@
 // Feature flag: storefront
 // Dependencies: inventory (core product data)
 
-
-
-
-
 // 🛒 SHOPPING CART
 model Cart {
-  id        String   @id @default(cuid())
-  sessionId String?  @unique  // For guest users
-  userId    String?  @unique  // For logged-in users
-  
+  id        String  @id @default(cuid())
+  sessionId String? @unique // For guest users
+  userId    String? @unique // For logged-in users
+
   // 📊 Cart totals (calculated)
-  subtotal   Decimal @db.Decimal(10, 2) @default(0)
-  taxAmount  Decimal @db.Decimal(10, 2) @default(0)
-  total      Decimal @db.Decimal(10, 2) @default(0)
-  
+  subtotal  Decimal @default(0) @db.Decimal(10, 2)
+  taxAmount Decimal @default(0) @db.Decimal(10, 2)
+  total     Decimal @default(0) @db.Decimal(10, 2)
+
   // 📅 Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   expiresAt DateTime // Auto-cleanup old carts
-  
+
   // 🔗 Relations
-  user  User? @relation("UserCart", fields: [userId], references: [id], onDelete: Cascade)
+  user  User?      @relation("UserCart", fields: [userId], references: [id], onDelete: Cascade)
   items CartItem[]
-  
+
   @@index([sessionId])
   @@index([userId])
   @@index([expiresAt])
@@ -39,19 +35,19 @@ model CartItem {
   cartId    String
   productId String
   quantity  Int    @default(1)
-  
+
   // 💰 Price snapshot (frozen at add time)
   unitPrice Decimal @db.Decimal(10, 2)
   total     Decimal @db.Decimal(10, 2)
-  
+
   // 📅 Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   // 🔗 Relations
   cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  
+
   @@unique([cartId, productId]) // One product per cart
   @@index([cartId])
   @@index([productId])
@@ -64,11 +60,11 @@ model WishlistItem {
   userId    String
   productId String
   addedAt   DateTime @default(now())
-  
+
   // 🔗 Relations
   user    User    @relation("UserWishlist", fields: [userId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  
+
   @@unique([userId, productId]) // One product per user wishlist
   @@index([userId])
   @@index([productId])
@@ -77,55 +73,63 @@ model WishlistItem {
 
 // 📦 ORDERS
 model Order {
-  id     String @id @default(cuid())
-  number String @unique // Human-readable order number
+  id     String  @id @default(cuid())
+  number String  @unique // Human-readable order number
   userId String? // Nullable for guest orders
-  
+
   // 📧 Contact info (for guest orders)
-  email      String
-  phone      String?
-  
+  email String
+  phone String?
+
   // 💰 Order totals
-  subtotal      Decimal @db.Decimal(10, 2)
-  taxAmount     Decimal @db.Decimal(10, 2)
-  shippingCost  Decimal @db.Decimal(10, 2) @default(0)
-  discountAmount Decimal @db.Decimal(10, 2) @default(0)
-  total         Decimal @db.Decimal(10, 2)
-  
+  subtotal       Decimal @db.Decimal(10, 2)
+  taxAmount      Decimal @db.Decimal(10, 2)
+  shippingCost   Decimal @default(0) @db.Decimal(10, 2)
+  discountAmount Decimal @default(0) @db.Decimal(10, 2)
+  total          Decimal @db.Decimal(10, 2)
+
+  // 🎁 Discount Breakdown (E-COMMERCE COMPLETE)
+  productDiscounts   Decimal @default(0) @db.Decimal(10, 2) // Product-level discounts (sale prices)
+  promotionDiscounts Decimal @default(0) @db.Decimal(10, 2) // Cart-level promotions (2x1, etc)
+  couponDiscounts    Decimal @default(0) @db.Decimal(10, 2) // Coupon codes
+  autoDiscounts      Decimal @default(0) @db.Decimal(10, 2) // Auto-applied discounts
+  appliedCouponCode  String? // Coupon code used (if any)
+  discountDetails    Json? // Full breakdown for reporting
+
   // 📊 Order status
-  status           OrderStatus @default(PENDING)
-  paymentStatus    PaymentStatus @default(PENDING)
+  status            OrderStatus       @default(PENDING)
+  paymentStatus     PaymentStatus     @default(PENDING)
   fulfillmentStatus FulfillmentStatus @default(UNFULFILLED)
-  
+
   // 📅 Important dates
-  placedAt       DateTime @default(now())
+  placedAt          DateTime  @default(now())
   estimatedDelivery DateTime?
-  shippedAt      DateTime?
-  deliveredAt    DateTime?
-  cancelledAt    DateTime?
-  
+  shippedAt         DateTime?
+  deliveredAt       DateTime?
+  cancelledAt       DateTime?
+
   // 📍 Shipping info  
-  trackingNumber    String?
-  shippingMethod    String?
-  shippingAddress   String? // JSON string with address data
-  
+  trackingNumber  String?
+  shippingMethod  String?
+  shippingAddress String? // JSON string with address data
+
   // 💳 Payment info
-  paymentMethod     String?
-  paymentIntentId   String? // Stripe, PayPal, etc.
-  
+  paymentMethod   String?
+  paymentIntentId String? // Stripe, PayPal, etc.
+
   // 📝 Notes
   customerNotes String?
   adminNotes    String?
-  
+
   // 📅 Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   // 🔗 Relations
-  user            User?            @relation("UserOrders", fields: [userId], references: [id], onDelete: SetNull)
-  items           OrderItem[]
-  statusHistory   OrderStatusHistory[]
-  
+  user          User?                @relation("UserOrders", fields: [userId], references: [id], onDelete: SetNull)
+  items         OrderItem[]
+  statusHistory OrderStatusHistory[]
+
   @@index([userId])
   @@index([status])
   @@index([paymentStatus])
@@ -139,23 +143,23 @@ model OrderItem {
   orderId   String
   productId String
   quantity  Int
-  
+
   // 💰 Price snapshot (frozen at order time)
-  unitPrice     Decimal @db.Decimal(10, 2)
-  total         Decimal @db.Decimal(10, 2)
-  
+  unitPrice Decimal @db.Decimal(10, 2)
+  total     Decimal @db.Decimal(10, 2)
+
   // 📦 Product snapshot (in case product changes)
-  productSku    String
-  productName   String
-  productImage  String?
-  
+  productSku   String
+  productName  String
+  productImage String?
+
   // 📅 Timestamps
   createdAt DateTime @default(now())
-  
+
   // 🔗 Relations
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
-  
+
   @@index([orderId])
   @@index([productId])
   @@map("order_items")
@@ -166,13 +170,13 @@ model OrderStatusHistory {
   orderId String
   status  OrderStatus
   notes   String?
-  
+
   // 📅 Timestamps
   createdAt DateTime @default(now())
-  
+
   // 🔗 Relations
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  
+
   @@index([orderId])
   @@index([createdAt])
   @@map("order_status_history")
@@ -184,28 +188,28 @@ model ProductReview {
   productId String
   userId    String
   orderId   String? // Link to verified purchase
-  
+
   // ⭐ Review content
-  rating     Int     // 1-5 stars
-  title      String?
-  content    String
-  
+  rating  Int // 1-5 stars
+  title   String?
+  content String
+
   // ✅ Verification
   isVerifiedPurchase Boolean @default(false)
   isPublished        Boolean @default(true)
-  
+
   // 👍 Community engagement
   helpfulCount   Int @default(0)
   unhelpfulCount Int @default(0)
-  
+
   // 📅 Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   // 🔗 Relations
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   user    User    @relation("UserReviews", fields: [userId], references: [id], onDelete: Cascade)
-  
+
   @@unique([productId, userId]) // One review per user per product
   @@index([productId])
   @@index([rating])
@@ -215,41 +219,188 @@ model ProductReview {
 
 // 📍 USER ADDRESSES
 model Address {
-  id        String      @id @default(cuid())
-  userId    String
+  id     String @id @default(cuid())
+  userId String
 
   // 📋 Address Information
-  type         AddressType @default(SHIPPING)
-  label        String?              // e.g., "Casa", "Oficina", "Casa de mamá"
-  firstName    String
-  lastName     String
-  company      String?
+  type      AddressType @default(SHIPPING)
+  label     String? // e.g., "Casa", "Oficina", "Casa de mamá"
+  firstName String
+  lastName  String
+  company   String?
 
   // 📍 Location
-  street       String
-  street2      String?              // Apartment, suite, etc.
-  city         String
-  state        String
-  zipCode      String
-  country      String  @default("MX")
+  street  String
+  street2 String? // Apartment, suite, etc.
+  city    String
+  state   String
+  zipCode String
+  country String  @default("MX")
 
   // 📞 Contact
-  phone        String
+  phone String
 
   // ⚙️ Settings
-  isDefault    Boolean @default(false)
-  isVerified   Boolean @default(false)
+  isDefault  Boolean @default(false)
+  isVerified Boolean @default(false)
 
   // 📅 Timestamps
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // 🔗 Relations
-  user         User     @relation("UserAddresses", fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation("UserAddresses", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([isDefault])
   @@map("addresses")
+}
+
+// 🎁 PROMOTIONS (Cart-Level Automatic Discounts)
+model Promotion {
+  id          String        @id @default(cuid())
+  name        String // Internal name (e.g., "Black Friday 2x1")
+  description String? // Description for customers
+  type        PromotionType // Type of promotion
+
+  // 💰 Discount Configuration
+  discountType  DiscountType // PERCENTAGE or FIXED_AMOUNT
+  discountValue Decimal      @db.Decimal(10, 2) // Percentage or amount
+
+  // 🎯 Targeting (what gets the discount)
+  appliesTo         AppliesTo @default(ALL_PRODUCTS) // What this promotion applies to
+  targetProductIds  String[]  @default([]) // Specific products (if appliesTo = SPECIFIC_PRODUCTS)
+  targetCategoryIds String[]  @default([]) // Specific categories (if appliesTo = SPECIFIC_CATEGORIES)
+
+  // 🎁 BOGO / BuyXGetY Configuration (JSON)
+  // Example: {buy: 2, get: 1, discountPercent: 100} for 2x1
+  // Example: {buy: 3, get: 1, discountPercent: 50} for 3x2 with 50% off
+  promoConfig Json?
+
+  // 📋 Conditions (when promotion applies)
+  minPurchaseAmount Decimal? @db.Decimal(10, 2) // Minimum cart value
+  minQuantity       Int? // Minimum quantity of items
+  maxUsesTotal      Int? // Total times this promo can be used
+  maxUsesPerUser    Int? // Times per user
+
+  // 🚀 Channel & Visibility
+  availableChannels SalesChannel[] @default([ONLINE, POS]) // Where this promo is active
+  isActive          Boolean        @default(true)
+  isPriority        Boolean        @default(false) // Priority promotions apply first
+
+  // 📅 Time Period
+  startAt DateTime?
+  endAt   DateTime?
+
+  // 📊 Usage Tracking
+  usageCount    Int     @default(0) // Total times used
+  totalDiscount Decimal @default(0) @db.Decimal(10, 2) // Total discount given
+
+  // 📅 Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 🔗 Relations
+  usageHistory PromotionUsage[]
+
+  @@index([type])
+  @@index([isActive])
+  @@index([startAt, endAt])
+  @@index([isPriority])
+  @@map("promotions")
+}
+
+// 📊 Promotion Usage Tracking
+model PromotionUsage {
+  id          String  @id @default(cuid())
+  promotionId String
+  orderId     String
+  userId      String?
+
+  // 💰 Discount Applied
+  discountAmount Decimal @db.Decimal(10, 2)
+
+  // 📅 Timestamps
+  createdAt DateTime @default(now())
+
+  // 🔗 Relations
+  promotion Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  @@index([promotionId])
+  @@index([orderId])
+  @@index([userId])
+  @@map("promotion_usage")
+}
+
+// 🎟️ COUPONS (User-Entered Codes)
+model Coupon {
+  id          String     @id @default(cuid())
+  code        String     @unique // User-facing code (e.g., "SUMMER2024")
+  name        String // Internal name
+  description String? // Description for customers
+  type        CouponType // Type of coupon
+
+  // 💰 Discount Configuration
+  discountType  DiscountType // PERCENTAGE or FIXED_AMOUNT
+  discountValue Decimal      @db.Decimal(10, 2)
+
+  // 🎯 Targeting (what gets the discount)
+  appliesTo         AppliesTo @default(ALL_PRODUCTS)
+  targetProductIds  String[]  @default([])
+  targetCategoryIds String[]  @default([])
+
+  // 📋 Conditions
+  minPurchaseAmount Decimal? @db.Decimal(10, 2) // Minimum cart value
+  maxDiscountAmount Decimal? @db.Decimal(10, 2) // Maximum discount cap
+  maxUsesTotal      Int? // Total times this coupon can be used
+  maxUsesPerUser    Int      @default(1) // Times per user (default 1)
+
+  // 🚀 Channel & Visibility
+  availableChannels SalesChannel[] @default([ONLINE]) // Usually online only
+  isActive          Boolean        @default(true)
+
+  // 📅 Time Period
+  startAt DateTime?
+  endAt   DateTime?
+
+  // 📊 Usage Tracking
+  usageCount    Int     @default(0)
+  totalDiscount Decimal @default(0) @db.Decimal(10, 2)
+
+  // 📅 Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 🔗 Relations
+  usageHistory CouponUsage[]
+
+  @@index([code])
+  @@index([isActive])
+  @@index([startAt, endAt])
+  @@map("coupons")
+}
+
+// 📊 Coupon Usage Tracking
+model CouponUsage {
+  id       String  @id @default(cuid())
+  couponId String
+  orderId  String
+  userId   String?
+
+  // 💰 Discount Applied
+  discountAmount Decimal @db.Decimal(10, 2)
+
+  // 📅 Timestamps
+  createdAt DateTime @default(now())
+
+  // 🔗 Relations
+  coupon Coupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
+
+  @@unique([couponId, orderId]) // One coupon per order
+  @@index([couponId])
+  @@index([orderId])
+  @@index([userId])
+  @@map("coupon_usage")
 }
 
 // 🏷️ ENUMS
@@ -262,29 +413,29 @@ enum AddressType {
 
 // 💳 PAYMENT METHODS (Saved Cards)
 model PaymentMethod {
-  id        String   @id @default(cuid())
-  userId    String
+  id     String @id @default(cuid())
+  userId String
 
   // 🔐 Stripe Integration (PCI-Compliant - never store raw card data)
-  stripePaymentMethodId String  @unique  // Stripe PM ID (pm_xxx)
-  stripeCustomerId      String?          // Stripe Customer ID (cus_xxx)
+  stripePaymentMethodId String  @unique // Stripe PM ID (pm_xxx)
+  stripeCustomerId      String? // Stripe Customer ID (cus_xxx)
 
   // 💳 Card Information (from Stripe, safe to store)
-  brand         String           // visa, mastercard, amex, etc.
-  last4         String           // Last 4 digits
-  expiryMonth   Int              // 1-12
-  expiryYear    Int              // e.g., 2025
+  brand       String // visa, mastercard, amex, etc.
+  last4       String // Last 4 digits
+  expiryMonth Int // 1-12
+  expiryYear  Int // e.g., 2025
 
   // 📋 Metadata
-  label         String?          // e.g., "Personal", "Business", "Main Card"
-  isDefault     Boolean @default(false)
+  label     String? // e.g., "Personal", "Business", "Main Card"
+  isDefault Boolean @default(false)
 
   // 📅 Timestamps
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // 🔗 Relations
-  user          User     @relation("UserPaymentMethods", fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation("UserPaymentMethods", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([isDefault])
@@ -293,29 +444,59 @@ model PaymentMethod {
 }
 
 enum OrderStatus {
-  PENDING    // Order created, payment pending
-  CONFIRMED  // Payment confirmed, processing
+  PENDING // Order created, payment pending
+  CONFIRMED // Payment confirmed, processing
   PROCESSING // Order being prepared
-  SHIPPED    // Order shipped
-  DELIVERED  // Order delivered
-  CANCELLED  // Order cancelled
-  REFUNDED   // Order refunded
+  SHIPPED // Order shipped
+  DELIVERED // Order delivered
+  CANCELLED // Order cancelled
+  REFUNDED // Order refunded
 }
 
 enum PaymentStatus {
-  PENDING    // Payment not processed
-  PAID       // Payment successful
-  FAILED     // Payment failed
-  REFUNDED   // Payment refunded
+  PENDING // Payment not processed
+  PAID // Payment successful
+  FAILED // Payment failed
+  REFUNDED // Payment refunded
   PARTIALLY_REFUNDED // Partial refund
 }
 
 enum FulfillmentStatus {
-  UNFULFILLED     // Not yet fulfilled
+  UNFULFILLED // Not yet fulfilled
   PARTIALLY_FULFILLED // Some items fulfilled
-  FULFILLED       // All items fulfilled
-  SHIPPED         // Items shipped
-  DELIVERED       // Items delivered
+  FULFILLED // All items fulfilled
+  SHIPPED // Items shipped
+  DELIVERED // Items delivered
+}
+
+// 🎁 PRICING & PROMOTIONS ENUMS (E-COMMERCE COMPLETE)
+
+enum PromotionType {
+  PERCENTAGE // X% off entire cart or specific items
+  FIXED_AMOUNT // $X off entire cart or specific items
+  BOGO // Buy One Get One (2x1)
+  BUY_X_GET_Y // Buy X Get Y free/discounted (3x2, etc)
+  FREE_SHIPPING // Free shipping promotion
+  BUNDLE // Bundle discount (buy together)
+}
+
+enum CouponType {
+  PERCENTAGE // X% off
+  FIXED_AMOUNT // $X off
+  FREE_SHIPPING // Free shipping
+  FIRST_ORDER // First order discount
+}
+
+enum DiscountType {
+  PERCENTAGE // Percentage discount (e.g., 20%)
+  FIXED_AMOUNT // Fixed amount discount (e.g., $10)
+}
+
+enum AppliesTo {
+  ALL_PRODUCTS // All products in cart
+  SPECIFIC_PRODUCTS // Only specific products
+  SPECIFIC_CATEGORIES // Only specific categories
+  ENTIRE_ORDER // Entire order (shipping, etc)
 }
 
 // 🔗 EXTENDED PRODUCT RELATIONS (add to inventory.prisma when storefront is active)

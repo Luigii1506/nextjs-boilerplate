@@ -25,6 +25,7 @@ export const FEATURE_FLAGS = {
   pos: process.env.FEATURE_POS === "true",
   ecommerce: process.env.FEATURE_ECOMMERCE === "true",
   suppliers: process.env.FEATURE_SUPPLIERS === "true",
+  sellerPortal: process.env.FEATURE_SELLER_PORTAL === "true",
   aiIntegration: process.env.FEATURE_AI === "true",
   analytics: process.env.FEATURE_ANALYTICS === "true",
 
