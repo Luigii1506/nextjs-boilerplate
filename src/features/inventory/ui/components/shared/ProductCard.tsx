@@ -8,7 +8,9 @@
  * Created: 2025-01-17 - Inventory Management Module
  */
 
-import React, { memo, useMemo } from "react";
+"use client";
+
+import React, { memo, useMemo, useState } from "react";
 import {
   MoreVertical,
   Edit3,
@@ -22,6 +24,9 @@ import {
   Calendar,
   User,
   ExternalLink,
+  Plus,
+  Minus,
+  History,
 } from "lucide-react";
 import { cn } from "@/shared/utils";
 import { INVENTORY_DEFAULTS, STOCK_STATUS } from "../../../constants";
@@ -107,13 +112,18 @@ const ProductImagePlaceholder: React.FC<{ name: string; className?: string }> =
 ProductImagePlaceholder.displayName = "ProductImagePlaceholder";
 
 // 🎯 Main component
-const ProductCard: React.FC<ProductCardProps> = memo(
+const ProductCard: React.FC<
+  ProductCardProps & {
+    onQuickAdjust?: (product: ProductWithRelations) => void;
+  }
+> = memo(
   ({
     product: baseProduct,
     showActions = true,
     onEdit,
     onDelete,
     onView,
+    onQuickAdjust,
     className,
   }) => {
     // 🧮 Compute enhanced properties
@@ -237,11 +247,11 @@ const ProductCard: React.FC<ProductCardProps> = memo(
         <div className="p-4 space-y-3">
           {/* Header: Name + SKU */}
           <div className="space-y-1">
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100 line-clamp-2 leading-tight">
+            <h3 className="font-semibold text-gray-900 dark:text-white line-clamp-2 leading-tight">
               {product.name}
             </h3>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-mono text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
+              <span className="text-xs font-mono text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/70 px-2 py-0.5 rounded border border-gray-200 dark:border-gray-600">
                 {product.sku}
               </span>
               <CategoryBadge
@@ -262,101 +272,31 @@ const ProductCard: React.FC<ProductCardProps> = memo(
             showLabel={false}
           />
 
-          {/* Pricing */}
+          {/* Pricing - Simplified */}
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600 dark:text-gray-300">
-                Precio venta
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                Precio
               </span>
-              <span className="font-semibold text-gray-900 dark:text-gray-100">
+              <span className="font-semibold text-lg text-gray-900 dark:text-white">
                 {product.formattedPrice}
               </span>
             </div>
-
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600 dark:text-gray-300">
-                Costo
-              </span>
-              <span className="text-sm text-gray-700 dark:text-gray-200">
-                {product.formattedCost}
-              </span>
-            </div>
-
-            {/* Profit margin indicator */}
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                Margen
-              </span>
-              <div className="flex items-center space-x-1">
-                {isHighProfit && (
-                  <TrendingUp className="w-3 h-3 text-green-600 dark:text-green-400" />
-                )}
-                {isLowProfit && (
-                  <TrendingDown className="w-3 h-3 text-red-600 dark:text-red-400" />
-                )}
-                <span
-                  className={cn(
-                    "text-xs font-medium",
-                    isHighProfit && "text-green-600 dark:text-green-400",
-                    isLowProfit && "text-red-600 dark:text-red-400",
-                    !isHighProfit &&
-                      !isLowProfit &&
-                      "text-gray-600 dark:text-gray-300"
-                  )}
-                >
-                  {profitMargin.toFixed(1)}%
-                </span>
-              </div>
-            </div>
           </div>
 
-          {/* Tags */}
-          {product.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {product.tags.slice(0, 3).map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                >
-                  <Tag className="w-2.5 h-2.5 mr-1" />
-                  {tag}
-                </span>
-              ))}
-              {product.tags.length > 3 && (
-                <span className="text-xs text-gray-500 dark:text-gray-400">
-                  +{product.tags.length - 3} más
-                </span>
-              )}
-            </div>
+          {/* Quick Stock Adjust Button */}
+          {onQuickAdjust && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onQuickAdjust(product);
+              }}
+              className="w-full mt-3 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center justify-center space-x-2 transition-all duration-200 hover:scale-[1.02] font-medium text-sm"
+            >
+              <Package className="w-4 h-4" />
+              <span>Ajustar Stock</span>
+            </button>
           )}
-
-          {/* Supplier info */}
-          {product.supplier && (
-            <div className="flex items-center space-x-2 text-xs text-gray-600 dark:text-gray-300">
-              <User className="w-3 h-3" />
-              <span className="truncate">{product.supplier.name}</span>
-            </div>
-          )}
-
-          {/* Last updated */}
-          <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-100 dark:border-gray-700">
-            <div className="flex items-center space-x-1">
-              <Calendar className="w-3 h-3" />
-              <span>
-                {new Intl.DateTimeFormat("es-MX", {
-                  day: "numeric",
-                  month: "short",
-                }).format(product.updatedAt)}
-              </span>
-            </div>
-
-            {/* Stock movements count */}
-            {product._count?.stockMovements !== undefined && (
-              <span className="text-xs">
-                {product._count.stockMovements} movimientos
-              </span>
-            )}
-          </div>
         </div>
       </div>
     );

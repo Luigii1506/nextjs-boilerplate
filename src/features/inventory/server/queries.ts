@@ -1033,6 +1033,31 @@ export async function getProductForStockMovement(
   });
 }
 
+export async function getAllStockMovementsQuery(): Promise<StockMovement[]> {
+  return await prisma.stockMovement.findMany({
+    include: {
+      product: {
+        select: {
+          id: true,
+          name: true,
+          sku: true,
+          images: true,
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+}
+
 // 📊 ANALYTICS QUERIES
 export async function getInventoryStatsQuery(): Promise<
   Record<string, number>

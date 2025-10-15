@@ -32,6 +32,7 @@ import {
   getSupplierWithProductsQuery,
   validateSupplierExists,
   addStockMovementQuery,
+  getAllStockMovementsQuery,
   getInventoryStatsQuery,
   getLowStockAlertsQuery,
   type ProductListItem,
@@ -853,6 +854,20 @@ export class StockMovementService {
     }
 
     return { success: true, newStock, previousStock };
+  }
+
+  static async getAll(): Promise<ActionResult<StockMovement[]>> {
+    try {
+      // Get all stock movements with product and user relations
+      const movements = await getAllStockMovementsQuery();
+
+      return {
+        success: true,
+        data: movements,
+      };
+    } catch (error) {
+      return this.handleError(error, "Error fetching stock movements");
+    }
   }
 
   private static async logStockAction(

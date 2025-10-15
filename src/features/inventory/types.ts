@@ -77,6 +77,17 @@ export interface StockMovement {
   reference: string | null;
   userId: string;
   createdAt: Date;
+  product?: {
+    id: string;
+    name: string;
+    sku: string;
+    images: string[];
+  };
+  user?: {
+    id: string;
+    name: string | null;
+    email: string;
+  };
 }
 
 // 📊 Enums
@@ -330,7 +341,7 @@ export interface UseInventoryQueryResult {
   deleteSupplier: (id: string) => Promise<ActionResult>;
 
   addStockMovement: (
-    data: CreateStockMovementInput
+    data: Omit<CreateStockMovementInput, "userId">
   ) => Promise<ActionResult<StockMovement>>;
 
   // Utilities

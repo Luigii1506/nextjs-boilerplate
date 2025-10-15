@@ -353,6 +353,11 @@ export function validateCreateStockMovement(
     } as CreateStockMovementInput;
   } catch (error) {
     if (error instanceof z.ZodError) {
+      // Log para debugging
+      console.error("[VALIDATION] Stock movement validation failed:", {
+        input,
+        issues: error.issues,
+      });
       throw new ValidationError(
         "Stock movement validation failed",
         error.issues

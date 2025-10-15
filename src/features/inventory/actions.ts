@@ -436,7 +436,7 @@ export async function deleteSupplierAction(
 
 // 📊 STOCK MOVEMENT ACTIONS
 export async function addStockMovementAction(
-  input: CreateStockMovementInput
+  input: Omit<CreateStockMovementInput, "userId">
 ): Promise<ActionResult<StockMovement>> {
   try {
     // 🔐 Authentication
@@ -446,8 +446,14 @@ export async function addStockMovementAction(
     }
     const userId = session.user.id;
 
+    // Add userId from session to input
+    const fullInput: CreateStockMovementInput = {
+      ...input,
+      userId,
+    };
+
     // 🎯 Delegate to service (thick layer)
-    const result = await StockMovementService.addMovement(input, userId);
+    const result = await StockMovementService.addMovement(fullInput, userId);
 
     // 🔄 Cache invalidation (UI concerns)
     if (result.success) {
@@ -510,6 +516,26 @@ export async function getLowStockAlertsAction(): Promise<
         error instanceof Error
           ? error.message
           : "Error al obtener alertas de stock",
+    };
+  }
+}
+
+export async function getStockMovementsAction(): Promise<
+  ActionResult<StockMovement[]>
+> {
+  try {
+    // 🚀 FAST - Direct service call
+    const result = await StockMovementService.getAll();
+
+    return result;
+  } catch (error) {
+    console.error("[Inventory] Action error - getStockMovements:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error al obtener movimientos de stock",
     };
   }
 }

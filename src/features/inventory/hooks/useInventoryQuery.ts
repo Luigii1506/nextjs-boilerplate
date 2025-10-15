@@ -23,6 +23,7 @@ import {
   addStockMovementAction,
   getInventoryStatsAction,
   getLowStockAlertsAction,
+  getStockMovementsAction,
 } from "../actions";
 import type {
   ProductWithRelations,
@@ -171,7 +172,7 @@ async function createCategory(
 }
 
 async function addStockMovement(
-  data: CreateStockMovementInput
+  data: Omit<CreateStockMovementInput, "userId">
 ): Promise<ActionResult> {
   return await addStockMovementAction(data);
 }
@@ -567,7 +568,7 @@ export function useInventoryQuery(
     deleteSupplier: async () => ({ success: false, error: "Not implemented" }), // TODO
 
     // Stock movement actions
-    addStockMovement: async (data: CreateStockMovementInput) => {
+    addStockMovement: async (data: Omit<CreateStockMovementInput, "userId">) => {
       return (await addStockMovementMutation.mutateAsync(
         data
       )) as ActionResult<StockMovement>;
@@ -656,6 +657,47 @@ export function useSuppliersQuery(
     data: query.data || [],
     suppliers: query.data || [],
     isLoading: query.isLoading,
+    error: query.error || null,
+    refetch: query.refetch,
+  };
+}
+
+/**
+ * Hook for stock movements only
+ * Independent query for MovementsTab - lazy loads when tab is active
+ */
+export function useStockMovementsQuery(
+  options: {
+    enabled?: boolean;
+    staleTime?: number;
+    refetchOnWindowFocus?: boolean;
+  } = {}
+) {
+  const {
+    enabled = true,
+    staleTime = 30000,
+    refetchOnWindowFocus = false,
+  } = options;
+
+  const query = useQuery({
+    queryKey: STOCK_MOVEMENTS_QUERY_KEYS.all(),
+    queryFn: () => getStockMovementsAction(),
+    enabled,
+    staleTime,
+    refetchOnWindowFocus,
+    select: (response) => {
+      if (response.success) {
+        return response.data || [];
+      }
+      throw new Error(response.error || "Error fetching stock movements");
+    },
+  });
+
+  return {
+    data: query.data || [],
+    movements: query.data || [],
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
     error: query.error || null,
     refetch: query.refetch,
   };

@@ -29,6 +29,7 @@ import { cn } from "@/shared/utils";
 import { useInventoryContext } from "../../../context";
 import { ProductCard, StockIndicator, CategoryBadge } from "..";
 import { TabTransition } from "../shared/TabTransition";
+import { QuickStockAdjustModal } from "../modals/QuickStockAdjustModal";
 import type { ProductWithRelations } from "../../../types";
 
 // 🔍 Advanced Search & Filter Component
@@ -267,7 +268,9 @@ const ProductFilters: React.FC = () => {
 };
 
 // 📦 Products Display Component
-const ProductsDisplay: React.FC = () => {
+const ProductsDisplay: React.FC<{
+  onQuickAdjust?: (product: ProductWithRelations) => void;
+}> = ({ onQuickAdjust }) => {
   const {
     inventory,
     viewMode,
@@ -373,6 +376,7 @@ const ProductsDisplay: React.FC = () => {
               onView={handleViewProduct}
               onEdit={handleEditProduct}
               onDelete={handleDeleteProduct}
+              onQuickAdjust={onQuickAdjust}
               className="h-full hover:scale-[1.02] transition-transform duration-200"
             />
           ) : (
@@ -463,6 +467,52 @@ const ProductsDisplay: React.FC = () => {
 
 // 🎯 OPTIMIZED PRODUCTS TAB - Memoized for SPA Performance
 const ProductsTab: React.FC = React.memo(function ProductsTab() {
+  const { inventory } = useInventoryContext();
+  const [stockAdjustModalOpen, setStockAdjustModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<ProductWithRelations | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleOpenStockAdjust = (product: ProductWithRelations) => {
+    setSelectedProduct(product);
+    setStockAdjustModalOpen(true);
+  };
+
+  const handleCloseStockAdjust = () => {
+    setStockAdjustModalOpen(false);
+    setSelectedProduct(null);
+  };
+
+  const handleSubmitStockAdjust = async (data: {
+    productId: string;
+    type: "IN" | "OUT" | "ADJUSTMENT";
+    quantity: number;
+    reason: string;
+  }) => {
+    try {
+      setIsSubmitting(true);
+
+      // Use the mutation from inventory hook - this will invalidate all caches including stock movements
+      const result = await inventory.addStockMovement({
+        productId: data.productId,
+        type: data.type,
+        quantity: data.quantity,
+        reason: data.reason,
+      });
+
+      if (!result.success) {
+        throw new Error(result.error || "Error al ajustar stock");
+      }
+
+      // The mutation already refetches and shows notification
+      handleCloseStockAdjust();
+    } catch (error) {
+      console.error("Error ajustando stock:", error);
+      alert(error instanceof Error ? error.message : "Error al ajustar stock");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <TabTransition isActive={true} transitionType="fade" delay={50}>
       <div className="space-y-6 p-6">
@@ -470,10 +520,10 @@ const ProductsTab: React.FC = React.memo(function ProductsTab() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fadeInUp stagger-1">
           <div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              📦 Gestión de Productos
+              Gestión de Productos
             </h2>
             <p className="text-gray-600 dark:text-gray-300">
-              Administra tu catálogo de productos, stock y precios
+              Administra tu catálogo y ajusta stock directamente
             </p>
           </div>
 
@@ -497,8 +547,17 @@ const ProductsTab: React.FC = React.memo(function ProductsTab() {
 
         {/* Products Display */}
         <div className="animate-fadeInScale stagger-3">
-          <ProductsDisplay />
+          <ProductsDisplay onQuickAdjust={handleOpenStockAdjust} />
         </div>
+
+        {/* Stock Adjustment Modal */}
+        <QuickStockAdjustModal
+          product={selectedProduct}
+          isOpen={stockAdjustModalOpen}
+          onClose={handleCloseStockAdjust}
+          onSubmit={handleSubmitStockAdjust}
+          isLoading={isSubmitting}
+        />
       </div>
     </TabTransition>
   );

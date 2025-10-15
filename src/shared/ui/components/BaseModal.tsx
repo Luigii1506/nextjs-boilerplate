@@ -20,6 +20,7 @@
 "use client";
 
 import React, { useEffect, ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/shared/utils";
 
@@ -112,8 +113,9 @@ export const BaseModal: React.FC<BaseModalProps> = ({
   // 🚫 Don't render if closed
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+  // 🎯 Render to body using portal
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999] overflow-y-auto">
       {/* 🌫️ Backdrop with fade animation */}
       <div
         className="fixed inset-0 bg-black/50 transition-opacity duration-300 animate-fadeIn"
@@ -121,7 +123,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
       />
 
       {/* 📦 Modal Container */}
-      <div className="flex min-h-full items-end sm:items-center justify-center p-4">
+      <div className="flex min-h-full items-center justify-center p-4">
         <div
           className={cn(
             "relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl",
@@ -186,6 +188,11 @@ export const BaseModal: React.FC<BaseModalProps> = ({
       </div>
     </div>
   );
+
+  // Render modal to document body
+  return typeof document !== "undefined"
+    ? createPortal(modalContent, document.body)
+    : null;
 };
 
 // 🎨 Pre-built action components for consistency

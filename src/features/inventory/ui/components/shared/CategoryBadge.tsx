@@ -115,18 +115,19 @@ const CategoryBadge: React.FC<CategoryBadgeProps> = memo(
           sizes.container,
           sizes.spacing,
 
-          // Dynamic colors
-          "border-opacity-20",
+          // Text color - better contrast in dark mode
+          "text-gray-700 dark:text-gray-200",
 
-          // Dark mode adaptations
-          "dark:border-opacity-30",
+          // Background and border
+          "bg-gray-100 dark:bg-gray-700/50",
+          "border-gray-300 dark:border-gray-600",
 
           // Interactive states
           clickable && [
             "cursor-pointer select-none",
-            "hover:scale-105 hover:shadow-md",
+            "hover:scale-105 hover:shadow-md hover:bg-gray-200 dark:hover:bg-gray-700",
             "active:scale-95",
-            "focus:outline-none focus:ring-2 focus:ring-offset-2",
+            "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500",
             "dark:focus:ring-offset-gray-800",
           ],
 
@@ -138,15 +139,6 @@ const CategoryBadge: React.FC<CategoryBadgeProps> = memo(
 
           className
         )}
-        style={
-          {
-            backgroundColor: categoryColor + "20", // 20% opacity
-            borderColor: categoryColor,
-            color: category.color ? textColor : undefined,
-            // Focus ring color
-            "--tw-ring-color": categoryColor,
-          } as React.CSSProperties
-        }
         onClick={clickable ? handleClick : undefined}
         role={clickable ? "button" : undefined}
         tabIndex={clickable ? 0 : undefined}
@@ -175,14 +167,11 @@ const CategoryBadge: React.FC<CategoryBadgeProps> = memo(
         {category._count?.products !== undefined && (
           <span
             className={cn(
-              "ml-1 px-1.5 py-0.5 text-xs font-bold rounded-full",
-              "bg-white bg-opacity-80 dark:bg-gray-800 dark:bg-opacity-80",
-              // Use a darker/lighter version of the category color
+              "ml-1 px-1.5 py-0.5 font-bold rounded-full",
+              "bg-gray-200 dark:bg-gray-600",
+              "text-gray-700 dark:text-gray-200",
               size === "sm" ? "text-[10px]" : "text-xs"
             )}
-            style={{
-              color: categoryColor,
-            }}
           >
             {category._count.products}
           </span>
