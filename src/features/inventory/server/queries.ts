@@ -305,37 +305,150 @@ export async function getProductsQuery(
   const page = pagination.page ?? 1;
   const limit = pagination.limit ?? 20;
 
-  // Build where clause
-  const where = {
-    ...(filters.search && {
+  // Build where clause with advanced filters support
+  const whereConditions: any[] = [];
+
+  // Search filter
+  if (filters.search) {
+    whereConditions.push({
       OR: [
         { name: { contains: filters.search, mode: "insensitive" as const } },
         { sku: { contains: filters.search, mode: "insensitive" as const } },
-        {
-          description: {
-            contains: filters.search,
-            mode: "insensitive" as const,
-          },
-        },
+        { description: { contains: filters.search, mode: "insensitive" as const } },
+        { barcode: { contains: filters.search, mode: "insensitive" as const } },
       ],
-    }),
-    ...(filters.categoryId && { categoryId: filters.categoryId }),
-    ...(filters.supplierId && { supplierId: filters.supplierId }),
-    ...(filters.isActive !== undefined && { isActive: filters.isActive }),
-    ...(filters.stockStatus && {
-      ...(filters.stockStatus === "OUT_OF_STOCK" && { stock: { equals: 0 } }),
-      ...(filters.stockStatus === "CRITICAL_STOCK" && {
-        stock: { lte: 2, gt: 0 },
-      }),
-      ...(filters.stockStatus === "LOW_STOCK" && {
-        AND: [
-          { stock: { gt: 2 } },
-          // Use raw SQL for stock <= minStock comparison
-        ],
-      }),
-      ...(filters.stockStatus === "IN_STOCK" && { stock: { gt: 0 } }),
-    }),
-  };
+    });
+  }
+
+  // Category filters - support both single and multi-select
+  if (filters.categoryId) {
+    whereConditions.push({ categoryId: filters.categoryId });
+  } else if (filters.categoryIds && filters.categoryIds.length > 0) {
+    whereConditions.push({ categoryId: { in: filters.categoryIds } });
+  }
+
+  // Supplier filters - support both single and multi-select
+  if (filters.supplierId) {
+    whereConditions.push({ supplierId: filters.supplierId });
+  } else if (filters.supplierIds && filters.supplierIds.length > 0) {
+    whereConditions.push({ supplierId: { in: filters.supplierIds } });
+  }
+
+  // Active status filter
+  if (filters.isActive !== undefined) {
+    whereConditions.push({ isActive: filters.isActive });
+  }
+
+  // Stock status filters - support multi-select
+  if (filters.stockStatuses && filters.stockStatuses.length > 0) {
+    const stockConditions = filters.stockStatuses.map((status) => {
+      switch (status) {
+        case "OUT_OF_STOCK":
+          return { stock: { equals: 0 } };
+        case "CRITICAL_STOCK":
+          return { stock: { lte: 2, gt: 0 } };
+        case "LOW_STOCK":
+          return { AND: [{ stock: { gt: 2 } }] };
+        case "IN_STOCK":
+          return { stock: { gt: 0 } };
+        default:
+          return {};
+      }
+    });
+    if (stockConditions.length > 0) {
+      whereConditions.push({ OR: stockConditions });
+    }
+  } else if (filters.stockStatus) {
+    // Single stock status (backward compatibility)
+    switch (filters.stockStatus) {
+      case "OUT_OF_STOCK":
+        whereConditions.push({ stock: { equals: 0 } });
+        break;
+      case "CRITICAL_STOCK":
+        whereConditions.push({ stock: { lte: 2, gt: 0 } });
+        break;
+      case "LOW_STOCK":
+        whereConditions.push({ stock: { gt: 2 } });
+        break;
+      case "IN_STOCK":
+        whereConditions.push({ stock: { gt: 0 } });
+        break;
+    }
+  }
+
+  // Stock range filters
+  if (filters.minStock !== undefined) {
+    whereConditions.push({ stock: { gte: filters.minStock } });
+  }
+  if (filters.maxStock !== undefined) {
+    whereConditions.push({ stock: { lte: filters.maxStock } });
+  }
+
+  // Price range filters
+  if (filters.minPrice !== undefined) {
+    whereConditions.push({ price: { gte: filters.minPrice } });
+  }
+  if (filters.maxPrice !== undefined) {
+    whereConditions.push({ price: { lte: filters.maxPrice } });
+  }
+
+  // Cost range filters
+  if (filters.minCost !== undefined) {
+    whereConditions.push({ cost: { gte: filters.minCost } });
+  }
+  if (filters.maxCost !== undefined) {
+    whereConditions.push({ cost: { lte: filters.maxCost } });
+  }
+
+  // Date range filters
+  if (filters.createdAfter) {
+    whereConditions.push({ createdAt: { gte: new Date(filters.createdAfter) } });
+  }
+  if (filters.createdBefore) {
+    whereConditions.push({ createdAt: { lte: new Date(filters.createdBefore) } });
+  }
+  if (filters.updatedAfter) {
+    whereConditions.push({ updatedAt: { gte: new Date(filters.updatedAfter) } });
+  }
+  if (filters.updatedBefore) {
+    whereConditions.push({ updatedAt: { lte: new Date(filters.updatedBefore) } });
+  }
+
+  // Advanced boolean filters
+  if (filters.hasImages !== undefined) {
+    whereConditions.push(
+      filters.hasImages
+        ? { images: { isEmpty: false } }
+        : { OR: [{ images: { isEmpty: true } }, { images: { equals: [] } }] }
+    );
+  }
+
+  if (filters.isOutOfStock) {
+    whereConditions.push({ stock: { equals: 0 } });
+  }
+
+  if (filters.hasLowStock) {
+    // Stock below minStock threshold
+    whereConditions.push({
+      AND: [
+        { stock: { gt: 0 } },
+        // This is an approximation - ideally use raw SQL for stock < minStock
+        { stock: { lte: 10 } },
+      ],
+    });
+  }
+
+  if (filters.hasCriticalStock) {
+    whereConditions.push({ stock: { lte: 2, gt: 0 } });
+  }
+
+  // Tags filter
+  if (filters.tags && filters.tags.length > 0) {
+    whereConditions.push({ tags: { hasSome: filters.tags } });
+  }
+
+  // Combine all conditions
+  const where = whereConditions.length > 0 ? { AND: whereConditions } : {};
 
   // Build order clause
   const orderBy = pagination.sortBy
@@ -1286,4 +1399,246 @@ export async function getSupplierWithProductsQuery(id: string) {
       },
     },
   });
+}
+
+// 📊 ANALYTICS & REPORTS QUERIES
+
+/**
+ * Get stock movements analytics by date range
+ * Returns aggregated data for charts
+ */
+export async function getStockMovementsByDateQuery(
+  startDate: Date,
+  endDate: Date
+): Promise<
+  Array<{
+    date: string;
+    IN: number;
+    OUT: number;
+    ADJUSTMENT: number;
+  }>
+> {
+  const movements = await prisma.stockMovement.findMany({
+    where: {
+      createdAt: {
+        gte: startDate,
+        lte: endDate,
+      },
+    },
+    select: {
+      type: true,
+      quantity: true,
+      createdAt: true,
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
+
+  // Group by date and type
+  const grouped = movements.reduce((acc, movement) => {
+    const date = movement.createdAt.toISOString().split("T")[0];
+    if (!acc[date]) {
+      acc[date] = { date, IN: 0, OUT: 0, ADJUSTMENT: 0, TRANSFER: 0 };
+    }
+    acc[date][movement.type] += movement.quantity;
+    return acc;
+  }, {} as Record<string, { date: string; IN: number; OUT: number; ADJUSTMENT: number; TRANSFER: number }>);
+
+  return Object.values(grouped).map(({ date, IN, OUT, ADJUSTMENT }) => ({
+    date,
+    IN,
+    OUT,
+    ADJUSTMENT,
+  }));
+}
+
+/**
+ * Get inventory value over time
+ */
+export async function getInventoryValueOverTimeQuery(
+  days: number = 30
+): Promise<
+  Array<{
+    date: string;
+    totalValue: number;
+    totalRetailValue: number;
+  }>
+> {
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+
+  // Get all stock movements in the range
+  const movements = await prisma.stockMovement.findMany({
+    where: {
+      createdAt: {
+        gte: startDate,
+        lte: endDate,
+      },
+    },
+    select: {
+      createdAt: true,
+      quantity: true,
+      type: true,
+      product: {
+        select: {
+          cost: true,
+          price: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
+
+  // Calculate cumulative value by date
+  const dailyValues: Record<
+    string,
+    { date: string; totalValue: number; totalRetailValue: number }
+  > = {};
+
+  let currentTotalValue = 0;
+  let currentRetailValue = 0;
+
+  movements.forEach((movement) => {
+    const date = movement.createdAt.toISOString().split("T")[0];
+    const cost = Number(movement.product.cost);
+    const price = Number(movement.product.price);
+    const change =
+      movement.type === "IN"
+        ? movement.quantity
+        : movement.type === "OUT"
+        ? -movement.quantity
+        : 0;
+
+    currentTotalValue += cost * change;
+    currentRetailValue += price * change;
+
+    dailyValues[date] = {
+      date,
+      totalValue: currentTotalValue,
+      totalRetailValue: currentRetailValue,
+    };
+  });
+
+  return Object.values(dailyValues);
+}
+
+/**
+ * Get top products by value
+ */
+export async function getTopProductsByValueQuery(
+  limit: number = 10
+): Promise<
+  Array<{
+    id: string;
+    name: string;
+    sku: string;
+    totalValue: number;
+    stock: number;
+  }>
+> {
+  const products = await prisma.product.findMany({
+    where: { isActive: true },
+    select: {
+      id: true,
+      name: true,
+      sku: true,
+      cost: true,
+      stock: true,
+    },
+    orderBy: {
+      stock: "desc",
+    },
+    take: limit * 2, // Get more to calculate and filter
+  });
+
+  return products
+    .map((product) => ({
+      id: product.id,
+      name: product.name,
+      sku: product.sku,
+      totalValue: Number(product.cost) * product.stock,
+      stock: product.stock,
+    }))
+    .sort((a, b) => b.totalValue - a.totalValue)
+    .slice(0, limit);
+}
+
+/**
+ * Get products by category with stats
+ */
+export async function getProductsByCategoryQuery(): Promise<
+  Array<{
+    categoryId: string;
+    categoryName: string;
+    productCount: number;
+    totalStock: number;
+    totalValue: number;
+  }>
+> {
+  const categories = await prisma.category.findMany({
+    where: { isActive: true },
+    include: {
+      products: {
+        where: { isActive: true },
+        select: {
+          cost: true,
+          stock: true,
+        },
+      },
+    },
+  });
+
+  return categories.map((category) => ({
+    categoryId: category.id,
+    categoryName: category.name,
+    productCount: category.products.length,
+    totalStock: category.products.reduce((sum, p) => sum + p.stock, 0),
+    totalValue: category.products.reduce(
+      (sum, p) => sum + Number(p.cost) * p.stock,
+      0
+    ),
+  }));
+}
+
+/**
+ * Get stock alerts summary
+ */
+export async function getStockAlertsSummaryQuery(): Promise<{
+  critical: number;
+  low: number;
+  ok: number;
+  outOfStock: number;
+}> {
+  const products = await prisma.product.findMany({
+    where: { isActive: true },
+    select: {
+      stock: true,
+      minStock: true,
+    },
+  });
+
+  const summary = {
+    critical: 0,
+    low: 0,
+    ok: 0,
+    outOfStock: 0,
+  };
+
+  products.forEach((product) => {
+    if (product.stock === 0) {
+      summary.outOfStock++;
+    } else if (product.stock < product.minStock * 0.5) {
+      summary.critical++;
+    } else if (product.stock <= product.minStock) {
+      summary.low++;
+    } else {
+      summary.ok++;
+    }
+  });
+
+  return summary;
 }

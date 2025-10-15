@@ -96,6 +96,30 @@ export const BaseModal: React.FC<BaseModalProps> = ({
     onConfirmClose?.();
   };
 
+  // 🔒 Block body scroll when modal is open
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Save original overflow style
+    const originalOverflow = document.body.style.overflow;
+    const originalPaddingRight = document.body.style.paddingRight;
+
+    // Get scrollbar width to prevent layout shift
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
+    // Block scroll and compensate for scrollbar
+    document.body.style.overflow = "hidden";
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+
+    // Cleanup: restore original styles
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.body.style.paddingRight = originalPaddingRight;
+    };
+  }, [isOpen]);
+
   // ⌨️ Keyboard support
   useEffect(() => {
     if (!isOpen) return;

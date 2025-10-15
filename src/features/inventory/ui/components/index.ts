@@ -49,6 +49,9 @@ export { default as SupplierDeleteModal } from "./SupplierDeleteModal";
 // export { default as SuppliersGrid } from "./SuppliersGrid";
 // export { default as SupplierModal } from "./SupplierModal";
 
-// 🔍 Search and filter components (TODO: Create these components)
-// export { default as InventoryFilters } from "./InventoryFilters";
-// export { default as ProductSearch } from "./ProductSearch";
+// 🔍 Search and filter components
+export { AdvancedFilterPanel, ActiveFiltersBar } from "./filters";
+
+// 🎯 Bulk operations components
+export { BulkSelectionBar, BulkActionsModal } from "./bulk";
+export type { BulkOperationData } from "./bulk";

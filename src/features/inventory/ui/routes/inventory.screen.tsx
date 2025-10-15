@@ -51,8 +51,9 @@ import {
   ProductsTab,
   CategoriesTab,
   SuppliersTab,
+  MovementsTab,
+  ReportsTab,
 } from "../components/tabs";
-import MovementsTab from "../components/tabs/MovementsTab";
 
 // 🎨 Icon mapping for tabs
 const ICON_MAP = {
@@ -359,7 +360,7 @@ const TabContent: React.FC = () => {
         <MovementsTab />
       </div>
 
-      {/* Reports Tab - Placeholder (Always mounted) */}
+      {/* Reports Tab - Always mounted */}
       <div
         className={cn(
           "transition-all duration-300 ease-out",
@@ -372,15 +373,7 @@ const TabContent: React.FC = () => {
             activeTab === "reports" ? "translateY(0)" : "translateY(20px)",
         }}
       >
-        <div className="p-6 text-center animate-fadeInUp">
-          <FileText className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4 animate-scaleIn" />
-          <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2 animate-slideInUp stagger-1">
-            📊 Reportes y Analytics
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400 animate-fadeInScale stagger-2">
-            Próximamente: Reportes detallados y análisis de datos
-          </p>
-        </div>
+        <ReportsTab />
       </div>
     </div>
   );

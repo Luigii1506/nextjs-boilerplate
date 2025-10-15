@@ -115,6 +115,9 @@ ProductImagePlaceholder.displayName = "ProductImagePlaceholder";
 const ProductCard: React.FC<
   ProductCardProps & {
     onQuickAdjust?: (product: ProductWithRelations) => void;
+    isSelected?: boolean;
+    onToggleSelection?: (productId: string) => void;
+    showCheckbox?: boolean;
   }
 > = memo(
   ({
@@ -124,6 +127,9 @@ const ProductCard: React.FC<
     onDelete,
     onView,
     onQuickAdjust,
+    isSelected = false,
+    onToggleSelection,
+    showCheckbox = false,
     className,
   }) => {
     // 🧮 Compute enhanced properties
@@ -166,16 +172,39 @@ const ProductCard: React.FC<
           className
         )}
       >
+        {/* ✅ Selection checkbox */}
+        {showCheckbox && onToggleSelection && (
+          <div className="absolute top-2 left-2 z-20">
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={(e) => {
+                e.stopPropagation();
+                onToggleSelection(product.id);
+              }}
+              onClick={(e) => e.stopPropagation()}
+              className={cn(
+                "w-5 h-5 rounded border-2 cursor-pointer transition-all",
+                "focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
+                isSelected
+                  ? "bg-blue-600 border-blue-600 text-white"
+                  : "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:border-blue-400"
+              )}
+            />
+          </div>
+        )}
+
         {/* 🚨 Status indicator */}
         {(product.isLowStock || product.isOutOfStock) && (
           <div
             className={cn(
-              "absolute top-2 left-2 z-10 px-2 py-1 rounded-full text-xs font-bold",
+              "absolute top-2 z-10 px-2 py-1 rounded-full text-xs font-bold",
               "flex items-center space-x-1 shadow-sm",
               stockConfig.bgColor,
               stockConfig.textColor,
               stockConfig.borderColor,
-              "border"
+              "border",
+              showCheckbox ? "left-9" : "left-2"
             )}
           >
             <AlertTriangle className="w-3 h-3" />

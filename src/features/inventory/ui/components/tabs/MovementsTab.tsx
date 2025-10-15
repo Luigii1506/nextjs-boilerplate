@@ -265,7 +265,8 @@ const MovementsTab: React.FC = React.memo(function MovementsTab() {
 
     // Sort by date (newest first)
     return filtered.sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
   }, [movements, searchTerm, selectedType]);
 
@@ -379,7 +380,9 @@ const MovementsTab: React.FC = React.memo(function MovementsTab() {
           <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/10 rounded-lg border border-red-200 dark:border-red-800 p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-red-700 dark:text-red-300">Salidas</p>
+                <p className="text-sm text-red-700 dark:text-red-300">
+                  Salidas
+                </p>
                 <p className="text-2xl font-bold text-red-900 dark:text-red-100 mt-1">
                   -{stats.totalOut}
                 </p>

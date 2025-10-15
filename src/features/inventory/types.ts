@@ -198,16 +198,43 @@ export interface CreateStockMovementInput {
 
 // 🔍 Query & Filter Types
 export interface ProductFilters {
+  // Search
   search?: string;
+
+  // Category & Supplier - now support multiple selections
   categoryId?: string;
+  categoryIds?: string[]; // Multi-select categories
   supplierId?: string;
+  supplierIds?: string[]; // Multi-select suppliers
+
+  // Stock filters
   stockStatus?: StockStatus;
-  isActive?: boolean;
-  tags?: string[];
-  minPrice?: number;
-  maxPrice?: number;
+  stockStatuses?: StockStatus[]; // Multi-select stock statuses
   minStock?: number;
   maxStock?: number;
+
+  // Price filters
+  minPrice?: number;
+  maxPrice?: number;
+  minCost?: number;
+  maxCost?: number;
+
+  // Status & tags
+  isActive?: boolean;
+  tags?: string[];
+
+  // Date filters
+  createdAfter?: Date | string;
+  createdBefore?: Date | string;
+  updatedAfter?: Date | string;
+  updatedBefore?: Date | string;
+
+  // Advanced filters
+  hasImages?: boolean;
+  hasLowStock?: boolean; // Stock below minStock
+  hasCriticalStock?: boolean; // Stock below criticalStock
+  isOutOfStock?: boolean; // Stock = 0
+  isFeatured?: boolean;
 }
 
 export interface CategoryFilters {
@@ -229,6 +256,69 @@ export interface StockMovementFilters {
   type?: StockMovementType;
   dateFrom?: Date;
   dateTo?: Date;
+}
+
+// 🎯 Bulk Operations Types
+export type BulkOperationType =
+  | "delete"
+  | "updateCategory"
+  | "updateSupplier"
+  | "updatePrice"
+  | "updateCost"
+  | "activate"
+  | "deactivate"
+  | "addTags"
+  | "removeTags";
+
+export interface BulkOperationInput {
+  productIds: string[];
+  operation: BulkOperationType;
+  data?: {
+    categoryId?: string;
+    supplierId?: string;
+    priceAdjustment?: {
+      type: "percentage" | "fixed";
+      value: number;
+      operation: "increase" | "decrease";
+    };
+    costAdjustment?: {
+      type: "percentage" | "fixed";
+      value: number;
+      operation: "increase" | "decrease";
+    };
+    tags?: string[];
+    isActive?: boolean;
+  };
+}
+
+export interface BulkOperationResult {
+  success: boolean;
+  totalSelected: number;
+  successCount: number;
+  failedCount: number;
+  errors?: Array<{ productId: string; error: string }>;
+}
+
+// 💾 Filter Presets Types
+export interface FilterPreset {
+  id: string;
+  name: string;
+  description?: string;
+  filters: ProductFilters;
+  color?: string;
+  icon?: string;
+  isDefault?: boolean;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+export interface SavePresetInput {
+  name: string;
+  description?: string;
+  filters: ProductFilters;
+  color?: string;
+  icon?: string;
+  isDefault?: boolean;
 }
 
 // 📄 Pagination Types
@@ -321,24 +411,15 @@ export interface UseInventoryQueryResult {
 
   // Actions
   createProduct: (data: CreateProductInput) => Promise<ActionResult<Product>>;
-  updateProduct: (data: UpdateProductInput) => Promise<ActionResult<Product>>;
+  updateProduct: (id: string, data: UpdateProductInput) => Promise<ActionResult<Product>>;
   deleteProduct: (id: string) => Promise<ActionResult>;
 
+  // Category - only createCategory, use useCreateCategory hook for update/delete
   createCategory: (
     data: CreateCategoryInput
   ) => Promise<ActionResult<Category>>;
-  updateCategory: (
-    data: UpdateCategoryInput
-  ) => Promise<ActionResult<Category>>;
-  deleteCategory: (id: string) => Promise<ActionResult>;
 
-  createSupplier: (
-    data: CreateSupplierInput
-  ) => Promise<ActionResult<Supplier>>;
-  updateSupplier: (
-    data: UpdateSupplierInput
-  ) => Promise<ActionResult<Supplier>>;
-  deleteSupplier: (id: string) => Promise<ActionResult>;
+  // Supplier - use useCreateSupplier hook for all CRUD operations
 
   addStockMovement: (
     data: Omit<CreateStockMovementInput, "userId">

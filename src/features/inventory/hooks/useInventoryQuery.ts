@@ -19,7 +19,12 @@ import {
   deleteProductAction,
   getCategoriesAction,
   createCategoryAction,
+  updateCategoryAction,
+  deleteCategoryAction,
   getSuppliersAction,
+  createSupplierAction,
+  updateSupplierAction,
+  deleteSupplierAction,
   addStockMovementAction,
   getInventoryStatsAction,
   getLowStockAlertsAction,
@@ -35,6 +40,7 @@ import type {
   CreateProductInput,
   UpdateProductInput,
   CreateCategoryInput,
+  CreateSupplierInput,
   CreateStockMovementInput,
   ProductFilters,
   CategoryFilters,
@@ -170,6 +176,9 @@ async function createCategory(
 ): Promise<ActionResult> {
   return await createCategoryAction(data);
 }
+
+// Note: Category and Supplier mutations are handled by dedicated hooks
+// (useCreateCategory.ts, useCreateSupplier.ts) for better separation of concerns
 
 async function addStockMovement(
   data: Omit<CreateStockMovementInput, "userId">
@@ -432,6 +441,9 @@ export function useInventoryQuery(
     },
   });
 
+  // Note: Category update/delete and Supplier CRUD mutations removed
+  // These are handled by dedicated hooks (useCreateCategory.ts, useCreateSupplier.ts)
+
   const addStockMovementMutation = useMutation({
     mutationFn: addStockMovement,
     onSuccess: (result) => {
@@ -553,19 +565,16 @@ export function useInventoryQuery(
       )) as ActionResult<void>;
     },
 
-    // Category actions
+    // Category actions - only createCategory remains
+    // Note: update/delete moved to useCreateCategory.ts for better separation
     createCategory: async (data: CreateCategoryInput) => {
       return (await createCategoryMutation.mutateAsync(
         data
       )) as ActionResult<CategoryWithRelations>;
     },
-    updateCategory: async () => ({ success: false, error: "Not implemented" }), // TODO
-    deleteCategory: async () => ({ success: false, error: "Not implemented" }), // TODO
 
-    // Supplier actions
-    createSupplier: async () => ({ success: false, error: "Not implemented" }), // TODO
-    updateSupplier: async () => ({ success: false, error: "Not implemented" }), // TODO
-    deleteSupplier: async () => ({ success: false, error: "Not implemented" }), // TODO
+    // Supplier actions - use dedicated hooks instead
+    // Note: All supplier CRUD moved to useCreateSupplier.ts
 
     // Stock movement actions
     addStockMovement: async (data: Omit<CreateStockMovementInput, "userId">) => {

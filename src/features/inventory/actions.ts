@@ -539,3 +539,697 @@ export async function getStockMovementsAction(): Promise<
     };
   }
 }
+
+// 📊 ANALYTICS ACTIONS
+
+export async function getStockMovementsByDateAction(
+  startDate: Date,
+  endDate: Date
+): Promise<
+  ActionResult<
+    Array<{
+      date: string;
+      IN: number;
+      OUT: number;
+      ADJUSTMENT: number;
+    }>
+  >
+> {
+  try {
+    const { getStockMovementsByDateQuery } = await import("./server/queries");
+    const data = await getStockMovementsByDateQuery(startDate, endDate);
+    return { success: true, data };
+  } catch (error) {
+    console.error("[Inventory] Action error - getStockMovementsByDate:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error al obtener movimientos por fecha",
+    };
+  }
+}
+
+export async function getInventoryValueOverTimeAction(
+  days: number = 30
+): Promise<
+  ActionResult<
+    Array<{
+      date: string;
+      totalValue: number;
+      totalRetailValue: number;
+    }>
+  >
+> {
+  try {
+    const { getInventoryValueOverTimeQuery } = await import("./server/queries");
+    const data = await getInventoryValueOverTimeQuery(days);
+    return { success: true, data };
+  } catch (error) {
+    console.error(
+      "[Inventory] Action error - getInventoryValueOverTime:",
+      error
+    );
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error al obtener valor del inventario",
+    };
+  }
+}
+
+export async function getTopProductsByValueAction(limit: number = 10): Promise<
+  ActionResult<
+    Array<{
+      id: string;
+      name: string;
+      sku: string;
+      totalValue: number;
+      stock: number;
+    }>
+  >
+> {
+  try {
+    const { getTopProductsByValueQuery } = await import("./server/queries");
+    const data = await getTopProductsByValueQuery(limit);
+    return { success: true, data };
+  } catch (error) {
+    console.error("[Inventory] Action error - getTopProductsByValue:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error al obtener productos principales",
+    };
+  }
+}
+
+export async function getProductsByCategoryAction(): Promise<
+  ActionResult<
+    Array<{
+      categoryId: string;
+      categoryName: string;
+      productCount: number;
+      totalStock: number;
+      totalValue: number;
+    }>
+  >
+> {
+  try {
+    const { getProductsByCategoryQuery } = await import("./server/queries");
+    const data = await getProductsByCategoryQuery();
+    return { success: true, data };
+  } catch (error) {
+    console.error("[Inventory] Action error - getProductsByCategory:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error al obtener productos por categoría",
+    };
+  }
+}
+
+export async function getStockAlertsSummaryAction(): Promise<
+  ActionResult<{
+    critical: number;
+    low: number;
+    ok: number;
+    outOfStock: number;
+  }>
+> {
+  try {
+    const { getStockAlertsSummaryQuery } = await import("./server/queries");
+    const data = await getStockAlertsSummaryQuery();
+    return { success: true, data };
+  } catch (error) {
+    console.error("[Inventory] Action error - getStockAlertsSummary:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error al obtener resumen de alertas",
+    };
+  }
+}
+
+// 🎯 BULK OPERATIONS ACTIONS
+// ============================
+
+/**
+ * Bulk update category for multiple products
+ */
+export async function bulkUpdateCategoryAction(
+  productIds: string[],
+  categoryId: string
+): Promise<ActionResult<{ successCount: number; failedCount: number }>> {
+  try {
+    await requireAuth();
+
+    if (!productIds || productIds.length === 0) {
+      return { success: false, error: "No se proporcionaron productos" };
+    }
+
+    if (!categoryId) {
+      return { success: false, error: "No se proporcionó una categoría" };
+    }
+
+    // Update all products
+    const { prisma } = await import("@/core/database/prisma");
+    const result = await prisma.product.updateMany({
+      where: {
+        id: { in: productIds },
+      },
+      data: {
+        categoryId,
+        updatedAt: new Date(),
+      },
+    });
+
+    // Invalidate caches
+    revalidateTag(INVENTORY_CACHE_TAGS.products);
+    revalidateTag(INVENTORY_CACHE_TAGS.categories);
+
+    return {
+      success: true,
+      data: {
+        successCount: result.count,
+        failedCount: productIds.length - result.count,
+      },
+    };
+  } catch (error) {
+    console.error("[Inventory] Action error - bulkUpdateCategory:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error al actualizar categorías",
+    };
+  }
+}
+
+/**
+ * Bulk update supplier for multiple products
+ */
+export async function bulkUpdateSupplierAction(
+  productIds: string[],
+  supplierId: string
+): Promise<ActionResult<{ successCount: number; failedCount: number }>> {
+  try {
+    await requireAuth();
+
+    if (!productIds || productIds.length === 0) {
+      return { success: false, error: "No se proporcionaron productos" };
+    }
+
+    if (!supplierId) {
+      return { success: false, error: "No se proporcionó un proveedor" };
+    }
+
+    // Update all products
+    const { prisma } = await import("@/core/database/prisma");
+    const result = await prisma.product.updateMany({
+      where: {
+        id: { in: productIds },
+      },
+      data: {
+        supplierId,
+        updatedAt: new Date(),
+      },
+    });
+
+    // Invalidate caches
+    revalidateTag(INVENTORY_CACHE_TAGS.products);
+    revalidateTag(INVENTORY_CACHE_TAGS.suppliers);
+
+    return {
+      success: true,
+      data: {
+        successCount: result.count,
+        failedCount: productIds.length - result.count,
+      },
+    };
+  } catch (error) {
+    console.error("[Inventory] Action error - bulkUpdateSupplier:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error al actualizar proveedores",
+    };
+  }
+}
+
+/**
+ * Bulk adjust prices for multiple products
+ */
+export async function bulkAdjustPricesAction(
+  productIds: string[],
+  adjustment: {
+    type: "percentage" | "fixed";
+    value: number;
+    operation: "increase" | "decrease";
+  }
+): Promise<ActionResult<{ successCount: number; failedCount: number }>> {
+  try {
+    await requireAuth();
+
+    if (!productIds || productIds.length === 0) {
+      return { success: false, error: "No se proporcionaron productos" };
+    }
+
+    if (!adjustment.value || adjustment.value <= 0) {
+      return { success: false, error: "Valor de ajuste inválido" };
+    }
+
+    // Get all products
+    const { prisma } = await import("@/core/database/prisma");
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds } },
+      select: { id: true, price: true },
+    });
+
+    // Calculate new prices
+    const updates = products.map((product) => {
+      const currentPrice = Number(product.price);
+      let newPrice: number;
+
+      if (adjustment.type === "percentage") {
+        const multiplier =
+          adjustment.operation === "increase"
+            ? 1 + adjustment.value / 100
+            : 1 - adjustment.value / 100;
+        newPrice = currentPrice * multiplier;
+      } else {
+        newPrice =
+          adjustment.operation === "increase"
+            ? currentPrice + adjustment.value
+            : currentPrice - adjustment.value;
+      }
+
+      // Ensure price doesn't go below 0
+      newPrice = Math.max(0, newPrice);
+
+      return { id: product.id, newPrice };
+    });
+
+    // Update products
+    let successCount = 0;
+    for (const update of updates) {
+      try {
+        await prisma.product.update({
+          where: { id: update.id },
+          data: { price: update.newPrice, updatedAt: new Date() },
+        });
+        successCount++;
+      } catch (error) {
+        console.error(`Error updating product ${update.id}:`, error);
+      }
+    }
+
+    // Invalidate cache
+    revalidateTag(INVENTORY_CACHE_TAGS.products);
+
+    return {
+      success: true,
+      data: {
+        successCount,
+        failedCount: productIds.length - successCount,
+      },
+    };
+  } catch (error) {
+    console.error("[Inventory] Action error - bulkAdjustPrices:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error al ajustar precios",
+    };
+  }
+}
+
+/**
+ * Bulk adjust costs for multiple products
+ */
+export async function bulkAdjustCostsAction(
+  productIds: string[],
+  adjustment: {
+    type: "percentage" | "fixed";
+    value: number;
+    operation: "increase" | "decrease";
+  }
+): Promise<ActionResult<{ successCount: number; failedCount: number }>> {
+  try {
+    await requireAuth();
+
+    if (!productIds || productIds.length === 0) {
+      return { success: false, error: "No se proporcionaron productos" };
+    }
+
+    if (!adjustment.value || adjustment.value <= 0) {
+      return { success: false, error: "Valor de ajuste inválido" };
+    }
+
+    // Get all products
+    const { prisma } = await import("@/core/database/prisma");
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds } },
+      select: { id: true, cost: true },
+    });
+
+    // Calculate new costs
+    const updates = products.map((product) => {
+      const currentCost = Number(product.cost);
+      let newCost: number;
+
+      if (adjustment.type === "percentage") {
+        const multiplier =
+          adjustment.operation === "increase"
+            ? 1 + adjustment.value / 100
+            : 1 - adjustment.value / 100;
+        newCost = currentCost * multiplier;
+      } else {
+        newCost =
+          adjustment.operation === "increase"
+            ? currentCost + adjustment.value
+            : currentCost - adjustment.value;
+      }
+
+      // Ensure cost doesn't go below 0
+      newCost = Math.max(0, newCost);
+
+      return { id: product.id, newCost };
+    });
+
+    // Update products
+    let successCount = 0;
+    for (const update of updates) {
+      try {
+        await prisma.product.update({
+          where: { id: update.id },
+          data: { cost: update.newCost, updatedAt: new Date() },
+        });
+        successCount++;
+      } catch (error) {
+        console.error(`Error updating product ${update.id}:`, error);
+      }
+    }
+
+    // Invalidate cache
+    revalidateTag(INVENTORY_CACHE_TAGS.products);
+
+    return {
+      success: true,
+      data: {
+        successCount,
+        failedCount: productIds.length - successCount,
+      },
+    };
+  } catch (error) {
+    console.error("[Inventory] Action error - bulkAdjustCosts:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error al ajustar costos",
+    };
+  }
+}
+
+/**
+ * Bulk activate/deactivate products
+ */
+export async function bulkUpdateActiveStatusAction(
+  productIds: string[],
+  isActive: boolean
+): Promise<ActionResult<{ successCount: number; failedCount: number }>> {
+  try {
+    await requireAuth();
+
+    if (!productIds || productIds.length === 0) {
+      return { success: false, error: "No se proporcionaron productos" };
+    }
+
+    const { prisma } = await import("@/core/database/prisma");
+    const result = await prisma.product.updateMany({
+      where: {
+        id: { in: productIds },
+      },
+      data: {
+        isActive,
+        updatedAt: new Date(),
+      },
+    });
+
+    // Invalidate cache
+    revalidateTag(INVENTORY_CACHE_TAGS.products);
+
+    return {
+      success: true,
+      data: {
+        successCount: result.count,
+        failedCount: productIds.length - result.count,
+      },
+    };
+  } catch (error) {
+    console.error("[Inventory] Action error - bulkUpdateActiveStatus:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error al actualizar estado",
+    };
+  }
+}
+
+/**
+ * Bulk activate products - convenience wrapper
+ */
+export async function bulkActivateProductsAction(
+  productIds: string[]
+): Promise<ActionResult<{ successCount: number; failedCount: number }>> {
+  return bulkUpdateActiveStatusAction(productIds, true);
+}
+
+/**
+ * Bulk deactivate products - convenience wrapper
+ */
+export async function bulkDeactivateProductsAction(
+  productIds: string[]
+): Promise<ActionResult<{ successCount: number; failedCount: number }>> {
+  return bulkUpdateActiveStatusAction(productIds, false);
+}
+
+/**
+ * Bulk delete products
+ */
+export async function bulkDeleteProductsAction(
+  productIds: string[]
+): Promise<ActionResult<{ successCount: number; failedCount: number }>> {
+  try {
+    await requireAuth();
+
+    if (!productIds || productIds.length === 0) {
+      return { success: false, error: "No se proporcionaron productos" };
+    }
+
+    const { prisma } = await import("@/core/database/prisma");
+
+    // Delete products (cascade will handle relations)
+    const result = await prisma.product.deleteMany({
+      where: {
+        id: { in: productIds },
+      },
+    });
+
+    // Invalidate caches
+    revalidateTag(INVENTORY_CACHE_TAGS.products);
+    revalidateTag(INVENTORY_CACHE_TAGS.stats);
+
+    return {
+      success: true,
+      data: {
+        successCount: result.count,
+        failedCount: productIds.length - result.count,
+      },
+    };
+  } catch (error) {
+    console.error("[Inventory] Action error - bulkDeleteProducts:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error al eliminar productos",
+    };
+  }
+}
+
+// ================================================================================
+// 📥 BULK IMPORT ACTIONS
+// ================================================================================
+
+export interface ImportProductInput {
+  sku: string;
+  name: string;
+  description?: string;
+  categoryName?: string;
+  supplierName?: string;
+  price: number;
+  cost: number;
+  stock: number;
+  minStock: number;
+  maxStock?: number;
+  unit?: string;
+  barcode?: string;
+  location?: string;
+  weight?: number;
+  isActive: boolean;
+}
+
+/**
+ * Importa productos masivamente desde CSV/Excel
+ */
+export async function bulkImportProductsAction(
+  products: ImportProductInput[]
+): Promise<
+  ActionResult<{
+    successCount: number;
+    failedCount: number;
+    errors: Array<{ sku: string; error: string }>;
+  }>
+> {
+  try {
+    await requireAuth();
+
+    const { prisma } = await import("@/core/database/prisma");
+    const errors: Array<{ sku: string; error: string }> = [];
+    let successCount = 0;
+
+    // Obtener categorías y proveedores existentes para mapear nombres a IDs
+    const categories = await prisma.category.findMany({
+      select: { id: true, name: true },
+    });
+
+    const suppliers = await prisma.supplier.findMany({
+      select: { id: true, name: true },
+    });
+
+    const categoryMap = new Map(
+      categories.map((c) => [c.name.toLowerCase(), c.id])
+    );
+    const supplierMap = new Map(
+      suppliers.map((s) => [s.name.toLowerCase(), s.id])
+    );
+
+    // Procesar cada producto
+    for (const productInput of products) {
+      try {
+        // Verificar si el SKU ya existe
+        const existingProduct = await prisma.product.findUnique({
+          where: { sku: productInput.sku },
+        });
+
+        if (existingProduct) {
+          errors.push({
+            sku: productInput.sku,
+            error: "El SKU ya existe en el sistema",
+          });
+          continue;
+        }
+
+        // Mapear categoría y proveedor
+        let categoryId: string | undefined;
+        let supplierId: string | undefined;
+
+        if (productInput.categoryName) {
+          categoryId = categoryMap.get(productInput.categoryName.toLowerCase());
+          if (!categoryId) {
+            // Crear categoría si no existe
+            const newCategory = await prisma.category.create({
+              data: {
+                name: productInput.categoryName,
+                description: `Categoría creada automáticamente durante importación`,
+              },
+            });
+            categoryId = newCategory.id;
+            categoryMap.set(
+              productInput.categoryName.toLowerCase(),
+              categoryId
+            );
+          }
+        }
+
+        if (productInput.supplierName) {
+          supplierId = supplierMap.get(productInput.supplierName.toLowerCase());
+          if (!supplierId) {
+            // Crear proveedor si no existe
+            const newSupplier = await prisma.supplier.create({
+              data: {
+                name: productInput.supplierName,
+                contactInfo: { email: "", phone: "" },
+              },
+            });
+            supplierId = newSupplier.id;
+            supplierMap.set(
+              productInput.supplierName.toLowerCase(),
+              supplierId
+            );
+          }
+        }
+
+        // Crear el producto
+        await prisma.product.create({
+          data: {
+            sku: productInput.sku,
+            name: productInput.name,
+            description: productInput.description || "",
+            categoryId: categoryId || categories[0]?.id, // Usar primera categoría como fallback
+            supplierId: supplierId,
+            price: productInput.price,
+            cost: productInput.cost,
+            stock: productInput.stock,
+            minStock: productInput.minStock,
+            maxStock: productInput.maxStock,
+            unit: productInput.unit || "piece",
+            barcode: productInput.barcode,
+            location: productInput.location,
+            weight: productInput.weight,
+            isActive: productInput.isActive,
+          },
+        });
+
+        successCount++;
+      } catch (error) {
+        errors.push({
+          sku: productInput.sku,
+          error: error instanceof Error ? error.message : "Error desconocido",
+        });
+      }
+    }
+
+    // Invalidar caches
+    revalidateTag(INVENTORY_CACHE_TAGS.products);
+    revalidateTag(INVENTORY_CACHE_TAGS.categories);
+    revalidateTag(INVENTORY_CACHE_TAGS.suppliers);
+    revalidateTag(INVENTORY_CACHE_TAGS.stats);
+
+    return {
+      success: true,
+      data: {
+        successCount,
+        failedCount: errors.length,
+        errors,
+      },
+    };
+  } catch (error) {
+    console.error("[Inventory] Action error - bulkImportProducts:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error al importar productos",
+    };
+  }
+}

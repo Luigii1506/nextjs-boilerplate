@@ -11,7 +11,5 @@ export { default as OverviewTab } from "./OverviewTab";
 export { default as ProductsTab } from "./ProductsTab";
 export { default as CategoriesTab } from "./CategoriesTab";
 export { default as SuppliersTab } from "./SuppliersTab";
-
-// TODO: Export other tabs as they're created
-// export { default as MovementsTab } from "./MovementsTab";
-// export { default as ReportsTab } from "./ReportsTab";
+export { default as MovementsTab } from "./MovementsTab";
+export { default as ReportsTab } from "./ReportsTab";
