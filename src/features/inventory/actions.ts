@@ -23,10 +23,11 @@ import { INVENTORY_CACHE_TAGS } from "./constants";
 import {
   ProductService,
   CategoryService,
-  SupplierService,
   StockMovementService,
   InventoryAnalyticsService,
 } from "./server/service";
+// SupplierService now from shared module
+import { SupplierService } from "@/features/suppliers/server/service";
 import type {
   ActionResult,
   Product,
@@ -378,7 +379,8 @@ export async function updateSupplierAction(
     const userId = session.user.id;
 
     // 🎯 Delegate to service (thick layer)
-    const result = await SupplierService.update(id, input, userId);
+    // Convert to UpdateSupplierInput by adding id
+    const result = await SupplierService.update(id, { ...input, id }, userId);
 
     // 🔄 Cache invalidation (UI concerns)
     if (result.success) {

@@ -15,14 +15,15 @@
  *
  * Created: 2025-01-18 - Extracted from AdminLayout
  * Updated: 2025-01-18 - Fixed hydration issue
+ * Fixed: 2025-01-17 - Removed dynamic import to fix chunk loading error
  */
 
 "use client";
 
 import React, { Suspense } from "react";
-import dynamic from "next/dynamic";
 import { cn } from "@/shared/utils";
 import { LogoutButton } from "./LogoutButton";
+import Navigation from "./Navigation";
 import type { UserRole } from "@/core/navigation";
 
 // 🎯 Types
@@ -33,26 +34,23 @@ interface AdminSidebarProps {
   ariaControls?: string;
 }
 
-// 🚀 Dynamic import to prevent hydration issues
-const Navigation = dynamic(() => import("./Navigation"), {
-  ssr: false, // Disable SSR for this component to prevent hydration mismatch
-  loading: () => (
-    <nav className="mt-8 space-y-6" suppressHydrationWarning>
-      <div
-        className="animate-pulse space-y-3"
-        role="status"
-        aria-label="Cargando navegación"
-      >
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div
-            key={i}
-            className="h-10 bg-slate-200 dark:bg-slate-600 rounded-lg animate-pulse"
-          />
-        ))}
-      </div>
-    </nav>
-  ),
-});
+// 🎯 Loading skeleton component
+const NavigationSkeleton = () => (
+  <nav className="mt-8 space-y-6" suppressHydrationWarning>
+    <div
+      className="animate-pulse space-y-3"
+      role="status"
+      aria-label="Cargando navegación"
+    >
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div
+          key={i}
+          className="h-10 bg-slate-200 dark:bg-slate-600 rounded-lg animate-pulse"
+        />
+      ))}
+    </div>
+  </nav>
+);
 
 /**
  * 🎯 AdminSidebar Component
@@ -102,25 +100,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           </div>
         </div>
 
-        {/* ⚡ Dynamic Navigation to Prevent Hydration Issues */}
-        <Suspense
-          fallback={
-            <nav className="mt-8 space-y-6" suppressHydrationWarning>
-              <div
-                className="animate-pulse space-y-3"
-                role="status"
-                aria-label="Cargando navegación"
-              >
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-10 bg-slate-200 dark:bg-slate-600 rounded-lg animate-pulse"
-                  />
-                ))}
-              </div>
-            </nav>
-          }
-        >
+        {/* ⚡ Navigation with Suspense boundary */}
+        <Suspense fallback={<NavigationSkeleton />}>
           <Navigation userRole={userRole} />
         </Suspense>
 

@@ -61,8 +61,10 @@ export {
   SUPPLIERS_QUERY_KEYS,
   STOCK_MOVEMENTS_QUERY_KEYS,
   useCategoriesQuery,
-  useSuppliersQuery,
 } from "./useInventoryQuery";
+
+// 🚛 Supplier hooks (re-exported from shared module)
+export { useSuppliersQuery } from "@/features/suppliers";
 
 // 🔧 Utility hooks (will be created later)
 // export { useStockCalculations } from "./useStockCalculations";

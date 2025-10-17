@@ -209,7 +209,7 @@ export function getStripeEnvironmentConfig() {
     });
   }
 
-  return config as const;
+  return config;
 }
 
 // 🛍️ ECOMMERCE CONFIGURATION (future use)

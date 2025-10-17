@@ -3,9 +3,9 @@
  * ==============================
  *
  * Hooks personalizados para CRUD de proveedores con TanStack Query
- * Incluye optimistic updates, cache invalidation y notificaciones
+ * SHARED module - can be used by inventory, pos, services, etc.
  *
- * Created: 2025-01-18 - Supplier Management Hooks
+ * Created: 2025-01-17 - Refactored from inventory to shared module
  */
 
 "use client";
@@ -16,13 +16,17 @@ import {
   updateSupplierAction,
   deleteSupplierAction,
 } from "../actions";
-import { INVENTORY_QUERY_KEYS } from "./useInventoryQuery";
-import type { CreateSupplierInput, SupplierWithRelations } from "../types";
+import { SUPPLIER_QUERY_KEYS } from "../constants";
+import type {
+  CreateSupplierInput,
+  UpdateSupplierInput,
+  SupplierWithRelations,
+} from "@/shared/types/supplier";
 import { useNotifications } from "@/shared/hooks/useNotifications";
 
 // 🎯 Hook options
 interface UseSupplierMutationOptions {
-  onSuccess?: (supplier?: SupplierWithRelations) => void;
+  onSuccess?: (supplier?: SupplierWithRelations<unknown>) => void;
   onError?: (error: string) => void;
   optimisticUpdate?: boolean;
 }
@@ -36,10 +40,7 @@ interface UseCreateSupplierReturn {
 }
 
 interface UseUpdateSupplierReturn {
-  updateSupplier: (
-    id: string,
-    data: CreateSupplierInput & { isActive?: boolean }
-  ) => Promise<void>;
+  updateSupplier: (id: string, data: UpdateSupplierInput) => Promise<void>;
   isLoading: boolean;
   error: string | null;
   reset: () => void;
@@ -61,7 +62,6 @@ export function useCreateSupplier(
 
   const { onSuccess, onError, optimisticUpdate = true } = options;
 
-  // 🚀 Create Supplier Mutation
   const mutation = useMutation({
     mutationFn: async (data: CreateSupplierInput) => {
       const result = await createSupplierAction(data);
@@ -76,19 +76,16 @@ export function useCreateSupplier(
     // 🎯 Optimistic Update (Optional)
     onMutate: optimisticUpdate
       ? async (newSupplier: CreateSupplierInput) => {
-          // Cancel any outgoing refetches
           await queryClient.cancelQueries({
-            queryKey: INVENTORY_QUERY_KEYS.suppliers(),
+            queryKey: SUPPLIER_QUERY_KEYS.ALL,
           });
 
-          // Snapshot the previous value
           const previousSuppliers = queryClient.getQueryData(
-            INVENTORY_QUERY_KEYS.suppliers()
+            SUPPLIER_QUERY_KEYS.ALL
           );
 
-          // Optimistically update to the new value
           if (previousSuppliers) {
-            const optimisticSupplier: SupplierWithRelations = {
+            const optimisticSupplier: SupplierWithRelations<unknown> = {
               id: `optimistic-${Date.now()}`,
               ...newSupplier,
               contactPerson: newSupplier.contactPerson || null,
@@ -111,58 +108,21 @@ export function useCreateSupplier(
               _count: { products: 0 },
             };
 
-            queryClient.setQueryData(
-              INVENTORY_QUERY_KEYS.suppliers(),
-              (old: unknown) => {
-                const oldData = old as {
-                  data?: { suppliers?: SupplierWithRelations[] };
-                };
-                return {
-                  ...oldData,
-                  data: {
-                    ...oldData?.data,
-                    suppliers: [
-                      ...(oldData?.data?.suppliers || []),
-                      optimisticSupplier,
-                    ],
-                  },
-                };
-              }
-            );
+            queryClient.setQueryData(SUPPLIER_QUERY_KEYS.ALL, (old: any) => [
+              ...(old || []),
+              optimisticSupplier,
+            ]);
           }
 
-          // Return a context with the previous and new data
           return { previousSuppliers };
         }
       : undefined,
 
     // 🎯 Success Handler
     onSuccess: (supplier) => {
-      // 🔄 Invalidate and refetch relevant queries
+      // 🔄 Invalidate all supplier queries
       queryClient.invalidateQueries({
-        queryKey: INVENTORY_QUERY_KEYS.suppliers(),
-      });
-      queryClient.invalidateQueries({
-        queryKey: INVENTORY_QUERY_KEYS.stats(),
-      });
-      // ✅ Invalidate ALL supplier list variations
-      queryClient.invalidateQueries({
-        predicate: (query) => {
-          const key = query.queryKey;
-          return (
-            Array.isArray(key) &&
-            key[0] === "inventory" &&
-            key[1] === "suppliers"
-          );
-        },
-      });
-      // ✅ Invalidate products since they depend on suppliers
-      queryClient.invalidateQueries({
-        queryKey: INVENTORY_QUERY_KEYS.products(),
-      });
-      // ✅ Invalidate the root inventory cache
-      queryClient.invalidateQueries({
-        queryKey: INVENTORY_QUERY_KEYS.all,
+        queryKey: SUPPLIER_QUERY_KEYS.ALL,
       });
 
       // 📢 Success notification
@@ -170,8 +130,7 @@ export function useCreateSupplier(
         success(`"${supplier.name}" fue creado exitosamente.`, {
           duration: 5000,
         });
-        // 🎯 Custom success handler
-        onSuccess?.(supplier as SupplierWithRelations);
+        onSuccess?.(supplier as SupplierWithRelations<unknown>);
       } else {
         success("Proveedor fue creado exitosamente.", {
           duration: 5000,
@@ -181,21 +140,16 @@ export function useCreateSupplier(
 
     // 🚨 Error Handler
     onError: (error: Error, _variables, context) => {
-      // Rollback optimistic update if it was enabled
+      // Rollback optimistic update
       if (context?.previousSuppliers) {
         queryClient.setQueryData(
-          INVENTORY_QUERY_KEYS.suppliers(),
+          SUPPLIER_QUERY_KEYS.ALL,
           context.previousSuppliers
         );
       }
 
-      // 🚨 Error notification
       const errorMessage = error.message || "Error al crear proveedor";
-      notifyError(errorMessage, {
-        duration: 8000,
-      });
-
-      // 🎯 Custom error handler
+      notifyError(errorMessage, { duration: 8000 });
       onError?.(errorMessage);
     },
   });
@@ -225,7 +179,7 @@ export function useUpdateSupplier(
       data,
     }: {
       id: string;
-      data: CreateSupplierInput & { isActive?: boolean };
+      data: UpdateSupplierInput;
     }) => {
       const result = await updateSupplierAction(id, data);
 
@@ -237,28 +191,15 @@ export function useUpdateSupplier(
     },
 
     onSuccess: (supplier) => {
-      // 🔄 Invalidate and refetch relevant queries
       queryClient.invalidateQueries({
-        queryKey: INVENTORY_QUERY_KEYS.suppliers(),
-      });
-      if (supplier) {
-        queryClient.invalidateQueries({
-          queryKey: INVENTORY_QUERY_KEYS.supplier(supplier.id),
-        });
-      }
-      queryClient.invalidateQueries({
-        queryKey: INVENTORY_QUERY_KEYS.products(),
-      });
-      queryClient.invalidateQueries({
-        queryKey: INVENTORY_QUERY_KEYS.stats(),
+        queryKey: SUPPLIER_QUERY_KEYS.ALL,
       });
 
-      // 📢 Success notification
       if (supplier) {
         success(`"${supplier.name}" fue actualizado exitosamente.`, {
           duration: 5000,
         });
-        onSuccess?.(supplier as SupplierWithRelations);
+        onSuccess?.(supplier as SupplierWithRelations<unknown>);
       } else {
         success("Proveedor fue actualizado exitosamente.", {
           duration: 5000,
@@ -268,19 +209,13 @@ export function useUpdateSupplier(
 
     onError: (error: Error) => {
       const errorMessage = error.message || "Error al actualizar proveedor";
-      notifyError(errorMessage, {
-        duration: 8000,
-      });
-
+      notifyError(errorMessage, { duration: 8000 });
       onError?.(errorMessage);
     },
   });
 
   return {
-    updateSupplier: async (
-      id: string,
-      data: CreateSupplierInput & { isActive?: boolean }
-    ) => {
+    updateSupplier: async (id: string, data: UpdateSupplierInput) => {
       await mutation.mutateAsync({ id, data });
     },
     isLoading: mutation.isPending,
@@ -309,35 +244,18 @@ export function useDeleteSupplier(
       return result.data;
     },
 
-    onSuccess: (_result, supplierId) => {
-      // 🔄 Invalidate and refetch relevant queries
+    onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: INVENTORY_QUERY_KEYS.suppliers(),
-      });
-      queryClient.invalidateQueries({
-        queryKey: INVENTORY_QUERY_KEYS.supplier(supplierId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: INVENTORY_QUERY_KEYS.products(),
-      });
-      queryClient.invalidateQueries({
-        queryKey: INVENTORY_QUERY_KEYS.stats(),
+        queryKey: SUPPLIER_QUERY_KEYS.ALL,
       });
 
-      // 📢 Success notification
-      success("Proveedor eliminado exitosamente.", {
-        duration: 5000,
-      });
-
+      success("Proveedor eliminado exitosamente.", { duration: 5000 });
       onSuccess?.();
     },
 
     onError: (error: Error) => {
       const errorMessage = error.message || "Error al eliminar proveedor";
-      notifyError(errorMessage, {
-        duration: 8000,
-      });
-
+      notifyError(errorMessage, { duration: 8000 });
       onError?.(errorMessage);
     },
   });
@@ -350,11 +268,9 @@ export function useDeleteSupplier(
   };
 }
 
-// 🎯 Wrapper Hooks with Notifications (siguiendo el patrón establecido)
+// 🎯 Convenience Exports
 export function useCreateSupplierWithNotifications() {
-  return useCreateSupplier({
-    optimisticUpdate: true,
-  });
+  return useCreateSupplier({ optimisticUpdate: true });
 }
 
 export function useUpdateSupplierWithNotifications() {
@@ -363,71 +279,4 @@ export function useUpdateSupplierWithNotifications() {
 
 export function useDeleteSupplierWithNotifications() {
   return useDeleteSupplier();
-}
-
-// 🎯 Modal Integration Hooks (para uso directo en modales)
-export function useCreateSupplierModal() {
-  const { createSupplier, isLoading, error, reset } =
-    useCreateSupplierWithNotifications();
-
-  const handleCreateSupplier = async (data: CreateSupplierInput) => {
-    try {
-      await createSupplier(data);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
-  return {
-    handleCreateSupplier,
-    isLoading,
-    error,
-    reset,
-  };
-}
-
-export function useUpdateSupplierModal() {
-  const { updateSupplier, isLoading, error, reset } =
-    useUpdateSupplierWithNotifications();
-
-  const handleUpdateSupplier = async (
-    id: string,
-    data: CreateSupplierInput & { isActive?: boolean }
-  ) => {
-    try {
-      await updateSupplier(id, data);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
-  return {
-    handleUpdateSupplier,
-    isLoading,
-    error,
-    reset,
-  };
-}
-
-export function useDeleteSupplierModal() {
-  const { deleteSupplier, isLoading, error, reset } =
-    useDeleteSupplierWithNotifications();
-
-  const handleDeleteSupplier = async (id: string) => {
-    try {
-      await deleteSupplier(id);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
-  return {
-    handleDeleteSupplier,
-    isLoading,
-    error,
-    reset,
-  };
 }

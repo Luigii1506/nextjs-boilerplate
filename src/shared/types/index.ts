@@ -5,6 +5,9 @@
 // 👤 User Types
 export type { User, UserFormData, UserStats } from "./user";
 
+// 🚛 Supplier Types (Shared entity across modules)
+export * from "./supplier";
+
 // 🌍 Global Base Types
 export * from "./global";
 

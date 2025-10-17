@@ -293,9 +293,11 @@ export function mapCategoryToExternal(
 }
 
 // 🚛 SUPPLIER MAPPERS
+// ⚠️ MOVED TO: @/features/suppliers/server/mappers (if needed)
+// Supplier is now a SHARED module
 export function mapSupplierToExternal(
   rawSupplier: RawSupplier
-): SupplierWithRelations {
+): SupplierWithRelations<unknown> {
   return {
     id: rawSupplier.id,
     name: rawSupplier.name,
@@ -323,8 +325,7 @@ export function mapSupplierToExternal(
         ? rawSupplier.updatedAt
         : new Date(rawSupplier.updatedAt),
 
-    // Relations
-    products: rawSupplier.products?.map(mapProductToExternal) || [],
+    // Relations - only _count for shared module
     _count: {
       products: rawSupplier._count?.products || 0,
     },

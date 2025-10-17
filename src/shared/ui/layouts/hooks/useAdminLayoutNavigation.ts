@@ -88,6 +88,9 @@ export function useAdminLayoutNavigation({
   const handleSearch = useCallback(() => {
     console.log("🔍 Search action triggered");
 
+    // Guard against SSR
+    if (typeof window === "undefined") return;
+
     // 🎯 Implementación: Command Palette / Search Modal
     const event = new CustomEvent("admin-search", {
       detail: {
@@ -102,7 +105,7 @@ export function useAdminLayoutNavigation({
     // setSearchModalOpen?.(true);
 
     // 📊 Analytics tracking
-    if (typeof window !== "undefined" && window.gtag) {
+    if (window.gtag) {
       window.gtag("event", "admin_search_triggered", {
         event_category: "navigation",
         event_label: "header_search",
@@ -112,6 +115,9 @@ export function useAdminLayoutNavigation({
 
   const handleNotifications = useCallback(() => {
     console.log("🔔 Notifications action triggered");
+
+    // Guard against SSR
+    if (typeof window === "undefined") return;
 
     // 🎯 Implementación: Toggle notifications panel
     const event = new CustomEvent("admin-notifications", {
@@ -127,7 +133,7 @@ export function useAdminLayoutNavigation({
     // window.location.href = '/admin/notifications';
 
     // 📊 Analytics tracking
-    if (typeof window !== "undefined" && window.gtag) {
+    if (window.gtag) {
       window.gtag("event", "admin_notifications_opened", {
         event_category: "navigation",
         event_label: "header_notifications",
@@ -138,11 +144,14 @@ export function useAdminLayoutNavigation({
   const handleSettings = useCallback(() => {
     console.log("⚙️ Settings action triggered");
 
+    // Guard against SSR
+    if (typeof window === "undefined") return;
+
     // 🎯 Implementación: Navigate to settings
     const settingsUrl = "/admin/settings";
 
     // 📊 Analytics before navigation
-    if (typeof window !== "undefined" && window.gtag) {
+    if (window.gtag) {
       window.gtag("event", "admin_settings_accessed", {
         event_category: "navigation",
         event_label: "header_settings",
@@ -161,6 +170,9 @@ export function useAdminLayoutNavigation({
   const handleProfileClick = useCallback(() => {
     console.log("👤 Profile action triggered", user.email);
 
+    // Guard against SSR
+    if (typeof window === "undefined") return;
+
     // 🎯 Implementación: Toggle profile dropdown menu
     const event = new CustomEvent("admin-profile-menu", {
       detail: {
@@ -178,7 +190,7 @@ export function useAdminLayoutNavigation({
     // window.location.href = '/admin/profile';
 
     // 📊 Analytics tracking
-    if (typeof window !== "undefined" && window.gtag) {
+    if (window.gtag) {
       window.gtag("event", "admin_profile_menu_opened", {
         event_category: "navigation",
         event_label: "header_profile",

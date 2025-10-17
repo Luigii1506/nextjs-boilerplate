@@ -1,0 +1,61 @@
+// 🚛 SUPPLIER MANAGEMENT - SHARED MODULE
+// =======================================
+// Core shared entity used across multiple features
+//
+// Used by:
+//   - 📦 inventory   - Product suppliers
+//   - 🏪 pos         - Purchase suppliers (future)
+//   - 👥 seller-portal - External sellers as suppliers (future)
+//   - 🔧 services    - Service providers (future)
+//   - 📦 logistics   - Shipping suppliers (future)
+//
+// Feature flag: None (always active - core entity)
+
+model Supplier {
+  id            String   @id @default(cuid())
+  name          String   @unique
+  contactPerson String?
+  email         String?  @unique
+  phone         String?
+  website       String?
+  taxId         String?  @unique // RFC, NIT, etc.
+  paymentTerms  Int      @default(30) // días de crédito
+  isActive      Boolean  @default(true)
+  rating        Decimal? @db.Decimal(2, 1) // 1.0-5.0 estrellas
+  notes         String?
+
+  // 📍 Address (embedded)
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  state        String?
+  postalCode   String?
+  country      String? @default("MX")
+
+  // 📅 Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 🔗 Cross-Module Relations
+  // ========================
+
+  // MODULE: inventory
+  products Product[] // Products supplied by this supplier
+
+  // MODULE: pos (future)
+  // purchaseOrders PurchaseOrder[] // Purchase orders from this supplier
+
+  // MODULE: seller-portal (future)
+  // sellerProducts SellerProduct[] // Products from external sellers
+
+  // MODULE: services (future)
+  // services Service[] // Services provided by this supplier
+
+  // MODULE: logistics (future)
+  // shipments Shipment[] // Shipments handled by this supplier
+
+  @@index([isActive])
+  @@index([email])
+  @@index([name])
+  @@map("suppliers")
+}

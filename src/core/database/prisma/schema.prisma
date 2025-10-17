@@ -15,13 +15,13 @@ datasource db {
 
 // 📁 MODELOS ORGANIZADOS EN ARCHIVOS SEPARADOS:
 // ============================================
-// 
-// 🔐 ./models/auth.prisma        - User, Session, Account, Verification
+//
+// 🔐 ./models/auth.prisma          - User, Session, Account, Verification
+// 🚛 ./models/supplier.prisma      - Supplier (SHARED: inventory, pos, services)
 // 🎛️ ./models/feature-flags.prisma - FeatureFlag, FeatureFlagHistory, ModuleConfig
-// 📁 ./models/file-upload.prisma - Upload, FileCategory
-// 📊 ./models/audit.prisma       - AuditEvent, AuditChange
-// 💳 ./models/stripe.prisma      - Payment, Subscription (próximamente)  
-// 📦 ./models/inventory.prisma   - Product, Category (próximamente)
-// 🛒 ./models/ecommerce.prisma   - Order, Cart (próximamente)
+// 📁 ./models/file-upload.prisma   - Upload, FileCategory
+// 📊 ./models/audit.prisma         - AuditEvent, AuditChange
+// 📦 ./models/inventory.prisma     - Product, Category, StockMovement
+// 🛒 ./models/storefront.prisma    - Cart, Order, Review, Promotion, Coupon
 //
 // Prisma automáticamente combina todos los archivos .prisma en este directorio

@@ -1,7 +1,10 @@
 // 📦 INVENTORY MANAGEMENT MODELS
 // ===============================
-// E-commerce inventory system - products, categories, suppliers, stock movements
+// E-commerce inventory system - products, categories, stock movements
 // Feature flag: inventory
+//
+// Dependencies:
+//   - supplier.prisma (Supplier model - SHARED across modules)
 
 model Product {
   id          String   @id @default(cuid())
@@ -108,38 +111,11 @@ model Category {
   @@map("categories")
 }
 
-model Supplier {
-  id            String   @id @default(cuid())
-  name          String   @unique
-  contactPerson String?
-  email         String?  @unique
-  phone         String?
-  website       String?
-  taxId         String?  @unique // RFC, NIT, etc.
-  paymentTerms  Int      @default(30) // días de crédito
-  isActive      Boolean  @default(true)
-  rating        Decimal? @db.Decimal(2, 1) // 1.0-5.0 estrellas
-  notes         String?
-
-  // 📍 Address (embedded)
-  addressLine1 String?
-  addressLine2 String?
-  city         String?
-  state        String?
-  postalCode   String?
-  country      String? @default("MX")
-
-  // 📅 Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // 🔗 Relations
-  products Product[]
-
-  @@index([isActive])
-  @@index([email])
-  @@map("suppliers")
-}
+// 🚛 SUPPLIER MODEL
+// =================
+// ⚠️ MOVED TO: src/core/database/prisma/models/supplier.prisma
+// Supplier is now a SHARED module used by inventory, pos, services, etc.
+// Relations to Product are maintained in supplier.prisma
 
 model StockMovement {
   id            String            @id @default(cuid())

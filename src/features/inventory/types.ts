@@ -6,7 +6,26 @@
  * Interfaces, tipos utilitarios y tipos derivados del schema Prisma
  *
  * Created: 2025-01-17 - Inventory Management Module
+ * Updated: 2025-01-17 - Refactored Supplier to shared module
  */
+
+// 🚛 Supplier Types (imported from shared module)
+import type {
+  Supplier,
+  SupplierWithRelations,
+  CreateSupplierInput,
+  UpdateSupplierInput,
+  SupplierFilters,
+} from "@/shared/types/supplier";
+
+// Re-export for convenience
+export type {
+  Supplier,
+  SupplierWithRelations,
+  CreateSupplierInput,
+  UpdateSupplierInput,
+  SupplierFilters,
+};
 
 // 🗄️ Base Prisma Types (will be auto-generated)
 export interface Product {
@@ -44,27 +63,8 @@ export interface Category {
   updatedAt: Date;
 }
 
-export interface Supplier {
-  id: string;
-  name: string;
-  contactPerson: string | null;
-  email: string | null;
-  phone: string | null;
-  website: string | null;
-  taxId: string | null;
-  paymentTerms: number;
-  isActive: boolean;
-  rating: number | null;
-  notes: string | null;
-  addressLine1: string | null;
-  addressLine2: string | null;
-  city: string | null;
-  state: string | null;
-  postalCode: string | null;
-  country: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
+// ⚠️ SUPPLIER TYPE REMOVED
+// Now imported from @/shared/types/supplier (see top of file)
 
 export interface StockMovement {
   id: string;
@@ -119,12 +119,8 @@ export interface CategoryWithRelations extends Category {
   };
 }
 
-export interface SupplierWithRelations extends Supplier {
-  products?: Product[];
-  _count?: {
-    products: number;
-  };
-}
+// ⚠️ SUPPLIER WITH RELATIONS TYPE REMOVED
+// Now imported from @/shared/types/supplier (see top of file)
 
 // 📝 Form Input Types
 export interface CreateProductInput {
@@ -164,28 +160,10 @@ export interface UpdateCategoryInput extends Partial<CreateCategoryInput> {
   isActive?: boolean;
 }
 
-export interface CreateSupplierInput {
-  name: string;
-  contactPerson?: string;
-  email?: string;
-  phone?: string;
-  website?: string;
-  taxId?: string;
-  paymentTerms?: number;
-  rating?: number;
-  notes?: string;
-  addressLine1?: string;
-  addressLine2?: string;
-  city?: string;
-  state?: string;
-  postalCode?: string;
-  country?: string;
-}
-
-export interface UpdateSupplierInput extends Partial<CreateSupplierInput> {
-  id: string;
-  isActive?: boolean;
-}
+// ⚠️ SUPPLIER INPUT TYPES REMOVED
+// Now imported from @/shared/types/supplier (see top of file)
+// - CreateSupplierInput
+// - UpdateSupplierInput
 
 export interface CreateStockMovementInput {
   productId: string;
@@ -243,12 +221,8 @@ export interface CategoryFilters {
   isActive?: boolean;
 }
 
-export interface SupplierFilters {
-  search?: string;
-  isActive?: boolean;
-  minRating?: number;
-  country?: string;
-}
+// ⚠️ SUPPLIER FILTERS TYPE REMOVED
+// Now imported from @/shared/types/supplier (see top of file)
 
 export interface StockMovementFilters {
   productId?: string;
@@ -398,7 +372,7 @@ export interface UseInventoryQueryResult {
   // Data
   products: ProductWithRelations[];
   categories: CategoryWithRelations[];
-  suppliers: SupplierWithRelations[];
+  suppliers: SupplierWithRelations<unknown>[];
   stockMovements: StockMovement[];
   stats: InventoryStats | null;
   alerts: StockAlert[];
@@ -488,27 +462,27 @@ export type {
   // Main entities
   Product,
   Category,
-  Supplier,
+  // Supplier, // ⚠️ Now from @/shared/types/supplier
   StockMovement,
 
   // With relations
   ProductWithRelations,
   CategoryWithRelations,
-  SupplierWithRelations,
+  // SupplierWithRelations, // ⚠️ Now from @/shared/types/supplier
 
   // Input types
   CreateProductInput,
   UpdateProductInput,
   CreateCategoryInput,
   UpdateCategoryInput,
-  CreateSupplierInput,
-  UpdateSupplierInput,
+  // CreateSupplierInput, // ⚠️ Now from @/shared/types/supplier
+  // UpdateSupplierInput, // ⚠️ Now from @/shared/types/supplier
   CreateStockMovementInput,
 
   // Query types
   ProductFilters,
   CategoryFilters,
-  SupplierFilters,
+  // SupplierFilters, // ⚠️ Now from @/shared/types/supplier
   StockMovementFilters,
   PaginationParams,
   PaginatedResponse,

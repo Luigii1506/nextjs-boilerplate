@@ -25,12 +25,6 @@ import {
   getCategoriesQuery,
   getCategoryByIdQuery,
   getCategoryWithProductsQuery,
-  createSupplierQuery,
-  updateSupplierQuery,
-  deleteSupplierQuery,
-  getSuppliersQuery,
-  getSupplierWithProductsQuery,
-  validateSupplierExists,
   addStockMovementQuery,
   getAllStockMovementsQuery,
   getInventoryStatsQuery,
@@ -49,12 +43,9 @@ import {
   validateUpdateProduct,
   validateCreateCategory,
   validateUpdateCategory,
-  validateCreateSupplier,
-  validateUpdateSupplier,
   validateCreateStockMovement,
   validateProductFilters,
   validateCategoryFilters,
-  validateSupplierFilters,
   validatePagination,
 } from "./validators";
 import type {
@@ -63,20 +54,19 @@ import type {
   CreateProductInput,
   UpdateProductInput,
   CreateCategoryInput,
-  CreateSupplierInput,
   CreateStockMovementInput,
   ProductFilters,
   CategoryFilters,
-  SupplierFilters,
   PaginationParams,
   ProductWithRelations,
   CategoryWithRelations,
-  SupplierWithRelations,
   InventoryStats,
   StockAlert,
   PaginatedResponse,
   ActionResult,
 } from "../types";
+// Supplier types now from shared module
+import { validateSupplierExists } from "@/features/suppliers/server/queries";
 
 // 🎯 PRODUCT SERVICES
 export class ProductService {
@@ -581,188 +571,8 @@ export class CategoryService {
 }
 
 // 🚛 SUPPLIER SERVICES
-export class SupplierService {
-  static async create(
-    input: CreateSupplierInput,
-    userId: string
-  ): Promise<ActionResult<SupplierWithRelations>> {
-    try {
-      const session = await requireAuth();
-      const user = sessionToPermissionUser(session);
-      validateInventoryPermissions(user, "CREATE_SUPPLIER");
-
-      const validatedInput = validateCreateSupplier(input);
-
-      // Business Logic - Name uniqueness
-      const existing = await getSuppliersQuery({ search: validatedInput.name });
-      if (
-        existing.some(
-          (s) => s.name.toLowerCase() === validatedInput.name.toLowerCase()
-        )
-      ) {
-        return { success: false, error: "Supplier name already exists" };
-      }
-
-      // Email uniqueness if provided
-      if (validatedInput.email) {
-        const existingEmail = await getSuppliersQuery({
-          search: validatedInput.email,
-        });
-        if (existingEmail.some((s) => s.email === validatedInput.email)) {
-          return { success: false, error: "Supplier email already exists" };
-        }
-      }
-
-      const rawSupplier = await createSupplierQuery(validatedInput);
-      const supplier = mapSupplierToExternal(rawSupplier);
-
-      await this.logSupplierAction("CREATED", supplier.id, userId);
-
-      return {
-        success: true,
-        data: supplier,
-      };
-    } catch (error) {
-      return this.handleError(error, "Error creating supplier");
-    }
-  }
-
-  // ⚡ ULTRA-FAST READ - No auth needed for public suppliers
-  static async getMany(
-    filters?: SupplierFilters
-  ): Promise<ActionResult<SupplierWithRelations[]>> {
-    try {
-      // 🚀 FAST - Skip auth for public reads, direct validation
-      const validatedFilters = filters ? validateSupplierFilters(filters) : {};
-
-      // 🚀 FAST - Get suppliers from database
-      const rawSuppliers = await getSuppliersQuery(validatedFilters);
-
-      // 🔄 Transform to domain types (products is optional so we omit it for performance)
-      const suppliers: SupplierWithRelations[] = rawSuppliers.map(
-        (supplier) => ({
-          ...supplier,
-          // Omit products array for list performance - use _count for product count info
-          products: undefined, // Optional field - undefined for listing performance
-        })
-      );
-
-      return {
-        success: true,
-        data: suppliers,
-      };
-    } catch (error) {
-      return this.handleError(error, "Error fetching suppliers");
-    }
-  }
-
-  static async update(
-    id: string,
-    input: CreateSupplierInput & { isActive?: boolean },
-    userId: string
-  ): Promise<ActionResult<SupplierWithRelations>> {
-    try {
-      const session = await requireAuth();
-      const user = sessionToPermissionUser(session);
-      validateInventoryPermissions(user, "UPDATE_SUPPLIER");
-
-      const validatedInput = validateUpdateSupplier({ ...input, id });
-
-      // Business Logic - Name uniqueness (except for current supplier)
-      if (validatedInput.name) {
-        const existing = await getSuppliersQuery({
-          search: validatedInput.name,
-        });
-        const duplicateSupplier = existing.find(
-          (s) =>
-            s.name.toLowerCase() === validatedInput.name!.toLowerCase() &&
-            s.id !== id
-        );
-        if (duplicateSupplier) {
-          return { success: false, error: "Supplier name already exists" };
-        }
-      }
-
-      // Email uniqueness if provided (except for current supplier)
-      if (validatedInput.email) {
-        const existingEmail = await getSuppliersQuery({
-          search: validatedInput.email,
-        });
-        const duplicateEmail = existingEmail.find(
-          (s) => s.email === validatedInput.email && s.id !== id
-        );
-        if (duplicateEmail) {
-          return { success: false, error: "Supplier email already exists" };
-        }
-      }
-
-      const rawSupplier = await updateSupplierQuery(validatedInput);
-      const supplier = mapSupplierToExternal(rawSupplier);
-
-      await this.logSupplierAction("UPDATED", supplier.id, userId);
-
-      return {
-        success: true,
-        data: supplier,
-      };
-    } catch (error) {
-      return this.handleError(error, "Error updating supplier");
-    }
-  }
-
-  static async delete(id: string, userId: string): Promise<ActionResult<void>> {
-    try {
-      const session = await requireAuth();
-      const user = sessionToPermissionUser(session);
-      validateInventoryPermissions(user, "DELETE_SUPPLIER");
-
-      // Business Logic - Check if supplier has products
-      const supplierWithProducts = await getSupplierWithProductsQuery(id);
-      if (!supplierWithProducts) {
-        return { success: false, error: "Supplier not found" };
-      }
-
-      if (
-        supplierWithProducts._count &&
-        supplierWithProducts._count.products > 0
-      ) {
-        return {
-          success: false,
-          error: "Cannot delete supplier that has products",
-        };
-      }
-
-      // Soft delete - set isActive to false
-      await deleteSupplierQuery(id);
-
-      await this.logSupplierAction("DELETED", id, userId);
-
-      return {
-        success: true,
-        data: undefined,
-      };
-    } catch (error) {
-      return this.handleError(error, "Error deleting supplier");
-    }
-  }
-
-  private static async logSupplierAction(
-    action: string,
-    supplierId: string,
-    userId: string
-  ): Promise<void> {
-    console.log(`[AUDIT] ${action} supplier ${supplierId} by user ${userId}`);
-  }
-
-  private static handleError<T = unknown>(
-    error: unknown,
-    defaultMessage: string
-  ): ActionResult<T> {
-    console.error(`[SUPPLIER_SERVICE] ${defaultMessage}:`, error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return { success: false, error: errorMessage || defaultMessage };
-  }
-}
+// ⚠️ MOVED TO: @/features/suppliers/server/service
+// Supplier is now a SHARED module - use SupplierService from there
 
 // 📊 STOCK MOVEMENT SERVICES
 export class StockMovementService {
@@ -938,7 +748,7 @@ export class InventoryAnalyticsService {
 export const InventoryService = {
   Products: ProductService,
   Categories: CategoryService,
-  Suppliers: SupplierService,
+  // Suppliers: SupplierService, // ⚠️ Now at @/features/suppliers
   StockMovements: StockMovementService,
   Analytics: InventoryAnalyticsService,
 };

@@ -29,7 +29,6 @@ export {
   EMAIL_CONFIG,
   ANALYTICS_CONFIG,
   DEBUG_CONFIG,
-  STRIPE_CONFIG,
   ECOMMERCE_CONFIG,
 } from "./environment";
 
