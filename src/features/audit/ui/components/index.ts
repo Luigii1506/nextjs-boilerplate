@@ -9,3 +9,9 @@ export { AuditEventCard } from "./AuditEventCard";
 export { AuditFilters } from "./AuditFilters";
 export { AuditStats } from "./AuditStats";
 export { AuditEventsList } from "./AuditEventsList";
+
+// Export tabs
+export * from "./tabs";
+
+// Export modals
+export * from "./modals";

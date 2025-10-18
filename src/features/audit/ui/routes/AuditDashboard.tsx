@@ -1,72 +1,289 @@
 /**
- * ⚡ AUDIT DASHBOARD SCREEN - TANSTACK OPTIMIZED
- * =============================================
+ * ⚡ AUDIT DASHBOARD - ENHANCED WITH TABS
+ * ======================================
  *
- * Dashboard principal de auditoría súper optimizado con TanStack Query.
- * Performance enterprise, cache inteligente, skeleton loading profesional.
+ * Dashboard principal de auditoría mejorado con sistema de tabs,
+ * modales estándar y funcionalidad completa
  *
- * Enterprise: 2025-01-17 - TanStack Query audit optimization
+ * Enterprise: 2025-01-18 - Enhanced Audit Dashboard
  */
 
 "use client";
 
-import React from "react";
-import { Card } from "@/shared/ui/components/Card";
-import { Button } from "@/shared/ui/components/Button";
-import { AuditStats, AuditFilters, AuditEventsList } from "../components";
+// Import custom animations
+import "../../../inventory/ui/styles/animations.css";
+
+import React, { useState, useMemo } from "react";
 import { useAuditDashboard } from "../../hooks/useAuditDashboard";
-import { SkeletonStatsCard } from "@/shared/ui/components";
 import { cn } from "@/shared/utils";
 import {
   BarChart3,
   Activity,
-  Download,
-  Settings,
+  Users,
+  Server,
   RefreshCw,
   AlertCircle,
-  TrendingUp,
-  Database,
+  Shield,
+  Settings,
 } from "lucide-react";
+import { ReusableTabs, type TabItem } from "@/shared/ui/components";
+import { useScrollHeader } from "@/shared/hooks";
+
+// Import tabs
+import { OverviewTab, ActivitiesTab, UsersTab, SystemTab } from "../components/tabs";
+
+// Import modal
+import { AuditEventDetailsModal } from "../components/modals";
+
+// Import types
+import type { AuditDashboardTab, AuditEvent } from "../../types";
 
 interface AuditDashboardProps {
-  onViewChange?: (view: string) => void;
+  initialTab?: AuditDashboardTab;
 }
 
+// 🎨 Icon mapping for tabs
+const ICON_MAP = {
+  BarChart3,
+  Activity,
+  Users,
+  Server,
+} as const;
+
+// 🎯 Tab Navigation Component
+interface TabNavigationProps {
+  isHeaderVisible: boolean;
+  scrollY: number;
+  isPastThreshold: boolean;
+  activeTab: AuditDashboardTab;
+  setActiveTab: (tab: AuditDashboardTab) => void;
+  totalCount: number;
+  userCount: number;
+  isRefetching: boolean;
+  onRefresh: () => void;
+}
+
+const TabNavigation: React.FC<TabNavigationProps> = ({
+  isHeaderVisible,
+  scrollY,
+  isPastThreshold,
+  activeTab,
+  setActiveTab,
+  totalCount,
+  userCount,
+  isRefetching,
+  onRefresh,
+}) => {
+  // Tab configuration
+  const auditTabs: TabItem[] = [
+    {
+      id: "overview",
+      label: "Resumen",
+      icon: <BarChart3 className="w-4 h-4" />,
+      color: "blue",
+    },
+    {
+      id: "activities",
+      label: "Actividades",
+      icon: <Activity className="w-4 h-4" />,
+      color: "purple",
+      hasNotification: totalCount > 0,
+      notificationCount: totalCount > 999 ? 999 : totalCount,
+    },
+    {
+      id: "users",
+      label: "Usuarios",
+      icon: <Users className="w-4 h-4" />,
+      color: "green",
+      hasNotification: userCount > 0,
+      notificationCount: userCount,
+    },
+    {
+      id: "system",
+      label: "Sistema",
+      icon: <Server className="w-4 h-4" />,
+      color: "orange",
+    },
+  ];
+
+  return (
+    <div
+      className={cn(
+        "border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50",
+        "transform-gpu transition-all duration-300",
+        // Backdrop blur effect when scrolled
+        isPastThreshold
+          ? "header-backdrop scrolled"
+          : "header-backdrop bg-white dark:bg-gray-800"
+      )}
+      style={{
+        transform: `translateY(${
+          scrollY > 0 ? Math.min(scrollY * 0.1, 10) : 0
+        }px)`,
+      }}
+    >
+      <div className="px-6 py-4 flex justify-center flex-col">
+        {/* Smart Header with Scroll Animations */}
+        <div
+          id="header-tabs-container"
+          className={cn(
+            "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4",
+            "transform-gpu transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
+            isHeaderVisible
+              ? "opacity-100 translate-y-0 scale-y-100 mb-6 max-h-96"
+              : "opacity-0 -translate-y-3 scale-y-90 mb-0 max-h-0 overflow-hidden pointer-events-none"
+          )}
+          style={{
+            visibility: isHeaderVisible ? "visible" : "hidden",
+            transitionProperty: "opacity, transform, margin-bottom, max-height",
+            transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
+          }}
+        >
+          <div
+            id="header-tabs"
+            className={cn(
+              "transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] transform-gpu",
+              isHeaderVisible
+                ? "opacity-100 translate-x-0"
+                : "opacity-0 -translate-x-2"
+            )}
+          >
+            <h1
+              className={cn(
+                "text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-2",
+                "transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] transform-gpu",
+                isHeaderVisible
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-1"
+              )}
+            >
+              <Shield
+                className={cn(
+                  "w-7 h-7 text-blue-600 dark:text-blue-400",
+                  "transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] transform-gpu",
+                  isHeaderVisible
+                    ? "opacity-100 scale-100 rotate-0"
+                    : "opacity-0 scale-95 rotate-3"
+                )}
+              />
+              <span
+                className={cn(
+                  "transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] transform-gpu",
+                  isHeaderVisible
+                    ? "opacity-100 translate-x-0"
+                    : "opacity-0 translate-x-1"
+                )}
+              >
+                Audit Trail
+              </span>
+            </h1>
+            <p
+              className={cn(
+                "text-gray-600 dark:text-gray-300 mt-1",
+                "transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] transform-gpu",
+                isHeaderVisible
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-1"
+              )}
+            >
+              Sistema de auditoría y seguimiento de actividades
+            </p>
+          </div>
+
+          {/* Actions */}
+          <div
+            className={cn(
+              "flex items-center space-x-3",
+              "transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] transform-gpu",
+              isHeaderVisible
+                ? "opacity-100 translate-x-0 scale-100"
+                : "opacity-0 translate-x-4 scale-98"
+            )}
+          >
+            <button
+              onClick={onRefresh}
+              disabled={isRefetching}
+              className={cn(
+                "px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg",
+                "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700",
+                "flex items-center space-x-2 transition-all duration-200",
+                "hover:scale-[1.02] active:scale-[0.98] transform-gpu",
+                isRefetching && "opacity-50 cursor-not-allowed"
+              )}
+            >
+              <RefreshCw
+                className={cn("w-4 h-4", isRefetching && "animate-spin")}
+              />
+              <span>Actualizar</span>
+            </button>
+
+            <button className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 hover:scale-105">
+              <Settings className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Enhanced Tab Navigation - Always Visible & Clean */}
+        <div
+          className={cn(
+            "transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] transform-gpu",
+            isHeaderVisible ? "translate-y-0 pt-0" : "translate-y-0"
+          )}
+        >
+          <ReusableTabs
+            tabs={auditTabs}
+            activeTab={activeTab}
+            onTabChange={(tabId) => setActiveTab(tabId as AuditDashboardTab)}
+            variant="default"
+            size="md"
+            animated={true}
+            scrollable={true}
+            className="bg-transparent border-0 shadow-none p-0"
+          />
+        </div>
+      </div>
+
+      {/* Scroll Indicator */}
+      {isPastThreshold && (
+        <div
+          className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300"
+          style={{
+            width: `${Math.min((scrollY / window.innerHeight) * 100, 100)}%`,
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
 /**
- * ⚡ OPTIMIZED AUDIT DASHBOARD COMPONENT
- *
- * Dashboard súper optimizado con TanStack Query que incluye:
- * - Cache inteligente con 2min stale time
- * - Professional skeleton loading states
- * - Error boundaries y retry logic
- * - Performance indicators
- * - Enterprise UX patterns
+ * ⚡ ENHANCED AUDIT DASHBOARD COMPONENT
  */
-export default function AuditDashboard({ onViewChange }: AuditDashboardProps) {
+export default function AuditDashboard({ initialTab = "overview" }: AuditDashboardProps) {
+  // Tab state
+  const [activeTab, setActiveTab] = useState<AuditDashboardTab>(initialTab);
+
+  // Modal state
+  const [selectedEvent, setSelectedEvent] = useState<AuditEvent | null>(null);
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+
   // ⚡ TanStack Query optimized dashboard hook
   const {
-    // Tab management
-    activeTab,
-    handleTabChange,
-
     // Data
     events,
     stats,
     totalCount,
     currentPage,
     totalPages,
-    hasMore,
 
     // Filters
     filters,
     resetFilters,
-    activeFiltersCount,
     hasActiveFilters,
 
     // Loading states
     isEventsLoading,
     isStatsLoading,
-    isExporting,
 
     // Error states
     eventsError,
@@ -78,306 +295,192 @@ export default function AuditDashboard({ onViewChange }: AuditDashboardProps) {
     handlePageChange,
     handleRefresh,
     handleExport,
-    handleViewEvent,
-
-    // Utilities
-    // getPageInfo,
-    getActiveFiltersDisplay,
-    canExport,
   } = useAuditDashboard({
     initialTab: "overview",
     enableAutoRefresh: true,
     refreshInterval: 30000,
   });
 
-  // const pageInfo = getPageInfo();
-  const activeFiltersDisplay = getActiveFiltersDisplay();
+  // ✨ Scroll Detection Hook
+  const { scrollY, isHeaderVisible, isPastThreshold } = useScrollHeader({
+    threshold: 17,
+    wheelSensitivity: 0.5,
+    useWheelFallback: true,
+    debug: false,
+  });
+
+  // Handle view event details
+  const handleViewEvent = (event: AuditEvent) => {
+    setSelectedEvent(event);
+    setIsEventModalOpen(true);
+  };
+
+  // Handle close modal
+  const handleCloseModal = () => {
+    setIsEventModalOpen(false);
+    setSelectedEvent(null);
+  };
+
+  // Calculate counts for badges
+  const userCount = stats?.byUser.length || 0;
+  const isRefetching = isEventsLoading || isStatsLoading;
 
   return (
-    <div className="space-y-6">
-      {/* ⚡ Optimized Header with Performance Indicators */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Audit Trail
-            </h1>
-            {/* 🚀 Performance indicators (development only) */}
-            {process.env.NODE_ENV === "development" && (
-              <div className="flex items-center gap-2 text-sm text-slate-500">
-                <Database className="h-4 w-4" />
-                <span>TanStack Cache</span>
-                {isEventsLoading || isStatsLoading ? (
-                  <span className="text-blue-600">Fetching...</span>
-                ) : (
-                  <span className="text-green-600">Cached</span>
-                )}
-              </div>
-            )}
-          </div>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Seguimiento y auditoría de actividades del sistema - Sistema
-            optimizado con TanStack Query
-          </p>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Fixed Navigation */}
+      <TabNavigation
+        isHeaderVisible={isHeaderVisible}
+        scrollY={scrollY}
+        isPastThreshold={isPastThreshold}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        totalCount={totalCount}
+        userCount={userCount}
+        isRefetching={isRefetching}
+        onRefresh={handleRefresh}
+      />
 
-          {/* Active filters indicator */}
-          {hasActiveFilters && (
-            <div className="mt-2 flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
-              <TrendingUp className="h-4 w-4" />
-              <span>{activeFiltersCount} filtros activos:</span>
-              <span className="font-medium">
-                {activeFiltersDisplay.join(" • ")}
-              </span>
+      {/* Main Content Area */}
+      <main className="flex-1 relative">
+        <div
+          className={cn(
+            "max-w-full",
+            "transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] transform-gpu",
+            isHeaderVisible ? "translate-y-0" : "-translate-y-6"
+          )}
+        >
+          {/* ⚡ Professional Error Display */}
+          {hasErrors && (
+            <div className="px-6 pt-6">
+              <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-lg p-4">
+                <div className="flex items-center gap-3 text-red-800 dark:text-red-200">
+                  <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <h3 className="font-medium">Error al cargar datos</h3>
+                    <div className="text-sm text-red-600 dark:text-red-300 mt-1 space-y-1">
+                      {eventsError && <div>Eventos: {eventsError}</div>}
+                      {statsError && <div>Estadísticas: {statsError}</div>}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleRefresh}
+                      className="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg"
+                    >
+                      Reintentar
+                    </button>
+                    {hasActiveFilters && (
+                      <button
+                        onClick={resetFilters}
+                        className="px-3 py-1 text-sm border border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                      >
+                        Limpiar filtros
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
-        </div>
 
-        <div className="flex items-center gap-2">
-          {/* Refresh button with loading state */}
-          <Button
-            variant="outline"
-            onClick={handleRefresh}
-            disabled={isEventsLoading || isStatsLoading}
-            className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50"
-          >
-            <RefreshCw
+          {/* TRUE SPA Tab Content - Keep All Tabs Mounted */}
+          <div className="relative min-h-screen">
+            {/* Overview Tab - Always mounted */}
+            <div
               className={cn(
-                "h-4 w-4",
-                (isEventsLoading || isStatsLoading) && "animate-spin"
+                "transition-all duration-300 ease-out",
+                activeTab === "overview"
+                  ? "opacity-100 visible relative z-0"
+                  : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
               )}
-            />
-            {isEventsLoading || isStatsLoading
-              ? "Actualizando..."
-              : "Actualizar"}
-          </Button>
-
-          <Button
-            variant="outline"
-            onClick={() => onViewChange?.("settings")}
-            className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50"
-          >
-            <Settings className="h-4 w-4 mr-2" />
-            Configuración
-          </Button>
-        </div>
-      </div>
-
-      {/* ⚡ Professional Error Display */}
-      {hasErrors && (
-        <Card className="p-4 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10">
-          <div className="flex items-center gap-3 text-red-800 dark:text-red-200">
-            <AlertCircle className="h-5 w-5 flex-shrink-0" />
-            <div>
-              <h3 className="font-medium">Error al cargar datos</h3>
-              <div className="text-sm text-red-600 dark:text-red-300 mt-1 space-y-1">
-                {eventsError && <div>Eventos: {eventsError}</div>}
-                {statsError && <div>Estadísticas: {statsError}</div>}
-              </div>
-            </div>
-          </div>
-          <div className="mt-3 flex gap-2">
-            <Button size="sm" variant="outline" onClick={handleRefresh}>
-              Reintentar
-            </Button>
-            {hasActiveFilters && (
-              <Button size="sm" variant="outline" onClick={resetFilters}>
-                Limpiar filtros
-              </Button>
-            )}
-          </div>
-        </Card>
-      )}
-
-      {/* ⚡ Enhanced Tabs with Loading States */}
-      <Card className="p-1 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-        <div className="flex items-center gap-1">
-          <Button
-            variant={activeTab === "overview" ? "default" : "ghost"}
-            onClick={() => handleTabChange("overview")}
-            disabled={isStatsLoading}
-            className={`flex items-center gap-2 ${
-              activeTab === "overview"
-                ? "bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50"
-            }`}
-          >
-            <BarChart3 className="h-4 w-4" />
-            Resumen
-            {isStatsLoading && (
-              <div className="w-2 h-2 bg-blue-500 dark:bg-blue-400 rounded-full animate-pulse" />
-            )}
-          </Button>
-          <Button
-            variant={activeTab === "events" ? "default" : "ghost"}
-            onClick={() => handleTabChange("events")}
-            disabled={isEventsLoading}
-            className={`flex items-center gap-2 ${
-              activeTab === "events"
-                ? "bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50"
-            }`}
-          >
-            <Activity className="h-4 w-4" />
-            Eventos
-            {totalCount > 0 && (
-              <span className="ml-1 px-2 py-0.5 text-xs bg-slate-200 dark:bg-slate-700 rounded-full">
-                {totalCount.toLocaleString()}
-              </span>
-            )}
-            {isEventsLoading && (
-              <div className="w-2 h-2 bg-blue-500 dark:bg-blue-400 rounded-full animate-pulse" />
-            )}
-          </Button>
-        </div>
-      </Card>
-
-      {/* ⚡ Content with Professional Loading States */}
-      {activeTab === "overview" ? (
-        <div className="space-y-6">
-          {/* Stats Section */}
-          {statsError ? (
-            <Card className="p-8 text-center border-red-200 dark:border-red-800">
-              <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-4" />
-              <div className="text-red-600 dark:text-red-400 mb-4">
-                Error al cargar las estadísticas: {statsError}
-              </div>
-              <Button onClick={handleRefresh}>Reintentar</Button>
-            </Card>
-          ) : isStatsLoading ? (
-            <div className="space-y-6">
-              {/* Professional skeleton for stats */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <SkeletonStatsCard key={i} />
-                ))}
-              </div>
-
-              {/* Chart skeletons */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {Array.from({ length: 2 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6"
-                  >
-                    <div className="w-32 h-6 bg-slate-300 dark:bg-slate-600 rounded mb-4 animate-pulse" />
-                    <div className="w-full h-64 bg-slate-300 dark:bg-slate-600 rounded animate-pulse" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : stats ? (
-            <AuditStats stats={stats} />
-          ) : (
-            <Card className="p-8 text-center">
-              <Database className="h-8 w-8 text-slate-400 mx-auto mb-4" />
-              <p className="text-slate-600 dark:text-slate-400">
-                No hay datos de estadísticas disponibles
-              </p>
-            </Card>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {/* ⚡ Enhanced Filters with Active State */}
-          <AuditFilters
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            onReset={resetFilters}
-          />
-
-          {/* Export Actions */}
-          {canExport && (
-            <Card className="p-4 bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Download className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  <div>
-                    <p className="font-medium text-blue-900 dark:text-blue-100">
-                      Exportar eventos ({totalCount.toLocaleString()} eventos)
-                    </p>
-                    <p className="text-sm text-blue-700 dark:text-blue-300">
-                      Descarga los eventos filtrados en tu formato preferido
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleExport("csv")}
-                    disabled={isExporting}
-                  >
-                    {isExporting ? "Exportando..." : "CSV"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleExport("json")}
-                    disabled={isExporting}
-                  >
-                    {isExporting ? "Exportando..." : "JSON"}
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          )}
-
-          {/* ⚡ Events List with Professional Error/Loading States */}
-          {eventsError ? (
-            <Card className="p-8 text-center border-red-200 dark:border-red-800">
-              <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-4" />
-              <div className="text-red-600 dark:text-red-400 mb-4">
-                Error al cargar los eventos: {eventsError}
-              </div>
-              <div className="space-x-2">
-                <Button onClick={handleRefresh}>Reintentar</Button>
-                {hasActiveFilters && (
-                  <Button variant="outline" onClick={resetFilters}>
-                    Limpiar filtros
-                  </Button>
-                )}
-              </div>
-            </Card>
-          ) : events.length > 0 || isEventsLoading ? (
-            <AuditEventsList
-              data={{
-                events,
-                totalCount,
-                currentPage,
-                totalPages,
-                hasMore,
+              style={{
+                transform:
+                  activeTab === "overview" ? "translateY(0)" : "translateY(20px)",
               }}
-              isLoading={isEventsLoading}
-              onPageChange={handlePageChange}
-              onRefresh={handleRefresh}
-              onExport={handleExport}
-              onViewEvent={handleViewEvent}
-            />
-          ) : (
-            <Card className="p-8 text-center">
-              <Activity className="h-8 w-8 text-slate-400 mx-auto mb-4" />
-              <p className="text-slate-600 dark:text-slate-400 mb-2">
-                No se encontraron eventos
-              </p>
-              {hasActiveFilters ? (
-                <div className="space-y-2">
-                  <p className="text-sm text-slate-500">
-                    Prueba ajustando los filtros o el rango de fechas
-                  </p>
-                  <Button variant="outline" onClick={resetFilters}>
-                    Limpiar filtros
-                  </Button>
-                </div>
-              ) : (
-                <p className="text-sm text-slate-500">
-                  Los eventos de auditoría aparecerán aquí cuando ocurran
-                  actividades en el sistema
-                </p>
+            >
+              <OverviewTab
+                stats={stats}
+                isLoading={isStatsLoading}
+                onNavigate={(tab) => setActiveTab(tab as AuditDashboardTab)}
+              />
+            </div>
+
+            {/* Activities Tab - Always mounted */}
+            <div
+              className={cn(
+                "transition-all duration-300 ease-out",
+                activeTab === "activities"
+                  ? "opacity-100 visible relative z-0"
+                  : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
               )}
-            </Card>
-          )}
+              style={{
+                transform:
+                  activeTab === "activities" ? "translateY(0)" : "translateY(20px)",
+              }}
+            >
+              <ActivitiesTab
+                events={events}
+                filters={filters}
+                totalCount={totalCount}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                isLoading={isEventsLoading}
+                onFiltersChange={handleFiltersChange}
+                onResetFilters={resetFilters}
+                onPageChange={handlePageChange}
+                onViewEvent={handleViewEvent}
+                onExport={handleExport}
+                onRefresh={handleRefresh}
+              />
+            </div>
+
+            {/* Users Tab - Always mounted */}
+            <div
+              className={cn(
+                "transition-all duration-300 ease-out",
+                activeTab === "users"
+                  ? "opacity-100 visible relative z-0"
+                  : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
+              )}
+              style={{
+                transform:
+                  activeTab === "users" ? "translateY(0)" : "translateY(20px)",
+              }}
+            >
+              <UsersTab
+                stats={stats}
+                isLoading={isStatsLoading}
+                onViewUserDetails={(userId) => {
+                  console.log("View user details:", userId);
+                }}
+              />
+            </div>
+
+            {/* System Tab - Always mounted */}
+            <div
+              className={cn(
+                "transition-all duration-300 ease-out",
+                activeTab === "system"
+                  ? "opacity-100 visible relative z-0"
+                  : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
+              )}
+              style={{
+                transform:
+                  activeTab === "system" ? "translateY(0)" : "translateY(20px)",
+              }}
+            >
+              <SystemTab stats={stats} isLoading={isStatsLoading} />
+            </div>
+          </div>
         </div>
-      )}
+      </main>
+
+      {/* ⚡ Event Details Modal */}
+      <AuditEventDetailsModal
+        isOpen={isEventModalOpen}
+        onClose={handleCloseModal}
+        event={selectedEvent}
+      />
     </div>
   );
 }

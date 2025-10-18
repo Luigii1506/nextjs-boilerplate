@@ -384,7 +384,9 @@ const CategoriesDisplay: React.FC = () => {
         <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
           Error al cargar categorías
         </h3>
-        <p className="text-gray-600 dark:text-gray-400">{error.message || "Error desconocido"}</p>
+        <p className="text-gray-600 dark:text-gray-400">
+          {error.message || "Error desconocido"}
+        </p>
       </div>
     );
   }
@@ -399,7 +401,8 @@ const CategoriesDisplay: React.FC = () => {
           No hay categorías aún
         </h3>
         <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-          Comienza organizando tus productos creando categorías para clasificarlos
+          Comienza organizando tus productos creando categorías para
+          clasificarlos
         </p>
         <button
           onClick={() => setIsCategoryModalOpen(true)}

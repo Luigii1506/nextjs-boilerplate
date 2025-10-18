@@ -252,3 +252,36 @@ export interface AuditEventDetails extends AuditEvent {
   relatedEvents?: AuditEvent[];
   context?: Record<string, unknown>;
 }
+
+// Dashboard Tab Types
+export type AuditDashboardTab = "overview" | "activities" | "users" | "system";
+
+export interface AuditUserActivity {
+  userId: string;
+  userName: string | null;
+  userEmail: string;
+  userRole: string;
+  eventCount: number;
+  lastActivity: Date;
+  actions: Partial<Record<AuditAction, number>>;
+  resources: Partial<Record<AuditResource, number>>;
+}
+
+export interface AuditSystemHealth {
+  totalEvents: number;
+  eventsToday: number;
+  eventsThisWeek: number;
+  eventsThisMonth: number;
+  avgEventsPerDay: number;
+  criticalEvents: number;
+  highSeverityEvents: number;
+  failedActions: number;
+  suspiciousActivity: number;
+}
+
+export interface AuditActivityTrend {
+  date: string;
+  count: number;
+  byAction: Partial<Record<AuditAction, number>>;
+  bySeverity: Partial<Record<AuditSeverity, number>>;
+}

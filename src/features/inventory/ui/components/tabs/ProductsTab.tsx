@@ -30,22 +30,30 @@ import { cn } from "@/shared/utils";
 import { useInventoryContext } from "../../../context";
 import { ProductCard, StockIndicator, CategoryBadge } from "..";
 import { TabTransition } from "../shared/TabTransition";
-import { QuickStockAdjustModal, ExportModal, ImportModal, SavePresetModal } from "../modals";
+import {
+  QuickStockAdjustModal,
+  ExportModal,
+  ImportModal,
+  SavePresetModal,
+} from "../modals";
 import { AdvancedFilterPanel } from "../filters/AdvancedFilterPanel";
 import { ActiveFiltersBar } from "../filters/ActiveFiltersBar";
 import { FilterPresetsDropdown } from "../filters/FilterPresetsDropdown";
 import { BulkSelectionBar } from "../bulk/BulkSelectionBar";
 import { BulkActionsModal } from "../bulk/BulkActionsModal";
-import type { ProductWithRelations, BulkOperationType, FilterPreset, SavePresetInput } from "../../../types";
+import type {
+  ProductWithRelations,
+  BulkOperationType,
+  FilterPreset,
+  SavePresetInput,
+} from "../../../types";
 import type { ImportedProduct } from "../../../utils/import";
 import {
   getFilterPresets,
   saveFilterPreset,
-  updateFilterPreset,
   deleteFilterPreset,
   duplicateFilterPreset,
   setDefaultPreset,
-  getDefaultPreset,
 } from "../../../utils/filterPresets";
 import {
   bulkDeleteProductsAction,
@@ -216,7 +224,12 @@ const ProductsDisplay: React.FC<{
   selectedProductIds: Set<string>;
   onToggleSelection: (productId: string) => void;
   showCheckbox: boolean;
-}> = ({ onQuickAdjust, selectedProductIds, onToggleSelection, showCheckbox }) => {
+}> = ({
+  onQuickAdjust,
+  selectedProductIds,
+  onToggleSelection,
+  showCheckbox,
+}) => {
   const {
     inventory,
     viewMode,
@@ -356,6 +369,7 @@ const ProductsDisplay: React.FC<{
 
                 <div className="flex-shrink-0">
                   {product.images[0] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={product.images[0]}
                       alt={product.name}
@@ -440,13 +454,18 @@ const ProductsDisplay: React.FC<{
 const ProductsTab: React.FC = React.memo(function ProductsTab() {
   const { inventory } = useInventoryContext();
   const [stockAdjustModalOpen, setStockAdjustModalOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<ProductWithRelations | null>(null);
+  const [selectedProduct, setSelectedProduct] =
+    useState<ProductWithRelations | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 🎯 Bulk operations state
-  const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set());
+  const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(
+    new Set()
+  );
   const [showBulkActions, setShowBulkActions] = useState(false);
-  const [bulkOperation, setBulkOperation] = useState<BulkOperationType | null>(null);
+  const [bulkOperation, setBulkOperation] = useState<
+    BulkOperationType | undefined
+  >(undefined);
   const [isBulkLoading, setIsBulkLoading] = useState(false);
 
   // 📤 Export/Import state
@@ -581,19 +600,28 @@ const ProductsTab: React.FC = React.memo(function ProductsTab() {
           if (!operationData.categoryId) {
             throw new Error("Debe seleccionar una categoría");
           }
-          result = await bulkUpdateCategoryAction(productIds, operationData.categoryId);
+          result = await bulkUpdateCategoryAction(
+            productIds,
+            operationData.categoryId
+          );
           break;
         case "updateSupplier":
           if (!operationData.supplierId) {
             throw new Error("Debe seleccionar un proveedor");
           }
-          result = await bulkUpdateSupplierAction(productIds, operationData.supplierId);
+          result = await bulkUpdateSupplierAction(
+            productIds,
+            operationData.supplierId
+          );
           break;
         case "updatePrice":
           if (!operationData.priceAdjustment) {
             throw new Error("Debe especificar el ajuste de precio");
           }
-          result = await bulkAdjustPricesAction(productIds, operationData.priceAdjustment);
+          result = await bulkAdjustPricesAction(
+            productIds,
+            operationData.priceAdjustment
+          );
           break;
         case "activate":
           result = await bulkActivateProductsAction(productIds);
@@ -615,14 +643,18 @@ const ProductsTab: React.FC = React.memo(function ProductsTab() {
       // Clear selection and close modal
       setSelectedProductIds(new Set());
       setShowBulkActions(false);
-      setBulkOperation(null);
+      setBulkOperation(undefined);
 
       alert(
-        `Operación completada: ${result.data?.successCount || 0} productos actualizados`
+        `Operación completada: ${
+          result.data?.successCount || 0
+        } productos actualizados`
       );
     } catch (error) {
       console.error("Error en operación bulk:", error);
-      alert(error instanceof Error ? error.message : "Error al ejecutar operación");
+      alert(
+        error instanceof Error ? error.message : "Error al ejecutar operación"
+      );
     } finally {
       setIsBulkLoading(false);
     }
@@ -672,7 +704,11 @@ const ProductsTab: React.FC = React.memo(function ProductsTab() {
               : "")
         );
       } else {
-        alert(`✓ ${result.data?.successCount || 0} productos importados correctamente`);
+        alert(
+          `✓ ${
+            result.data?.successCount || 0
+          } productos importados correctamente`
+        );
       }
     } catch (error) {
       console.error("Error importing products:", error);
@@ -681,7 +717,7 @@ const ProductsTab: React.FC = React.memo(function ProductsTab() {
   };
 
   // 💾 Preset handlers
-  const {productFilters, setProductFilters} = useInventoryContext();
+  const { productFilters, setProductFilters } = useInventoryContext();
 
   const handleSavePreset = (input: SavePresetInput) => {
     const preset = saveFilterPreset(input);
@@ -812,6 +848,10 @@ const ProductsTab: React.FC = React.memo(function ProductsTab() {
           onUpdatePrice={handleBulkUpdatePrice}
           onActivate={handleBulkActivate}
           onDeactivate={handleBulkDeactivate}
+          onMoreActions={() => {
+            // Placeholder for additional bulk actions
+            console.log("More actions clicked");
+          }}
         />
 
         {/* Bulk Actions Modal */}
@@ -819,7 +859,7 @@ const ProductsTab: React.FC = React.memo(function ProductsTab() {
           isOpen={showBulkActions}
           onClose={() => {
             setShowBulkActions(false);
-            setBulkOperation(null);
+            setBulkOperation(undefined);
           }}
           selectedCount={selectedProductIds.size}
           operationType={bulkOperation}

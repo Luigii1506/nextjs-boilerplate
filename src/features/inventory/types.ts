@@ -420,11 +420,11 @@ export interface ProductWithComputedProps extends ProductWithRelations {
 
 // 📱 UI Component Props Types
 export interface ProductCardProps {
-  product: ProductWithComputedProps;
+  product: ProductWithRelations;
   showActions?: boolean;
-  onEdit?: (product: Product) => void;
-  onDelete?: (product: Product) => void;
-  onView?: (product: Product) => void;
+  onEdit?: (product: ProductWithRelations) => void;
+  onDelete?: (product: ProductWithRelations) => void;
+  onView?: (product: ProductWithRelations) => void;
   className?: string;
 }
 
