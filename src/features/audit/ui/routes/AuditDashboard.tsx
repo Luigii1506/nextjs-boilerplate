@@ -1,11 +1,13 @@
 /**
- * ⚡ AUDIT DASHBOARD - ENHANCED WITH TABS
- * ======================================
+ * ⚡ AUDIT DASHBOARD - ELEGANT UX
+ * ===============================
  *
- * Dashboard principal de auditoría mejorado con sistema de tabs,
- * modales estándar y funcionalidad completa
+ * Dashboard con UX elegante:
+ * - Header que desaparece suavemente con scroll
+ * - Tabs con bordes redondeados
+ * - Transiciones smooth
  *
- * Enterprise: 2025-01-18 - Enhanced Audit Dashboard
+ * Enterprise: 2025-01-18 - Elegant UX
  */
 
 "use client";
@@ -13,24 +15,25 @@
 // Import custom animations
 import "../../../inventory/ui/styles/animations.css";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuditDashboard } from "../../hooks/useAuditDashboard";
-import { cn } from "@/shared/utils";
 import {
   BarChart3,
   Activity,
   Users,
   Server,
-  RefreshCw,
   AlertCircle,
   Shield,
-  Settings,
 } from "lucide-react";
 import { ReusableTabs, type TabItem } from "@/shared/ui/components";
-import { useScrollHeader } from "@/shared/hooks";
 
 // Import tabs
-import { OverviewTab, ActivitiesTab, UsersTab, SystemTab } from "../components/tabs";
+import {
+  OverviewTab,
+  ActivitiesTab,
+  UsersTab,
+  SystemTab,
+} from "../components/tabs";
 
 // Import modal
 import { AuditEventDetailsModal } from "../components/modals";
@@ -42,226 +45,23 @@ interface AuditDashboardProps {
   initialTab?: AuditDashboardTab;
 }
 
-// 🎨 Icon mapping for tabs
-const ICON_MAP = {
-  BarChart3,
-  Activity,
-  Users,
-  Server,
-} as const;
-
-// 🎯 Tab Navigation Component
-interface TabNavigationProps {
-  isHeaderVisible: boolean;
-  scrollY: number;
-  isPastThreshold: boolean;
-  activeTab: AuditDashboardTab;
-  setActiveTab: (tab: AuditDashboardTab) => void;
-  totalCount: number;
-  userCount: number;
-  isRefetching: boolean;
-  onRefresh: () => void;
-}
-
-const TabNavigation: React.FC<TabNavigationProps> = ({
-  isHeaderVisible,
-  scrollY,
-  isPastThreshold,
-  activeTab,
-  setActiveTab,
-  totalCount,
-  userCount,
-  isRefetching,
-  onRefresh,
-}) => {
-  // Tab configuration
-  const auditTabs: TabItem[] = [
-    {
-      id: "overview",
-      label: "Resumen",
-      icon: <BarChart3 className="w-4 h-4" />,
-      color: "blue",
-    },
-    {
-      id: "activities",
-      label: "Actividades",
-      icon: <Activity className="w-4 h-4" />,
-      color: "purple",
-      hasNotification: totalCount > 0,
-      notificationCount: totalCount > 999 ? 999 : totalCount,
-    },
-    {
-      id: "users",
-      label: "Usuarios",
-      icon: <Users className="w-4 h-4" />,
-      color: "green",
-      hasNotification: userCount > 0,
-      notificationCount: userCount,
-    },
-    {
-      id: "system",
-      label: "Sistema",
-      icon: <Server className="w-4 h-4" />,
-      color: "orange",
-    },
-  ];
-
-  return (
-    <div
-      className={cn(
-        "border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50",
-        "transform-gpu transition-all duration-300",
-        // Backdrop blur effect when scrolled
-        isPastThreshold
-          ? "header-backdrop scrolled"
-          : "header-backdrop bg-white dark:bg-gray-800"
-      )}
-      style={{
-        transform: `translateY(${
-          scrollY > 0 ? Math.min(scrollY * 0.1, 10) : 0
-        }px)`,
-      }}
-    >
-      <div className="px-6 py-4 flex justify-center flex-col">
-        {/* Smart Header with Scroll Animations */}
-        <div
-          id="header-tabs-container"
-          className={cn(
-            "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4",
-            "transform-gpu transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
-            isHeaderVisible
-              ? "opacity-100 translate-y-0 scale-y-100 mb-6 max-h-96"
-              : "opacity-0 -translate-y-3 scale-y-90 mb-0 max-h-0 overflow-hidden pointer-events-none"
-          )}
-          style={{
-            visibility: isHeaderVisible ? "visible" : "hidden",
-            transitionProperty: "opacity, transform, margin-bottom, max-height",
-            transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
-          }}
-        >
-          <div
-            id="header-tabs"
-            className={cn(
-              "transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] transform-gpu",
-              isHeaderVisible
-                ? "opacity-100 translate-x-0"
-                : "opacity-0 -translate-x-2"
-            )}
-          >
-            <h1
-              className={cn(
-                "text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-2",
-                "transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] transform-gpu",
-                isHeaderVisible
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 translate-y-1"
-              )}
-            >
-              <Shield
-                className={cn(
-                  "w-7 h-7 text-blue-600 dark:text-blue-400",
-                  "transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] transform-gpu",
-                  isHeaderVisible
-                    ? "opacity-100 scale-100 rotate-0"
-                    : "opacity-0 scale-95 rotate-3"
-                )}
-              />
-              <span
-                className={cn(
-                  "transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] transform-gpu",
-                  isHeaderVisible
-                    ? "opacity-100 translate-x-0"
-                    : "opacity-0 translate-x-1"
-                )}
-              >
-                Audit Trail
-              </span>
-            </h1>
-            <p
-              className={cn(
-                "text-gray-600 dark:text-gray-300 mt-1",
-                "transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] transform-gpu",
-                isHeaderVisible
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 translate-y-1"
-              )}
-            >
-              Sistema de auditoría y seguimiento de actividades
-            </p>
-          </div>
-
-          {/* Actions */}
-          <div
-            className={cn(
-              "flex items-center space-x-3",
-              "transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] transform-gpu",
-              isHeaderVisible
-                ? "opacity-100 translate-x-0 scale-100"
-                : "opacity-0 translate-x-4 scale-98"
-            )}
-          >
-            <button
-              onClick={onRefresh}
-              disabled={isRefetching}
-              className={cn(
-                "px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg",
-                "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700",
-                "flex items-center space-x-2 transition-all duration-200",
-                "hover:scale-[1.02] active:scale-[0.98] transform-gpu",
-                isRefetching && "opacity-50 cursor-not-allowed"
-              )}
-            >
-              <RefreshCw
-                className={cn("w-4 h-4", isRefetching && "animate-spin")}
-              />
-              <span>Actualizar</span>
-            </button>
-
-            <button className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 hover:scale-105">
-              <Settings className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Enhanced Tab Navigation - Always Visible & Clean */}
-        <div
-          className={cn(
-            "transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] transform-gpu",
-            isHeaderVisible ? "translate-y-0 pt-0" : "translate-y-0"
-          )}
-        >
-          <ReusableTabs
-            tabs={auditTabs}
-            activeTab={activeTab}
-            onTabChange={(tabId) => setActiveTab(tabId as AuditDashboardTab)}
-            variant="default"
-            size="md"
-            animated={true}
-            scrollable={true}
-            className="bg-transparent border-0 shadow-none p-0"
-          />
-        </div>
-      </div>
-
-      {/* Scroll Indicator */}
-      {isPastThreshold && (
-        <div
-          className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300"
-          style={{
-            width: `${Math.min((scrollY / window.innerHeight) * 100, 100)}%`,
-          }}
-        />
-      )}
-    </div>
-  );
-};
-
 /**
- * ⚡ ENHANCED AUDIT DASHBOARD COMPONENT
+ * ⚡ OPTIMIZED AUDIT DASHBOARD
+ *
+ * Best practices:
+ * - Header that fades out smoothly on scroll
+ * - Rounded tabs container
+ * - Professional spacing
  */
-export default function AuditDashboard({ initialTab = "overview" }: AuditDashboardProps) {
+export default function AuditDashboard({
+  initialTab = "overview",
+}: AuditDashboardProps) {
   // Tab state
   const [activeTab, setActiveTab] = useState<AuditDashboardTab>(initialTab);
+
+  // Scroll state for header visibility
+  const [showHeader, setShowHeader] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
 
   // Modal state
   const [selectedEvent, setSelectedEvent] = useState<AuditEvent | null>(null);
@@ -301,14 +101,6 @@ export default function AuditDashboard({ initialTab = "overview" }: AuditDashboa
     refreshInterval: 30000,
   });
 
-  // ✨ Scroll Detection Hook
-  const { scrollY, isHeaderVisible, isPastThreshold } = useScrollHeader({
-    threshold: 17,
-    wheelSensitivity: 0.5,
-    useWheelFallback: true,
-    debug: false,
-  });
-
   // Handle view event details
   const handleViewEvent = (event: AuditEvent) => {
     setSelectedEvent(event);
@@ -323,101 +115,176 @@ export default function AuditDashboard({ initialTab = "overview" }: AuditDashboa
 
   // Calculate counts for badges
   const userCount = stats?.byUser.length || 0;
-  const isRefetching = isEventsLoading || isStatsLoading;
+
+  // 🎯 Smooth scroll detection
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      // Show header when scrolling up or at top
+      // Hide header when scrolling down (after 50px)
+      if (currentScrollY < lastScrollY || currentScrollY < 50) {
+        setShowHeader(true);
+      } else if (currentScrollY > 50) {
+        setShowHeader(false);
+      }
+
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [lastScrollY]);
+
+  // Handle tab change with smooth scroll to show header
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId as AuditDashboardTab);
+
+    // Scroll to position that triggers header visibility (just under 50px threshold)
+    // This shows the header without scrolling all the way to absolute top
+    window.scrollTo({
+      top: 40,
+      behavior: "smooth",
+    });
+  };
+
+  // Tab configuration
+  const auditTabs: TabItem[] = [
+    {
+      id: "overview",
+      label: "Resumen",
+      icon: <BarChart3 className="w-4 h-4" />,
+      color: "blue",
+    },
+    {
+      id: "activities",
+      label: "Actividades",
+      icon: <Activity className="w-4 h-4" />,
+      color: "purple",
+      hasNotification: totalCount > 0,
+      notificationCount: totalCount > 999 ? 999 : totalCount,
+    },
+    {
+      id: "users",
+      label: "Usuarios",
+      icon: <Users className="w-4 h-4" />,
+      color: "green",
+      hasNotification: userCount > 0,
+      notificationCount: userCount,
+    },
+    {
+      id: "system",
+      label: "Sistema",
+      icon: <Server className="w-4 h-4" />,
+      color: "orange",
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Fixed Navigation */}
-      <TabNavigation
-        isHeaderVisible={isHeaderVisible}
-        scrollY={scrollY}
-        isPastThreshold={isPastThreshold}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        totalCount={totalCount}
-        userCount={userCount}
-        isRefetching={isRefetching}
-        onRefresh={handleRefresh}
-      />
-
-      {/* Main Content Area */}
-      <main className="flex-1 relative">
-        <div
-          className={cn(
-            "max-w-full",
-            "transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] transform-gpu",
-            isHeaderVisible ? "translate-y-0" : "-translate-y-6"
-          )}
-        >
-          {/* ⚡ Professional Error Display */}
-          {hasErrors && (
-            <div className="px-6 pt-6">
-              <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-lg p-4">
-                <div className="flex items-center gap-3 text-red-800 dark:text-red-200">
-                  <AlertCircle className="h-5 w-5 flex-shrink-0" />
-                  <div className="flex-1">
-                    <h3 className="font-medium">Error al cargar datos</h3>
-                    <div className="text-sm text-red-600 dark:text-red-300 mt-1 space-y-1">
-                      {eventsError && <div>Eventos: {eventsError}</div>}
-                      {statsError && <div>Estadísticas: {statsError}</div>}
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleRefresh}
-                      className="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg"
-                    >
-                      Reintentar
-                    </button>
-                    {hasActiveFilters && (
-                      <button
-                        onClick={resetFilters}
-                        className="px-3 py-1 text-sm border border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
-                      >
-                        Limpiar filtros
-                      </button>
-                    )}
-                  </div>
+    <div className="bg-gray-50 dark:bg-gray-900">
+      {/*
+        🎯 HEADER - Smooth fade out on scroll down
+        - NO sticky (se oculta completamente)
+        - Aparece cuando: scroll up o en top
+        - Desaparece cuando: scroll down > 50px
+      */}
+      {showHeader && (
+        <div className="transition-all duration-300 ease-in-out animate-fadeIn">
+          <div className="  border-b border-gray-200 dark:border-gray-700 shadow-sm">
+            <div className="max-w-[1600px] mx-auto px-6 py-6">
+              <div className="flex items-center gap-3">
+                <Shield className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    Audit Trail
+                  </h1>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Sistema de auditoría y seguimiento de actividades
+                  </p>
                 </div>
               </div>
             </div>
-          )}
+          </div>
+        </div>
+      )}
 
-          {/* TRUE SPA Tab Content - Keep All Tabs Mounted */}
-          <div className="relative min-h-screen">
-            {/* Overview Tab - Always mounted */}
-            <div
-              className={cn(
-                "transition-all duration-300 ease-out",
-                activeTab === "overview"
-                  ? "opacity-100 visible relative z-0"
-                  : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
-              )}
-              style={{
-                transform:
-                  activeTab === "overview" ? "translateY(0)" : "translateY(20px)",
-              }}
-            >
+      {/*
+        🎯 TABS - Sticky & Rounded
+        - Sticky top-0 siempre
+        - Bordes redondeados elegantes
+        - Shadow para profundidad
+      */}
+      <div className="sticky top-0 z-50 bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-[1600px] mx-auto px-6 pt-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-2">
+            <ReusableTabs
+              tabs={auditTabs}
+              activeTab={activeTab}
+              onTabChange={handleTabChange}
+              variant="default"
+              size="md"
+              animated={true}
+              scrollable={true}
+              className="bg-transparent border-0 shadow-none p-0"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/*
+        📦 CONTENT AREA - Professional Spacing
+      */}
+      <div className="max-w-[1600px] mx-auto px-6 py-6">
+        {/* ⚡ Professional Error Display */}
+        {hasErrors && (
+          <div className="mb-6">
+            <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl p-4">
+              <div className="flex items-center gap-3 text-red-800 dark:text-red-200">
+                <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                <div className="flex-1">
+                  <h3 className="font-medium">Error al cargar datos</h3>
+                  <div className="text-sm text-red-600 dark:text-red-300 mt-1 space-y-1">
+                    {eventsError && <div>Eventos: {eventsError}</div>}
+                    {statsError && <div>Estadísticas: {statsError}</div>}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleRefresh}
+                    className="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                  >
+                    Reintentar
+                  </button>
+                  {hasActiveFilters && (
+                    <button
+                      onClick={resetFilters}
+                      className="px-3 py-1 text-sm border border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                    >
+                      Limpiar filtros
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/*
+          🎯 TAB CONTENT - Only Active Tab
+        */}
+        <div className="transition-opacity duration-200">
+          {activeTab === "overview" && (
+            <div className="animate-fadeIn">
               <OverviewTab
                 stats={stats}
                 isLoading={isStatsLoading}
                 onNavigate={(tab) => setActiveTab(tab as AuditDashboardTab)}
               />
             </div>
+          )}
 
-            {/* Activities Tab - Always mounted */}
-            <div
-              className={cn(
-                "transition-all duration-300 ease-out",
-                activeTab === "activities"
-                  ? "opacity-100 visible relative z-0"
-                  : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
-              )}
-              style={{
-                transform:
-                  activeTab === "activities" ? "translateY(0)" : "translateY(20px)",
-              }}
-            >
+          {activeTab === "activities" && (
+            <div className="animate-fadeIn">
               <ActivitiesTab
                 events={events}
                 filters={filters}
@@ -433,20 +300,10 @@ export default function AuditDashboard({ initialTab = "overview" }: AuditDashboa
                 onRefresh={handleRefresh}
               />
             </div>
+          )}
 
-            {/* Users Tab - Always mounted */}
-            <div
-              className={cn(
-                "transition-all duration-300 ease-out",
-                activeTab === "users"
-                  ? "opacity-100 visible relative z-0"
-                  : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
-              )}
-              style={{
-                transform:
-                  activeTab === "users" ? "translateY(0)" : "translateY(20px)",
-              }}
-            >
+          {activeTab === "users" && (
+            <div className="animate-fadeIn">
               <UsersTab
                 stats={stats}
                 isLoading={isStatsLoading}
@@ -455,25 +312,15 @@ export default function AuditDashboard({ initialTab = "overview" }: AuditDashboa
                 }}
               />
             </div>
+          )}
 
-            {/* System Tab - Always mounted */}
-            <div
-              className={cn(
-                "transition-all duration-300 ease-out",
-                activeTab === "system"
-                  ? "opacity-100 visible relative z-0"
-                  : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
-              )}
-              style={{
-                transform:
-                  activeTab === "system" ? "translateY(0)" : "translateY(20px)",
-              }}
-            >
+          {activeTab === "system" && (
+            <div className="animate-fadeIn">
               <SystemTab stats={stats} isLoading={isStatsLoading} />
             </div>
-          </div>
+          )}
         </div>
-      </main>
+      </div>
 
       {/* ⚡ Event Details Modal */}
       <AuditEventDetailsModal
