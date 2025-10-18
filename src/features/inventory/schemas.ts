@@ -103,7 +103,10 @@ export const createProductSchema = z
       .default([]),
 
     metadata: z
-      .record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()]))
+      .record(
+        z.string(),
+        z.union([z.string(), z.number(), z.boolean(), z.null()])
+      )
       .optional()
       .nullable(),
   })
@@ -183,14 +186,19 @@ export const createSupplierSchema = z.object({
 
   phone: z
     .string()
-    .min(10, "Teléfono debe tener al menos 10 dígitos")
     .max(20, "Teléfono no puede exceder 20 caracteres")
-    .regex(/^[\d\s\-\+\(\)]+$/, "Teléfono contiene caracteres inválidos")
-    .optional(),
+    .regex(
+      /^[\d\s\-\+\(\)]*$/,
+      "Teléfono solo puede contener números, espacios, guiones, paréntesis y +"
+    )
+    .optional()
+    .or(z.literal("")),
 
   website: z
     .string()
-    .url("Sitio web debe ser una URL válida")
+    .refine((val) => val === "" || z.string().url().safeParse(val).success, {
+      message: "Sitio web debe ser una URL válida o vacío",
+    })
     .max(255, "URL no puede exceder 255 caracteres")
     .optional(),
 
@@ -247,14 +255,15 @@ export const createSupplierSchema = z.object({
 
   postalCode: z
     .string()
-    .min(3, "Código postal debe tener al menos 3 caracteres")
     .max(20, "Código postal no puede exceder 20 caracteres")
-    .optional(),
+    .optional()
+    .or(z.literal("")),
 
   country: z
     .string()
     .length(2, "País debe ser un código ISO de 2 letras")
     .regex(/^[A-Z]{2}$/, "País debe ser un código ISO válido (ej: MX, US)")
+    .optional()
     .default("MX"),
 });
 

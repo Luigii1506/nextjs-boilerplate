@@ -51,32 +51,76 @@ export default function Navigation({ userRole }: NavigationProps) {
     );
   }
 
-  // ⚡ Skeleton loading - TanStack Query optimized
+  // ⚡ Skeleton loading - TanStack Query optimized - Matches real structure
   if (isLoading || navigationItems.length === 0) {
     return (
-      <nav className="mt-8 space-y-2">
-        {[1, 2, 3, 4].map((i) => (
-          <div
-            key={i}
-            className={cn(
-              NAVIGATION_STYLES.base,
-              "animate-pulse bg-slate-100 dark:bg-slate-700"
-            )}
-          >
-            <div className="w-4 h-4 bg-slate-300 dark:bg-slate-600 rounded" />
-            <div className="h-4 bg-slate-300 dark:bg-slate-600 rounded flex-1" />
+      <nav className="mt-8 space-y-6" suppressHydrationWarning>
+        {/* Core Section Skeleton */}
+        <div className="space-y-1" suppressHydrationWarning>
+          <div className="px-3 py-1">
+            <div className="h-3 w-12 bg-slate-300 dark:bg-slate-600 rounded animate-pulse" />
           </div>
-        ))}
+          {[1, 2].map((i) => (
+            <div
+              key={`core-${i}`}
+              className={cn(
+                NAVIGATION_STYLES.base,
+                "animate-pulse bg-slate-100 dark:bg-slate-700"
+              )}
+            >
+              <div className="w-4 h-4 bg-slate-300 dark:bg-slate-600 rounded" />
+              <div className="h-4 bg-slate-300 dark:bg-slate-600 rounded flex-1" />
+            </div>
+          ))}
+        </div>
+
+        {/* Features Section Skeleton */}
+        <div className="space-y-1" suppressHydrationWarning>
+          <div className="px-3 py-1">
+            <div className="h-3 w-16 bg-slate-300 dark:bg-slate-600 rounded animate-pulse" />
+          </div>
+          {[1, 2].map((i) => (
+            <div
+              key={`feature-${i}`}
+              className={cn(
+                NAVIGATION_STYLES.base,
+                "animate-pulse bg-slate-100 dark:bg-slate-700"
+              )}
+            >
+              <div className="w-4 h-4 bg-slate-300 dark:bg-slate-600 rounded" />
+              <div className="h-4 bg-slate-300 dark:bg-slate-600 rounded flex-1" />
+            </div>
+          ))}
+        </div>
+
+        {/* Admin Section Skeleton */}
+        <div className="space-y-1" suppressHydrationWarning>
+          <div className="px-3 py-1 border-t border-slate-200 dark:border-slate-700 pt-4">
+            <div className="h-3 w-24 bg-slate-300 dark:bg-slate-600 rounded animate-pulse" />
+          </div>
+          {[1, 2].map((i) => (
+            <div
+              key={`admin-${i}`}
+              className={cn(
+                NAVIGATION_STYLES.base,
+                "animate-pulse bg-slate-100 dark:bg-slate-700"
+              )}
+            >
+              <div className="w-4 h-4 bg-slate-300 dark:bg-slate-600 rounded" />
+              <div className="h-4 bg-slate-300 dark:bg-slate-600 rounded flex-1" />
+            </div>
+          ))}
+        </div>
       </nav>
     );
   }
 
   // ✅ Render optimizado - Grouped by categories for better UX
   return (
-    <nav className="mt-8 space-y-6">
+    <nav className="mt-8 space-y-6" suppressHydrationWarning>
       {/* 🏗️ Core Navigation */}
       {categories.core.length > 0 && (
-        <div className="space-y-1">
+        <div className="space-y-1" suppressHydrationWarning>
           <div className="px-3 py-1">
             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               Core
@@ -109,7 +153,7 @@ export default function Navigation({ userRole }: NavigationProps) {
 
       {/* 🚀 Feature Modules */}
       {categories.feature.length > 0 && (
-        <div className="space-y-1">
+        <div className="space-y-1" suppressHydrationWarning>
           <div className="px-3 py-1">
             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               Features
@@ -142,7 +186,7 @@ export default function Navigation({ userRole }: NavigationProps) {
 
       {/* 🛡️ Admin Tools */}
       {categories.admin.length > 0 && (
-        <div className="space-y-1">
+        <div className="space-y-1" suppressHydrationWarning>
           <div className="px-3 py-1 border-t border-slate-200 dark:border-slate-700 pt-4">
             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               Administración

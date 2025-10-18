@@ -1,11 +1,11 @@
 /**
- * 🚛 SUPPLIER MODAL COMPONENT
- * ===========================
+ * 🚛 SUPPLIER FORM MODAL (Native for Suppliers Module)
+ * ====================================================
  *
- * Modal hermoso para crear/editar proveedores con validación completa
- * Diseño consistente con BaseModal, campos específicos para suppliers
+ * Modal nativo para crear/editar proveedores en el módulo de Suppliers
+ * Usa SupplierContext en lugar de InventoryContext
  *
- * Created: 2025-01-18 - Supplier Management Modal
+ * Created: 2025-01-18 - Native Supplier CRUD Modal
  */
 
 "use client";
@@ -15,15 +15,15 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertTriangle, Check, Truck, MapPin, Star } from "lucide-react";
 import { cn } from "@/shared/utils";
-import { useInventoryContext } from "../../context";
-import { useCreateSupplierModal, useUpdateSupplierModal } from "../../hooks";
+import { useSupplierContext } from "../../../context";
+import { useCreateSupplierModal, useUpdateSupplierModal } from "../../../../inventory/hooks";
 import {
   BaseModal,
   BaseModalActions,
   BaseModalButton,
 } from "@/shared/ui/components";
-import { createSupplierSchema, updateSupplierSchema } from "../../schemas";
-import type { CreateSupplierInput, SupplierWithRelations } from "../../types";
+import { createSupplierSchema, updateSupplierSchema } from "../../../../inventory/schemas";
+import type { CreateSupplierInput, SupplierWithRelations } from "@/shared/types";
 
 // 🎯 Form Data Type - Compatible with both create and update schemas
 type SupplierFormData = Omit<CreateSupplierInput, "rating"> & {
@@ -32,16 +32,18 @@ type SupplierFormData = Omit<CreateSupplierInput, "rating"> & {
 };
 
 /**
- * 🎯 SupplierModal Component
+ * 🎯 SupplierFormModal Component
  */
-export const SupplierModal: React.FC = () => {
+export const SupplierFormModal: React.FC = () => {
   const {
-    isSupplierModalOpen,
-    setIsSupplierModalOpen,
-    editingSupplier,
-    setEditingSupplier,
-    isEditSupplierMode,
-  } = useInventoryContext();
+    modals,
+    closeSupplierModal,
+  } = useSupplierContext();
+
+  const isOpen = modals.supplier.isOpen;
+  const mode = modals.supplier.mode;
+  const editingSupplier = modals.supplier.data;
+  const isEditMode = mode === "edit";
 
   // 🚀 Mutation hooks
   const {
@@ -59,9 +61,7 @@ export const SupplierModal: React.FC = () => {
   } = useUpdateSupplierModal();
 
   // 📝 Form setup
-  const schema = isEditSupplierMode
-    ? updateSupplierSchema
-    : createSupplierSchema;
+  const schema = isEditMode ? updateSupplierSchema : createSupplierSchema;
   const isSubmitting = isCreating || isUpdating;
   const submitError = createError || updateError;
 
@@ -137,9 +137,6 @@ export const SupplierModal: React.FC = () => {
       const defaultValues = getDefaultValues(editingSupplier);
       reset(defaultValues);
 
-      // 🐛 Debug: Log errors on edit mode
-      console.log("🐛 Edit Supplier - Default Values:", defaultValues);
-
       // Trigger validation after reset
       setTimeout(() => {
         trigger();
@@ -172,7 +169,7 @@ export const SupplierModal: React.FC = () => {
 
       let success: boolean;
 
-      if (isEditSupplierMode && editingSupplier) {
+      if (isEditMode && editingSupplier) {
         success = await handleUpdateSupplier(editingSupplier.id, {
           ...supplierData,
           isActive: editingSupplier.isActive,
@@ -192,8 +189,7 @@ export const SupplierModal: React.FC = () => {
   // 🎯 Close handler
   const handleClose = () => {
     if (!isSubmitting) {
-      setIsSupplierModalOpen(false);
-      setEditingSupplier(null);
+      closeSupplierModal();
       reset();
       resetCreate();
       resetUpdate();
@@ -243,11 +239,11 @@ export const SupplierModal: React.FC = () => {
 
   return (
     <BaseModal
-      isOpen={isSupplierModalOpen}
+      isOpen={isOpen}
       onClose={handleClose}
-      title={isEditSupplierMode ? "Editar Proveedor" : "Agregar Proveedor"}
+      title={isEditMode ? "Editar Proveedor" : "Agregar Proveedor"}
       description={
-        isEditSupplierMode
+        isEditMode
           ? `Modifica la información de "${editingSupplier?.name}"`
           : "Completa la información del nuevo proveedor"
       }
@@ -267,7 +263,7 @@ export const SupplierModal: React.FC = () => {
                     {Object.keys(errors).length} error(es) en el formulario
                   </span>
                 </div>
-                {/* 🐛 Show specific errors for debugging */}
+                {/* Show specific errors for debugging */}
                 <div className="text-xs text-red-500 dark:text-red-300 ml-6">
                   {Object.entries(errors).map(([field, error]) => (
                     <div key={field}>
@@ -305,7 +301,7 @@ export const SupplierModal: React.FC = () => {
                 void handleSubmit(onSubmit)();
               }}
             >
-              {isEditSupplierMode ? (
+              {isEditMode ? (
                 <>
                   <Truck className="w-4 h-4" />
                   Actualizar Proveedor
@@ -748,5 +744,3 @@ export const SupplierModal: React.FC = () => {
     </BaseModal>
   );
 };
-
-export default SupplierModal;

@@ -428,7 +428,7 @@ const ReportsTab: React.FC = React.memo(function ReportsTab() {
 
   return (
     <TabTransition isActive={true} transitionType="fade" delay={50}>
-      <div className="space-y-6 p-6">
+      <div className="space-y-6 p-6" suppressHydrationWarning>
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -542,21 +542,6 @@ const ReportsTab: React.FC = React.memo(function ReportsTab() {
           </div>
         </div>
       </div>
-
-      {/* Dark mode CSS variables */}
-      <style jsx global>{`
-        :root {
-          --tooltip-bg: #ffffff;
-          --tooltip-border: #e5e7eb;
-          --tooltip-text: #374151;
-        }
-
-        .dark {
-          --tooltip-bg: #1f2937;
-          --tooltip-border: #374151;
-          --tooltip-text: #f3f4f6;
-        }
-      `}</style>
     </TabTransition>
   );
 });

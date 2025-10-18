@@ -692,3 +692,16 @@
   z-index: -1;
   animation: tabGlow 2s ease-in-out infinite;
 }
+
+/* 📊 Recharts Tooltip CSS Variables - Dark Mode Compatible */
+:root {
+  --tooltip-bg: #ffffff;
+  --tooltip-border: #e5e7eb;
+  --tooltip-text: #374151;
+}
+
+.dark {
+  --tooltip-bg: #1f2937;
+  --tooltip-border: #374151;
+  --tooltip-text: #f3f4f6;
+}

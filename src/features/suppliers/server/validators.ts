@@ -21,7 +21,10 @@ export function validateCreateSupplier(
   input: CreateSupplierInput
 ): CreateSupplierInput {
   // Name validation
-  if (!input.name || input.name.trim().length < SUPPLIER_VALIDATION.NAME_MIN_LENGTH) {
+  if (
+    !input.name ||
+    input.name.trim().length < SUPPLIER_VALIDATION.NAME_MIN_LENGTH
+  ) {
     throw new Error(
       `Supplier name must be at least ${SUPPLIER_VALIDATION.NAME_MIN_LENGTH} characters`
     );
@@ -40,8 +43,8 @@ export function validateCreateSupplier(
     }
   }
 
-  // Phone validation
-  if (input.phone) {
+  // Phone validation - only validate if not empty
+  if (input.phone && input.phone.trim() !== "") {
     if (!SUPPLIER_VALIDATION.PHONE_PATTERN.test(input.phone)) {
       throw new Error("Invalid phone format");
     }
@@ -106,8 +109,12 @@ export function validateUpdateSupplier(
     }
   }
 
-  // Phone validation (if provided)
-  if (input.phone !== undefined && input.phone !== null) {
+  // Phone validation (if provided and not empty)
+  if (
+    input.phone !== undefined &&
+    input.phone !== null &&
+    input.phone.trim() !== ""
+  ) {
     if (!SUPPLIER_VALIDATION.PHONE_PATTERN.test(input.phone)) {
       throw new Error("Invalid phone format");
     }

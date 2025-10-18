@@ -82,6 +82,15 @@ const nextConfig: NextConfig = {
           key: "Referrer-Policy",
           value: "origin-when-cross-origin",
         },
+        // 🔧 Development: Prevent aggressive caching
+        ...(process.env.NODE_ENV === "development"
+          ? [
+              {
+                key: "Cache-Control",
+                value: "no-store, must-revalidate",
+              },
+            ]
+          : []),
       ],
     },
   ],

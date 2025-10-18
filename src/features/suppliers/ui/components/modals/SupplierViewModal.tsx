@@ -1,4 +1,6 @@
 /**
+ * Native for Suppliers Module - Uses SupplierContext
+ *
  * 👁️ SUPPLIER VIEW MODAL COMPONENT
  * ================================
  *
@@ -11,7 +13,6 @@
 "use client";
 
 import React, { useMemo } from "react";
-import Image from "next/image";
 import {
   X,
   Truck,
@@ -27,13 +28,10 @@ import {
   EyeOff,
   Hash,
   Clock,
-  Tag,
-  DollarSign,
 } from "lucide-react";
 import { cn } from "@/shared/utils";
-import { useInventoryContext } from "../../context";
-import type { SupplierWithRelations } from "../../types";
-import { useProductsQuery } from "../../hooks";
+import { useSupplierContext } from "../../../context";
+import type { SupplierWithRelations } from "@/shared/types/supplier";
 
 // 🧮 Utility function to compute enhanced supplier properties
 function computeSupplierProps(supplier: SupplierWithRelations) {
@@ -75,38 +73,24 @@ function computeSupplierProps(supplier: SupplierWithRelations) {
  * 🎯 SupplierViewModal Component
  */
 const SupplierViewModal: React.FC = () => {
-  const { viewingSupplier, isSupplierViewModalOpen, closeViewSupplierModal } =
-    useInventoryContext();
+  const { modals, closeViewModal } = useSupplierContext();
 
   // 🧮 Computed properties
   const supplierData = useMemo(() => {
-    if (!viewingSupplier) return null;
+    if (!modals.view.data) return null;
     return {
-      ...viewingSupplier,
-      computed: computeSupplierProps(viewingSupplier),
+      ...modals.view.data,
+      computed: computeSupplierProps(modals.view.data),
     };
-  }, [viewingSupplier]);
-
-  // 📦 Fetch products for this supplier
-  const { products: allProducts = [], isLoading: isLoadingProducts } =
-    useProductsQuery({
-      filters: { supplierId: viewingSupplier?.id, isActive: true },
-      enabled: !!viewingSupplier?.id,
-    });
-
-  // Filter products for this supplier (extra safety)
-  const supplierProducts = useMemo(() => {
-    if (!viewingSupplier) return [];
-    return allProducts.filter((p) => p.supplierId === viewingSupplier.id);
-  }, [allProducts, viewingSupplier]);
+  }, [modals.view.data]);
 
   // 🎯 Close handler
   const handleClose = () => {
-    closeViewSupplierModal();
+    closeViewModal();
   };
 
   // 🛡️ Early returns
-  if (!isSupplierViewModalOpen || !supplierData) {
+  if (!modals.view.isOpen || !supplierData) {
     return null;
   }
 
@@ -518,127 +502,6 @@ const SupplierViewModal: React.FC = () => {
                 </div>
               </div>
 
-              {/* 📦 Products Section */}
-              <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                  <Package className="w-5 h-5 text-purple-500" />
-                  Productos de este Proveedor
-                  <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
-                    ({supplierProducts.length})
-                  </span>
-                </h3>
-
-                {isLoadingProducts ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="w-8 h-8 border-4 border-purple-200 dark:border-purple-800 border-t-purple-600 dark:border-t-purple-400 rounded-full animate-spin" />
-                  </div>
-                ) : supplierProducts.length > 0 ? (
-                  <div className="max-h-[500px] overflow-y-auto overscroll-contain scrollbar-thin">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {supplierProducts.map((product) => {
-                        // Stock level color coding
-                        const stockLevel =
-                          product.stock === 0
-                            ? "empty"
-                            : product.stock < 10
-                            ? "low"
-                            : product.stock < 50
-                            ? "medium"
-                            : "good";
-
-                        const stockColors = {
-                          empty:
-                            "bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800",
-                          low: "bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 border-red-100 dark:border-red-800/50",
-                          medium:
-                            "bg-yellow-50 dark:bg-yellow-900/10 text-yellow-700 dark:text-yellow-400 border-yellow-100 dark:border-yellow-800/50",
-                          good: "bg-green-50 dark:bg-green-900/10 text-green-700 dark:text-green-400 border-green-100 dark:border-green-800/50",
-                        };
-
-                        return (
-                          <div
-                            key={product.id}
-                            className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow"
-                          >
-                            {/* Product Image */}
-                            <div className="mb-3">
-                              {product.images && product.images.length > 0 ? (
-                                <div className="relative w-full h-32 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
-                                  <Image
-                                    src={product.images[0]}
-                                    alt={product.name}
-                                    fill
-                                    className="object-cover"
-                                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                                  />
-                                </div>
-                              ) : (
-                                <div className="w-full h-32 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                                  <Package className="w-12 h-12 text-gray-400 dark:text-gray-500" />
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Product Info */}
-                            <div className="space-y-2">
-                              {/* Name */}
-                              <h4 className="font-semibold text-gray-900 dark:text-white text-sm line-clamp-2">
-                                {product.name}
-                              </h4>
-
-                              {/* SKU */}
-                              <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-                                <Hash className="w-3 h-3" />
-                                <span className="font-mono">{product.sku}</span>
-                              </div>
-
-                              {/* Category */}
-                              <div className="flex items-center gap-1.5">
-                                <Tag className="w-3 h-3 text-gray-400" />
-                                <span className="text-xs text-gray-600 dark:text-gray-400">
-                                  {product.category?.name || "Sin categoría"}
-                                </span>
-                              </div>
-
-                              {/* Stock Badge */}
-                              <div
-                                className={cn(
-                                  "inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium border",
-                                  stockColors[stockLevel]
-                                )}
-                              >
-                                <Package className="w-3 h-3" />
-                                <span>
-                                  Stock: {product.stock} {product.unit}
-                                </span>
-                              </div>
-
-                              {/* Price */}
-                              <div className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-white pt-1">
-                                <DollarSign className="w-4 h-4 text-green-600 dark:text-green-400" />
-                                <span>
-                                  {new Intl.NumberFormat("es-MX", {
-                                    style: "currency",
-                                    currency: "MXN",
-                                  }).format(product.price)}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-gray-100 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-8 text-center">
-                    <Package className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
-                    <p className="text-gray-600 dark:text-gray-400 font-medium">
-                      Este proveedor no tiene productos asignados
-                    </p>
-                  </div>
-                )}
-              </div>
-
               {/* 🚨 Empty State Warning */}
               {computed.isEmpty && (
                 <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
@@ -681,4 +544,3 @@ function getCountryName(code: string): string {
 }
 
 export default SupplierViewModal;
-
