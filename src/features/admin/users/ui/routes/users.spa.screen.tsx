@@ -1,14 +1,15 @@
 /**
- * 👥 USERS SPA SCREEN
- * ==================
+ * 👥 USERS SCREEN - ELEGANT UX
+ * =============================
  *
- * Single Page Application completa para Users Management
- * Navegación por tabs internos con estado compartido y transiciones smooth
- * Siguiendo EXACTAMENTE el patrón de InventoryContext
+ * Layout estandarizado siguiendo docs/layout_updated.md:
+ * - Header que desaparece suavemente con scroll
+ * - Tabs con bordes redondeados
+ * - Sin min-h-screen (sin scroll innecesario)
+ * - Solo renderiza el tab activo
+ * - Transiciones smooth
  *
- * Created: 2025-01-18 - Users SPA Implementation
- * Pattern: Strictly following InventoryContext architecture
- * Fixed: 2025-01-17 - True SPA behavior - tabs no longer re-mount when switching
+ * Updated: 2025-01-18 - Standardized Layout
  */
 
 "use client";
@@ -16,7 +17,7 @@
 // Import custom animations
 import "../styles/animations.css";
 
-import React, { useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   BarChart3,
   Users,
@@ -25,6 +26,8 @@ import {
   FileText,
   Key,
   UserCheck,
+  RefreshCw,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/shared/utils";
 import {
@@ -34,7 +37,6 @@ import {
   type TabId,
 } from "../../context";
 import { ReusableTabs, type TabItem } from "@/shared/ui/components";
-import { useScrollHeader } from "@/shared/hooks";
 import {
   OverviewTab,
   AllUsersTab,
@@ -53,14 +55,75 @@ const ICON_MAP = {
   Key,
 } as const;
 
-// 🎯 Enhanced Tab Navigation with Smart Scroll
-interface TabNavigationProps {
-  isHeaderVisible: boolean;
-}
+// 🎯 Tab Content - Only Active Tab Mounted
+const TabContent: React.FC = () => {
+  const { activeTab } = useUsersContext();
 
-const TabNavigation: React.FC<TabNavigationProps> = ({ isHeaderVisible }) => {
-  const { activeTab, setActiveTab, users, isTabChanging } = useUsersContext();
+  return (
+    <div className="transition-opacity duration-200">
+      {activeTab === "overview" && (
+        <div className="animate-fadeIn">
+          <OverviewTab />
+        </div>
+      )}
+
+      {activeTab === "all-users" && (
+        <div className="animate-fadeIn">
+          <AllUsersTab />
+        </div>
+      )}
+
+      {activeTab === "admins" && (
+        <div className="animate-fadeIn">
+          <AdminsTab />
+        </div>
+      )}
+
+      {activeTab === "analytics" && (
+        <div className="animate-fadeIn">
+          <AnalyticsTab />
+        </div>
+      )}
+
+      {activeTab === "audit" && (
+        <div className="animate-fadeIn">
+          <AuditTab />
+        </div>
+      )}
+
+      {activeTab === "permissions" && (
+        <div className="animate-fadeIn">
+          <div className="p-8 text-center">
+            <div className="max-w-md mx-auto">
+              <Key className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                Gestión de Permisos
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                Esta funcionalidad estará disponible próximamente. Permitirá
+                gestionar permisos granulares para cada usuario.
+              </p>
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  🚧 En desarrollo - Próximamente disponible
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// 🎯 Main Component Content (without Provider)
+const UsersSPAContent: React.FC = () => {
+  const { activeTab, setActiveTab, users } = useUsersContext();
   const { stats } = users;
+
+  // Estado para visibilidad del header
+  const [showHeader, setShowHeader] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
 
   // Calculate notification counts for each tab
   const notificationCounts = useMemo(
@@ -75,259 +138,126 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ isHeaderVisible }) => {
     [stats.banned, stats.total, stats.admins]
   );
 
+  // 🎯 Smooth scroll detection
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      // Mostrar header cuando: scroll up o está en top
+      // Ocultar header cuando: scroll down > 50px
+      if (currentScrollY < lastScrollY || currentScrollY < 50) {
+        setShowHeader(true);
+      } else if (currentScrollY > 50) {
+        setShowHeader(false);
+      }
+
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [lastScrollY]);
+
   return (
-    <div className="border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg">
-      <div className="px-6 py-4 flex justify-center flex-col">
-        {/* Smart Header with Scroll Animations - DISAPPEARS ON SCROLL */}
-        <div
-          id="header-tabs-container"
-          className={cn(
-            "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4",
-            "transform-gpu transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
-            isHeaderVisible
-              ? "opacity-100 translate-y-0 scale-y-100 mb-6 max-h-96"
-              : "opacity-0 -translate-y-3 scale-y-90 mb-0 max-h-0 overflow-hidden pointer-events-none"
-          )}
-          style={{
-            visibility: isHeaderVisible ? "visible" : "hidden",
-            transitionProperty: "opacity, transform, margin-bottom, max-height",
-          }}
-        >
-          {/* Title Section */}
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-3">
-              <UserCheck className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Gestión de Usuarios
-              </h1>
-            </div>
-            <p className="text-gray-600 dark:text-gray-400 max-w-2xl">
-              Administra usuarios, roles, permisos y monitorea la actividad del
-              sistema. Panel centralizado para la gestión completa de usuarios.
-            </p>
-          </div>
+    <div className="bg-gray-50 dark:bg-gray-900">
+      {/*
+        🎯 HEADER - Smooth fade out on scroll down
+        - NO sticky (se oculta completamente)
+        - Aparece cuando: scroll up o en top
+        - Desaparece cuando: scroll down > 50px
+      */}
+      {showHeader && (
+        <div className="transition-all duration-300 ease-in-out animate-fadeIn">
+          <div className="border-b border-gray-200 dark:border-gray-700 shadow-sm">
+            <div className="max-w-[1600px] mx-auto px-6 py-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-3">
+                    <UserCheck className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                    Gestión de Usuarios
+                  </h1>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Administra usuarios, roles, permisos y monitorea la actividad del sistema
+                  </p>
+                </div>
 
-          {/* Quick Stats - Visible only when header is visible */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                {stats.total} Total
-              </span>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              <UserCheck className="w-5 h-5 text-green-600 dark:text-green-400" />
-              <span className="text-sm font-medium text-green-900 dark:text-green-100">
-                {stats.active} Activos
-              </span>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-              <Shield className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-              <span className="text-sm font-medium text-purple-900 dark:text-purple-100">
-                {stats.admins} Admins
-              </span>
-            </div>
-          </div>
-        </div>
+                {/* Quick Stats & Actions */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                  <div className="flex gap-2">
+                    <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      <span className="text-xs font-medium text-blue-900 dark:text-blue-100">
+                        {stats.total} Total
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                      <UserCheck className="w-4 h-4 text-green-600 dark:text-green-400" />
+                      <span className="text-xs font-medium text-green-900 dark:text-green-100">
+                        {stats.active} Activos
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                      <Shield className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                      <span className="text-xs font-medium text-purple-900 dark:text-purple-100">
+                        {stats.admins} Admins
+                      </span>
+                    </div>
+                  </div>
 
-        {/* Enhanced Tab Navigation - ALWAYS VISIBLE & CLEAN */}
-        <div
-          className={cn(
-            "transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] transform-gpu",
-            // Add smooth movement when header is hidden
-            isHeaderVisible ? "translate-y-0 pt-0" : "translate-y-0"
-          )}
-        >
-          <ReusableTabs
-            tabs={USERS_TABS.map((tab) => {
-              const IconComponent =
-                ICON_MAP[tab.icon as keyof typeof ICON_MAP] || Eye;
-              const notificationCount =
-                notificationCounts[tab.id as keyof typeof notificationCounts];
-
-              return {
-                id: tab.id,
-                label: tab.label,
-                icon: <IconComponent className="w-4 h-4" />,
-                color: tab.color,
-                hasNotification: notificationCount > 0,
-                notificationCount: notificationCount || 0,
-                disabled: tab.id === "permissions", // Future feature
-              } as TabItem;
-            })}
-            activeTab={activeTab}
-            onTabChange={(tabId) => setActiveTab(tabId as TabId)}
-            variant="default"
-            size="md"
-            animated={true}
-            scrollable={true}
-            className="bg-transparent border-0 shadow-none p-0"
-          />
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// 🎯 TRUE SPA Tab Content - Keep All Tabs Mounted (Users)
-const TabContent: React.FC = () => {
-  const { activeTab, isTabChanging } = useUsersContext();
-
-  // 🚨 SPA FIX: Render ALL tabs but only show the active one
-  // This prevents unmounting/remounting which was causing the "refresh" behavior
-  return (
-    <div className="relative min-h-screen">
-      {/* Tab transition overlay */}
-      <div
-        className={cn(
-          "absolute inset-0 bg-white/50 dark:bg-gray-900/50 z-10 pointer-events-none transition-opacity duration-150",
-          isTabChanging ? "opacity-100" : "opacity-0"
-        )}
-      />
-
-      {/* Overview Tab - Always mounted */}
-      <div
-        className={cn(
-          "transition-all duration-300 ease-out",
-          activeTab === "overview"
-            ? "opacity-100 visible relative z-0"
-            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
-        )}
-        style={{
-          transform:
-            activeTab === "overview" ? "translateY(0)" : "translateY(20px)",
-        }}
-      >
-        <OverviewTab />
-      </div>
-
-      {/* All Users Tab - Always mounted */}
-      <div
-        className={cn(
-          "transition-all duration-300 ease-out",
-          activeTab === "all-users"
-            ? "opacity-100 visible relative z-0"
-            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
-        )}
-        style={{
-          transform:
-            activeTab === "all-users" ? "translateY(0)" : "translateY(20px)",
-        }}
-      >
-        <AllUsersTab />
-      </div>
-
-      {/* Admins Tab - Always mounted */}
-      <div
-        className={cn(
-          "transition-all duration-300 ease-out",
-          activeTab === "admins"
-            ? "opacity-100 visible relative z-0"
-            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
-        )}
-        style={{
-          transform:
-            activeTab === "admins" ? "translateY(0)" : "translateY(20px)",
-        }}
-      >
-        <AdminsTab />
-      </div>
-
-      {/* Analytics Tab - Always mounted */}
-      <div
-        className={cn(
-          "transition-all duration-300 ease-out",
-          activeTab === "analytics"
-            ? "opacity-100 visible relative z-0"
-            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
-        )}
-        style={{
-          transform:
-            activeTab === "analytics" ? "translateY(0)" : "translateY(20px)",
-        }}
-      >
-        <AnalyticsTab />
-      </div>
-
-      {/* Audit Tab - Always mounted */}
-      <div
-        className={cn(
-          "transition-all duration-300 ease-out",
-          activeTab === "audit"
-            ? "opacity-100 visible relative z-0"
-            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
-        )}
-        style={{
-          transform:
-            activeTab === "audit" ? "translateY(0)" : "translateY(20px)",
-        }}
-      >
-        <AuditTab />
-      </div>
-
-      {/* Permissions Tab - Placeholder (Always mounted) */}
-      <div
-        className={cn(
-          "transition-all duration-300 ease-out",
-          activeTab === "permissions"
-            ? "opacity-100 visible relative z-0"
-            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
-        )}
-        style={{
-          transform:
-            activeTab === "permissions" ? "translateY(0)" : "translateY(20px)",
-        }}
-      >
-        <div className="p-8 text-center">
-          <div className="max-w-md mx-auto">
-            <Key className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              Gestión de Permisos
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Esta funcionalidad estará disponible próximamente. Permitirá
-              gestionar permisos granulares para cada usuario.
-            </p>
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-              <p className="text-sm text-blue-800 dark:text-blue-200">
-                🚧 En desarrollo - Próximamente disponible
-              </p>
+                  <button className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200">
+                    <Settings className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  );
-};
+      )}
 
-// 🎯 Main SPA Component (without Provider)
-const UsersSPAContent: React.FC = () => {
-  // ✨ Clean Scroll Detection Hook
-  const { isHeaderVisible } = useScrollHeader({
-    threshold: 17,
-    wheelSensitivity: 0.5,
-    useWheelFallback: true,
-    debug: false, // Set to true for debugging
-  });
+      {/*
+        🎯 TABS - Sticky & Rounded
+        - Sticky top-0 siempre
+        - Bordes redondeados elegantes
+        - Shadow para profundidad
+      */}
+      <div className="sticky top-0 z-50 bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-[1600px] mx-auto px-6 pt-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-2">
+            <ReusableTabs
+              tabs={USERS_TABS.map((tab) => {
+                const IconComponent =
+                  ICON_MAP[tab.icon as keyof typeof ICON_MAP] || Eye;
+                const notificationCount =
+                  notificationCounts[tab.id as keyof typeof notificationCounts];
 
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Fixed Navigation */}
-      <TabNavigation isHeaderVisible={isHeaderVisible} />
-
-      {/* Main Content Area */}
-      <main className="flex-1 relative">
-        <div
-          className={cn(
-            "max-w-full",
-            "transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] transform-gpu",
-            isHeaderVisible ? "translate-y-0" : "-translate-y-6"
-          )}
-          data-scroll-content
-        >
-          <TabContent />
+                return {
+                  id: tab.id,
+                  label: tab.label,
+                  icon: <IconComponent className="w-4 h-4" />,
+                  color: tab.color,
+                  hasNotification: notificationCount > 0,
+                  notificationCount: notificationCount || 0,
+                  disabled: tab.id === "permissions",
+                } as TabItem;
+              })}
+              activeTab={activeTab}
+              onTabChange={(tabId) => setActiveTab(tabId as TabId)}
+              variant="default"
+              size="md"
+              animated={true}
+              scrollable={true}
+              className="bg-transparent border-0 shadow-none p-0"
+            />
+          </div>
         </div>
-      </main>
+      </div>
+
+      {/*
+        📦 CONTENT AREA - Professional Spacing
+      */}
+      <div className="max-w-[1600px] mx-auto px-6 py-6">
+        <TabContent />
+      </div>
     </div>
   );
 };

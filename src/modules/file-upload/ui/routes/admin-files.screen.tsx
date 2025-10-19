@@ -1,16 +1,23 @@
 /**
- * ⚡ ADMIN FILES SCREEN - TANSTACK OPTIMIZED
- * ========================================
+ * ⚡ ADMIN FILES SCREEN - ELEGANT UX
+ * ===================================
  *
- * Screen principal de gestión de archivos súper optimizada con TanStack Query.
- * Performance enterprise, cache inteligente, optimistic updates.
+ * Layout estandarizado siguiendo docs/layout_updated.md:
+ * - Header que desaparece suavemente con scroll
+ * - Tabs con bordes redondeados usando ReusableTabs
+ * - Sin min-h-screen (sin scroll innecesario)
+ * - Solo renderiza el tab activo
+ * - Transiciones smooth
  *
- * Enterprise: 2025-01-17 - TanStack Query migration
+ * Updated: 2025-01-18 - Standardized Layout
  */
 
 "use client";
 
-import React, { useState, useMemo } from "react";
+// Import custom animations
+import "../../../../features/inventory/ui/styles/animations.css";
+
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Upload,
   Grid,
@@ -20,7 +27,9 @@ import {
   Image,
   File,
   RefreshCw,
+  HardDrive,
 } from "lucide-react";
+import { ReusableTabs, type TabItem } from "@/shared/ui/components";
 import { useFileUploadQuery } from "../../hooks/useFileUploadQuery";
 // Notifications now handled by useFileUploadQuery
 import FileUploader from "../components/FileUploader";
@@ -201,10 +210,13 @@ export const AdminFilesScreen: React.FC<AdminFilesScreenProps> = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  // Removed unused upload provider and category state
   const [activeTab, setActiveTab] = useState<
     "upload" | "manager" | "stats" | "gallery"
   >("manager");
+
+  // Estado para visibilidad del header
+  const [showHeader, setShowHeader] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
 
   // ⚡ TanStack Query Hook - Enterprise optimized
   const {
@@ -359,6 +371,54 @@ export const AdminFilesScreen: React.FC<AdminFilesScreenProps> = () => {
 
   // Images are filtered inline in the gallery tab
 
+  // 🎯 Smooth scroll detection
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      // Mostrar header cuando: scroll up o está en top
+      // Ocultar header cuando: scroll down > 50px
+      if (currentScrollY < lastScrollY || currentScrollY < 50) {
+        setShowHeader(true);
+      } else if (currentScrollY > 50) {
+        setShowHeader(false);
+      }
+
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [lastScrollY]);
+
+  // Tab configuration for ReusableTabs
+  const tabs: TabItem[] = [
+    {
+      id: "manager",
+      label: "Gestor",
+      icon: <File className="w-4 h-4" />,
+      color: "blue",
+    },
+    {
+      id: "upload",
+      label: "Subir",
+      icon: <Upload className="w-4 h-4" />,
+      color: "green",
+    },
+    {
+      id: "stats",
+      label: "Estadísticas",
+      icon: <MoreHorizontal className="w-4 h-4" />,
+      color: "purple",
+    },
+    {
+      id: "gallery",
+      label: "Galería",
+      icon: <Image className="w-4 h-4" />,
+      color: "pink",
+    },
+  ];
+
   if (error) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -381,193 +441,218 @@ export const AdminFilesScreen: React.FC<AdminFilesScreenProps> = () => {
   }
 
   return (
-    <div className="space-y-6 p-6 bg-white dark:bg-slate-900 min-h-screen transition-colors duration-300">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">
-            Gestión de Archivos
-          </h1>
-          <p className="text-sm text-gray-600 dark:text-slate-400">
-            {files.length} archivo(s) • TanStack Query Optimized
-          </p>
-        </div>
+    <div className="bg-gray-50 dark:bg-gray-900">
+      {/*
+        🎯 HEADER - Smooth fade out on scroll down
+        - NO sticky (se oculta completamente)
+        - Aparece cuando: scroll up o en top
+        - Desaparece cuando: scroll down > 50px
+      */}
+      {showHeader && (
+        <div className="transition-all duration-300 ease-in-out animate-fadeIn">
+          <div className="border-b border-gray-200 dark:border-gray-700 shadow-sm">
+            <div className="max-w-[1600px] mx-auto px-6 py-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-3">
+                    <HardDrive className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                    Gestión de Archivos
+                  </h1>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    {files.length} archivo(s) • TanStack Query Optimized
+                  </p>
+                </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={refresh}
-            disabled={isRefreshing}
-            className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 transition-colors duration-200"
-          >
-            <RefreshCw
-              className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
-            />
-            Actualizar
-          </button>
+                {/* Actions */}
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={refresh}
+                    disabled={isRefreshing}
+                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center space-x-2 transition-all duration-200 disabled:opacity-50"
+                  >
+                    <RefreshCw
+                      className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
+                    />
+                    <span>Actualizar</span>
+                  </button>
 
-          <div className="flex border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800">
-            <button
-              onClick={() => setViewMode("grid")}
-              className={`p-2 transition-colors duration-200 ${
-                viewMode === "grid"
-                  ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                  : "text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-              }`}
-            >
-              <Grid className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              className={`p-2 transition-colors duration-200 ${
-                viewMode === "list"
-                  ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                  : "text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-              }`}
-            >
-              <List className="w-4 h-4" />
-            </button>
+                  <div className="flex border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
+                    <button
+                      onClick={() => setViewMode("grid")}
+                      className={`p-2 transition-colors duration-200 ${
+                        viewMode === "grid"
+                          ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                          : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      }`}
+                    >
+                      <Grid className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setViewMode("list")}
+                      className={`p-2 transition-colors duration-200 ${
+                        viewMode === "list"
+                          ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                          : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      }`}
+                    >
+                      <List className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-slate-700">
-        <nav className="-mb-px flex space-x-8">
-          {[
-            { key: "manager", label: "Gestor", icon: File },
-            { key: "upload", label: "Subir", icon: Upload },
-            { key: "stats", label: "Estadísticas", icon: MoreHorizontal },
-            { key: "gallery", label: "Galería", icon: Image },
-          ].map(({ key, label, icon: Icon }) => (
-            <button
-              key={key}
-              onClick={() =>
-                setActiveTab(key as "upload" | "manager" | "stats" | "gallery")
-              }
-              className={`flex items-center gap-2 py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
-                activeTab === key
-                  ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                  : "border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300 hover:border-gray-300 dark:hover:border-slate-600"
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              {label}
-            </button>
-          ))}
-        </nav>
-      </div>
-
-      {/* Search and Filters */}
-      {(activeTab === "manager" || activeTab === "gallery") && (
-        <div className="flex flex-col sm:flex-row gap-4">
-          {/* Search */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-slate-500 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Buscar archivos..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-500 dark:placeholder-slate-400 transition-colors duration-200"
-            />
-          </div>
-
-          {/* Type Filter */}
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 transition-colors duration-200"
-          >
-            <option value="all">Todos los tipos</option>
-            <option value="images">Imágenes ({fileTypeStats.images})</option>
-            <option value="documents">
-              Documentos ({fileTypeStats.documents})
-            </option>
-            <option value="videos">Videos ({fileTypeStats.videos})</option>
-            <option value="audio">Audio ({fileTypeStats.audio})</option>
-          </select>
-
-          {/* Category Filter */}
-          <select
-            value={selectedCategory || ""}
-            onChange={(e) => setSelectedCategory(e.target.value || null)}
-            className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 transition-colors duration-200"
-          >
-            <option value="">Todas las categorías</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
         </div>
       )}
 
-      {/* Content */}
-      <div className="min-h-[400px]">
-        {isLoading ? (
-          <FilesSkeleton activeTab={activeTab} viewMode={viewMode} />
-        ) : (
-          <>
-            {activeTab === "upload" && (
-              <FileUploader
-                config={uploadConfig}
-                onUploadComplete={() => {}} // Notifications handled by useFileUploadQuery
-                onUploadError={() => {}}
-                isUploading={isUploading}
-                uploadProgress={[]}
-                uploadError={null}
-                uploadFiles={async (files) => {
-                  // Simple delegation to uploadFile - let useFileUploadQuery handle everything
-                  const results = [];
-                  for (const file of files) {
-                    try {
-                      const result = await uploadFile(file);
-                      results.push({
-                        success: true,
-                        file: transformToCardData(result),
-                      });
-                    } catch (error) {
-                      results.push({
-                        success: false,
-                        error:
-                          error instanceof Error
-                            ? error.message
-                            : "Upload failed",
-                      });
-                    }
-                  }
-                  return results;
-                }}
-                clearError={() => {}} // No-op for now
-              />
-            )}
+      {/*
+        🎯 TABS - Sticky & Rounded
+        - Sticky top-0 siempre
+        - Bordes redondeados elegantes
+        - Shadow para profundidad
+      */}
+      <div className="sticky top-0 z-50 bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-[1600px] mx-auto px-6 pt-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-2">
+            <ReusableTabs
+              tabs={tabs}
+              activeTab={activeTab}
+              onTabChange={(tabId) =>
+                setActiveTab(tabId as "upload" | "manager" | "stats" | "gallery")
+              }
+              variant="default"
+              size="md"
+              animated={true}
+              scrollable={true}
+              className="bg-transparent border-0 shadow-none p-0"
+            />
+          </div>
+        </div>
+      </div>
 
-            {activeTab === "manager" && (
-              <FileManager
-                files={filteredFiles.map(transformToCardData)}
-                uploadProgress={[]}
-                uploadFiles={handleUploadForManager}
-                deleteFile={handleFileDelete}
-                viewMode={viewMode}
-                selectable={false}
+      {/*
+        📦 CONTENT AREA - Professional Spacing
+      */}
+      <div className="max-w-[1600px] mx-auto px-6 py-6">
+        {/* Search and Filters */}
+        {(activeTab === "manager" || activeTab === "gallery") && (
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Buscar archivos..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-200"
               />
-            )}
+            </div>
 
-            {activeTab === "stats" && stats && (
-              <FileStats stats={stats} showDetails={true} />
-            )}
+            {/* Type Filter */}
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition-colors duration-200"
+            >
+              <option value="all">Todos los tipos</option>
+              <option value="images">Imágenes ({fileTypeStats.images})</option>
+              <option value="documents">
+                Documentos ({fileTypeStats.documents})
+              </option>
+              <option value="videos">Videos ({fileTypeStats.videos})</option>
+              <option value="audio">Audio ({fileTypeStats.audio})</option>
+            </select>
 
-            {activeTab === "gallery" && (
-              <ImageGallery
-                images={filteredFiles
-                  .filter((f) => f.mimeType.startsWith("image/"))
-                  .map(transformToCardData)}
-                onImageDelete={(image) => handleFileDelete(image.id)}
-              />
-            )}
-          </>
+            {/* Category Filter */}
+            <select
+              value={selectedCategory || ""}
+              onChange={(e) => setSelectedCategory(e.target.value || null)}
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition-colors duration-200"
+            >
+              <option value="">Todas las categorías</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </div>
         )}
+
+        {/* Tab Content - Only Active Tab */}
+        <div className="transition-opacity duration-200">
+          {isLoading ? (
+            <FilesSkeleton activeTab={activeTab} viewMode={viewMode} />
+          ) : (
+            <>
+              {activeTab === "upload" && (
+                <div className="animate-fadeIn">
+                  <FileUploader
+                    config={uploadConfig}
+                    onUploadComplete={() => {}}
+                    onUploadError={() => {}}
+                    isUploading={isUploading}
+                    uploadProgress={[]}
+                    uploadError={null}
+                    uploadFiles={async (files) => {
+                      const results = [];
+                      for (const file of files) {
+                        try {
+                          const result = await uploadFile(file);
+                          results.push({
+                            success: true,
+                            file: transformToCardData(result),
+                          });
+                        } catch (error) {
+                          results.push({
+                            success: false,
+                            error:
+                              error instanceof Error
+                                ? error.message
+                                : "Upload failed",
+                          });
+                        }
+                      }
+                      return results;
+                    }}
+                    clearError={() => {}}
+                  />
+                </div>
+              )}
+
+              {activeTab === "manager" && (
+                <div className="animate-fadeIn">
+                  <FileManager
+                    files={filteredFiles.map(transformToCardData)}
+                    uploadProgress={[]}
+                    uploadFiles={handleUploadForManager}
+                    deleteFile={handleFileDelete}
+                    viewMode={viewMode}
+                    selectable={false}
+                  />
+                </div>
+              )}
+
+              {activeTab === "stats" && stats && (
+                <div className="animate-fadeIn">
+                  <FileStats stats={stats} showDetails={true} />
+                </div>
+              )}
+
+              {activeTab === "gallery" && (
+                <div className="animate-fadeIn">
+                  <ImageGallery
+                    images={filteredFiles
+                      .filter((f) => f.mimeType.startsWith("image/"))
+                      .map(transformToCardData)}
+                    onImageDelete={(image) => handleFileDelete(image.id)}
+                  />
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Loading Overlay for Mutations */}
