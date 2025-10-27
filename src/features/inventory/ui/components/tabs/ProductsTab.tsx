@@ -511,83 +511,137 @@ const ProductsTab: React.FC = React.memo(function ProductsTab() {
   };
 
   return (
-    <TabWrapper spacing="space-y-6">
-      {/* 🔥 Using TabHeader component */}
-      <TabHeader
-        icon={<Package className="w-8 h-8 text-blue-600 dark:text-blue-400" />}
-        title="Gestión de Productos"
-        description="Administra tu catálogo y ajusta stock directamente"
-        customActions={
-          <>
-            {/* Filter Presets Dropdown */}
-            <FilterPresetsDropdown
-              presets={filterPresets}
-              onSelectPreset={handleSelectPreset}
-              onEditPreset={handleEditPreset}
-              onDeletePreset={handleDeletePreset}
-              onDuplicatePreset={handleDuplicatePreset}
-              onSetDefault={handleSetDefaultPreset}
-              currentPresetId={currentPresetId}
-            />
-          </>
-        }
-        actions={[
-          {
-            label: "Guardar Preset",
-            icon: <Save className="w-4 h-4" />,
-            onClick: () => {
-              setEditingPreset(null);
-              setShowSavePresetModal(true);
+    <>
+      <TabWrapper spacing="space-y-6">
+        {/* 🔥 Using TabHeader component */}
+        <TabHeader
+          icon={
+            <Package className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+          }
+          title="Gestión de Productos"
+          description="Administra tu catálogo y ajusta stock directamente"
+          customActions={
+            <>
+              {/* Filter Presets Dropdown */}
+              <FilterPresetsDropdown
+                presets={filterPresets}
+                onSelectPreset={handleSelectPreset}
+                onEditPreset={handleEditPreset}
+                onDeletePreset={handleDeletePreset}
+                onDuplicatePreset={handleDuplicatePreset}
+                onSetDefault={handleSetDefaultPreset}
+                currentPresetId={currentPresetId}
+              />
+            </>
+          }
+          actions={[
+            {
+              label: "Guardar Preset",
+              icon: <Save className="w-4 h-4" />,
+              onClick: () => {
+                setEditingPreset(null);
+                setShowSavePresetModal(true);
+              },
+              variant: "secondary",
             },
-            variant: "secondary",
-          },
-          {
-            label: "Exportar",
-            icon: <Download className="w-4 h-4" />,
-            onClick: () => setShowExportModal(true),
-            variant: "secondary",
-          },
-          {
-            label: "Importar",
-            icon: <Upload className="w-4 h-4" />,
-            onClick: () => setShowImportModal(true),
-            variant: "secondary",
-          },
-        ]}
-      />
+            {
+              label: "Exportar",
+              icon: <Download className="w-4 h-4" />,
+              onClick: () => setShowExportModal(true),
+              variant: "secondary",
+            },
+            {
+              label: "Importar",
+              icon: <Upload className="w-4 h-4" />,
+              onClick: () => setShowImportModal(true),
+              variant: "secondary",
+            },
+          ]}
+        />
 
-      {/* 🔥 Extracted ProductFilters component */}
-      <ProductFilters
-        searchTerm={globalSearchTerm}
-        onSearchChange={setGlobalSearchTerm}
-        filters={productFilters}
-        onFiltersChange={setProductFilters}
-        onClearAllFilters={clearAllFilters}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        onAddProduct={() => setIsProductModalOpen(true)}
-        categories={inventory.categories}
-        suppliers={inventory.suppliers}
-      />
+        {/* 🔥 Extracted ProductFilters component */}
+        <ProductFilters
+          searchTerm={globalSearchTerm}
+          onSearchChange={setGlobalSearchTerm}
+          filters={productFilters}
+          onFiltersChange={setProductFilters}
+          onClearAllFilters={clearAllFilters}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          onAddProduct={() => setIsProductModalOpen(true)}
+          categories={inventory.categories}
+          suppliers={inventory.suppliers}
+        />
 
-      {/* Products Display */}
-      <ProductsDisplay
-        onQuickAdjust={handleOpenStockAdjust}
-        selectedProductIds={selectedProductIds}
-        onToggleSelection={handleToggleSelection}
-        showCheckbox={true}
-      />
+        {/* Products Display */}
+        <ProductsDisplay
+          onQuickAdjust={handleOpenStockAdjust}
+          selectedProductIds={selectedProductIds}
+          onToggleSelection={handleToggleSelection}
+          showCheckbox={true}
+        />
 
-      {/* Stock Adjustment Modal */}
-      <QuickStockAdjustModal
-        product={selectedProduct}
-        isOpen={stockAdjustModalOpen}
-        onClose={handleCloseStockAdjust}
-        onSubmit={handleSubmitStockAdjust}
-        isLoading={isSubmitting}
-      />
+        {/* Stock Adjustment Modal */}
+        <QuickStockAdjustModal
+          product={selectedProduct}
+          isOpen={stockAdjustModalOpen}
+          onClose={handleCloseStockAdjust}
+          onSubmit={handleSubmitStockAdjust}
+          isLoading={isSubmitting}
+        />
 
-      {/* Bulk Selection Bar */}
+        {/* Bulk Actions Modal */}
+        <BulkActionsModal
+          isOpen={showBulkActions}
+          onClose={() => {
+            setShowBulkActions(false);
+            setBulkOperation(undefined);
+          }}
+          selectedCount={selectedProductIds.size}
+          operationType={bulkOperation}
+          categories={inventory.categories}
+          suppliers={inventory.suppliers}
+          onExecute={handleBulkExecute}
+          isLoading={isBulkLoading}
+        />
+
+        {/* Export Modal */}
+        <ExportModal
+          isOpen={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          products={inventory.products}
+        />
+
+        {/* Import Modal */}
+        <ImportModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onImport={handleImport}
+        />
+
+        {/* Save Preset Modal */}
+        <SavePresetModal
+          isOpen={showSavePresetModal}
+          onClose={() => {
+            setShowSavePresetModal(false);
+            setEditingPreset(null);
+          }}
+          onSave={handleSavePreset}
+          currentFilters={productFilters}
+          editingPreset={
+            editingPreset
+              ? {
+                  id: editingPreset.id,
+                  name: editingPreset.name,
+                  description: editingPreset.description,
+                  color: editingPreset.color,
+                }
+              : undefined
+          }
+        />
+      </TabWrapper>
+
+      {/* Bulk Selection Bar - Fixed position, outside TabWrapper */}
       <BulkSelectionBar
         selectedCount={selectedProductIds.size}
         totalCount={inventory.products.length}
@@ -604,57 +658,7 @@ const ProductsTab: React.FC = React.memo(function ProductsTab() {
           console.log("More actions clicked");
         }}
       />
-
-      {/* Bulk Actions Modal */}
-      <BulkActionsModal
-        isOpen={showBulkActions}
-        onClose={() => {
-          setShowBulkActions(false);
-          setBulkOperation(undefined);
-        }}
-        selectedCount={selectedProductIds.size}
-        operationType={bulkOperation}
-        categories={inventory.categories}
-        suppliers={inventory.suppliers}
-        onExecute={handleBulkExecute}
-        isLoading={isBulkLoading}
-      />
-
-      {/* Export Modal */}
-      <ExportModal
-        isOpen={showExportModal}
-        onClose={() => setShowExportModal(false)}
-        products={inventory.products}
-      />
-
-      {/* Import Modal */}
-      <ImportModal
-        isOpen={showImportModal}
-        onClose={() => setShowImportModal(false)}
-        onImport={handleImport}
-      />
-
-      {/* Save Preset Modal */}
-      <SavePresetModal
-        isOpen={showSavePresetModal}
-        onClose={() => {
-          setShowSavePresetModal(false);
-          setEditingPreset(null);
-        }}
-        onSave={handleSavePreset}
-        currentFilters={productFilters}
-        editingPreset={
-          editingPreset
-            ? {
-                id: editingPreset.id,
-                name: editingPreset.name,
-                description: editingPreset.description,
-                color: editingPreset.color,
-              }
-            : undefined
-        }
-      />
-    </TabWrapper>
+    </>
   );
 });
 
