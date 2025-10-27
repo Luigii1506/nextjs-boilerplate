@@ -4,6 +4,7 @@
  *
  * Header reutilizable para todas las secciones administrativas
  * Diseñado para ser responsivo y consistente en toda la app.
+ * Siempre visible - sin funcionalidad de ocultación.
  *
  * Features:
  * - Responsive design (mobile-first)
@@ -12,6 +13,7 @@
  * - Quick stats display
  * - Icon support
  * - Smooth animations
+ * - Always visible (simplified)
  *
  * Usage:
  * ```tsx
@@ -29,6 +31,7 @@
  * ```
  *
  * Created: 2025-01-18
+ * Updated: 2025-01-27 - Simplified (removed hidden functionality)
  */
 
 "use client";
@@ -59,8 +62,6 @@ export interface PageHeaderProps {
   onActionClick?: () => void;
   /** Additional CSS classes */
   className?: string;
-  /** Hide the header (for animations) */
-  hidden?: boolean;
 }
 
 // 🎨 Color variants for stats
@@ -90,10 +91,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   action,
   onActionClick,
   className,
-  hidden = false,
 }) => {
-  if (hidden) return null;
-
   return (
     <div
       className={cn(
