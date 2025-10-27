@@ -118,7 +118,7 @@ const SPAWrapper: React.FC<SPAWrapperProps> = ({
       {/* 🎯 Fixed Navigation */}
       <div
         className={cn(
-          "border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50",
+          "border-b border-gray-200 dark:border-gray-700 sticky top-0 z-20",
           "transform-gpu transition-all duration-300",
           // Backdrop blur effect when scrolled
           isPastThreshold
@@ -228,8 +228,6 @@ const SPAWrapper: React.FC<SPAWrapperProps> = ({
               onTabChange={handleTabChange}
               variant="underline"
               size="lg"
-              showIcons={true}
-              showNotifications={true}
               className="border-none"
             />
           </div>

@@ -55,7 +55,7 @@ export const StorefrontHeader: React.FC<StorefrontHeaderProps> = ({
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700",
+        "sticky top-0 z-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700",
         "transform-gpu transition-all duration-300",
         isPastThreshold &&
           "shadow-lg bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm"

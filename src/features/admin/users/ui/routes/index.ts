@@ -7,11 +7,8 @@
  *
  * Architecture: Clean exports para screens
  *
- * Created: 2025-01-18 - Users SPA Implementation
+ * Updated: 2025-01-18 - Removed legacy users.screen.tsx
  */
 
-// Legacy screen (mantener por compatibilidad)
-export { default as UsersScreen } from "./users.screen";
-
-// New SPA screen (recommended)
+// Main SPA screen
 export { default as UsersSPAScreen } from "./users.spa.screen";

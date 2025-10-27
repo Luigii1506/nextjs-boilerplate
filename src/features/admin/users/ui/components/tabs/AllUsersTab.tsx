@@ -30,13 +30,13 @@ import {
 } from "lucide-react";
 import { cn } from "@/shared/utils";
 import { useUsersContext } from "../../../context";
-import { TabTransition } from "../shared";
 import type { User } from "../../../types";
 import UserModal from "../UserModal.main";
 import UserViewModal from "../UserViewModal";
 import DeleteUserModal from "../DeleteUserModal";
 import BanUserModal from "../BanUserModal";
 import BanReasonModal from "../BanReasonModal";
+import { TabHeader, TabWrapper } from "./shared";
 
 // 👤 User Card Component
 interface UserCardProps {
@@ -489,222 +489,213 @@ const AllUsersTab: React.FC = () => {
   // 🚨 Error state handling can be added here if needed
 
   return (
-    <TabTransition isActive={true} transitionType="fade" delay={50}>
-      <div className="space-y-6 p-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fadeInUp stagger-1">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              👥 Todos los Usuarios
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300">
-              Gestión completa de usuarios del sistema
-            </p>
-          </div>
+    <TabWrapper>
+      {/* Header */}
+      <TabHeader
+        icon={<Users className="w-8 h-8 text-blue-600 dark:text-blue-400" />}
+        title="Todos los Usuarios"
+        description={`Gestión completa de usuarios del sistema (${filteredUsers.length} usuarios)`}
+        customActions={<UserFilters onFilterChange={setCurrentFilters} />}
+        actions={[
+          {
+            label: "Nuevo Usuario",
+            icon: <Plus className="w-4 h-4" />,
+            onClick: handleCreateUser,
+            variant: "primary",
+            color: "blue",
+          },
+        ]}
+      />
 
-          <div className="flex items-center space-x-3">
-            <UserFilters onFilterChange={setCurrentFilters} />
+      {/* Search and View Toggle */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <input
+            type="text"
+            placeholder="Buscar usuarios..."
+            value={globalSearchTerm}
+            onChange={(e) => setGlobalSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
 
+        <div className="flex items-center space-x-2">
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            Vista:
+          </span>
+          <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
             <button
-              onClick={handleCreateUser}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              onClick={() => setViewMode("grid")}
+              className={cn(
+                "p-2 rounded-md transition-colors",
+                viewMode === "grid"
+                  ? "bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+              )}
             >
-              <Plus className="w-4 h-4" />
-              <span>Nuevo Usuario</span>
+              <Grid className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={cn(
+                "p-2 rounded-md transition-colors",
+                viewMode === "list"
+                  ? "bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+              )}
+            >
+              <List className="w-4 h-4" />
             </button>
           </div>
         </div>
-
-        {/* Search and View Toggle */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Buscar usuarios..."
-              value={globalSearchTerm}
-              onChange={(e) => setGlobalSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              Vista:
-            </span>
-            <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-              <button
-                onClick={() => setViewMode("grid")}
-                className={cn(
-                  "p-2 rounded-md transition-colors",
-                  viewMode === "grid"
-                    ? "bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm"
-                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
-                )}
-              >
-                <Grid className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode("list")}
-                className={cn(
-                  "p-2 rounded-md transition-colors",
-                  viewMode === "list"
-                    ? "bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm"
-                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
-                )}
-              >
-                <List className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* 👥 Users Display (same pattern as inventory) */}
-        {isLoading ? (
-          <div
-            className={cn(
-              "transition-all duration-300",
-              viewMode === "grid"
-                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                : "space-y-4"
-            )}
-          >
-            {[...Array(8)].map((_, i) => (
-              <div
-                key={i}
-                className={cn(
-                  "bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse",
-                  viewMode === "grid" ? "h-80" : "h-24"
-                )}
-                style={{
-                  animationDelay: `${i * 0.1}s`,
-                }}
-              />
-            ))}
-          </div>
-        ) : filteredUsers.length === 0 ? (
-          <div className="text-center py-16">
-            <Users className="w-20 h-20 text-gray-300 dark:text-gray-600 mx-auto mb-6" />
-            <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">
-              No se encontraron usuarios
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-md mx-auto">
-              {globalSearchTerm ||
-              currentFilters.role !== "all" ||
-              currentFilters.status !== "all"
-                ? "Intenta ajustar los filtros de búsqueda para ver más usuarios"
-                : "Aún no hay usuarios registrados en el sistema"}
-            </p>
-            <button
-              onClick={handleCreateUser}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg flex items-center space-x-2 mx-auto transition-all duration-200 hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-blue-500/20"
-            >
-              <Plus className="w-5 h-5" />
-              <span>Agregar Primer Usuario</span>
-            </button>
-          </div>
-        ) : (
-          <div
-            className={cn(
-              "transition-all duration-300",
-              viewMode === "grid"
-                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                : "space-y-4"
-            )}
-          >
-            {filteredUsers.map((user, index) => (
-              <div
-                key={user.id}
-                className="transition-all duration-200"
-                style={{
-                  animationDelay: `${index * 0.05}s`,
-                }}
-              >
-                <UserCard
-                  user={user}
-                  viewMode={viewMode}
-                  onView={openViewModal}
-                  onEdit={openEditModal}
-                  onDelete={openDeleteConfirm}
-                  onToggleBan={handleToggleBan}
-                />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* 📊 Simple Stats Footer (same pattern as inventory) */}
-        {filteredUsers.length > 0 && (
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Mostrando {filteredUsers.length} usuarios
-                  {globalSearchTerm ||
-                  currentFilters.role !== "all" ||
-                  currentFilters.status !== "all"
-                    ? " (filtrado)"
-                    : ` de ${users.length} total`}
-                </p>
-              </div>
-              <div className="flex items-center space-x-2">
-                <button className="flex items-center space-x-2 px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors">
-                  <Download className="w-4 h-4" />
-                  <span>Exportar</span>
-                </button>
-                <button className="flex items-center space-x-2 px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors">
-                  <Upload className="w-4 h-4" />
-                  <span>Importar</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 🎭 User Management Modal */}
-        <UserModal
-          isOpen={isUserModalOpen}
-          onClose={closeEditModal}
-          user={editingUser}
-          mode={editingUser ? "edit" : "create"}
-          title={editingUser ? "Editar Usuario" : "Crear Nuevo Usuario"}
-        />
-
-        {/* 🗑️ Delete Confirmation Modal */}
-        <DeleteUserModal
-          isOpen={isDeleteConfirmOpen}
-          onClose={closeDeleteConfirm}
-          user={deletingUser}
-          onConfirm={handleConfirmDelete}
-        />
-
-        {/* 🚫 Ban/Unban Confirmation Modal (Only for unbanning) */}
-        <BanUserModal
-          isOpen={isBanConfirmOpen}
-          onClose={closeBanConfirm}
-          user={banningUser}
-          onConfirm={handleConfirmBan}
-        />
-
-        {/* 🚫 Ban Reason Modal (For banning with reason) */}
-        <BanReasonModal
-          isOpen={isBanReasonModalOpen}
-          onClose={closeBanReasonModal}
-          user={banningUser}
-          onConfirm={handleConfirmBanWithReason}
-        />
-
-        {/* 👁️ User View Modal (For detailed user information) */}
-        <UserViewModal
-          isOpen={isViewModalOpen}
-          onClose={closeViewModal}
-          user={viewingUser}
-          onEdit={openEditModal}
-          onDelete={openDeleteConfirm}
-          onBan={handleToggleBan}
-        />
       </div>
-    </TabTransition>
+
+      {/* 👥 Users Display (same pattern as inventory) */}
+      {isLoading ? (
+        <div
+          className={cn(
+            "transition-all duration-300",
+            viewMode === "grid"
+              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              : "space-y-4"
+          )}
+        >
+          {[...Array(8)].map((_, i) => (
+            <div
+              key={i}
+              className={cn(
+                "bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse",
+                viewMode === "grid" ? "h-80" : "h-24"
+              )}
+              style={{
+                animationDelay: `${i * 0.1}s`,
+              }}
+            />
+          ))}
+        </div>
+      ) : filteredUsers.length === 0 ? (
+        <div className="text-center py-16">
+          <Users className="w-20 h-20 text-gray-300 dark:text-gray-600 mx-auto mb-6" />
+          <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">
+            No se encontraron usuarios
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-md mx-auto">
+            {globalSearchTerm ||
+            currentFilters.role !== "all" ||
+            currentFilters.status !== "all"
+              ? "Intenta ajustar los filtros de búsqueda para ver más usuarios"
+              : "Aún no hay usuarios registrados en el sistema"}
+          </p>
+          <button
+            onClick={handleCreateUser}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg flex items-center space-x-2 mx-auto transition-all duration-200 hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-blue-500/20"
+          >
+            <Plus className="w-5 h-5" />
+            <span>Agregar Primer Usuario</span>
+          </button>
+        </div>
+      ) : (
+        <div
+          className={cn(
+            "transition-all duration-300",
+            viewMode === "grid"
+              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              : "space-y-4"
+          )}
+        >
+          {filteredUsers.map((user, index) => (
+            <div
+              key={user.id}
+              className="transition-all duration-200"
+              style={{
+                animationDelay: `${index * 0.05}s`,
+              }}
+            >
+              <UserCard
+                user={user}
+                viewMode={viewMode}
+                onView={openViewModal}
+                onEdit={openEditModal}
+                onDelete={openDeleteConfirm}
+                onToggleBan={handleToggleBan}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* 📊 Simple Stats Footer (same pattern as inventory) */}
+      {filteredUsers.length > 0 && (
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Mostrando {filteredUsers.length} usuarios
+                {globalSearchTerm ||
+                currentFilters.role !== "all" ||
+                currentFilters.status !== "all"
+                  ? " (filtrado)"
+                  : ` de ${users.length} total`}
+              </p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <button className="flex items-center space-x-2 px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors">
+                <Download className="w-4 h-4" />
+                <span>Exportar</span>
+              </button>
+              <button className="flex items-center space-x-2 px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors">
+                <Upload className="w-4 h-4" />
+                <span>Importar</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🎭 User Management Modal */}
+      <UserModal
+        isOpen={isUserModalOpen}
+        onClose={closeEditModal}
+        user={editingUser}
+        mode={editingUser ? "edit" : "create"}
+        title={editingUser ? "Editar Usuario" : "Crear Nuevo Usuario"}
+      />
+
+      {/* 🗑️ Delete Confirmation Modal */}
+      <DeleteUserModal
+        isOpen={isDeleteConfirmOpen}
+        onClose={closeDeleteConfirm}
+        user={deletingUser}
+        onConfirm={handleConfirmDelete}
+      />
+
+      {/* 🚫 Ban/Unban Confirmation Modal (Only for unbanning) */}
+      <BanUserModal
+        isOpen={isBanConfirmOpen}
+        onClose={closeBanConfirm}
+        user={banningUser}
+        onConfirm={handleConfirmBan}
+      />
+
+      {/* 🚫 Ban Reason Modal (For banning with reason) */}
+      <BanReasonModal
+        isOpen={isBanReasonModalOpen}
+        onClose={closeBanReasonModal}
+        user={banningUser}
+        onConfirm={handleConfirmBanWithReason}
+      />
+
+      {/* 👁️ User View Modal (For detailed user information) */}
+      <UserViewModal
+        isOpen={isViewModalOpen}
+        onClose={closeViewModal}
+        user={viewingUser}
+        onEdit={openEditModal}
+        onDelete={openDeleteConfirm}
+        onBan={handleToggleBan}
+      />
+    </TabWrapper>
   );
 };
 

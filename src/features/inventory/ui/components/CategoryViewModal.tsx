@@ -136,7 +136,7 @@ const CategoryViewModal: React.FC = () => {
 
           {/* 📋 Content */}
           <div className="flex-1 overflow-y-auto overscroll-contain scrollbar-thin">
-            <div className="p-6 space-y-8">
+            <div className="p-0 md:p-6 space-y-8">
               {/* 📊 Stats Overview */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Products Count */}

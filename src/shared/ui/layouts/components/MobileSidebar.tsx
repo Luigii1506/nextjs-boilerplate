@@ -84,7 +84,7 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({
     <>
       {/* Backdrop Overlay */}
       <div
-        className="fixed inset-0 z-20 bg-slate-900 bg-opacity-50 lg:hidden transition-opacity duration-300"
+        className="fixed inset-0 z-40 bg-slate-900 bg-opacity-50 lg:hidden transition-opacity duration-300"
         onClick={onClose}
         aria-hidden="true"
         role="button"
@@ -96,7 +96,7 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({
       <aside
         id="mobile-sidebar"
         className={cn(
-          "fixed top-0 left-0 z-30 h-full w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 transform transition-all duration-300",
+          "fixed top-0 left-0 z-50 h-full w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 transform transition-all duration-300",
           RESPONSIVE_CONFIG.sidebar.mobile,
           isOpen ? "translate-x-0" : "-translate-x-full",
           className
@@ -143,21 +143,28 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({
           </div>
 
           {/* Mobile User Info Panel */}
-          <div className="p-4 mb-6 bg-slate-50 dark:bg-slate-700 rounded-lg transition-colors duration-300">
-            <div className="flex items-center justify-between">
-              <UserMenu
-                user={currentUser}
-                roleInfo={roleInfo}
-                showDropdown={false}
-                compact={true}
-                onProfileClick={handleProfileClick}
-              />
+          <div className="mb-6 space-y-3">
+            {/* Settings - Stacked vertically for better spacing */}
+            <div className="space-y-2">
+              {/* 🌙 Dark Mode Toggle */}
+              <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700 rounded-lg transition-colors duration-300">
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Modo Oscuro
+                </span>
+                <DarkModeToggle
+                  size="sm"
+                  variant="switch"
+                  showTooltip={false}
+                />
+              </div>
 
-              {/* 🌙 Mobile Dark Mode Toggle */}
-              <DarkModeToggle size="sm" variant="switch" showTooltip={false} />
-
-              {/* 🌍 Mobile Language Toggle */}
-              <I18nToggle size="sm" variant="switch" showTooltip={false} />
+              {/* 🌍 Language Toggle */}
+              <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700 rounded-lg transition-colors duration-300">
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Idioma
+                </span>
+                <I18nToggle size="sm" variant="switch" showTooltip={false} />
+              </div>
             </div>
           </div>
 

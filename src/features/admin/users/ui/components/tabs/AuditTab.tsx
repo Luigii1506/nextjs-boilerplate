@@ -36,7 +36,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/shared/utils";
 import { useUsersContext } from "../../../context";
-import { TabTransition } from "../shared";
+import { TabHeader, TabWrapper } from "./shared";
 
 // 📋 Audit Entry Interface
 interface AuditFiltersState {
@@ -602,145 +602,138 @@ const AuditTab: React.FC = () => {
 
   if (isLoading) {
     return (
-      <TabTransition>
-        <div className="p-6 space-y-6">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-6"></div>
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div
-                  key={i}
-                  className="h-24 bg-gray-200 dark:bg-gray-700 rounded-lg"
-                ></div>
-              ))}
-            </div>
+      <TabWrapper spacing="space-y-6" responsive={false}>
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-6"></div>
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <div
+                key={i}
+                className="h-24 bg-gray-200 dark:bg-gray-700 rounded-lg"
+              ></div>
+            ))}
           </div>
         </div>
-      </TabTransition>
+      </TabWrapper>
     );
   }
 
   return (
-    <TabTransition>
-      <div className="p-6 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center space-x-3">
-              <FileText className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
-              <span>Auditoría del Sistema</span>
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              Registro completo de actividades y cambios del sistema (
-              {auditEntries.length} entradas)
-            </p>
-          </div>
+    <TabWrapper spacing="space-y-6">
+      {/* Header */}
+      <TabHeader
+        icon={
+          <FileText className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+        }
+        title="Auditoría del Sistema"
+        description={`Registro completo de actividades y cambios del sistema (${auditEntries.length} entradas)`}
+        customActions={<AuditFilters onFilterChange={setCurrentFilters} />}
+        actions={[
+          {
+            label: "Actualizar",
+            icon: <RefreshCw className="w-4 h-4" />,
+            onClick: () => console.log("Actualizar"),
+            variant: "secondary",
+          },
+          {
+            label: "Exportar Log",
+            icon: <Download className="w-4 h-4" />,
+            onClick: () => console.log("Exportar"),
+            variant: "primary",
+            color: "indigo",
+          },
+        ]}
+      />
 
-          <div className="flex items-center space-x-3">
-            <button className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-              <RefreshCw className="w-4 h-4" />
-              <span>Actualizar</span>
-            </button>
-
-            <AuditFilters onFilterChange={setCurrentFilters} />
-
-            <button className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
-              <Download className="w-4 h-4" />
-              <span>Exportar Log</span>
-            </button>
-          </div>
+      {/* Search */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <input
+            type="text"
+            placeholder="Buscar en auditoría..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          />
         </div>
 
-        {/* Search */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Buscar en auditoría..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+        <div className="text-sm text-gray-600 dark:text-gray-400">
+          Últimas 24 horas:{" "}
+          {
+            auditEntries.filter(
+              (entry) =>
+                new Date(entry.timestamp) >
+                new Date(Date.now() - 24 * 60 * 60 * 1000)
+            ).length
+          }{" "}
+          entradas
+        </div>
+      </div>
+
+      {/* Audit Entries */}
+      {auditEntries.length === 0 ? (
+        <div className="text-center py-12">
+          <FileText className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            No se encontraron entradas
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400">
+            {searchTerm || Object.keys(currentFilters).length > 0
+              ? "Intenta ajustar los filtros de búsqueda"
+              : "No hay actividades registradas en el período seleccionado"}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {auditEntries.map((entry) => (
+            <AuditEntryCard
+              key={entry.id}
+              entry={entry}
+              onViewDetails={handleViewDetails}
             />
-          </div>
-
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            Últimas 24 horas:{" "}
-            {
-              auditEntries.filter(
-                (entry) =>
-                  new Date(entry.timestamp) >
-                  new Date(Date.now() - 24 * 60 * 60 * 1000)
-              ).length
-            }{" "}
-            entradas
-          </div>
+          ))}
         </div>
+      )}
 
-        {/* Audit Entries */}
-        {auditEntries.length === 0 ? (
-          <div className="text-center py-12">
-            <FileText className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              No se encontraron entradas
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              {searchTerm || Object.keys(currentFilters).length > 0
-                ? "Intenta ajustar los filtros de búsqueda"
-                : "No hay actividades registradas en el período seleccionado"}
+      {/* Summary */}
+      <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+              {auditEntries.filter((e) => e.severity === "low").length}
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Severidad Baja
             </p>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {auditEntries.map((entry) => (
-              <AuditEntryCard
-                key={entry.id}
-                entry={entry}
-                onViewDetails={handleViewDetails}
-              />
-            ))}
+          <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+              {auditEntries.filter((e) => e.severity === "medium").length}
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Severidad Media
+            </p>
           </div>
-        )}
-
-        {/* Summary */}
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {auditEntries.filter((e) => e.severity === "low").length}
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Severidad Baja
-              </p>
+          <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+              {auditEntries.filter((e) => e.severity === "high").length}
             </div>
-            <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-              <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                {auditEntries.filter((e) => e.severity === "medium").length}
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Severidad Media
-              </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Severidad Alta
+            </p>
+          </div>
+          <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+            <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+              {auditEntries.filter((e) => e.severity === "critical").length}
             </div>
-            <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                {auditEntries.filter((e) => e.severity === "high").length}
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Severidad Alta
-              </p>
-            </div>
-            <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
-              <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                {auditEntries.filter((e) => e.severity === "critical").length}
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Severidad Crítica
-              </p>
-            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Severidad Crítica
+            </p>
           </div>
         </div>
       </div>
-    </TabTransition>
+    </TabWrapper>
   );
 };
 

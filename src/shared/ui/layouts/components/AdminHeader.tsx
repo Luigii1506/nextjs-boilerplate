@@ -76,7 +76,6 @@ const RESPONSIVE_CONFIG = {
 export const AdminHeader: React.FC<AdminHeaderProps> = ({
   currentUser,
   roleInfo,
-  compact,
   sidebarOpen,
   onSidebarToggle,
   headerActions,
@@ -85,14 +84,18 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
 }) => {
   return (
     <header className="bg-white dark:bg-slate-800 shadow-sm border-b border-slate-200 dark:border-slate-700 z-10 transition-colors duration-300">
-      <div className="px-4 lg:px-6 py-4">
-        <div className="flex items-center justify-between">
-          {/* Mobile Menu Button + Title */}
-          <div className="flex items-center gap-4">
+      <div className="px-3 py-2.5 sm:px-4 sm:py-3 lg:px-6 lg:py-4">
+        <div className="flex items-center justify-between gap-2">
+          {/* Left Side: Mobile Menu Button + Title */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            {/* Mobile Menu Button - Solo visible en mobile/tablet */}
             <button
               onClick={onSidebarToggle}
               className={cn(
-                "p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors duration-200",
+                "flex-shrink-0 p-1.5 sm:p-2 text-slate-600 dark:text-slate-400",
+                "hover:text-slate-900 dark:hover:text-slate-100",
+                "hover:bg-slate-100 dark:hover:bg-slate-700",
+                "rounded-lg transition-colors duration-200",
                 RESPONSIVE_CONFIG.header.mobileMenuButton
               )}
               aria-label="Abrir menú de navegación"
@@ -102,22 +105,23 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
               <Menu className="w-5 h-5" />
             </button>
 
-            <div className="lg:hidden">
-              <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+            {/* Title - Oculto en mobile muy pequeño (<400px), visible en tablet */}
+            <div className="hidden min-[400px]:block lg:hidden min-w-0">
+              <h1 className="text-sm sm:text-base font-semibold text-slate-900 dark:text-slate-100 truncate">
                 Admin Dashboard
               </h1>
-              <p className="text-xs text-slate-600 dark:text-slate-400">
+              <p className="hidden sm:block text-xs text-slate-600 dark:text-slate-400 truncate">
                 Enterprise • React 19
               </p>
             </div>
           </div>
 
-          {/* Header Actions */}
-          <div className="flex items-center gap-2 lg:gap-4">
-            {/* Desktop Actions */}
+          {/* Right Side: Actions + User Menu */}
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            {/* Desktop Actions - Solo visible en desktop (≥1024px) */}
             <div
               className={cn(
-                "items-center gap-3",
+                "items-center gap-2",
                 RESPONSIVE_CONFIG.header.desktopOnly
               )}
             >
@@ -138,17 +142,17 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                 </button>
               ))}
 
-              {/* 🌙 Dark Mode Toggle */}
+              {/* 🌙 Dark Mode Toggle - Desktop only */}
               <DarkModeToggle size="md" variant="button" showTooltip={true} />
 
-              {/* 🌍 Language Toggle */}
+              {/* 🌍 Language Toggle - Desktop only */}
               <I18nToggle size="md" variant="button" showTooltip={true} />
             </div>
 
-            {/* User Menu - Always visible */}
+            {/* User Menu - Siempre visible pero compacto en mobile */}
             <Suspense
               fallback={
-                <div className="w-10 h-10 bg-slate-200 dark:bg-slate-700 rounded-full animate-pulse" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-slate-200 dark:bg-slate-700 rounded-full animate-pulse" />
               }
             >
               <UserMenu
@@ -157,7 +161,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                 showDropdown={true}
                 onProfileClick={handleProfileClick}
                 onSettings={handleSettings}
-                compact={compact}
+                compact={true} // Siempre compacto para ahorrar espacio
               />
             </Suspense>
           </div>

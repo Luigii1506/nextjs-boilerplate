@@ -122,36 +122,57 @@ export function DarkModeToggle({
 
   if (variant === "switch") {
     return (
-      <label
+      <button
+        onClick={toggle}
+        disabled={disabled}
         className={cn(
-          "relative inline-flex items-center cursor-pointer",
+          "relative inline-flex items-center justify-center",
+          "w-14 h-8 rounded-full transition-all duration-300",
+          "focus:outline-none focus:ring-2 focus:ring-offset-2",
+          isDark
+            ? "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500"
+            : "bg-amber-400 hover:bg-amber-500 focus:ring-amber-400",
           disabled && "opacity-50 cursor-not-allowed"
         )}
         title={showTooltip ? getTooltipText() : undefined}
+        aria-label={getTooltipText()}
+        role="switch"
+        aria-checked={isDark}
       >
-        <input
-          type="checkbox"
-          checked={isDark}
-          onChange={toggle}
-          disabled={disabled}
-          className="sr-only"
-          aria-label={getTooltipText()}
-        />
+        {/* Switch Track Background */}
+        <div className="absolute inset-0 rounded-full overflow-hidden">
+          <div
+            className={cn(
+              "absolute inset-0 transition-transform duration-300",
+              isDark ? "translate-x-0" : "-translate-x-full"
+            )}
+          >
+            {/* Stars for dark mode */}
+            <div className="absolute inset-0 flex items-center justify-around px-2">
+              <span className="text-yellow-300 text-xs">✨</span>
+              <span className="text-yellow-200 text-[8px]">⭐</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Sliding Thumb */}
         <div
           className={cn(
-            "w-11 h-6 bg-gray-200 rounded-full peer",
-            "peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300",
-            "dark:peer-focus:ring-blue-800 dark:bg-gray-700",
-            "peer-checked:after:translate-x-full peer-checked:after:border-white",
-            "after:content-[''] after:absolute after:top-[2px] after:left-[2px]",
-            "after:bg-white after:border-gray-300 after:border after:rounded-full",
-            "after:h-5 after:w-5 after:transition-all dark:border-gray-600",
-            "peer-checked:bg-blue-600"
+            "absolute top-1 transition-all duration-300 ease-out",
+            "w-6 h-6 rounded-full shadow-lg",
+            "flex items-center justify-center",
+            isDark
+              ? "left-7 bg-slate-800"
+              : "left-1 bg-white"
           )}
-        />
-        <Moon className="absolute left-1 top-1 w-4 h-4 text-gray-400" />
-        <Sun className="absolute right-1 top-1 w-4 h-4 text-yellow-400" />
-      </label>
+        >
+          {isDark ? (
+            <Moon className="w-4 h-4 text-indigo-300" />
+          ) : (
+            <Sun className="w-4 h-4 text-amber-500" />
+          )}
+        </div>
+      </button>
     );
   }
 

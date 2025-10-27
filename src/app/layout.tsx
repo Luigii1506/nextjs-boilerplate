@@ -8,6 +8,11 @@ import "../styles/globals.css";
 export const metadata: Metadata = {
   title: "Next.js Boilerplate",
   description: "Enterprise Next.js 15 boilerplate with TanStack Query",
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 5,
+  },
 };
 
 export default function RootLayout({

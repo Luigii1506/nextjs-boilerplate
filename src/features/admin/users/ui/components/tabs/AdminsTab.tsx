@@ -30,7 +30,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/shared/utils";
 import { useUsersContext } from "../../../context";
-import { TabTransition } from "../shared";
+import { TabHeader, TabWrapper } from "./shared";
 import type { User } from "../../../types";
 
 // 🛡️ Admin Stats Card Component
@@ -294,219 +294,209 @@ const AdminsTab: React.FC = () => {
 
   if (isLoading) {
     return (
-      <TabTransition>
-        <div className="p-6 space-y-6">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-6"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              {[...Array(4)].map((_, i) => (
-                <div
-                  key={i}
-                  className="h-32 bg-gray-200 dark:bg-gray-700 rounded-xl"
-                ></div>
-              ))}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <div
-                  key={i}
-                  className="h-48 bg-gray-200 dark:bg-gray-700 rounded-xl"
-                ></div>
-              ))}
-            </div>
+      <TabWrapper spacing="space-y-6" responsive={false}>
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-6"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {[...Array(4)].map((_, i) => (
+              <div
+                key={i}
+                className="h-32 bg-gray-200 dark:bg-gray-700 rounded-xl"
+              ></div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div
+                key={i}
+                className="h-48 bg-gray-200 dark:bg-gray-700 rounded-xl"
+              ></div>
+            ))}
           </div>
         </div>
-      </TabTransition>
+      </TabWrapper>
     );
   }
 
   return (
-    <TabTransition>
-      <div className="p-6 space-y-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <TabWrapper>
+      {/* Header */}
+      <TabHeader
+        icon={
+          <Shield className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+        }
+        title="Administradores del Sistema"
+        description={`Gestión de usuarios con privilegios administrativos (${adminStats.totalAdmins} administradores)`}
+        actions={[
+          {
+            label: "Promover Usuario",
+            icon: <Plus className="w-4 h-4" />,
+            onClick: handlePromoteUser,
+            variant: "primary",
+            color: "purple",
+          },
+        ]}
+      />
+
+      {/* Admin Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <AdminStatsCard
+          title="Super Admins"
+          value={adminStats.superAdmins}
+          icon={Crown}
+          color="red"
+          description="Acceso completo al sistema"
+        />
+        <AdminStatsCard
+          title="Administradores"
+          value={adminStats.regularAdmins}
+          icon={Shield}
+          color="purple"
+          description="Gestión de usuarios y sistema"
+        />
+        <AdminStatsCard
+          title="Moderadores"
+          value={adminStats.moderators}
+          icon={UserCheck}
+          color="blue"
+          description="Moderación de contenido"
+        />
+        <AdminStatsCard
+          title="Total"
+          value={adminStats.totalAdmins}
+          icon={Users}
+          color="green"
+          description="Usuarios administrativos"
+        />
+      </div>
+
+      {/* Search */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <input
+            type="text"
+            placeholder="Buscar administradores..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          />
+        </div>
+      </div>
+
+      {/* Security Notice */}
+      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4">
+        <div className="flex items-start space-x-3">
+          <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5" />
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center space-x-3">
-              <Shield className="w-8 h-8 text-purple-600 dark:text-purple-400" />
-              <span>Administradores del Sistema</span>
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              Gestión de usuarios con privilegios administrativos (
-              {adminStats.totalAdmins} administradores)
+            <h4 className="text-sm font-medium text-amber-800 dark:text-amber-200">
+              Aviso de Seguridad
+            </h4>
+            <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+              Los cambios en permisos administrativos requieren confirmación
+              adicional y se registran en el log de auditoría.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Admins Grid */}
+      {adminUsers.length === 0 ? (
+        <div className="text-center py-12">
+          <Shield className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            No se encontraron administradores
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400">
+            {searchTerm
+              ? "Intenta ajustar los criterios de búsqueda"
+              : "No hay usuarios con privilegios administrativos"}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {adminUsers.map((admin) => (
+            <AdminCard
+              key={admin.id}
+              admin={admin}
+              onView={openViewModal}
+              onEdit={openEditModal}
+              onRemoveAdmin={handleRemoveAdmin}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Admin Management Actions */}
+      <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center space-x-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Mostrando {adminUsers.length} administradores
             </p>
           </div>
 
           <div className="flex items-center space-x-3">
-            <button
-              onClick={handlePromoteUser}
-              className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Promover Usuario</span>
+            <button className="flex items-center space-x-2 px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors">
+              <Settings className="w-4 h-4" />
+              <span>Configurar Roles</span>
+            </button>
+
+            <button className="flex items-center space-x-2 px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors">
+              <Eye className="w-4 h-4" />
+              <span>Log de Actividades</span>
             </button>
           </div>
         </div>
+      </div>
 
-        {/* Admin Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <AdminStatsCard
-            title="Super Admins"
-            value={adminStats.superAdmins}
-            icon={Crown}
-            color="red"
-            description="Acceso completo al sistema"
-          />
-          <AdminStatsCard
-            title="Administradores"
-            value={adminStats.regularAdmins}
-            icon={Shield}
-            color="purple"
-            description="Gestión de usuarios y sistema"
-          />
-          <AdminStatsCard
-            title="Moderadores"
-            value={adminStats.moderators}
-            icon={UserCheck}
-            color="blue"
-            description="Moderación de contenido"
-          />
-          <AdminStatsCard
-            title="Total"
-            value={adminStats.totalAdmins}
-            icon={Users}
-            color="green"
-            description="Usuarios administrativos"
-          />
-        </div>
-
-        {/* Search */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Buscar administradores..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            />
-          </div>
-        </div>
-
-        {/* Security Notice */}
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4">
-          <div className="flex items-start space-x-3">
-            <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5" />
-            <div>
-              <h4 className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                Aviso de Seguridad
+      {/* Role Descriptions */}
+      <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          Descripción de Roles
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <Crown className="w-5 h-5 text-red-500" />
+              <h4 className="font-medium text-gray-900 dark:text-white">
+                Super Administrador
               </h4>
-              <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                Los cambios en permisos administrativos requieren confirmación
-                adicional y se registran en el log de auditoría.
-              </p>
             </div>
-          </div>
-        </div>
-
-        {/* Admins Grid */}
-        {adminUsers.length === 0 ? (
-          <div className="text-center py-12">
-            <Shield className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              No se encontraron administradores
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              {searchTerm
-                ? "Intenta ajustar los criterios de búsqueda"
-                : "No hay usuarios con privilegios administrativos"}
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Acceso completo al sistema, incluyendo configuración de seguridad
+              y gestión de otros administradores.
             </p>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {adminUsers.map((admin) => (
-              <AdminCard
-                key={admin.id}
-                admin={admin}
-                onView={openViewModal}
-                onEdit={openEditModal}
-                onRemoveAdmin={handleRemoveAdmin}
-              />
-            ))}
+
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <Shield className="w-5 h-5 text-purple-500" />
+              <h4 className="font-medium text-gray-900 dark:text-white">
+                Administrador
+              </h4>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Gestión de usuarios, contenido y configuraciones básicas del
+              sistema. Sin acceso a configuración crítica.
+            </p>
           </div>
-        )}
 
-        {/* Admin Management Actions */}
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center space-x-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Mostrando {adminUsers.length} administradores
-              </p>
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <UserCheck className="w-5 h-5 text-blue-500" />
+              <h4 className="font-medium text-gray-900 dark:text-white">
+                Moderador
+              </h4>
             </div>
-
-            <div className="flex items-center space-x-3">
-              <button className="flex items-center space-x-2 px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors">
-                <Settings className="w-4 h-4" />
-                <span>Configurar Roles</span>
-              </button>
-
-              <button className="flex items-center space-x-2 px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors">
-                <Eye className="w-4 h-4" />
-                <span>Log de Actividades</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Role Descriptions */}
-        <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Descripción de Roles
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <Crown className="w-5 h-5 text-red-500" />
-                <h4 className="font-medium text-gray-900 dark:text-white">
-                  Super Administrador
-                </h4>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Acceso completo al sistema, incluyendo configuración de
-                seguridad y gestión de otros administradores.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <Shield className="w-5 h-5 text-purple-500" />
-                <h4 className="font-medium text-gray-900 dark:text-white">
-                  Administrador
-                </h4>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Gestión de usuarios, contenido y configuraciones básicas del
-                sistema. Sin acceso a configuración crítica.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <UserCheck className="w-5 h-5 text-blue-500" />
-                <h4 className="font-medium text-gray-900 dark:text-white">
-                  Moderador
-                </h4>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Moderación de contenido y usuarios. Acceso limitado a funciones
-                administrativas específicas.
-              </p>
-            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Moderación de contenido y usuarios. Acceso limitado a funciones
+              administrativas específicas.
+            </p>
           </div>
         </div>
       </div>
-    </TabTransition>
+    </TabWrapper>
   );
 };
 

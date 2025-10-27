@@ -137,7 +137,7 @@ const SuppliersSPAContent: React.FC = () => {
   }, [lastScrollY]);
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-full bg-gray-50 dark:bg-gray-900">
       {/*
         🎯 HEADER - Smooth fade out on scroll down
         - NO sticky (se oculta completamente)
@@ -196,7 +196,7 @@ const SuppliersSPAContent: React.FC = () => {
         - Bordes redondeados elegantes
         - Shadow para profundidad
       */}
-      <div className="sticky top-0 z-50 bg-gray-50 dark:bg-gray-900">
+      <div className="sticky top-0 z-20 bg-gray-50 dark:bg-gray-900">
         <div className="max-w-[1600px] mx-auto px-6 pt-6">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-2">
             <ReusableTabs

@@ -25,14 +25,22 @@ export interface UseScrollHeaderOptions {
   useWheelFallback?: boolean;
   /** Enable debug logging (default: false) */
   debug?: boolean;
+  /**
+   * Behavior mode:
+   * - 'threshold': Show/hide based on fixed threshold (default)
+   * - 'direction': Show on scroll up, hide on scroll down
+   */
+  mode?: "threshold" | "direction";
 }
 
 // 🎯 Hook Return Type
 export interface UseScrollHeaderReturn {
   /** Current scroll Y position */
   scrollY: number;
-  /** Whether header should be visible based on threshold */
+  /** Whether header should be visible (alias for showHeader) */
   isHeaderVisible: boolean;
+  /** Whether header should be visible (modern API) */
+  showHeader: boolean;
   /** Whether scroll position is past threshold */
   isPastThreshold: boolean;
   /** Whether native scroll is working */
@@ -52,6 +60,7 @@ export const useScrollHeader = (
     debounceDelay = 0,
     useWheelFallback = true,
     debug = false,
+    mode = "direction",
   } = options;
 
   // 🏗️ State Management
@@ -62,25 +71,45 @@ export const useScrollHeader = (
 
   // 🎯 Refs for performance
   const scrollYRef = useRef(0);
+  const lastScrollYRef = useRef(0);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const wheelTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // 🔄 Update scroll position and visibility
   const updateScrollState = useCallback(
     (newScrollY: number) => {
+      const lastScrollY = lastScrollYRef.current;
       scrollYRef.current = newScrollY;
       setScrollY(newScrollY);
-      setIsHeaderVisible(newScrollY < threshold);
+
+      // Determine visibility based on mode
+      let shouldShowHeader = true;
+
+      if (mode === "threshold") {
+        // Threshold mode: Show when below threshold
+        shouldShowHeader = newScrollY < threshold;
+      } else if (mode === "direction") {
+        // Direction mode: Show on scroll up OR when at top
+        // Hide on scroll down AND past threshold
+        if (newScrollY < lastScrollY || newScrollY < threshold) {
+          shouldShowHeader = true;
+        } else if (newScrollY > threshold) {
+          shouldShowHeader = false;
+        }
+      }
+
+      setIsHeaderVisible(shouldShowHeader);
+      lastScrollYRef.current = newScrollY;
 
       if (debug) {
         console.log(
-          `📊 Scroll Update: ${newScrollY}px, Header: ${
-            newScrollY < threshold ? "VISIBLE" : "HIDDEN"
+          `📊 Scroll Update: ${newScrollY}px (Δ: ${newScrollY - lastScrollY}px), Mode: ${mode}, Header: ${
+            shouldShowHeader ? "VISIBLE" : "HIDDEN"
           }`
         );
       }
     },
-    [threshold, debug]
+    [threshold, mode, debug]
   );
 
   // 🎯 Debounced scroll handler
@@ -209,6 +238,7 @@ export const useScrollHeader = (
   return {
     scrollY,
     isHeaderVisible,
+    showHeader: isHeaderVisible, // Alias for better API
     isPastThreshold,
     isNativeScrollWorking,
     isWheelSimulationActive,

@@ -79,11 +79,8 @@ const ITEMS_PER_PAGE_OPTIONS = [12, 24, 48];
  */
 const CategoriesTab: React.FC = () => {
   // 🎨 UI State
-  const {
-    setActiveTab,
-    globalSearchTerm,
-    setGlobalSearchTerm,
-  } = useStorefrontUI();
+  const { setActiveTab, globalSearchTerm, setGlobalSearchTerm } =
+    useStorefrontUI();
 
   // 📊 Data (TanStack Query)
   const { data, isLoading } = useStorefrontData();
@@ -660,7 +657,7 @@ const CategoriesFilters: React.FC<CategoriesFiltersProps> = ({
       </div>
 
       {/* Filters Content */}
-      <div className="p-6 space-y-8">
+      <div className="p-0 md:p-6 space-y-8">
         {/* Product Count Range */}
         <div>
           <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">

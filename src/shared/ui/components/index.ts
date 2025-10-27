@@ -9,6 +9,13 @@ export { Badge } from "./Badge";
 export { Input } from "./Input";
 export { Label } from "./Label";
 
+// 📄 Layout Components
+export { PageHeader, type PageHeaderProps, type StatItem } from "./PageHeader";
+export {
+  ContentContainer,
+  type ContentContainerProps,
+} from "./ContentContainer";
+
 // 🧭 Navigation Components
 export * from "./HydrationSafeNavItem";
 
@@ -19,6 +26,10 @@ export {
   TabSystem,
   type TabItem,
 } from "./ReusableTabs";
+export {
+  StickyTabsContainer,
+  type StickyTabsContainerProps,
+} from "./StickyTabsContainer";
 
 // 🌙 Theme Components
 export * from "./DarkModeToggle";

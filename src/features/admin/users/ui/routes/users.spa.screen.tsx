@@ -2,14 +2,13 @@
  * 👥 USERS SCREEN - ELEGANT UX
  * =============================
  *
- * Layout estandarizado siguiendo docs/layout_updated.md:
- * - Header que desaparece suavemente con scroll
- * - Tabs con bordes redondeados
- * - Sin min-h-screen (sin scroll innecesario)
- * - Solo renderiza el tab activo
- * - Transiciones smooth
+ * Layout estandarizado con componentes reutilizables:
+ * - PageHeader: Header responsive con stats y scroll behavior
+ * - StickyTabsContainer: Tabs sticky con bordes redondeados
+ * - ContentContainer: Contenedor con padding consistente
+ * - useScrollHeader: Hook reutilizable para scroll detection
  *
- * Updated: 2025-01-18 - Standardized Layout
+ * Updated: 2025-01-18 - Fully migrated to reusable components
  */
 
 "use client";
@@ -17,7 +16,7 @@
 // Import custom animations
 import "../styles/animations.css";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import {
   BarChart3,
   Users,
@@ -26,17 +25,23 @@ import {
   FileText,
   Key,
   UserCheck,
-  RefreshCw,
   Settings,
 } from "lucide-react";
-import { cn } from "@/shared/utils";
 import {
   UsersProvider,
   useUsersContext,
   USERS_TABS,
   type TabId,
 } from "../../context";
-import { ReusableTabs, type TabItem } from "@/shared/ui/components";
+import {
+  ReusableTabs,
+  type TabItem,
+  PageHeader,
+  type StatItem,
+  StickyTabsContainer,
+  ContentContainer,
+} from "@/shared/ui/components";
+import { useScrollHeader } from "@/shared/hooks";
 import {
   OverviewTab,
   AllUsersTab,
@@ -121,9 +126,11 @@ const UsersSPAContent: React.FC = () => {
   const { activeTab, setActiveTab, users } = useUsersContext();
   const { stats } = users;
 
-  // Estado para visibilidad del header
-  const [showHeader, setShowHeader] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
+  // 🎯 Scroll header detection (reusable hook)
+  const { showHeader } = useScrollHeader({
+    mode: "direction",
+    threshold: 50,
+  });
 
   // Calculate notification counts for each tab
   const notificationCounts = useMemo(
@@ -138,126 +145,82 @@ const UsersSPAContent: React.FC = () => {
     [stats.banned, stats.total, stats.admins]
   );
 
-  // 🎯 Smooth scroll detection
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-
-      // Mostrar header cuando: scroll up o está en top
-      // Ocultar header cuando: scroll down > 50px
-      if (currentScrollY < lastScrollY || currentScrollY < 50) {
-        setShowHeader(true);
-      } else if (currentScrollY > 50) {
-        setShowHeader(false);
-      }
-
-      setLastScrollY(currentScrollY);
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY]);
+  // 🎨 Prepare stats for PageHeader
+  const headerStats: StatItem[] = useMemo(
+    () => [
+      {
+        icon: <Users className="w-4 h-4" />,
+        label: `${stats.total} Total`,
+        color: "blue" as const,
+        value: stats.total,
+      },
+      {
+        icon: <UserCheck className="w-4 h-4" />,
+        label: `${stats.active} Activos`,
+        color: "green" as const,
+        value: stats.active,
+      },
+      {
+        icon: <Shield className="w-4 h-4" />,
+        label: `${stats.admins} Admins`,
+        color: "purple" as const,
+        value: stats.admins,
+      },
+    ],
+    [stats.total, stats.active, stats.admins]
+  );
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900">
-      {/*
-        🎯 HEADER - Smooth fade out on scroll down
-        - NO sticky (se oculta completamente)
-        - Aparece cuando: scroll up o en top
-        - Desaparece cuando: scroll down > 50px
-      */}
-      {showHeader && (
-        <div className="transition-all duration-300 ease-in-out animate-fadeIn">
-          <div className="border-b border-gray-200 dark:border-gray-700 shadow-sm">
-            <div className="max-w-[1600px] mx-auto px-6 py-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-3">
-                    <UserCheck className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-                    Gestión de Usuarios
-                  </h1>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Administra usuarios, roles, permisos y monitorea la actividad del sistema
-                  </p>
-                </div>
-
-                {/* Quick Stats & Actions */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                  <div className="flex gap-2">
-                    <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                      <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                      <span className="text-xs font-medium text-blue-900 dark:text-blue-100">
-                        {stats.total} Total
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 px-3 py-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                      <UserCheck className="w-4 h-4 text-green-600 dark:text-green-400" />
-                      <span className="text-xs font-medium text-green-900 dark:text-green-100">
-                        {stats.active} Activos
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 px-3 py-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                      <Shield className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                      <span className="text-xs font-medium text-purple-900 dark:text-purple-100">
-                        {stats.admins} Admins
-                      </span>
-                    </div>
-                  </div>
-
-                  <button className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200">
-                    <Settings className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+    <div className="min-h-full bg-gray-50 dark:bg-gray-900">
+      <PageHeader
+        icon={<UserCheck className="w-6 h-6 sm:w-8 sm:h-8" />}
+        title="Gestión de Usuarios"
+        description="Administra usuarios, roles, permisos y monitorea la actividad del sistema"
+        stats={headerStats}
+        action={<Settings className="w-5 h-5" />}
+        onActionClick={() => console.log("Settings clicked")}
+        hidden={!showHeader}
+      />
 
       {/*
-        🎯 TABS - Sticky & Rounded
-        - Sticky top-0 siempre
-        - Bordes redondeados elegantes
-        - Shadow para profundidad
+        🎯 TABS - Sticky & Rounded (RESPONSIVE)
+        Using StickyTabsContainer component for consistent layout
       */}
-      <div className="sticky top-0 z-50 bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-[1600px] mx-auto px-6 pt-6">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-2">
-            <ReusableTabs
-              tabs={USERS_TABS.map((tab) => {
-                const IconComponent =
-                  ICON_MAP[tab.icon as keyof typeof ICON_MAP] || Eye;
-                const notificationCount =
-                  notificationCounts[tab.id as keyof typeof notificationCounts];
+      <StickyTabsContainer responsive={true} zIndex={20}>
+        <ReusableTabs
+          tabs={USERS_TABS.map((tab) => {
+            const IconComponent =
+              ICON_MAP[tab.icon as keyof typeof ICON_MAP] || Eye;
+            const notificationCount =
+              notificationCounts[tab.id as keyof typeof notificationCounts];
 
-                return {
-                  id: tab.id,
-                  label: tab.label,
-                  icon: <IconComponent className="w-4 h-4" />,
-                  color: tab.color,
-                  hasNotification: notificationCount > 0,
-                  notificationCount: notificationCount || 0,
-                  disabled: tab.id === "permissions",
-                } as TabItem;
-              })}
-              activeTab={activeTab}
-              onTabChange={(tabId) => setActiveTab(tabId as TabId)}
-              variant="default"
-              size="md"
-              animated={true}
-              scrollable={true}
-              className="bg-transparent border-0 shadow-none p-0"
-            />
-          </div>
-        </div>
-      </div>
+            return {
+              id: tab.id,
+              label: tab.label,
+              icon: <IconComponent className="w-4 h-4" />,
+              color: tab.color,
+              hasNotification: notificationCount > 0,
+              notificationCount: notificationCount || 0,
+              disabled: tab.id === "permissions",
+            } as TabItem;
+          })}
+          activeTab={activeTab}
+          onTabChange={(tabId) => setActiveTab(tabId as TabId)}
+          variant="default"
+          size="md"
+          animated={true}
+          scrollable={true}
+          className="bg-transparent border-0 shadow-none p-0"
+        />
+      </StickyTabsContainer>
 
       {/*
-        📦 CONTENT AREA - Professional Spacing
+        📦 CONTENT AREA - Professional Spacing (RESPONSIVE)
+        Using ContentContainer component for consistent layout
       */}
-      <div className="max-w-[1600px] mx-auto px-6 py-6">
+      <ContentContainer responsive={true}>
         <TabContent />
-      </div>
+      </ContentContainer>
     </div>
   );
 };

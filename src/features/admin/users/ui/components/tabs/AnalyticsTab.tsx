@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/shared/utils";
 import { useUsersContext } from "../../../context";
-import { TabTransition } from "../shared";
+import { TabHeader, TabWrapper } from "./shared";
 
 // 📊 Metric Card Component
 interface MetricCardProps {
@@ -373,210 +373,206 @@ const AnalyticsTab: React.FC = () => {
 
   if (isLoading) {
     return (
-      <TabTransition>
-        <div className="p-6 space-y-6">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-6"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              {[...Array(4)].map((_, i) => (
-                <div
-                  key={i}
-                  className="h-32 bg-gray-200 dark:bg-gray-700 rounded-xl"
-                ></div>
-              ))}
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {[...Array(4)].map((_, i) => (
-                <div
-                  key={i}
-                  className="h-64 bg-gray-200 dark:bg-gray-700 rounded-xl"
-                ></div>
-              ))}
-            </div>
+      <TabWrapper spacing="space-y-6" responsive={false}>
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-6"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {[...Array(4)].map((_, i) => (
+              <div
+                key={i}
+                className="h-32 bg-gray-200 dark:bg-gray-700 rounded-xl"
+              ></div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div
+                key={i}
+                className="h-64 bg-gray-200 dark:bg-gray-700 rounded-xl"
+              ></div>
+            ))}
           </div>
         </div>
-      </TabTransition>
+      </TabWrapper>
     );
   }
 
   return (
-    <TabTransition>
-      <div className="p-6 space-y-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center space-x-3">
-              <BarChart3 className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
-              <span>Analytics de Usuarios</span>
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              Métricas detalladas y análisis de comportamiento de usuarios
+    <TabWrapper>
+      {/* Header */}
+      <TabHeader
+        icon={
+          <BarChart3 className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+        }
+        title="Analytics de Usuarios"
+        description="Métricas detalladas y análisis de comportamiento de usuarios"
+        customActions={
+          <select
+            value={timeRange}
+            onChange={(e) => setTimeRange(e.target.value)}
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+          >
+            <option value="24h">Últimas 24 horas</option>
+            <option value="7d">Últimos 7 días</option>
+            <option value="30d">Últimos 30 días</option>
+            <option value="90d">Últimos 90 días</option>
+          </select>
+        }
+        actions={[
+          {
+            label: "Actualizar",
+            icon: <RefreshCw className="w-4 h-4" />,
+            onClick: () => console.log("Actualizar"),
+            variant: "secondary",
+          },
+          {
+            label: "Exportar",
+            icon: <Download className="w-4 h-4" />,
+            onClick: () => console.log("Exportar"),
+            variant: "primary",
+            color: "indigo",
+          },
+        ]}
+      />
+
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <MetricCard
+          title="Total Registros"
+          value={analytics.totalRegistrations}
+          change={analytics.registrationGrowth}
+          changeType="positive"
+          icon={Users}
+          color="text-blue-600 dark:text-blue-400"
+          description="Usuarios registrados en total"
+        />
+
+        <MetricCard
+          title="Nuevos esta Semana"
+          value={analytics.newRegistrationsThisWeek}
+          change="+15%"
+          changeType="positive"
+          icon={UserPlus}
+          color="text-green-600 dark:text-green-400"
+          description="Registros en los últimos 7 días"
+        />
+
+        <MetricCard
+          title="Promedio Diario"
+          value={analytics.averageDailyRegistrations}
+          change={analytics.activityGrowth}
+          changeType="positive"
+          icon={TrendingUp}
+          color="text-indigo-600 dark:text-indigo-400"
+          description="Registros por día (promedio)"
+        />
+
+        <MetricCard
+          title="Tasa de Retención"
+          value={`${analytics.retentionRate}%`}
+          change="+2%"
+          changeType="positive"
+          icon={Activity}
+          color="text-purple-600 dark:text-purple-400"
+          description="Usuarios activos mensualmente"
+        />
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <SimpleBarChart
+          title="Registros por Día (Esta Semana)"
+          data={analytics.userGrowthData}
+        />
+
+        <SimpleBarChart
+          title="Distribución por Roles"
+          data={analytics.roleDistributionData}
+        />
+      </div>
+
+      {/* Detailed Analytics */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* User Insights */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+            Insights de Usuarios
+          </h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                Ratio Admin/Usuario
+              </span>
+              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                {analytics.adminToUserRatio}%
+              </span>
+            </div>
+            <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                Usuarios Baneados
+              </span>
+              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                {analytics.bannedUserRate}%
+              </span>
+            </div>
+            <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                Tasa de Crecimiento
+              </span>
+              <span className="text-sm font-medium text-green-600 dark:text-green-400">
+                {analytics.registrationGrowth}
+              </span>
+            </div>
+            <div className="flex items-center justify-between py-3">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                Usuarios Activos
+              </span>
+              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                {analytics.retentionRate}%
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Activity Timeline */}
+        <div className="lg:col-span-2">
+          <ActivityTimeline activities={analytics.recentActivities} />
+        </div>
+      </div>
+
+      {/* Performance Summary */}
+      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          Resumen de Performance
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mb-1">
+              {analytics.registrationGrowth}
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Crecimiento en Registros
             </p>
           </div>
-
-          <div className="flex items-center space-x-3">
-            <select
-              value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
-            >
-              <option value="24h">Últimas 24 horas</option>
-              <option value="7d">Últimos 7 días</option>
-              <option value="30d">Últimos 30 días</option>
-              <option value="90d">Últimos 90 días</option>
-            </select>
-
-            <button className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-              <RefreshCw className="w-4 h-4" />
-              <span>Actualizar</span>
-            </button>
-
-            <button className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
-              <Download className="w-4 h-4" />
-              <span>Exportar</span>
-            </button>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">
+              {analytics.retentionRate}%
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Tasa de Retención
+            </p>
           </div>
-        </div>
-
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <MetricCard
-            title="Total Registros"
-            value={analytics.totalRegistrations}
-            change={analytics.registrationGrowth}
-            changeType="positive"
-            icon={Users}
-            color="text-blue-600 dark:text-blue-400"
-            description="Usuarios registrados en total"
-          />
-
-          <MetricCard
-            title="Nuevos esta Semana"
-            value={analytics.newRegistrationsThisWeek}
-            change="+15%"
-            changeType="positive"
-            icon={UserPlus}
-            color="text-green-600 dark:text-green-400"
-            description="Registros en los últimos 7 días"
-          />
-
-          <MetricCard
-            title="Promedio Diario"
-            value={analytics.averageDailyRegistrations}
-            change={analytics.activityGrowth}
-            changeType="positive"
-            icon={TrendingUp}
-            color="text-indigo-600 dark:text-indigo-400"
-            description="Registros por día (promedio)"
-          />
-
-          <MetricCard
-            title="Tasa de Retención"
-            value={`${analytics.retentionRate}%`}
-            change="+2%"
-            changeType="positive"
-            icon={Activity}
-            color="text-purple-600 dark:text-purple-400"
-            description="Usuarios activos mensualmente"
-          />
-        </div>
-
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <SimpleBarChart
-            title="Registros por Día (Esta Semana)"
-            data={analytics.userGrowthData}
-          />
-
-          <SimpleBarChart
-            title="Distribución por Roles"
-            data={analytics.roleDistributionData}
-          />
-        </div>
-
-        {/* Detailed Analytics */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* User Insights */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-              Insights de Usuarios
-            </h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  Ratio Admin/Usuario
-                </span>
-                <span className="text-sm font-medium text-gray-900 dark:text-white">
-                  {analytics.adminToUserRatio}%
-                </span>
-              </div>
-              <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  Usuarios Baneados
-                </span>
-                <span className="text-sm font-medium text-gray-900 dark:text-white">
-                  {analytics.bannedUserRate}%
-                </span>
-              </div>
-              <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  Tasa de Crecimiento
-                </span>
-                <span className="text-sm font-medium text-green-600 dark:text-green-400">
-                  {analytics.registrationGrowth}
-                </span>
-              </div>
-              <div className="flex items-center justify-between py-3">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  Usuarios Activos
-                </span>
-                <span className="text-sm font-medium text-gray-900 dark:text-white">
-                  {analytics.retentionRate}%
-                </span>
-              </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-1">
+              {analytics.averageDailyRegistrations}
             </div>
-          </div>
-
-          {/* Activity Timeline */}
-          <div className="lg:col-span-2">
-            <ActivityTimeline activities={analytics.recentActivities} />
-          </div>
-        </div>
-
-        {/* Performance Summary */}
-        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Resumen de Performance
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mb-1">
-                {analytics.registrationGrowth}
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Crecimiento en Registros
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">
-                {analytics.retentionRate}%
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Tasa de Retención
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-1">
-                {analytics.averageDailyRegistrations}
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Promedio Diario
-              </p>
-            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Promedio Diario
+            </p>
           </div>
         </div>
       </div>
-    </TabTransition>
+    </TabWrapper>
   );
 };
 

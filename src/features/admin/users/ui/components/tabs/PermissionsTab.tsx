@@ -86,7 +86,7 @@ const PermissionsTab: React.FC = () => {
   );
 
   return (
-    <div className="p-6 space-y-8 animate-fadeInUp">
+    <div className="p-0 md:p-6 space-y-8 animate-fadeInUp">
       {/* Header Section */}
       <div className="mb-8 animate-slideInUp">
         <div className="flex items-center gap-3 mb-4">

@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/shared/utils";
 import { useUsersContext } from "../../../context";
-import { TabTransition } from "../shared/TabTransition";
+import { TabHeader, TabWrapper } from "./shared";
 
 // 📊 Enhanced Stats Card with Animations
 interface StatsCardProps {
@@ -287,185 +287,182 @@ const OverviewTab: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-6 animate-pulse">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[...Array(4)].map((_, i) => (
-            <div
-              key={i}
-              className="h-32 bg-gray-200 dark:bg-gray-700 rounded-xl"
-            />
-          ))}
+      <TabWrapper spacing="space-y-6" responsive={false}>
+        <div className="animate-pulse">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div
+                key={i}
+                className="h-32 bg-gray-200 dark:bg-gray-700 rounded-xl"
+              />
+            ))}
+          </div>
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <div
+                key={i}
+                className="h-16 bg-gray-200 dark:bg-gray-700 rounded-lg"
+              />
+            ))}
+          </div>
         </div>
-        <div className="space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <div
-              key={i}
-              className="h-16 bg-gray-200 dark:bg-gray-700 rounded-lg"
-            />
-          ))}
-        </div>
-      </div>
+      </TabWrapper>
     );
   }
 
   return (
-    <TabTransition>
-      <div className="p-6 space-y-8">
-        {/* Header */}
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Vista General
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            Dashboard principal con métricas y KPIs del sistema de usuarios
-          </p>
-        </div>
+    <TabWrapper>
+      {/* Header */}
+      <TabHeader
+        icon={<Users className="w-8 h-8 text-blue-600 dark:text-blue-400" />}
+        title="Vista General"
+        description="Dashboard principal con métricas y KPIs del sistema de usuarios"
+      />
 
-        {/* Key Metrics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatsCard
-            title="Total de Usuarios"
-            value={metrics.totalUsers}
-            change={metrics.userGrowth}
-            changeType="positive"
-            icon={Users}
-            description="Usuarios registrados en el sistema"
-            color="blue"
-            onClick={() => setActiveTab("all-users")}
-          />
+      {/* Key Metrics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatsCard
+          title="Total de Usuarios"
+          value={metrics.totalUsers}
+          change={metrics.userGrowth}
+          changeType="positive"
+          icon={Users}
+          description="Usuarios registrados en el sistema"
+          color="blue"
+          onClick={() => setActiveTab("all-users")}
+        />
 
-          <StatsCard
-            title="Usuarios Activos"
-            value={metrics.activeUsers}
-            change={`${(
-              (metrics.activeUsers / metrics.totalUsers) * 100 || 0
-            ).toFixed(1)}%`}
-            changeType="positive"
-            icon={UserCheck}
-            description="Usuarios no baneados"
-            color="green"
-            onClick={() => setActiveTab("all-users")}
-          />
+        <StatsCard
+          title="Usuarios Activos"
+          value={metrics.activeUsers}
+          change={`${(
+            (metrics.activeUsers / metrics.totalUsers) * 100 || 0
+          ).toFixed(1)}%`}
+          changeType="positive"
+          icon={UserCheck}
+          description="Usuarios no baneados"
+          color="green"
+          onClick={() => setActiveTab("all-users")}
+        />
 
-          <StatsCard
-            title="Usuarios Baneados"
-            value={metrics.bannedUsers}
-            change={metrics.bannedPercentage}
-            changeType={metrics.bannedUsers > 0 ? "negative" : "neutral"}
-            icon={UserX}
-            description="Usuarios suspendidos"
-            color="red"
-            onClick={() => setActiveTab("all-users")}
-          />
+        <StatsCard
+          title="Usuarios Baneados"
+          value={metrics.bannedUsers}
+          change={metrics.bannedPercentage}
+          changeType={metrics.bannedUsers > 0 ? "negative" : "neutral"}
+          icon={UserX}
+          description="Usuarios suspendidos"
+          color="red"
+          onClick={() => setActiveTab("all-users")}
+        />
 
-          <StatsCard
-            title="Administradores"
-            value={metrics.adminUsers}
-            change={metrics.adminPercentage}
-            changeType="neutral"
-            icon={Shield}
-            description="Usuarios con rol administrativo"
-            color="purple"
-            onClick={() => setActiveTab("admins")}
-          />
-        </div>
+        <StatsCard
+          title="Administradores"
+          value={metrics.adminUsers}
+          change={metrics.adminPercentage}
+          changeType="neutral"
+          icon={Shield}
+          description="Usuarios con rol administrativo"
+          color="purple"
+          onClick={() => setActiveTab("admins")}
+        />
+      </div>
 
-        {/* Alerts Section */}
-        {alerts.length > 0 && (
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Alertas del Sistema
-            </h3>
-            <div className="space-y-3">
-              {alerts.map((alert, index) => (
-                <AlertCard
-                  key={index}
-                  title={alert.title}
-                  message={alert.message}
-                  type={alert.type}
-                  timestamp={alert.timestamp}
-                  onView={() => setActiveTab("audit")}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Quick Actions */}
+      {/* Alerts Section */}
+      {alerts.length > 0 && (
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Acciones Rápidas
+            Alertas del Sistema
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button
-              onClick={() => setActiveTab("all-users")}
-              className="p-4 text-left rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            >
-              <Users className="w-6 h-6 text-blue-600 dark:text-blue-400 mb-2" />
-              <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
-                Gestionar Usuarios
-              </h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Ver, editar y administrar todos los usuarios
-              </p>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("analytics")}
-              className="p-4 text-left rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            >
-              <TrendingUp className="w-6 h-6 text-green-600 dark:text-green-400 mb-2" />
-              <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
-                Ver Analytics
-              </h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Análisis y métricas detalladas
-              </p>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("audit")}
-              className="p-4 text-left rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            >
-              <Eye className="w-6 h-6 text-indigo-600 dark:text-indigo-400 mb-2" />
-              <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
-                Auditoría
-              </h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Historial de actividades del sistema
-              </p>
-            </button>
+          <div className="space-y-3">
+            {alerts.map((alert, index) => (
+              <AlertCard
+                key={index}
+                title={alert.title}
+                message={alert.message}
+                type={alert.type}
+                timestamp={alert.timestamp}
+                onView={() => setActiveTab("audit")}
+              />
+            ))}
           </div>
         </div>
+      )}
 
-        {/* System Health */}
-        <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Estado del Sistema
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-700 rounded-lg">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Base de Datos
-              </span>
-              <span className="flex items-center text-sm text-green-600 dark:text-green-400">
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                Operacional
-              </span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-700 rounded-lg">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Cache
-              </span>
-              <span className="flex items-center text-sm text-green-600 dark:text-green-400">
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                Óptimo
-              </span>
-            </div>
+      {/* Quick Actions */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          Acciones Rápidas
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <button
+            onClick={() => setActiveTab("all-users")}
+            className="p-4 text-left rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          >
+            <Users className="w-6 h-6 text-blue-600 dark:text-blue-400 mb-2" />
+            <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
+              Gestionar Usuarios
+            </h4>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Ver, editar y administrar todos los usuarios
+            </p>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("analytics")}
+            className="p-4 text-left rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          >
+            <TrendingUp className="w-6 h-6 text-green-600 dark:text-green-400 mb-2" />
+            <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
+              Ver Analytics
+            </h4>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Análisis y métricas detalladas
+            </p>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("audit")}
+            className="p-4 text-left rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          >
+            <Eye className="w-6 h-6 text-indigo-600 dark:text-indigo-400 mb-2" />
+            <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
+              Auditoría
+            </h4>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Historial de actividades del sistema
+            </p>
+          </button>
+        </div>
+      </div>
+
+      {/* System Health */}
+      <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          Estado del Sistema
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-700 rounded-lg">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Base de Datos
+            </span>
+            <span className="flex items-center text-sm text-green-600 dark:text-green-400">
+              <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+              Operacional
+            </span>
+          </div>
+          <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-700 rounded-lg">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Cache
+            </span>
+            <span className="flex items-center text-sm text-green-600 dark:text-green-400">
+              <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+              Óptimo
+            </span>
           </div>
         </div>
       </div>
-    </TabTransition>
+    </TabWrapper>
   );
 };
 

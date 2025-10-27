@@ -5,13 +5,20 @@
  * Componente de tabs completamente reutilizable con animaciones suaves
  * y sin problemas de z-index o superposiciones
  *
+ * 📱 MOBILE-FIRST RESPONSIVE:
+ * - Mobile (<768px): Select dropdown nativo
+ * - Desktop (≥768px): Tabs horizontales con scroll
+ * - Usa Tailwind CSS responsive classes (md:) para mejor detección
+ *
  * Created: 2025-01-17 - Enhanced Reusable Tabs
+ * Updated: 2025-01-24 - Pure Tailwind responsive (no JS detection)
  */
 
 "use client";
 
 import React from "react";
 import { cn } from "@/shared/utils";
+import { ChevronDown } from "lucide-react";
 
 // 🎨 Tab Item Interface
 export interface TabItem {
@@ -46,6 +53,10 @@ export const ReusableTabs: React.FC<ReusableTabsProps> = ({
   animated = true,
   scrollable = true,
 }) => {
+
+  // Get active tab info for mobile dropdown
+  const activeTabInfo = tabs.find((tab) => tab.id === activeTab);
+
   const colorClasses = {
     blue: "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800",
     green:
@@ -59,17 +70,19 @@ export const ReusableTabs: React.FC<ReusableTabsProps> = ({
     pink: "bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400 border-pink-200 dark:border-pink-800",
   };
 
+  // 📱 RESPONSIVE SIZE CLASSES (for desktop tabs)
   const sizeClasses = {
-    sm: "px-3 py-2 text-sm",
-    md: "px-4 py-3 text-base",
-    lg: "px-6 py-4 text-lg",
+    sm: "md:px-3 md:py-2 md:text-sm",
+    md: "md:px-4 md:py-3 md:text-base",
+    lg: "md:px-6 md:py-4 md:text-lg",
   };
 
   const getTabClasses = (tab: TabItem, isActive: boolean) => {
     const baseClasses = cn(
-      "relative flex items-center justify-center space-x-2 font-medium",
+      "relative flex items-center justify-center gap-2 font-medium",
       "transition-all duration-200 ease-out transform-gpu",
       "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1",
+      "min-h-[48px]", // Touch target size (48px minimum)
       sizeClasses[size],
       tab.disabled && "opacity-50 cursor-not-allowed pointer-events-none"
     );
@@ -126,81 +139,142 @@ export const ReusableTabs: React.FC<ReusableTabsProps> = ({
   };
 
   return (
-    <div
-      className={cn(
-        "flex space-x-1 bg-white dark:bg-gray-800 p-1 rounded-lg",
-        "tabs-container", // Custom CSS class for z-index isolation
-        scrollable && "overflow-x-auto scrollbar-hide scrollbar-thin",
-        animated && "transform-gpu",
-        className
-      )}
-      role="tablist"
-    >
-      {tabs.map((tab, index) => {
-        const isActive = activeTab === tab.id;
-
-        return (
-          <button
-            key={tab.id}
-            onClick={() => !tab.disabled && onTabChange(tab.id)}
+    <div className={cn("w-full", className)}>
+      {/* 📱 MOBILE: Select/Dropdown (visible only on mobile) */}
+      <div className="relative w-full md:hidden">
+        <div className="relative">
+          <select
+            value={activeTab}
+            onChange={(e) => onTabChange(e.target.value)}
             className={cn(
-              getTabClasses(tab, isActive),
-              "whitespace-nowrap min-w-0 flex-shrink-0",
-              "tab-item", // Custom CSS class for z-index isolation
-              isActive && "active-tab-glow",
-              animated && "animate-tabSlideIn",
-              !tab.disabled && "hover:scale-[1.02] active:scale-[0.98]"
+              "w-full appearance-none",
+              "bg-white dark:bg-gray-800",
+              "border-2 border-gray-200 dark:border-gray-700",
+              "rounded-lg",
+              activeTabInfo?.icon ? "pl-11 pr-10 py-3" : "px-4 pr-10 py-3",
+              "text-base font-medium",
+              "text-gray-900 dark:text-white",
+              "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500",
+              "transition-all duration-200",
+              "cursor-pointer"
             )}
-            style={animated ? { animationDelay: `${index * 50}ms` } : undefined}
-            disabled={tab.disabled}
-            role="tab"
-            aria-selected={isActive}
-            aria-controls={`tabpanel-${tab.id}`}
-            id={`tab-${tab.id}`}
+            aria-label="Select tab"
           >
-            {/* Icon */}
-            {tab.icon && (
-              <span
-                className={cn(
-                  "flex-shrink-0 transition-transform duration-200",
-                  isActive && animated && "scale-110"
-                )}
-              >
-                {tab.icon}
-              </span>
-            )}
+            {tabs.map((tab) => (
+              <option key={tab.id} value={tab.id} disabled={tab.disabled}>
+                {tab.label}
+                {tab.hasNotification && tab.notificationCount
+                  ? ` (${tab.notificationCount})`
+                  : ""}
+              </option>
+            ))}
+          </select>
 
-            {/* Label */}
-            <span className="font-medium transition-all duration-200">
-              {tab.label}
-            </span>
+          {/* Dropdown Icon */}
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+            <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+          </div>
 
-            {/* Notification Badge - FIXED: No absolute positioning + Custom animation */}
-            {tab.hasNotification &&
-              tab.notificationCount &&
-              tab.notificationCount > 0 && (
+          {/* Active tab icon (optional visual enhancement) */}
+          {activeTabInfo?.icon && (
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-blue-600 dark:text-blue-400">
+              {activeTabInfo.icon}
+            </div>
+          )}
+        </div>
+
+        {/* Notification indicator for mobile */}
+        {activeTabInfo?.hasNotification &&
+          activeTabInfo.notificationCount &&
+          activeTabInfo.notificationCount > 0 && (
+            <div className="absolute -top-1 -right-1 min-w-[20px] h-[20px] bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center ring-2 ring-white dark:ring-gray-900 shadow-lg">
+              {activeTabInfo.notificationCount > 99
+                ? "99+"
+                : activeTabInfo.notificationCount}
+            </div>
+          )}
+      </div>
+
+      {/* 💻 DESKTOP: Horizontal tabs (visible only on desktop) */}
+      <div
+        className={cn(
+          "hidden md:flex gap-1.5 bg-white dark:bg-gray-800 p-1.5 rounded-lg",
+          "tabs-container", // Custom CSS class for z-index isolation
+          scrollable && "overflow-x-auto scrollbar-hide scrollbar-thin",
+          animated && "transform-gpu",
+          scrollable && "snap-x snap-mandatory"
+        )}
+        role="tablist"
+      >
+        {tabs.map((tab, index) => {
+          const isActive = activeTab === tab.id;
+
+          return (
+            <button
+              key={tab.id}
+              onClick={() => !tab.disabled && onTabChange(tab.id)}
+              className={cn(
+                getTabClasses(tab, isActive),
+                "whitespace-nowrap min-w-0 flex-shrink-0",
+                "tab-item", // Custom CSS class for z-index isolation
+                isActive && "active-tab-glow",
+                animated && "animate-tabSlideIn",
+                !tab.disabled && "hover:scale-[1.02] active:scale-[0.98]",
+                scrollable && "snap-start"
+              )}
+              style={
+                animated ? { animationDelay: `${index * 50}ms` } : undefined
+              }
+              disabled={tab.disabled}
+              role="tab"
+              aria-selected={isActive}
+              aria-controls={`tabpanel-${tab.id}`}
+              id={`tab-${tab.id}`}
+            >
+              {/* Icon */}
+              {tab.icon && (
                 <span
                   className={cn(
-                    "ml-2 min-w-[18px] h-[18px] rounded-full",
-                    "bg-red-500 text-white text-[10px] font-bold",
-                    "flex items-center justify-center",
-                    "ring-2 ring-white dark:ring-gray-800",
-                    "notification-badge", // Custom pulse animation
-                    "shadow-lg",
-                    animated && "transition-all duration-200"
+                    "flex-shrink-0 transition-transform duration-200",
+                    isActive && animated && "scale-110"
                   )}
                 >
-                  {tab.notificationCount > 99 ? "99+" : tab.notificationCount}
+                  {tab.icon}
                 </span>
               )}
 
-            {/* Active Indicator for underline variant */}
-            {variant === "underline" && isActive && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 rounded-full" />
-            )}
-          </button>
-        );
-      })}
+              {/* Label */}
+              <span className="font-medium transition-all duration-200">
+                {tab.label}
+              </span>
+
+              {/* Notification Badge */}
+              {tab.hasNotification &&
+                tab.notificationCount &&
+                tab.notificationCount > 0 && (
+                  <span
+                    className={cn(
+                      "ml-2 min-w-[18px] h-[18px] rounded-full",
+                      "bg-red-500 text-white text-[10px] font-bold",
+                      "flex items-center justify-center",
+                      "ring-2 ring-white dark:ring-gray-800",
+                      "notification-badge",
+                      "shadow-lg",
+                      animated && "transition-all duration-200"
+                    )}
+                  >
+                    {tab.notificationCount > 99 ? "99+" : tab.notificationCount}
+                  </span>
+                )}
+
+              {/* Active Indicator for underline variant */}
+              {variant === "underline" && isActive && (
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 rounded-full" />
+              )}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 };

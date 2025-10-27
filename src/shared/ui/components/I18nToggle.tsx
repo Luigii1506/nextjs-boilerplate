@@ -123,83 +123,60 @@ export function I18nToggle({
   // 🔄 Switch variant
   if (variant === "switch") {
     const isEnglish = language === "en";
+    const isSpanish = language === "es";
 
     return (
-      <div className={cn("flex items-center gap-3", className)}>
-        {showLabel && (
-          <span
-            className={cn(
-              "font-medium text-slate-700 dark:text-slate-200",
-              config.text
-            )}
-          >
-            {t.language.toggle}
-          </span>
+      <button
+        onClick={toggleLanguage}
+        className={cn(
+          "relative inline-flex items-center justify-center",
+          "w-16 h-8 rounded-full transition-all duration-300",
+          "focus:outline-none focus:ring-2 focus:ring-offset-2",
+          isSpanish
+            ? "bg-gradient-to-r from-red-500 via-yellow-500 to-red-500 hover:shadow-lg focus:ring-red-400"
+            : "bg-gradient-to-r from-blue-600 via-red-500 to-blue-600 hover:shadow-lg focus:ring-blue-400",
+          className
         )}
-
-        <button
-          onClick={toggleLanguage}
-          className={cn(
-            // Base switch styles
-            "relative inline-flex items-center rounded-full transition-all duration-300",
-            "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
-            "dark:focus:ring-offset-slate-900",
-
-            // Size
-            config.switch,
-
-            // Colors based on language
-            isEnglish
-              ? "bg-blue-600 hover:bg-blue-700"
-              : "bg-green-600 hover:bg-green-700"
-          )}
-          title={showTooltip ? t.language.tooltip : undefined}
-          aria-label={`${t.language.current}: ${getLanguageName(language)}`}
-          role="switch"
-          aria-checked={isEnglish}
-        >
-          {/* Switch thumb */}
+        title={showTooltip ? t.language.tooltip : undefined}
+        aria-label={`${t.language.current}: ${getLanguageName(language)}`}
+        role="switch"
+        aria-checked={isEnglish}
+      >
+        {/* Flag background indicators */}
+        <div className="absolute inset-0 flex items-center justify-between px-1.5">
+          {/* Spanish flag emoji */}
           <span
             className={cn(
-              "inline-block rounded-full bg-white shadow-lg transition-transform duration-300",
-              config.switchThumb,
-
-              // Position based on language
-              isEnglish ? "translate-x-5" : "translate-x-0.5"
+              "text-lg transition-all duration-300",
+              isSpanish ? "scale-100 opacity-100" : "scale-75 opacity-40"
             )}
           >
-            {/* Language indicators */}
-            <span className="flex items-center justify-center w-full h-full text-xs font-bold">
-              {language === "es" ? "🇪🇸" : "🇺🇸"}
-            </span>
+            🇪🇸
           </span>
-        </button>
-
-        {/* Language labels */}
-        <div className={cn("flex items-center gap-1", config.text)}>
+          {/* English flag emoji */}
           <span
             className={cn(
-              "transition-colors duration-300",
-              language === "es"
-                ? "text-green-600 dark:text-green-400 font-semibold"
-                : "text-slate-400 dark:text-slate-500"
+              "text-lg transition-all duration-300",
+              isEnglish ? "scale-100 opacity-100" : "scale-75 opacity-40"
             )}
           >
-            ES
-          </span>
-          <span className="text-slate-300 dark:text-slate-600">|</span>
-          <span
-            className={cn(
-              "transition-colors duration-300",
-              language === "en"
-                ? "text-blue-600 dark:text-blue-400 font-semibold"
-                : "text-slate-400 dark:text-slate-500"
-            )}
-          >
-            EN
+            🇺🇸
           </span>
         </div>
-      </div>
+
+        {/* Sliding Thumb with flag */}
+        <div
+          className={cn(
+            "absolute top-0.5 transition-all duration-300 ease-out",
+            "w-7 h-7 rounded-full shadow-lg",
+            "bg-white",
+            "flex items-center justify-center",
+            isEnglish ? "left-8" : "left-0.5"
+          )}
+        >
+          <span className="text-xl">{isSpanish ? "🇪🇸" : "🇺🇸"}</span>
+        </div>
+      </button>
     );
   }
 

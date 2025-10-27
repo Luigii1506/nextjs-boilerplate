@@ -117,11 +117,19 @@ export default function AdminLayout({
   isAdmin, // eslint-disable-line @typescript-eslint/no-unused-vars -- For future role-based features
   isSuperAdmin = false, // eslint-disable-line @typescript-eslint/no-unused-vars -- For future super admin features
 }: AdminLayoutProps) {
+  // 🔄 Hydration state to avoid SSR mismatch
+  const [isHydrated, setIsHydrated] = useState(false);
+
   // 🔄 Get reactive auth state (for UI updates only)
   const { user: clientUser } = usePublicPage();
 
   // Use server user as fallback, client user for reactivity
   const currentUser = clientUser || serverUser;
+
+  // 🔄 Mark as hydrated after mount
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   // 🎯 Memoized role computation for performance
   const userRole = useMemo(
@@ -271,7 +279,14 @@ export default function AdminLayout({
     };
   }, [handleKeyboardShortcuts]);
 
-  // ✅ No loading state needed - server already verified auth
+  // ✅ Show skeleton during hydration to avoid SSR mismatch
+  if (!isHydrated) {
+    return (
+      <div className="h-screen flex bg-slate-50 dark:bg-slate-900">
+        <Skeleton className="h-full w-full" variant="pulse" />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -297,7 +312,7 @@ export default function AdminLayout({
       {/* 📄 Main Content Area */}
       <div
         className={cn(
-          "flex-1 flex flex-col min-h-0",
+          "flex-1 flex flex-col min-h-screen",
           RESPONSIVE_CONFIG.mainContent.desktop,
           RESPONSIVE_CONFIG.mainContent.mobile
         )}
@@ -324,16 +339,15 @@ export default function AdminLayout({
         >
           <div
             className={cn(
-              "h-full min-h-0",
+              "min-h-full",
               compact
-                ? "p-4"
-                : ENTERPRISE_SHELL_CONFIG.layout.contentPadding.desktop
+                ? "p-3 sm:p-4"
+                : "px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8"
             )}
           >
             <div
               className={cn(
-                ENTERPRISE_SHELL_CONFIG.layout.contentMaxWidth,
-                "mx-auto h-full"
+                "w-full xl:max-w-7xl mx-auto"
               )}
             >
               <Suspense
