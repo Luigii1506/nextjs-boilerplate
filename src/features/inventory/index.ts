@@ -26,8 +26,8 @@ export * from "./ui/components";
 // 📄 UI Routes/Screens
 export * from "./ui/routes";
 
-// 🚀 Server Actions (will be exported when created)
+// 🚀 Server Actions
 export * from "./actions";
 
-// 🧮 Utility Functions (will be created later)
-// export * from "./utils";
+// 🧮 Utility Functions
+export * from "./utils";

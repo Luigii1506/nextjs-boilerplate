@@ -14,8 +14,6 @@
 import React, { useState, useMemo } from "react";
 import {
   Shield,
-  Crown,
-  UserCheck,
   Plus,
   Edit,
   Trash2,
@@ -24,6 +22,8 @@ import {
   Lock,
   Unlock,
   Settings,
+  Crown,
+  UserCheck,
   Users,
 } from "lucide-react";
 import { cn } from "@/shared/utils";
@@ -36,6 +36,7 @@ import {
   TabFooterStats,
   TabLoadingSkeleton,
 } from "@/shared/ui/components/tabs";
+import { RoleBadge, getRoleIcon } from "@/shared/ui/components/RoleBadge";
 import type { User } from "../../../types";
 
 // 👑 Admin Card Component
@@ -52,45 +53,6 @@ const AdminCard: React.FC<AdminCardProps> = ({
   onEdit,
   onRemoveAdmin,
 }) => {
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case "super_admin":
-        return <Crown className="w-5 h-5 text-red-500" />;
-      case "admin":
-        return <Shield className="w-5 h-5 text-purple-500" />;
-      case "moderator":
-        return <UserCheck className="w-5 h-5 text-blue-500" />;
-      default:
-        return <Users className="w-5 h-5 text-gray-500" />;
-    }
-  };
-
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case "super_admin":
-        return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 border-red-200 dark:border-red-700";
-      case "admin":
-        return "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400 border-purple-200 dark:border-purple-700";
-      case "moderator":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-700";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600";
-    }
-  };
-
-  const getRoleName = (role: string) => {
-    switch (role) {
-      case "super_admin":
-        return "Super Administrador";
-      case "admin":
-        return "Administrador";
-      case "moderator":
-        return "Moderador";
-      default:
-        return role;
-    }
-  };
-
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-300 group">
       <div className="flex items-start justify-between mb-4">
@@ -101,18 +63,16 @@ const AdminCard: React.FC<AdminCardProps> = ({
           <div className="flex-1">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center space-x-2">
               <span>{admin.name}</span>
-              {getRoleIcon(admin.role)}
+              {getRoleIcon(admin.role as "super_admin" | "admin" | "moderator" | "user")}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 text-sm">
               {admin.email}
             </p>
-            <div
-              className={cn(
-                "inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border mt-2",
-                getRoleColor(admin.role)
-              )}
-            >
-              {getRoleName(admin.role)}
+            <div className="mt-2">
+              <RoleBadge
+                role={admin.role as "super_admin" | "admin" | "moderator" | "user"}
+                size="sm"
+              />
             </div>
           </div>
         </div>

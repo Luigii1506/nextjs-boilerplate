@@ -15,7 +15,6 @@ import React, { useState, useMemo } from "react";
 import {
   FileText,
   Eye,
-  Filter,
   Download,
   Clock,
   User,
@@ -40,6 +39,7 @@ import {
   TabWrapper,
   TabSearchBar,
   TabLoadingSkeleton,
+  FilterToggleButton,
 } from "@/shared/ui/components/tabs";
 
 // 📋 Audit Entry Interface
@@ -335,15 +335,22 @@ const AuditFilters: React.FC<{
     onFilterChange(newFilters);
   };
 
+  const activeFiltersCount = Object.entries(filters).filter(([key, value]) => {
+    if (key === "dateRange" && value === "all") return false;
+    if (key === "actionType" && value === "all") return false;
+    if (key === "severity" && value === "all") return false;
+    if (key === "user" && !value) return false;
+    return true;
+  }).length;
+
   return (
     <div className="relative">
-      <button
-        onClick={() => setShowFilters(!showFilters)}
-        className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-      >
-        <Filter className="w-4 h-4" />
-        <span>Filtros Avanzados</span>
-      </button>
+      <FilterToggleButton
+        isOpen={showFilters}
+        onToggle={() => setShowFilters(!showFilters)}
+        activeCount={activeFiltersCount}
+        label="Filtros Avanzados"
+      />
 
       {showFilters && (
         <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20 p-4">

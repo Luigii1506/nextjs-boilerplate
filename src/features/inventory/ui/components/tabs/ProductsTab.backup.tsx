@@ -2,38 +2,34 @@
  * 📦 PRODUCTS TAB COMPONENT
  * =========================
  *
- * Clean tab for product management with extracted components
- * Orchestrates product display, filtering, and CRUD operations
- *
- * ARCHITECTURE:
- * - Uses TabHeader component for consistent header
- * - Uses extracted ProductFilters component for search and filters
- * - Uses extracted ProductListItem component for list view
- * - Uses ProductCard component for grid view
- * - Handles bulk operations and import/export
- *
- * REFACTORED: 2025-01-27
- * - Reduced from 865 lines to 660 lines (24% reduction)
- * - Integrated TabHeader component for consistency
- * - Extracted ProductFilters component (134 lines)
- * - Extracted ProductListItem component (98 lines)
- * - Cleaner orchestration pattern
+ * Gestión completa de productos con filtros avanzados
+ * Búsqueda, paginación, modals y acciones bulk
  *
  * Created: 2025-01-17 - Inventory Products Tab
- * Updated: 2025-01-27 - Architecture refactor for maintainability
  */
 
 "use client";
 
-import React, { useState, useCallback } from "react";
-import { Package, Plus, Download, Upload, Save } from "lucide-react";
+import React, { useState, useMemo, useCallback } from "react";
+import {
+  Package,
+  Plus,
+  Filter,
+  Grid3X3,
+  List,
+  Download,
+  Upload,
+  Edit3,
+  Trash2,
+  Eye,
+  Save,
+} from "lucide-react";
 import { cn } from "@/shared/utils";
 import { useInventoryContext } from "../../../context";
-import { ProductCard } from "..";
-import { ProductFilters, ProductListItem } from "../products";
+import { ProductCard, StockIndicator, CategoryBadge } from "..";
 import {
   TabWrapper,
-  TabHeader,
+  TabSearchBar,
   TabEmptyState,
   TabLoadingSkeleton,
 } from "@/shared/ui/components/tabs";
@@ -43,6 +39,8 @@ import {
   ImportModal,
   SavePresetModal,
 } from "../modals";
+import { AdvancedFilterPanel } from "../filters/AdvancedFilterPanel";
+import { ActiveFiltersBar } from "../filters/ActiveFiltersBar";
 import { FilterPresetsDropdown } from "../filters/FilterPresetsDropdown";
 import { BulkSelectionBar } from "../bulk/BulkSelectionBar";
 import { BulkActionsModal } from "../bulk/BulkActionsModal";
@@ -71,12 +69,143 @@ import {
   type ImportProductInput,
 } from "../../../actions";
 
-/**
- * 📦 Products Display Component
- *
- * Handles the rendering of products in grid or list view
- * Manages loading and empty states
- */
+// 🔍 Advanced Search & Filter Component
+const ProductFilters: React.FC = () => {
+  const {
+    globalSearchTerm,
+    setGlobalSearchTerm,
+    productFilters,
+    setProductFilters,
+    inventory,
+    viewMode,
+    setViewMode,
+    clearAllFilters,
+    setIsProductModalOpen,
+  } = useInventoryContext();
+
+  const { categories, suppliers } = inventory;
+  const [showFilters, setShowFilters] = useState(false);
+
+  const activeFiltersCount = useMemo(() => {
+    return Object.entries(productFilters).filter(([key, value]) => {
+      if (key === "search") return false; // Don't count search
+      if (value === undefined || value === null) return false;
+      if (Array.isArray(value) && value.length === 0) return false;
+      return true;
+    }).length;
+  }, [productFilters]);
+
+  const handleFilterRemove = (key: keyof typeof productFilters) => {
+    const newFilters = { ...productFilters };
+    delete newFilters[key];
+    setProductFilters(newFilters);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-4">
+        {/* Primary Search */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <TabSearchBar
+              value={globalSearchTerm}
+              onChange={setGlobalSearchTerm}
+              placeholder="Buscar productos por nombre, SKU o código de barras..."
+            />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            {/* Filter Toggle */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={cn(
+                "px-4 py-3 border rounded-lg flex items-center space-x-2 transition-all duration-200",
+                "hover:scale-[1.02] active:scale-[0.98]",
+                showFilters || activeFiltersCount > 0
+                  ? "border-blue-300 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+                  : "border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
+              )}
+            >
+              <Filter className="w-4 h-4" />
+              <span>Filtros</span>
+              {activeFiltersCount > 0 && (
+                <span className="bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
+                  {activeFiltersCount}
+                </span>
+              )}
+            </button>
+
+            {/* View Mode Toggle */}
+            <div className="flex border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+              <button
+                onClick={() => setViewMode("grid")}
+                className={cn(
+                  "px-3 py-3 flex items-center transition-colors",
+                  viewMode === "grid"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+                )}
+              >
+                <Grid3X3 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode("list")}
+                className={cn(
+                  "px-3 py-3 flex items-center border-l border-gray-300 dark:border-gray-600 transition-colors",
+                  viewMode === "list"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+                )}
+              >
+                <List className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Actions */}
+            <button
+              onClick={() => setIsProductModalOpen(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg flex items-center space-x-2 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-blue-500/20"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Nuevo Producto</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Active Filters Bar */}
+      {activeFiltersCount > 0 && (
+        <ActiveFiltersBar
+          filters={productFilters}
+          onFilterRemove={handleFilterRemove}
+          onClearAll={clearAllFilters}
+          categories={categories}
+          suppliers={suppliers}
+        />
+      )}
+
+      {/* Advanced Filter Panel */}
+      <div
+        className={cn(
+          "transition-all duration-300 ease-in-out overflow-hidden",
+          showFilters ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+        )}
+      >
+        {showFilters && (
+          <AdvancedFilterPanel
+            filters={productFilters}
+            onFiltersChange={setProductFilters}
+            categories={categories}
+            suppliers={suppliers}
+            onClose={() => setShowFilters(false)}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+// 📦 Products Display Component
 const ProductsDisplay: React.FC<{
   onQuickAdjust?: (product: ProductWithRelations) => void;
   selectedProductIds: Set<string>;
@@ -177,16 +306,106 @@ const ProductsDisplay: React.FC<{
               className="h-full hover:scale-[1.02] transition-transform duration-200"
             />
           ) : (
-            // 🔥 Extracted ProductListItem component
-            <ProductListItem
-              product={product}
-              onView={handleViewProduct}
-              onEdit={handleEditProduct}
-              onDelete={handleDeleteProduct}
-              showCheckbox={showCheckbox}
-              isSelected={selectedProductIds.has(product.id)}
-              onToggleSelection={onToggleSelection}
-            />
+            // List view layout
+            <div className="p-4 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+              <div className="flex items-center space-x-4">
+                {/* Checkbox for list view */}
+                {showCheckbox && (
+                  <div className="flex-shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={selectedProductIds.has(product.id)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        onToggleSelection(product.id);
+                      }}
+                      className={cn(
+                        "w-5 h-5 rounded border-2 cursor-pointer transition-all",
+                        "focus:ring-2 focus:ring-blue-500",
+                        selectedProductIds.has(product.id)
+                          ? "bg-blue-600 border-blue-600"
+                          : "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600"
+                      )}
+                    />
+                  </div>
+                )}
+
+                <div className="flex-shrink-0">
+                  {product.images[0] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={product.images[0]}
+                      alt={product.name}
+                      className="w-16 h-16 object-cover rounded-lg"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                      <Package className="w-8 h-8 text-gray-400" />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">
+                        {product.name}
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 font-mono">
+                        SKU: {product.sku}
+                      </p>
+                      <div className="flex items-center space-x-4 mt-2">
+                        <CategoryBadge
+                          category={product.category}
+                          size="sm"
+                          showIcon={false}
+                        />
+                        <StockIndicator
+                          stock={product.stock}
+                          minStock={product.minStock}
+                          maxStock={product.maxStock}
+                          size="sm"
+                          showLabel={true}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="text-right ml-4">
+                      <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                        ${product.price.toLocaleString()}
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        Costo: ${product.cost.toLocaleString()}
+                      </div>
+
+                      <div className="flex items-center space-x-2 mt-2">
+                        <button
+                          onClick={() => handleViewProduct(product)}
+                          className="p-1.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                          title="Ver detalles"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleEditProduct(product)}
+                          className="p-1.5 text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded transition-colors"
+                          title="Editar"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteProduct(product)}
+                          className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       ))}
@@ -194,22 +413,9 @@ const ProductsDisplay: React.FC<{
   );
 };
 
-/**
- * 🎯 OPTIMIZED PRODUCTS TAB - Memoized for SPA Performance
- */
+// 🎯 OPTIMIZED PRODUCTS TAB - Memoized for SPA Performance
 const ProductsTab: React.FC = React.memo(function ProductsTab() {
-  const {
-    inventory,
-    globalSearchTerm,
-    setGlobalSearchTerm,
-    productFilters,
-    setProductFilters,
-    clearAllFilters,
-    viewMode,
-    setViewMode,
-    setIsProductModalOpen,
-  } = useInventoryContext();
-
+  const { inventory } = useInventoryContext();
   const [stockAdjustModalOpen, setStockAdjustModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] =
     useState<ProductWithRelations | null>(null);
@@ -474,6 +680,8 @@ const ProductsTab: React.FC = React.memo(function ProductsTab() {
   };
 
   // 💾 Preset handlers
+  const { productFilters, setProductFilters } = useInventoryContext();
+
   const handleSavePreset = (input: SavePresetInput) => {
     const preset = saveFilterPreset(input);
     setFilterPresets(getFilterPresets());
@@ -512,63 +720,63 @@ const ProductsTab: React.FC = React.memo(function ProductsTab() {
 
   return (
     <TabWrapper spacing="space-y-6">
-      {/* 🔥 Using TabHeader component */}
-      <TabHeader
-        icon={<Package className="w-8 h-8 text-blue-600 dark:text-blue-400" />}
-        title="Gestión de Productos"
-        description="Administra tu catálogo y ajusta stock directamente"
-        customActions={
-          <>
-            {/* Filter Presets Dropdown */}
-            <FilterPresetsDropdown
-              presets={filterPresets}
-              onSelectPreset={handleSelectPreset}
-              onEditPreset={handleEditPreset}
-              onDeletePreset={handleDeletePreset}
-              onDuplicatePreset={handleDuplicatePreset}
-              onSetDefault={handleSetDefaultPreset}
-              currentPresetId={currentPresetId}
-            />
-          </>
-        }
-        actions={[
-          {
-            label: "Guardar Preset",
-            icon: <Save className="w-4 h-4" />,
-            onClick: () => {
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <Package className="w-7 h-7 text-blue-600 dark:text-blue-400" />
+            Gestión de Productos
+          </h2>
+          <p className="text-gray-600 dark:text-gray-300">
+            Administra tu catálogo y ajusta stock directamente
+          </p>
+        </div>
+
+        <div className="flex items-center space-x-3">
+          {/* Filter Presets Dropdown */}
+          <FilterPresetsDropdown
+            presets={filterPresets}
+            onSelectPreset={handleSelectPreset}
+            onEditPreset={handleEditPreset}
+            onDeletePreset={handleDeletePreset}
+            onDuplicatePreset={handleDuplicatePreset}
+            onSetDefault={handleSetDefaultPreset}
+            currentPresetId={currentPresetId}
+          />
+
+          {/* Save Current Filters as Preset */}
+          <button
+            onClick={() => {
               setEditingPreset(null);
               setShowSavePresetModal(true);
-            },
-            variant: "secondary",
-          },
-          {
-            label: "Exportar",
-            icon: <Download className="w-4 h-4" />,
-            onClick: () => setShowExportModal(true),
-            variant: "secondary",
-          },
-          {
-            label: "Importar",
-            icon: <Upload className="w-4 h-4" />,
-            onClick: () => setShowImportModal(true),
-            variant: "secondary",
-          },
-        ]}
-      />
+            }}
+            className="flex items-center space-x-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            title="Guardar filtros actuales como preset"
+          >
+            <Save className="w-4 h-4" />
+            <span>Guardar Preset</span>
+          </button>
 
-      {/* 🔥 Extracted ProductFilters component */}
-      <ProductFilters
-        searchTerm={globalSearchTerm}
-        onSearchChange={setGlobalSearchTerm}
-        filters={productFilters}
-        onFiltersChange={setProductFilters}
-        onClearAllFilters={clearAllFilters}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        onAddProduct={() => setIsProductModalOpen(true)}
-        categories={inventory.categories}
-        suppliers={inventory.suppliers}
-      />
+          <button
+            onClick={() => setShowExportModal(true)}
+            className="flex items-center space-x-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            <span>Exportar</span>
+          </button>
+
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="flex items-center space-x-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          >
+            <Upload className="w-4 h-4" />
+            <span>Importar</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <ProductFilters />
 
       {/* Products Display */}
       <ProductsDisplay

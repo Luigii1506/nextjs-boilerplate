@@ -1,0 +1,437 @@
+/**
+ * 📋 MOVEMENTS TAB COMPONENT
+ * ===========================
+ *
+ * Historial completo de movimientos de inventario
+ * Con filtros, búsqueda y paginación
+ *
+ * Created: 2025-01-18 - Inventory Movements Tab
+ */
+
+"use client";
+
+import React, { useState, useMemo } from "react";
+import {
+  Archive,
+  Calendar,
+  Package,
+  TrendingUp,
+  TrendingDown,
+  Edit3,
+  User,
+  Download,
+} from "lucide-react";
+import { cn } from "@/shared/utils";
+import {
+  TabWrapper,
+  TabHeader,
+  TabStatsCard,
+  TabSearchBar,
+  TabLoadingSkeleton,
+  TabEmptyState,
+  FilterToggleButton,
+} from "@/shared/ui/components/tabs";
+import { useStockMovementsQuery } from "../../../hooks/useInventoryQuery";
+import type { StockMovement } from "../../../types";
+
+// 🎨 Movement Types
+type MovementType = "IN" | "OUT" | "ADJUSTMENT" | "TRANSFER" | "ALL";
+
+interface Movement {
+  id: string;
+  type: MovementType;
+  quantity: number;
+  reason: string;
+  reference?: string;
+  previousStock: number;
+  newStock: number;
+  product: {
+    id: string;
+    name: string;
+    sku: string;
+    images: string[];
+  };
+  user: {
+    name: string;
+    email: string;
+  };
+  createdAt: Date;
+}
+
+// 🎨 Movement Type Config
+const MOVEMENT_TYPE_CONFIG = {
+  IN: {
+    label: "Entrada",
+    icon: TrendingUp,
+    color: "green",
+    bgColor: "bg-green-50 dark:bg-green-900/20",
+    textColor: "text-green-700 dark:text-green-300",
+    borderColor: "border-green-200 dark:border-green-800",
+  },
+  OUT: {
+    label: "Salida",
+    icon: TrendingDown,
+    color: "red",
+    bgColor: "bg-red-50 dark:bg-red-900/20",
+    textColor: "text-red-700 dark:text-red-300",
+    borderColor: "border-red-200 dark:border-red-800",
+  },
+  ADJUSTMENT: {
+    label: "Ajuste",
+    icon: Edit3,
+    color: "purple",
+    bgColor: "bg-purple-50 dark:bg-purple-900/20",
+    textColor: "text-purple-700 dark:text-purple-300",
+    borderColor: "border-purple-200 dark:border-purple-800",
+  },
+  TRANSFER: {
+    label: "Transferencia",
+    icon: Archive,
+    color: "blue",
+    bgColor: "bg-blue-50 dark:bg-blue-900/20",
+    textColor: "text-blue-700 dark:text-blue-300",
+    borderColor: "border-blue-200 dark:border-blue-800",
+  },
+} as const;
+
+// 📦 Movement Card Component
+const MovementCard: React.FC<{ movement: Movement }> = ({ movement }) => {
+  const config =
+    MOVEMENT_TYPE_CONFIG[movement.type as keyof typeof MOVEMENT_TYPE_CONFIG];
+  const Icon = config.icon;
+
+  const quantityChange =
+    movement.type === "IN"
+      ? `+${movement.quantity}`
+      : movement.type === "OUT"
+      ? `-${movement.quantity}`
+      : movement.quantity.toString();
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between gap-4">
+        {/* Left: Product Info */}
+        <div className="flex items-start gap-3 flex-1 min-w-0">
+          {/* Product Image */}
+          <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-700 flex-shrink-0 overflow-hidden">
+            {movement.product.images[0] ? (
+              <img
+                src={movement.product.images[0]}
+                alt={movement.product.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Package className="w-6 h-6 text-gray-400" />
+              </div>
+            )}
+          </div>
+
+          {/* Product Details */}
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-gray-900 dark:text-white truncate">
+              {movement.product.name}
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+              SKU: {movement.product.sku}
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+              {movement.reason}
+            </p>
+            {movement.reference && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Ref: {movement.reference}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Right: Movement Info */}
+        <div className="flex flex-col items-end gap-2 flex-shrink-0">
+          {/* Type Badge */}
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border",
+              config.bgColor,
+              config.textColor,
+              config.borderColor
+            )}
+          >
+            <Icon className="w-3 h-3" />
+            {config.label}
+          </span>
+
+          {/* Quantity Change */}
+          <div className="text-right">
+            <div
+              className={cn(
+                "text-2xl font-bold",
+                movement.type === "IN" && "text-green-600 dark:text-green-400",
+                movement.type === "OUT" && "text-red-600 dark:text-red-400",
+                movement.type === "ADJUSTMENT" &&
+                  "text-purple-600 dark:text-purple-400"
+              )}
+            >
+              {quantityChange}
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              {movement.previousStock} → {movement.newStock}
+            </div>
+          </div>
+
+          {/* User & Date */}
+          <div className="text-xs text-gray-500 dark:text-gray-400 text-right">
+            <div className="flex items-center gap-1">
+              <User className="w-3 h-3" />
+              <span>{movement.user.name}</span>
+            </div>
+            <div className="flex items-center gap-1 mt-0.5">
+              <Calendar className="w-3 h-3" />
+              <span>
+                {new Intl.DateTimeFormat("es-MX", {
+                  day: "2-digit",
+                  month: "short",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }).format(new Date(movement.createdAt))}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 🎯 Main Movements Tab
+const MovementsTab: React.FC = React.memo(function MovementsTab() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedType, setSelectedType] = useState<MovementType>("ALL");
+  const [showFilters, setShowFilters] = useState(false);
+
+  // 🔄 Fetch stock movements from API
+  const {
+    movements: stockMovements = [],
+    isLoading,
+    error,
+  } = useStockMovementsQuery({
+    enabled: true,
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: false,
+  });
+
+  // 🔄 Transform API data to Movement format
+  const movements: Movement[] = useMemo(() => {
+    return stockMovements
+      .filter((movement: StockMovement) => movement.product && movement.user) // Filter out incomplete data
+      .map((movement: StockMovement) => ({
+        id: movement.id,
+        type: movement.type as MovementType,
+        quantity: movement.quantity,
+        reason: movement.reason || "Ajuste de stock",
+        reference: movement.reference || undefined,
+        previousStock: movement.previousStock || 0,
+        newStock: movement.newStock || 0,
+        product: {
+          id: movement.product!.id,
+          name: movement.product!.name,
+          sku: movement.product!.sku,
+          images: movement.product!.images || [],
+        },
+        user: {
+          name: movement.user!.name || "Sistema",
+          email: movement.user!.email || "sistema@inventory.com",
+        },
+        createdAt: new Date(movement.createdAt),
+      }));
+  }, [stockMovements]);
+
+  // Filter movements
+  const filteredMovements = useMemo(() => {
+    let filtered = movements;
+
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (m) =>
+          m.product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          m.product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          m.reason.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filter by type
+    if (selectedType !== "ALL") {
+      filtered = filtered.filter((m) => m.type === selectedType);
+    }
+
+    // Sort by date (newest first)
+    return filtered.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }, [movements, searchTerm, selectedType]);
+
+  // Stats
+  const stats = useMemo(() => {
+    const totalIn = movements
+      .filter((m) => m.type === "IN")
+      .reduce((acc, m) => acc + m.quantity, 0);
+    const totalOut = movements
+      .filter((m) => m.type === "OUT")
+      .reduce((acc, m) => acc + m.quantity, 0);
+
+    return {
+      total: movements.length,
+      totalIn,
+      totalOut,
+      netChange: totalIn - totalOut,
+    };
+  }, [movements]);
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <TabWrapper spacing="space-y-6">
+        <TabLoadingSkeleton type="stats" count={4} showHeader />
+        <TabLoadingSkeleton type="list" count={5} />
+      </TabWrapper>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <TabWrapper spacing="space-y-6">
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <Archive className="w-16 h-16 text-red-300 dark:text-red-600 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+              Error al cargar movimientos
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400">
+              {error.message || "Ocurrió un error al cargar los movimientos"}
+            </p>
+          </div>
+        </div>
+      </TabWrapper>
+    );
+  }
+
+  return (
+    <TabWrapper spacing="space-y-6">
+      {/* Header */}
+      <TabHeader
+        icon={<Archive className="w-8 h-8 text-blue-600 dark:text-blue-400" />}
+        title="Movimientos de Stock"
+        description="Historial completo de entradas, salidas y ajustes"
+        actions={[
+          {
+            label: "Exportar",
+            icon: <Download className="w-4 h-4" />,
+            onClick: () => console.log("Export"),
+            variant: "secondary",
+          },
+        ]}
+      />
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <TabStatsCard
+          title="Total Movimientos"
+          value={stats.total}
+          icon={Archive}
+          color="blue"
+          description="Total de movimientos registrados"
+        />
+
+        <TabStatsCard
+          title="Entradas"
+          value={`+${stats.totalIn}`}
+          icon={TrendingUp}
+          color="green"
+          description="Movimientos de entrada"
+        />
+
+        <TabStatsCard
+          title="Salidas"
+          value={`-${stats.totalOut}`}
+          icon={TrendingDown}
+          color="red"
+          description="Movimientos de salida"
+        />
+
+        <TabStatsCard
+          title="Cambio Neto"
+          value={`${stats.netChange >= 0 ? "+" : ""}${stats.netChange}`}
+          icon={Package}
+          color={stats.netChange >= 0 ? "blue" : "red"}
+          description="Diferencia entre entradas y salidas"
+        />
+      </div>
+
+      {/* Search & Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        {/* Search */}
+        <TabSearchBar
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder="Buscar por producto, SKU o razón..."
+        />
+
+        {/* Type Filter */}
+        <div className="flex gap-2">
+          <FilterToggleButton
+            isOpen={showFilters}
+            onToggle={() => setShowFilters(!showFilters)}
+            activeCount={selectedType !== "ALL" ? 1 : 0}
+            label="Filtros"
+          />
+        </div>
+      </div>
+
+      {/* Filter Pills */}
+      {showFilters && (
+        <div className="flex flex-wrap gap-2 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
+          {(["ALL", "IN", "OUT", "ADJUSTMENT"] as MovementType[]).map(
+            (type) => (
+              <button
+                key={type}
+                onClick={() => setSelectedType(type)}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                  selectedType === type
+                    ? "bg-blue-600 text-white"
+                    : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600"
+                )}
+              >
+                {type === "ALL" ? "Todos" : MOVEMENT_TYPE_CONFIG[type]?.label}
+              </button>
+            )
+          )}
+        </div>
+      )}
+
+      {/* Movements List */}
+      <div className="space-y-3">
+        {filteredMovements.length > 0 ? (
+          filteredMovements.map((movement) => (
+            <MovementCard key={movement.id} movement={movement} />
+          ))
+        ) : (
+          <TabEmptyState
+            icon={<Archive className="w-20 h-20" />}
+            title="No se encontraron movimientos"
+            description={
+              searchTerm || selectedType !== "ALL"
+                ? "Intenta ajustar los filtros de búsqueda"
+                : "Aún no hay movimientos de stock registrados"
+            }
+          />
+        )}
+      </div>
+    </TabWrapper>
+  );
+});
+
+export default MovementsTab;

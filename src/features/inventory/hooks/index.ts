@@ -66,7 +66,18 @@ export {
 // 🚛 Supplier hooks (re-exported from shared module)
 export { useSuppliersQuery } from "@/features/suppliers";
 
-// 🔧 Utility hooks (will be created later)
-// export { useStockCalculations } from "./useStockCalculations";
-// export { useInventoryFilters } from "./useInventoryFilters";
-// export { useBulkActions } from "./useBulkActions";
+// 🔧 Utility hooks - Business Logic Layer
+export { useProductMetrics } from "./useProductMetrics";
+export { useProductFilters } from "./useProductFilters";
+export { useCategoryFilters } from "./useCategoryFilters";
+
+// 📊 Type exports
+export type { UseProductMetricsReturn } from "./useProductMetrics";
+export type {
+  UseProductFiltersReturn,
+  ProductFilters,
+} from "./useProductFilters";
+export type {
+  UseCategoryFiltersReturn,
+  CategoryFilterOptions,
+} from "./useCategoryFilters";

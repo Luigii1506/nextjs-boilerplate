@@ -13,16 +13,7 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
-import {
-  Truck,
-  ExternalLink,
-  Star,
-  Package,
-  Eye,
-  ChevronRight,
-  AlertCircle,
-} from "lucide-react";
-import { cn } from "@/shared/utils";
+import { Truck, ExternalLink, Package, Star, AlertCircle } from "lucide-react";
 import {
   TabWrapper,
   TabHeader,
@@ -34,106 +25,7 @@ import {
 import { useSuppliersQuery } from "@/features/suppliers";
 import { useInventoryContext } from "../../../context";
 import type { SupplierWithRelations } from "@/shared/types";
-
-/**
- * 📇 Supplier Card with Product Count
- */
-interface SupplierCardProps {
-  supplier: SupplierWithRelations;
-  onViewDetails: (supplier: SupplierWithRelations) => void;
-}
-
-const SupplierCard: React.FC<SupplierCardProps> = ({
-  supplier,
-  onViewDetails,
-}) => {
-  const productCount = supplier._count?.products || 0;
-
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-200 overflow-hidden group">
-      {/* Header */}
-      <div className="p-5 border-b border-gray-100 dark:border-gray-700">
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex-1">
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-              {supplier.name}
-            </h3>
-            {supplier.contactPerson && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                {supplier.contactPerson}
-              </p>
-            )}
-          </div>
-          {supplier.isActive ? (
-            <span className="px-2.5 py-1 text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full">
-              Activo
-            </span>
-          ) : (
-            <span className="px-2.5 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full">
-              Inactivo
-            </span>
-          )}
-        </div>
-
-        {/* Rating */}
-        {supplier.rating !== null && supplier.rating > 0 && (
-          <div className="flex items-center gap-1.5">
-            <div className="flex items-center gap-0.5">
-              {Array.from({ length: 5 }, (_, i) => (
-                <Star
-                  key={i}
-                  className={cn(
-                    "w-3.5 h-3.5",
-                    i < supplier.rating!
-                      ? "text-yellow-500 fill-yellow-500"
-                      : "text-gray-300 dark:text-gray-600"
-                  )}
-                />
-              ))}
-            </div>
-            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-              {supplier.rating.toFixed(1)}
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Product Count - Destacado */}
-      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
-              <Package className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                Productos
-              </p>
-              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                {productCount}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => onViewDetails(supplier)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
-          >
-            <Eye className="w-4 h-4" />
-            Ver Detalles
-          </button>
-        </div>
-      </div>
-
-      {/* Footer Info */}
-      {supplier.paymentTerms && (
-        <div className="px-5 py-3 bg-gray-50 dark:bg-gray-900/50 text-xs text-gray-600 dark:text-gray-400">
-          <span className="font-medium">Términos:</span> {supplier.paymentTerms}{" "}
-          días
-        </div>
-      )}
-    </div>
-  );
-};
+import { SupplierCard, TopSupplierHighlight } from "../suppliers";
 
 /**
  * 🚛 Main Suppliers Tab - Inventory Context
@@ -172,9 +64,6 @@ export default function SuppliersTab() {
     suppliersWithProducts.length > 0
       ? totalProducts / suppliersWithProducts.length
       : 0;
-  const topSupplier = [...suppliersWithProducts].sort(
-    (a, b) => (b._count?.products || 0) - (a._count?.products || 0)
-  )[0];
 
   const handleViewDetails = (supplier: SupplierWithRelations) => {
     openViewSupplierModal(supplier);
@@ -191,7 +80,7 @@ export default function SuppliersTab() {
           {
             label: "Gestión Completa",
             icon: <ExternalLink className="w-4 h-4" />,
-            onClick: () => window.location.href = "/suppliers",
+            onClick: () => (window.location.href = "/suppliers"),
             variant: "primary",
           },
         ]}
@@ -224,32 +113,11 @@ export default function SuppliersTab() {
         />
       </div>
 
-        {/* Top Supplier Highlight */}
-        {topSupplier && (
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-5">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-amber-100 dark:bg-amber-900/40 rounded-lg">
-                <Star className="w-6 h-6 text-amber-600 dark:text-amber-400 fill-amber-600 dark:fill-amber-400" />
-              </div>
-              <div className="flex-1">
-                <h4 className="font-semibold text-amber-900 dark:text-amber-100">
-                  Proveedor Principal
-                </h4>
-                <p className="text-sm text-amber-700 dark:text-amber-300">
-                  <span className="font-semibold">{topSupplier.name}</span> con{" "}
-                  {topSupplier._count?.products || 0} productos
-                </p>
-              </div>
-              <button
-                onClick={() => handleViewDetails(topSupplier)}
-                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
-              >
-                Ver Productos
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
+      {/* Top Supplier Highlight */}
+      <TopSupplierHighlight
+        suppliers={suppliersWithProducts}
+        onViewDetails={handleViewDetails}
+      />
 
       {/* Search */}
       <TabSearchBar
@@ -263,8 +131,18 @@ export default function SuppliersTab() {
         <TabLoadingSkeleton type="grid" count={6} className="h-64" />
       ) : filteredSuppliers.length === 0 ? (
         <TabEmptyState
-          icon={searchTerm ? <AlertCircle className="w-20 h-20" /> : <AlertCircle className="w-20 h-20" />}
-          title={searchTerm ? "No se encontraron proveedores" : "No hay proveedores con productos"}
+          icon={
+            searchTerm ? (
+              <AlertCircle className="w-20 h-20" />
+            ) : (
+              <AlertCircle className="w-20 h-20" />
+            )
+          }
+          title={
+            searchTerm
+              ? "No se encontraron proveedores"
+              : "No hay proveedores con productos"
+          }
           description={
             searchTerm
               ? "Intenta con otros términos de búsqueda"
@@ -272,7 +150,7 @@ export default function SuppliersTab() {
           }
           action={{
             label: "Ir a Gestión de Proveedores",
-            onClick: () => window.location.href = "/suppliers",
+            onClick: () => (window.location.href = "/suppliers"),
             icon: <ExternalLink className="w-4 h-4" />,
           }}
         />
