@@ -41,7 +41,7 @@ import {
   TabSearchBar,
   TabEmptyState,
   TabFooterStats,
-} from "./shared";
+} from "@/shared/ui/components/tabs";
 
 // 👤 User Card Component
 interface UserCardProps {

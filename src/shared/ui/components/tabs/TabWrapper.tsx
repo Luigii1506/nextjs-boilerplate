@@ -11,7 +11,7 @@
 "use client";
 
 import React from "react";
-import { TabTransition } from "../../shared/TabTransition";
+import { TabTransition } from "@/shared/ui/components/TabTransition";
 import { cn } from "@/shared/utils";
 
 export interface TabWrapperProps {

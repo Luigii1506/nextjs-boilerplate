@@ -11,22 +11,22 @@
 
 "use client";
 
-import React, { useMemo, useRef, useEffect, useState } from "react";
+import React, { useMemo, useRef, useEffect } from "react";
 import {
   Package,
-  TrendingUp,
-  TrendingDown,
   AlertTriangle,
   ShoppingBag,
   DollarSign,
-  ArrowUpRight,
   Eye,
 } from "lucide-react";
 import { cn } from "@/shared/utils";
 import { useInventoryContext } from "../../../context";
 import { ProductCard, StockIndicator } from "..";
-import { TabTransition } from "../shared/TabTransition";
-import { QuickStockAdjustModal } from "../modals/QuickStockAdjustModal";
+import {
+  TabWrapper,
+  TabHeader,
+  TabStatsCard,
+} from "@/shared/ui/components/tabs";
 import type {
   ProductWithRelations,
   ProductWithComputedProps,
@@ -73,112 +73,7 @@ const computeProductProps = (
   };
 };
 
-// 📊 Enhanced Stats Card with Animations
-interface StatsCardProps {
-  title: string;
-  value: string | number;
-  change?: string;
-  changeType?: "positive" | "negative" | "neutral";
-  icon: React.ComponentType<{ className?: string }>;
-  description?: string;
-  color?: string;
-  onClick?: () => void;
-}
-
-const StatsCard: React.FC<StatsCardProps> = React.memo(function StatsCard({
-  title,
-  value,
-  change,
-  changeType = "neutral",
-  icon: Icon,
-  description,
-  color = "blue",
-  onClick,
-}) {
-  const colorClasses = {
-    blue: "from-blue-500 to-blue-600",
-    green: "from-green-500 to-green-600",
-    orange: "from-orange-500 to-orange-600",
-    red: "from-red-500 to-red-600",
-    purple: "from-purple-500 to-purple-600",
-  };
-
-  return (
-    <div
-      className={cn(
-        "group relative bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700",
-        "shadow-sm hover:shadow-lg dark:shadow-gray-900/20 transition-all duration-200",
-        "overflow-hidden transform-gpu",
-        onClick && "cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-      )}
-      onClick={onClick}
-    >
-      {/* Gradient Background */}
-      <div
-        className={cn(
-          "absolute top-0 right-0 w-20 h-20 opacity-10",
-          "bg-gradient-to-br rounded-bl-full",
-          colorClasses[color as keyof typeof colorClasses]
-        )}
-      />
-
-      <div className="relative p-6">
-        <div className="flex items-start justify-between">
-          <div className="space-y-2 flex-1">
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
-              {title}
-            </p>
-
-            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              {typeof value === "number" ? value.toLocaleString() : value}
-            </div>
-
-            {change && (
-              <div
-                className={cn(
-                  "flex items-center space-x-1 text-sm",
-                  changeType === "positive" &&
-                    "text-green-600 dark:text-green-400",
-                  changeType === "negative" && "text-red-600 dark:text-red-400",
-                  changeType === "neutral" && "text-gray-600 dark:text-gray-400"
-                )}
-              >
-                {changeType === "positive" && (
-                  <TrendingUp className="w-4 h-4" />
-                )}
-                {changeType === "negative" && (
-                  <TrendingDown className="w-4 h-4" />
-                )}
-                <span>{change}</span>
-              </div>
-            )}
-
-            {description && (
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {description}
-              </p>
-            )}
-          </div>
-
-          <div
-            className={cn(
-              "p-3 rounded-lg bg-gradient-to-br",
-              colorClasses[color as keyof typeof colorClasses]
-            )}
-          >
-            <Icon className="w-6 h-6 text-white" />
-          </div>
-        </div>
-
-        {onClick && (
-          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-            <ArrowUpRight className="w-4 h-4 text-gray-400" />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-});
+// Note: StatsCard has been replaced with TabStatsCard from shared components
 
 // 🚨 Enhanced Alert Card - Memoized for SPA Performance
 const AlertsCard: React.FC = React.memo(function AlertsCard() {
@@ -349,14 +244,8 @@ const OverviewTab: React.FC = React.memo(function OverviewTab() {
   const { inventory, setActiveTab } = useInventoryContext();
   const { stats, categories, suppliers, products } = inventory;
 
-  // Modal state
-  const [quickAdjustModalOpen, setQuickAdjustModalOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<ProductWithRelations | null>(null);
-  const [adjustmentType, setAdjustmentType] = useState<"IN" | "OUT" | "ADJUSTMENT">("IN");
-
   // 🚨 FIX: SPA-compatible animation system - no flicker on wishlist updates
   const hasInitialized = useRef(false);
-  const [allowAnimations, setAllowAnimations] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -405,8 +294,7 @@ const OverviewTab: React.FC = React.memo(function OverviewTab() {
       const lastMovement = p.stockMovements[0]?.createdAt;
       if (!lastMovement) return true;
       const daysSinceMovement =
-        (Date.now() - new Date(lastMovement).getTime()) /
-        (1000 * 60 * 60 * 24);
+        (Date.now() - new Date(lastMovement).getTime()) / (1000 * 60 * 60 * 24);
       return daysSinceMovement > 30;
     });
 
@@ -420,195 +308,177 @@ const OverviewTab: React.FC = React.memo(function OverviewTab() {
   }, [stats, products]);
 
   return (
-    <TabTransition isActive={true} transitionType="slideUp" delay={0}>
-      <div className="space-y-6 p-6">
-        {/* Quick Actions */}
-        <div
-          className={cn(
-            "flex items-center justify-between",
-            allowAnimations && "animate-fadeInUp stagger-1"
-          )}
-        >
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              Vista General
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Control operacional de tu inventario
-            </p>
-          </div>
-          <button
-            onClick={() => setActiveTab("products")}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-all duration-200 hover:scale-[1.02]"
-          >
-            <Package className="w-4 h-4" />
-            <span>Gestionar Productos</span>
-          </button>
-        </div>
+    <TabWrapper spacing="space-y-6">
+      {/* Header */}
+      <TabHeader
+        icon={<Package className="w-8 h-8 text-blue-600 dark:text-blue-400" />}
+        title="Vista General"
+        description="Control operacional de tu inventario"
+        actions={[
+          {
+            label: "Gestionar Productos",
+            icon: <Package className="w-4 h-4" />,
+            onClick: () => setActiveTab("products"),
+            variant: "primary",
+          },
+        ]}
+      />
 
-        {/* Operational Metrics - Real Stock Control */}
-        <div
-          className={cn(
-            "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6",
-            allowAnimations && "animate-slideInUp stagger-2"
-          )}
-        >
-          <StatsCard
-            title="Productos Activos"
-            value={stats?.activeProducts || 0}
-            description="Total en inventario"
-            icon={Package}
-            color="blue"
-            onClick={() => setActiveTab("products")}
-          />
+      {/* Operational Metrics - Real Stock Control */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <TabStatsCard
+          title="Productos Activos"
+          value={stats?.activeProducts || 0}
+          description="Total en inventario"
+          icon={Package}
+          color="blue"
+          onClick={() => setActiveTab("products")}
+        />
 
-          <StatsCard
-            title="Valor en Stock"
-            value={operationalMetrics.totalInventoryValue}
-            description="Inversión al costo"
-            icon={DollarSign}
-            color="green"
-          />
+        <TabStatsCard
+          title="Valor en Stock"
+          value={operationalMetrics.totalInventoryValue}
+          description="Inversión al costo"
+          icon={DollarSign}
+          color="green"
+        />
 
-          <StatsCard
-            title="Requieren Atención"
-            value={operationalMetrics.needsAttentionCount}
-            change={
-              operationalMetrics.needsAttentionCount > 0
-                ? "Acción requerida"
-                : "Todo bien"
-            }
-            changeType={
-              operationalMetrics.needsAttentionCount > 0
-                ? "negative"
-                : "positive"
-            }
-            description="Stock bajo o agotado"
-            icon={AlertTriangle}
-            color="red"
-            onClick={() => setActiveTab("products")}
-          />
+        <TabStatsCard
+          title="Requieren Atención"
+          value={operationalMetrics.needsAttentionCount}
+          change={
+            operationalMetrics.needsAttentionCount > 0
+              ? "Acción requerida"
+              : "Todo bien"
+          }
+          changeType={
+            operationalMetrics.needsAttentionCount > 0 ? "negative" : "positive"
+          }
+          description="Stock bajo o agotado"
+          icon={AlertTriangle}
+          color="orange"
+          onClick={() => setActiveTab("products")}
+        />
 
-          <StatsCard
-            title="Movimientos Hoy"
-            value={stats?.recentMovements || 0}
-            description="Transacciones registradas"
-            icon={ShoppingBag}
-            color="purple"
-            onClick={() => setActiveTab("movements")}
-          />
-        </div>
+        <TabStatsCard
+          title="Movimientos Hoy"
+          value={stats?.recentMovements || 0}
+          description="Transacciones registradas"
+          icon={ShoppingBag}
+          color="purple"
+          onClick={() => setActiveTab("movements")}
+        />
+      </div>
 
-        {/* Attention Required Section */}
-        {operationalMetrics.needsAttentionCount > 0 && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6">
-            <div className="flex items-start space-x-3">
-              <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-red-900 dark:text-red-100 mb-2">
-                  Productos Requieren Atención
-                </h3>
-                <div className="space-y-2 text-sm text-red-800 dark:text-red-200">
-                  <div className="flex items-center justify-between">
-                    <span>Productos agotados</span>
-                    <span className="font-semibold">
-                      {operationalMetrics.depletedCount}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Stock bajo mínimo</span>
-                    <span className="font-semibold">
-                      {operationalMetrics.needsAttentionCount -
-                        operationalMetrics.depletedCount}
-                    </span>
-                  </div>
-                  {operationalMetrics.staleProductsCount > 0 && (
-                    <div className="flex items-center justify-between">
-                      <span>Sin movimiento (30+ días)</span>
-                      <span className="font-semibold">
-                        {operationalMetrics.staleProductsCount}
-                      </span>
-                    </div>
-                  )}
+      {/* Attention Required Section */}
+      {operationalMetrics.needsAttentionCount > 0 && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6">
+          <div className="flex items-start space-x-3">
+            <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-red-900 dark:text-red-100 mb-2">
+                Productos Requieren Atención
+              </h3>
+              <div className="space-y-2 text-sm text-red-800 dark:text-red-200">
+                <div className="flex items-center justify-between">
+                  <span>Productos agotados</span>
+                  <span className="font-semibold">
+                    {operationalMetrics.depletedCount}
+                  </span>
                 </div>
-                <button
-                  onClick={() => setActiveTab("products")}
-                  className="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                >
-                  Revisar Productos
-                </button>
+                <div className="flex items-center justify-between">
+                  <span>Stock bajo mínimo</span>
+                  <span className="font-semibold">
+                    {operationalMetrics.needsAttentionCount -
+                      operationalMetrics.depletedCount}
+                  </span>
+                </div>
+                {operationalMetrics.staleProductsCount > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span>Sin movimiento (30+ días)</span>
+                    <span className="font-semibold">
+                      {operationalMetrics.staleProductsCount}
+                    </span>
+                  </div>
+                )}
               </div>
+              <button
+                onClick={() => setActiveTab("products")}
+                className="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              >
+                Revisar Productos
+              </button>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Alerts */}
-          <div className="lg:col-span-1">
-            <AlertsCard />
-          </div>
-
-          {/* Recent Products */}
-          <div className="lg:col-span-2">
-            <RecentProductsSection />
-          </div>
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Alerts */}
+        <div className="lg:col-span-1">
+          <AlertsCard />
         </div>
 
-        {/* Quick Navigation Footer */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            <button
-              className="hover:scale-105 transition-transform"
-              onClick={() => setActiveTab("products")}
-            >
-              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                {stats?.totalProducts || 0}
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-300">
-                Total Productos
-              </div>
-            </button>
-
-            <button
-              className="hover:scale-105 transition-transform"
-              onClick={() => setActiveTab("categories")}
-            >
-              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {categories.length}
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-300">
-                Categorías
-              </div>
-            </button>
-
-            <button
-              className="hover:scale-105 transition-transform"
-              onClick={() => setActiveTab("suppliers")}
-            >
-              <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                {suppliers.length}
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-300">
-                Proveedores
-              </div>
-            </button>
-
-            <button
-              className="hover:scale-105 transition-transform"
-              onClick={() => setActiveTab("reports")}
-            >
-              <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-                {operationalMetrics.totalRetailValue}
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-300">
-                Valor Retail
-              </div>
-            </button>
-          </div>
+        {/* Recent Products */}
+        <div className="lg:col-span-2">
+          <RecentProductsSection />
         </div>
       </div>
-    </TabTransition>
+
+      {/* Quick Navigation Footer */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          <button
+            className="hover:scale-105 transition-transform"
+            onClick={() => setActiveTab("products")}
+          >
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              {stats?.totalProducts || 0}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-300">
+              Total Productos
+            </div>
+          </button>
+
+          <button
+            className="hover:scale-105 transition-transform"
+            onClick={() => setActiveTab("categories")}
+          >
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+              {categories.length}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-300">
+              Categorías
+            </div>
+          </button>
+
+          <button
+            className="hover:scale-105 transition-transform"
+            onClick={() => setActiveTab("suppliers")}
+          >
+            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+              {suppliers.length}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-300">
+              Proveedores
+            </div>
+          </button>
+
+          <button
+            className="hover:scale-105 transition-transform"
+            onClick={() => setActiveTab("reports")}
+          >
+            <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+              {operationalMetrics.totalRetailValue}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-300">
+              Valor Retail
+            </div>
+          </button>
+        </div>
+      </div>
+    </TabWrapper>
   );
 });
 

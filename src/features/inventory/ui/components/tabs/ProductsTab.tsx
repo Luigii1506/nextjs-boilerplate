@@ -14,7 +14,6 @@ import React, { useState, useMemo, useCallback } from "react";
 import {
   Package,
   Plus,
-  Search,
   Filter,
   Grid3X3,
   List,
@@ -23,13 +22,12 @@ import {
   Edit3,
   Trash2,
   Eye,
-  X,
   Save,
 } from "lucide-react";
 import { cn } from "@/shared/utils";
 import { useInventoryContext } from "../../../context";
 import { ProductCard, StockIndicator, CategoryBadge } from "..";
-import { TabTransition } from "../shared/TabTransition";
+import { TabWrapper, TabSearchBar, TabEmptyState, TabLoadingSkeleton } from "@/shared/ui/components/tabs";
 import {
   QuickStockAdjustModal,
   ExportModal,
@@ -103,28 +101,12 @@ const ProductFilters: React.FC = () => {
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-4">
         {/* Primary Search */}
         <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Buscar productos por nombre, SKU o código de barras..."
+          <div className="flex-1">
+            <TabSearchBar
               value={globalSearchTerm}
-              onChange={(e) => setGlobalSearchTerm(e.target.value)}
-              className={cn(
-                "w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600",
-                "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
-                "focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all",
-                "placeholder:text-gray-500 dark:placeholder:text-gray-400"
-              )}
+              onChange={setGlobalSearchTerm}
+              placeholder="Buscar productos por nombre, SKU o código de barras..."
             />
-            {globalSearchTerm && (
-              <button
-                onClick={() => setGlobalSearchTerm("")}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
           </div>
 
           <div className="flex items-center space-x-2">
@@ -263,49 +245,25 @@ const ProductsDisplay: React.FC<{
 
   if (isLoading) {
     return (
-      <div
-        className={cn(
-          "transition-all duration-300",
-          viewMode === "grid"
-            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-            : "space-y-4"
-        )}
-      >
-        {[...Array(8)].map((_, i) => (
-          <div
-            key={i}
-            className={cn(
-              "bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse",
-              viewMode === "grid" ? "h-80" : "h-24"
-            )}
-            style={{
-              animationDelay: `${i * 0.1}s`,
-            }}
-          />
-        ))}
-      </div>
+      <TabLoadingSkeleton
+        type={viewMode === "grid" ? "grid" : "list"}
+        count={8}
+      />
     );
   }
 
   if (products.length === 0) {
     return (
-      <div className="text-center py-16">
-        <Package className="w-20 h-20 text-gray-300 dark:text-gray-600 mx-auto mb-6" />
-        <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">
-          No se encontraron productos
-        </h3>
-        <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-md mx-auto">
-          No hay productos que coincidan con tus criterios de búsqueda. Intenta
-          ajustar los filtros o agregar productos nuevos.
-        </p>
-        <button
-          onClick={() => setIsProductModalOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg flex items-center space-x-2 mx-auto transition-all duration-200 hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-blue-500/20"
-        >
-          <Plus className="w-5 h-5" />
-          <span>Agregar Primer Producto</span>
-        </button>
-      </div>
+      <TabEmptyState
+        icon={<Package className="w-20 h-20" />}
+        title="No se encontraron productos"
+        description="No hay productos que coincidan con tus criterios de búsqueda. Intenta ajustar los filtros o agregar productos nuevos."
+        action={{
+          label: "Agregar Primer Producto",
+          onClick: () => setIsProductModalOpen(true),
+          icon: <Plus className="w-5 h-5" />,
+        }}
+      />
     );
   }
 
@@ -756,22 +714,22 @@ const ProductsTab: React.FC = React.memo(function ProductsTab() {
   };
 
   return (
-    <TabTransition isActive={true} transitionType="fade" delay={50}>
-      <div className="space-y-6 p-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fadeInUp stagger-1">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              Gestión de Productos
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300">
-              Administra tu catálogo y ajusta stock directamente
-            </p>
-          </div>
+    <TabWrapper spacing="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <Package className="w-7 h-7 text-blue-600 dark:text-blue-400" />
+            Gestión de Productos
+          </h2>
+          <p className="text-gray-600 dark:text-gray-300">
+            Administra tu catálogo y ajusta stock directamente
+          </p>
+        </div>
 
-          <div className="flex items-center space-x-3">
-            {/* Filter Presets Dropdown */}
-            <FilterPresetsDropdown
+        <div className="flex items-center space-x-3">
+          {/* Filter Presets Dropdown */}
+          <FilterPresetsDropdown
               presets={filterPresets}
               onSelectPreset={handleSelectPreset}
               onEditPreset={handleEditPreset}
@@ -802,42 +760,38 @@ const ProductsTab: React.FC = React.memo(function ProductsTab() {
               <span>Exportar</span>
             </button>
 
-            <button
-              onClick={() => setShowImportModal(true)}
-              className="flex items-center space-x-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
-              <Upload className="w-4 h-4" />
-              <span>Importar</span>
-            </button>
-          </div>
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="flex items-center space-x-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          >
+            <Upload className="w-4 h-4" />
+            <span>Importar</span>
+          </button>
         </div>
+      </div>
 
-        {/* Filters */}
-        <div className="animate-slideInDown stagger-2">
-          <ProductFilters />
-        </div>
+      {/* Filters */}
+      <ProductFilters />
 
-        {/* Products Display */}
-        <div className="animate-fadeInScale stagger-3">
-          <ProductsDisplay
-            onQuickAdjust={handleOpenStockAdjust}
-            selectedProductIds={selectedProductIds}
-            onToggleSelection={handleToggleSelection}
-            showCheckbox={true}
-          />
-        </div>
+      {/* Products Display */}
+      <ProductsDisplay
+        onQuickAdjust={handleOpenStockAdjust}
+        selectedProductIds={selectedProductIds}
+        onToggleSelection={handleToggleSelection}
+        showCheckbox={true}
+      />
 
-        {/* Stock Adjustment Modal */}
-        <QuickStockAdjustModal
-          product={selectedProduct}
-          isOpen={stockAdjustModalOpen}
-          onClose={handleCloseStockAdjust}
-          onSubmit={handleSubmitStockAdjust}
-          isLoading={isSubmitting}
-        />
+      {/* Stock Adjustment Modal */}
+      <QuickStockAdjustModal
+        product={selectedProduct}
+        isOpen={stockAdjustModalOpen}
+        onClose={handleCloseStockAdjust}
+        onSubmit={handleSubmitStockAdjust}
+        isLoading={isSubmitting}
+      />
 
-        {/* Bulk Selection Bar */}
-        <BulkSelectionBar
+      {/* Bulk Selection Bar */}
+      <BulkSelectionBar
           selectedCount={selectedProductIds.size}
           totalCount={inventory.products.length}
           onSelectAll={handleSelectAll}
@@ -903,8 +857,7 @@ const ProductsTab: React.FC = React.memo(function ProductsTab() {
               : undefined
           }
         />
-      </div>
-    </TabTransition>
+    </TabWrapper>
   );
 });
 

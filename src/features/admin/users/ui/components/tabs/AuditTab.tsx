@@ -40,7 +40,7 @@ import {
   TabWrapper,
   TabSearchBar,
   TabLoadingSkeleton,
-} from "./shared";
+} from "@/shared/ui/components/tabs";
 
 // 📋 Audit Entry Interface
 interface AuditFiltersState {

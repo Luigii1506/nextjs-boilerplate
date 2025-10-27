@@ -35,7 +35,7 @@ import {
   TabSearchBar,
   TabFooterStats,
   TabLoadingSkeleton,
-} from "./shared";
+} from "@/shared/ui/components/tabs";
 import type { User } from "../../../types";
 
 // 👑 Admin Card Component

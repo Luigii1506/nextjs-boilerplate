@@ -14,7 +14,6 @@
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import {
-  Search,
   Truck,
   ExternalLink,
   Star,
@@ -24,7 +23,14 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { cn } from "@/shared/utils";
-import { TabTransition } from "../shared/TabTransition";
+import {
+  TabWrapper,
+  TabHeader,
+  TabStatsCard,
+  TabSearchBar,
+  TabLoadingSkeleton,
+  TabEmptyState,
+} from "@/shared/ui/components/tabs";
 import { useSuppliersQuery } from "@/features/suppliers";
 import { useInventoryContext } from "../../../context";
 import type { SupplierWithRelations } from "@/shared/types";
@@ -175,83 +181,48 @@ export default function SuppliersTab() {
   };
 
   return (
-    <TabTransition isActive={true} transitionType="fade" delay={50}>
-      <div className="space-y-6 p-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-              <Truck className="w-7 h-7 text-blue-600 dark:text-blue-400" />
-              Proveedores con Productos
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Visualiza proveedores y sus productos asociados
-            </p>
-          </div>
+    <TabWrapper spacing="space-y-6">
+      {/* Header */}
+      <TabHeader
+        icon={<Truck className="w-8 h-8 text-blue-600 dark:text-blue-400" />}
+        title="Proveedores con Productos"
+        description="Visualiza proveedores y sus productos asociados"
+        actions={[
+          {
+            label: "Gestión Completa",
+            icon: <ExternalLink className="w-4 h-4" />,
+            onClick: () => window.location.href = "/suppliers",
+            variant: "primary",
+          },
+        ]}
+      />
 
-          {/* Link to Full Suppliers Module */}
-          <Link
-            href="/suppliers"
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg transition-all font-medium shadow-md hover:shadow-lg"
-          >
-            <ExternalLink className="w-4 h-4" />
-            Gestión Completa
-          </Link>
-        </div>
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <TabStatsCard
+          title="Proveedores Activos"
+          value={suppliersWithProducts.length}
+          icon={Truck}
+          color="blue"
+          description="Con productos en inventario"
+        />
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl p-5 border border-blue-200 dark:border-blue-800">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                  Proveedores Activos
-                </p>
-                <p className="text-3xl font-bold text-blue-900 dark:text-blue-100 mt-2">
-                  {suppliersWithProducts.length}
-                </p>
-                <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-                  Con productos en inventario
-                </p>
-              </div>
-              <Truck className="w-10 h-10 text-blue-600 dark:text-blue-400 opacity-30" />
-            </div>
-          </div>
+        <TabStatsCard
+          title="Total Productos"
+          value={totalProducts}
+          icon={Package}
+          color="purple"
+          description="En todos los proveedores"
+        />
 
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl p-5 border border-purple-200 dark:border-purple-800">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-purple-600 dark:text-purple-400">
-                  Total Productos
-                </p>
-                <p className="text-3xl font-bold text-purple-900 dark:text-purple-100 mt-2">
-                  {totalProducts}
-                </p>
-                <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">
-                  En todos los proveedores
-                </p>
-              </div>
-              <Package className="w-10 h-10 text-purple-600 dark:text-purple-400 opacity-30" />
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl p-5 border border-green-200 dark:border-green-800">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-green-600 dark:text-green-400">
-                  Promedio por Proveedor
-                </p>
-                <p className="text-3xl font-bold text-green-900 dark:text-green-100 mt-2">
-                  {avgProductsPerSupplier.toFixed(1)}
-                </p>
-                <p className="text-xs text-green-700 dark:text-green-300 mt-1">
-                  Productos por proveedor
-                </p>
-              </div>
-              <Star className="w-10 h-10 text-green-600 dark:text-green-400 opacity-30" />
-            </div>
-          </div>
-        </div>
+        <TabStatsCard
+          title="Promedio por Proveedor"
+          value={avgProductsPerSupplier.toFixed(1)}
+          icon={Star}
+          color="green"
+          description="Productos por proveedor"
+        />
+      </div>
 
         {/* Top Supplier Highlight */}
         {topSupplier && (
@@ -280,93 +251,68 @@ export default function SuppliersTab() {
           </div>
         )}
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Buscar proveedor por nombre, contacto o email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
-          />
+      {/* Search */}
+      <TabSearchBar
+        value={searchTerm}
+        onChange={setSearchTerm}
+        placeholder="Buscar proveedor por nombre, contacto o email..."
+      />
+
+      {/* Suppliers Grid */}
+      {isLoading ? (
+        <TabLoadingSkeleton type="grid" count={6} className="h-64" />
+      ) : filteredSuppliers.length === 0 ? (
+        <TabEmptyState
+          icon={searchTerm ? <AlertCircle className="w-20 h-20" /> : <AlertCircle className="w-20 h-20" />}
+          title={searchTerm ? "No se encontraron proveedores" : "No hay proveedores con productos"}
+          description={
+            searchTerm
+              ? "Intenta con otros términos de búsqueda"
+              : "Los proveedores aparecerán aquí cuando tengan productos asignados"
+          }
+          action={{
+            label: "Ir a Gestión de Proveedores",
+            onClick: () => window.location.href = "/suppliers",
+            icon: <ExternalLink className="w-4 h-4" />,
+          }}
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredSuppliers.map((supplier) => (
+            <SupplierCard
+              key={supplier.id}
+              supplier={supplier}
+              onViewDetails={handleViewDetails}
+            />
+          ))}
         </div>
+      )}
 
-        {/* Suppliers Grid */}
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div
-                key={i}
-                className="bg-gray-100 dark:bg-gray-800 rounded-lg h-64 animate-pulse"
-              />
-            ))}
+      {/* Info Box */}
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-5">
+        <div className="flex items-start gap-4">
+          <div className="p-2.5 bg-blue-100 dark:bg-blue-900/40 rounded-lg flex-shrink-0">
+            <ExternalLink className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           </div>
-        ) : filteredSuppliers.length === 0 ? (
-          <div className="text-center py-16 bg-gray-50 dark:bg-gray-800 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full mb-4">
-              {searchTerm ? (
-                <Search className="w-8 h-8 text-gray-400" />
-              ) : (
-                <AlertCircle className="w-8 h-8 text-gray-400" />
-              )}
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-              {searchTerm
-                ? "No se encontraron proveedores"
-                : "No hay proveedores con productos"}
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-              {searchTerm
-                ? "Intenta con otros términos de búsqueda"
-                : "Los proveedores aparecerán aquí cuando tengan productos asignados"}
+          <div className="flex-1">
+            <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
+              Vista del Contexto de Inventario
+            </h4>
+            <p className="text-sm text-blue-700 dark:text-blue-300 leading-relaxed">
+              Esta vista muestra solo los proveedores que tienen productos
+              asociados en tu inventario. Para gestión completa de proveedores
+              (crear, editar, eliminar, analytics), visita el{" "}
+              <Link
+                href="/suppliers"
+                className="underline font-semibold hover:text-blue-800 dark:hover:text-blue-200"
+              >
+                módulo de Proveedores
+              </Link>
+              .
             </p>
-            <Link
-              href="/suppliers"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
-            >
-              <ExternalLink className="w-4 h-4" />
-              Ir a Gestión de Proveedores
-            </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredSuppliers.map((supplier) => (
-              <SupplierCard
-                key={supplier.id}
-                supplier={supplier}
-                onViewDetails={handleViewDetails}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Info Box */}
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-5">
-          <div className="flex items-start gap-4">
-            <div className="p-2.5 bg-blue-100 dark:bg-blue-900/40 rounded-lg flex-shrink-0">
-              <ExternalLink className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div className="flex-1">
-              <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
-                Vista del Contexto de Inventario
-              </h4>
-              <p className="text-sm text-blue-700 dark:text-blue-300 leading-relaxed">
-                Esta vista muestra solo los proveedores que tienen productos
-                asociados en tu inventario. Para gestión completa de proveedores
-                (crear, editar, eliminar, analytics), visita el{" "}
-                <Link
-                  href="/suppliers"
-                  className="underline font-semibold hover:text-blue-800 dark:hover:text-blue-200"
-                >
-                  módulo de Proveedores
-                </Link>
-                .
-              </p>
-            </div>
           </div>
         </div>
       </div>
-    </TabTransition>
+    </TabWrapper>
   );
 }

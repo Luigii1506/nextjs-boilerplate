@@ -29,7 +29,7 @@ import {
   TabWrapper,
   TabStatsCard,
   TabLoadingSkeleton,
-} from "./shared";
+} from "@/shared/ui/components/tabs";
 
 // 📊 Alert Card Component
 interface AlertCardProps {

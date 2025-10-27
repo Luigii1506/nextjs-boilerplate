@@ -31,7 +31,7 @@ import {
   TabWrapper,
   TabStatsCard,
   TabLoadingSkeleton,
-} from "./shared";
+} from "@/shared/ui/components/tabs";
 
 // 📈 Simple Chart Component (Mock visualization)
 interface SimpleBarChartProps {

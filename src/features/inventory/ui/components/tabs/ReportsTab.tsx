@@ -10,16 +10,13 @@
 
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
   BarChart3,
   TrendingUp,
-  TrendingDown,
   Package,
   DollarSign,
-  Calendar,
   Download,
-  Filter,
   AlertTriangle,
   CheckCircle2,
   XCircle,
@@ -43,7 +40,7 @@ import {
   AreaChart,
 } from "recharts";
 import { cn } from "@/shared/utils";
-import { TabTransition } from "../shared/TabTransition";
+import { TabWrapper, TabHeader } from "@/shared/ui/components/tabs";
 import { useQuery } from "@tanstack/react-query";
 import {
   getStockMovementsByDateAction,
@@ -427,56 +424,49 @@ const ReportsTab: React.FC = React.memo(function ReportsTab() {
   const [selectedRange, setSelectedRange] = useState(30);
 
   return (
-    <TabTransition isActive={true} transitionType="fade" delay={50}>
-      <div className="space-y-6 p-6" suppressHydrationWarning>
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-              <BarChart3 className="w-7 h-7 text-blue-600 dark:text-blue-400" />
-              Reportes y Analytics
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              Análisis detallado de tu inventario
-            </p>
+    <TabWrapper spacing="space-y-6">
+      {/* Header */}
+      <TabHeader
+        icon={<BarChart3 className="w-8 h-8 text-blue-600 dark:text-blue-400" />}
+        title="Reportes y Analytics"
+        description="Análisis detallado de tu inventario"
+      >
+        <div className="flex items-center gap-2">
+          {/* Time Range Selector */}
+          <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+            {TIME_RANGES.map((range) => (
+              <button
+                key={range.value}
+                onClick={() => setSelectedRange(range.value)}
+                className={cn(
+                  "px-4 py-2 rounded-md text-sm font-medium transition-all",
+                  selectedRange === range.value
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                )}
+              >
+                {range.label}
+              </button>
+            ))}
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Time Range Selector */}
-            <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-              {TIME_RANGES.map((range) => (
-                <button
-                  key={range.value}
-                  onClick={() => setSelectedRange(range.value)}
-                  className={cn(
-                    "px-4 py-2 rounded-md text-sm font-medium transition-all",
-                    selectedRange === range.value
-                      ? "bg-blue-600 text-white shadow-sm"
-                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
-                  )}
-                >
-                  {range.label}
-                </button>
-              ))}
-            </div>
-
-            <button className="flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-              <Download className="w-4 h-4" />
-              <span>Exportar</span>
-            </button>
-          </div>
+          <button className="flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+            <Download className="w-4 h-4" />
+            <span>Exportar</span>
+          </button>
         </div>
+      </TabHeader>
 
-        {/* Stock Alerts Summary */}
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-            Resumen de Alertas
-          </h3>
-          <StockAlertsSummary />
-        </div>
+      {/* Stock Alerts Summary */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+          Resumen de Alertas
+        </h3>
+        <StockAlertsSummary />
+      </div>
 
-        {/* Charts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Stock Movements Chart */}
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-4">
@@ -539,10 +529,9 @@ const ReportsTab: React.FC = React.memo(function ReportsTab() {
               <Package className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />
             </div>
             <ProductsByCategoryChart />
-          </div>
         </div>
       </div>
-    </TabTransition>
+    </TabWrapper>
   );
 });
 

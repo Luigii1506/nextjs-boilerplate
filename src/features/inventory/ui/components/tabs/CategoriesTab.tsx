@@ -28,7 +28,11 @@ import {
   Layers,
 } from "lucide-react";
 import { cn } from "@/shared/utils";
-import { TabTransition } from "../shared/TabTransition";
+import {
+  TabWrapper,
+  TabHeader,
+  TabStatsCard,
+} from "@/shared/ui/components/tabs";
 import { useInventoryContext } from "../../../context";
 import { useCategoriesQuery } from "../../../hooks";
 import type { CategoryWithRelations } from "../../../types";
@@ -536,87 +540,55 @@ const CategoriesTab: React.FC = React.memo(function CategoriesTab() {
   }, [categories]);
 
   return (
-    <TabTransition isActive={true} transitionType="fade" delay={50}>
-      <div className="space-y-6 p-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-              <Tags className="w-7 h-7 text-purple-600 dark:text-purple-400" />
-              Gestión de Categorías
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Organiza y clasifica tu catálogo de productos
-            </p>
-          </div>
-        </div>
+    <TabWrapper spacing="space-y-6">
+      {/* Header */}
+      <TabHeader
+        icon={<Tags className="w-8 h-8 text-purple-600 dark:text-purple-400" />}
+        title="Gestión de Categorías"
+        description="Organiza y clasifica tu catálogo de productos"
+      />
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl p-5 border border-purple-200 dark:border-purple-800">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-purple-600 dark:text-purple-400">
-                  Total Categorías
-                </p>
-                <p className="text-3xl font-bold text-purple-900 dark:text-purple-100 mt-2">
-                  {stats.totalCategories}
-                </p>
-              </div>
-              <Tags className="w-10 h-10 text-purple-600 dark:text-purple-400 opacity-30" />
-            </div>
-          </div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <TabStatsCard
+          title="Total Categorías"
+          value={stats.totalCategories}
+          icon={Tags}
+          color="purple"
+          description="Categorías en el sistema"
+        />
 
-          <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl p-5 border border-green-200 dark:border-green-800">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-green-600 dark:text-green-400">
-                  Categorías Activas
-                </p>
-                <p className="text-3xl font-bold text-green-900 dark:text-green-100 mt-2">
-                  {stats.activeCategories}
-                </p>
-              </div>
-              <TrendingUp className="w-10 h-10 text-green-600 dark:text-green-400 opacity-30" />
-            </div>
-          </div>
+        <TabStatsCard
+          title="Categorías Activas"
+          value={stats.activeCategories}
+          icon={TrendingUp}
+          color="green"
+          description="Categorías habilitadas"
+        />
 
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl p-5 border border-blue-200 dark:border-blue-800">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                  Total Productos
-                </p>
-                <p className="text-3xl font-bold text-blue-900 dark:text-blue-100 mt-2">
-                  {stats.totalProducts}
-                </p>
-              </div>
-              <ShoppingBag className="w-10 h-10 text-blue-600 dark:text-blue-400 opacity-30" />
-            </div>
-          </div>
+        <TabStatsCard
+          title="Total Productos"
+          value={stats.totalProducts}
+          icon={ShoppingBag}
+          color="blue"
+          description="Productos en el inventario"
+        />
 
-          <div className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 rounded-xl p-5 border border-amber-200 dark:border-amber-800">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
-                  Con Productos
-                </p>
-                <p className="text-3xl font-bold text-amber-900 dark:text-amber-100 mt-2">
-                  {stats.categoriesWithProducts}
-                </p>
-              </div>
-              <Package className="w-10 h-10 text-amber-600 dark:text-amber-400 opacity-30" />
-            </div>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <CategoryFilters />
-
-        {/* Categories Display */}
-        <CategoriesDisplay />
+        <TabStatsCard
+          title="Con Productos"
+          value={stats.categoriesWithProducts}
+          icon={Package}
+          color="orange"
+          description="Categorías con productos asignados"
+        />
       </div>
-    </TabTransition>
+
+      {/* Filters */}
+      <CategoryFilters />
+
+      {/* Categories Display */}
+      <CategoriesDisplay />
+    </TabWrapper>
   );
 });
 
