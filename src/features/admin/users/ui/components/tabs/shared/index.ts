@@ -13,8 +13,17 @@ export { TabHeader, type TabHeaderProps, type TabHeaderAction } from "./TabHeade
 // Tab Wrapper Component
 export { TabWrapper, type TabWrapperProps } from "./TabWrapper";
 
-// You can add more shared tab components here:
-// export { TabTransition } from "./TabTransition";
-// export { TabSearchBar } from "./TabSearchBar";
-// export { TabFilters } from "./TabFilters";
-// etc.
+// Tab Search Bar Component
+export { TabSearchBar, type TabSearchBarProps } from "./TabSearchBar";
+
+// Tab Empty State Component
+export { TabEmptyState, type TabEmptyStateProps } from "./TabEmptyState";
+
+// Tab Stats Card Component
+export { TabStatsCard, type TabStatsCardProps } from "./TabStatsCard";
+
+// Tab Loading Skeleton Component
+export { TabLoadingSkeleton, type TabLoadingSkeletonProps } from "./TabLoadingSkeleton";
+
+// Tab Footer Stats Component
+export { TabFooterStats, type TabFooterStatsProps, type TabFooterStatsAction } from "./TabFooterStats";

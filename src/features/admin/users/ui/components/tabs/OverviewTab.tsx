@@ -15,124 +15,21 @@ import React, { useMemo } from "react";
 import {
   Users,
   TrendingUp,
-  TrendingDown,
   AlertTriangle,
   Shield,
   UserCheck,
   UserX,
-  ArrowUpRight,
   Eye,
   Clock,
 } from "lucide-react";
 import { cn } from "@/shared/utils";
 import { useUsersContext } from "../../../context";
-import { TabHeader, TabWrapper } from "./shared";
-
-// 📊 Enhanced Stats Card with Animations
-interface StatsCardProps {
-  title: string;
-  value: string | number;
-  change?: string;
-  changeType?: "positive" | "negative" | "neutral";
-  icon: React.ComponentType<{ className?: string }>;
-  description?: string;
-  color?: string;
-  onClick?: () => void;
-}
-
-const StatsCard: React.FC<StatsCardProps> = ({
-  title,
-  value,
-  change,
-  changeType = "neutral",
-  icon: Icon,
-  description,
-  color = "blue",
-  onClick,
-}) => {
-  const colorClasses = {
-    blue: "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700",
-    green:
-      "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700",
-    red: "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700",
-    purple:
-      "bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-700",
-    orange:
-      "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700",
-    indigo:
-      "bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-700",
-  };
-
-  const iconColors = {
-    blue: "text-blue-600 dark:text-blue-400",
-    green: "text-green-600 dark:text-green-400",
-    red: "text-red-600 dark:text-red-400",
-    purple: "text-purple-600 dark:text-purple-400",
-    orange: "text-orange-600 dark:text-orange-400",
-    indigo: "text-indigo-600 dark:text-indigo-400",
-  };
-
-  return (
-    <div
-      className={cn(
-        "p-6 rounded-xl border transition-all duration-300 hover:shadow-lg",
-        "transform hover:scale-105 cursor-pointer group",
-        colorClasses[color as keyof typeof colorClasses],
-        onClick && "hover:bg-opacity-70"
-      )}
-      onClick={onClick}
-    >
-      <div className="flex items-center justify-between mb-3">
-        <Icon
-          className={cn(
-            "w-8 h-8",
-            iconColors[color as keyof typeof iconColors]
-          )}
-        />
-        {change && (
-          <div
-            className={cn(
-              "flex items-center text-sm font-medium",
-              changeType === "positive" && "text-green-600 dark:text-green-400",
-              changeType === "negative" && "text-red-600 dark:text-red-400",
-              changeType === "neutral" && "text-gray-600 dark:text-gray-400"
-            )}
-          >
-            {changeType === "positive" ? (
-              <TrendingUp className="w-4 h-4 mr-1" />
-            ) : changeType === "negative" ? (
-              <TrendingDown className="w-4 h-4 mr-1" />
-            ) : (
-              <ArrowUpRight className="w-4 h-4 mr-1" />
-            )}
-            {change}
-          </div>
-        )}
-      </div>
-
-      <div className="space-y-1">
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-          {value}
-        </h3>
-        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          {title}
-        </p>
-        {description && (
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {description}
-          </p>
-        )}
-      </div>
-
-      {onClick && (
-        <div className="mt-3 flex items-center text-xs text-gray-500 dark:text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Eye className="w-3 h-3 mr-1" />
-          Ver detalles
-        </div>
-      )}
-    </div>
-  );
-};
+import {
+  TabHeader,
+  TabWrapper,
+  TabStatsCard,
+  TabLoadingSkeleton,
+} from "./shared";
 
 // 📊 Alert Card Component
 interface AlertCardProps {
@@ -288,24 +185,8 @@ const OverviewTab: React.FC = () => {
   if (isLoading) {
     return (
       <TabWrapper spacing="space-y-6" responsive={false}>
-        <div className="animate-pulse">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[...Array(4)].map((_, i) => (
-              <div
-                key={i}
-                className="h-32 bg-gray-200 dark:bg-gray-700 rounded-xl"
-              />
-            ))}
-          </div>
-          <div className="space-y-4">
-            {[...Array(3)].map((_, i) => (
-              <div
-                key={i}
-                className="h-16 bg-gray-200 dark:bg-gray-700 rounded-lg"
-              />
-            ))}
-          </div>
-        </div>
+        <TabLoadingSkeleton type="stats" count={4} showHeader />
+        <TabLoadingSkeleton type="list" count={3} showHeader={false} />
       </TabWrapper>
     );
   }
@@ -321,7 +202,7 @@ const OverviewTab: React.FC = () => {
 
       {/* Key Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatsCard
+        <TabStatsCard
           title="Total de Usuarios"
           value={metrics.totalUsers}
           change={metrics.userGrowth}
@@ -332,7 +213,7 @@ const OverviewTab: React.FC = () => {
           onClick={() => setActiveTab("all-users")}
         />
 
-        <StatsCard
+        <TabStatsCard
           title="Usuarios Activos"
           value={metrics.activeUsers}
           change={`${(
@@ -345,7 +226,7 @@ const OverviewTab: React.FC = () => {
           onClick={() => setActiveTab("all-users")}
         />
 
-        <StatsCard
+        <TabStatsCard
           title="Usuarios Baneados"
           value={metrics.bannedUsers}
           change={metrics.bannedPercentage}
@@ -356,7 +237,7 @@ const OverviewTab: React.FC = () => {
           onClick={() => setActiveTab("all-users")}
         />
 
-        <StatsCard
+        <TabStatsCard
           title="Administradores"
           value={metrics.adminUsers}
           change={metrics.adminPercentage}

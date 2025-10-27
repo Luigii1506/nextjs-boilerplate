@@ -13,7 +13,6 @@
 
 import React, { useState } from "react";
 import {
-  Search,
   Plus,
   Filter,
   Grid,
@@ -36,7 +35,13 @@ import UserViewModal from "../UserViewModal";
 import DeleteUserModal from "../DeleteUserModal";
 import BanUserModal from "../BanUserModal";
 import BanReasonModal from "../BanReasonModal";
-import { TabHeader, TabWrapper } from "./shared";
+import {
+  TabHeader,
+  TabWrapper,
+  TabSearchBar,
+  TabEmptyState,
+  TabFooterStats,
+} from "./shared";
 
 // 👤 User Card Component
 interface UserCardProps {
@@ -509,16 +514,11 @@ const AllUsersTab: React.FC = () => {
 
       {/* Search and View Toggle */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <input
-            type="text"
-            placeholder="Buscar usuarios..."
-            value={globalSearchTerm}
-            onChange={(e) => setGlobalSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
+        <TabSearchBar
+          value={globalSearchTerm}
+          onChange={setGlobalSearchTerm}
+          placeholder="Buscar usuarios..."
+        />
 
         <div className="flex items-center space-x-2">
           <span className="text-sm text-gray-600 dark:text-gray-400">
@@ -575,26 +575,22 @@ const AllUsersTab: React.FC = () => {
           ))}
         </div>
       ) : filteredUsers.length === 0 ? (
-        <div className="text-center py-16">
-          <Users className="w-20 h-20 text-gray-300 dark:text-gray-600 mx-auto mb-6" />
-          <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">
-            No se encontraron usuarios
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-md mx-auto">
-            {globalSearchTerm ||
+        <TabEmptyState
+          icon={<Users className="w-20 h-20" />}
+          title="No se encontraron usuarios"
+          description={
+            globalSearchTerm ||
             currentFilters.role !== "all" ||
             currentFilters.status !== "all"
               ? "Intenta ajustar los filtros de búsqueda para ver más usuarios"
-              : "Aún no hay usuarios registrados en el sistema"}
-          </p>
-          <button
-            onClick={handleCreateUser}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg flex items-center space-x-2 mx-auto transition-all duration-200 hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-blue-500/20"
-          >
-            <Plus className="w-5 h-5" />
-            <span>Agregar Primer Usuario</span>
-          </button>
-        </div>
+              : "Aún no hay usuarios registrados en el sistema"
+          }
+          action={{
+            label: "Agregar Primer Usuario",
+            onClick: handleCreateUser,
+            icon: <Plus className="w-5 h-5" />,
+          }}
+        />
       ) : (
         <div
           className={cn(
@@ -627,30 +623,32 @@ const AllUsersTab: React.FC = () => {
 
       {/* 📊 Simple Stats Footer (same pattern as inventory) */}
       {filteredUsers.length > 0 && (
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Mostrando {filteredUsers.length} usuarios
-                {globalSearchTerm ||
-                currentFilters.role !== "all" ||
-                currentFilters.status !== "all"
-                  ? " (filtrado)"
-                  : ` de ${users.length} total`}
-              </p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <button className="flex items-center space-x-2 px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors">
-                <Download className="w-4 h-4" />
-                <span>Exportar</span>
-              </button>
-              <button className="flex items-center space-x-2 px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors">
-                <Upload className="w-4 h-4" />
-                <span>Importar</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        <TabFooterStats
+          count={`Mostrando ${filteredUsers.length} usuarios${
+            globalSearchTerm ||
+            currentFilters.role !== "all" ||
+            currentFilters.status !== "all"
+              ? ""
+              : ` de ${users.length} total`
+          }`}
+          isFiltered={
+            globalSearchTerm !== "" ||
+            currentFilters.role !== "all" ||
+            currentFilters.status !== "all"
+          }
+          actions={[
+            {
+              label: "Exportar",
+              icon: <Download className="w-4 h-4" />,
+              onClick: () => console.log("Exportar"),
+            },
+            {
+              label: "Importar",
+              icon: <Upload className="w-4 h-4" />,
+              onClick: () => console.log("Importar"),
+            },
+          ]}
+        />
       )}
 
       {/* 🎭 User Management Modal */}

@@ -16,7 +16,6 @@ import {
   Shield,
   Crown,
   UserCheck,
-  Search,
   Plus,
   Edit,
   Trash2,
@@ -26,65 +25,18 @@ import {
   Unlock,
   Settings,
   Users,
-  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/shared/utils";
 import { useUsersContext } from "../../../context";
-import { TabHeader, TabWrapper } from "./shared";
+import {
+  TabHeader,
+  TabWrapper,
+  TabStatsCard,
+  TabSearchBar,
+  TabFooterStats,
+  TabLoadingSkeleton,
+} from "./shared";
 import type { User } from "../../../types";
-
-// 🛡️ Admin Stats Card Component
-interface AdminStatsCardProps {
-  title: string;
-  value: number;
-  icon: React.ComponentType<{ className?: string }>;
-  color: "red" | "purple" | "blue" | "green";
-  description?: string;
-}
-
-const AdminStatsCard: React.FC<AdminStatsCardProps> = ({
-  title,
-  value,
-  icon: Icon,
-  color,
-  description,
-}) => {
-  const colorClasses = {
-    red: "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700 text-red-600 dark:text-red-400",
-    purple:
-      "bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-700 text-purple-600 dark:text-purple-400",
-    blue: "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700 text-blue-600 dark:text-blue-400",
-    green:
-      "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700 text-green-600 dark:text-green-400",
-  };
-
-  return (
-    <div
-      className={cn(
-        "p-6 rounded-xl border transition-all duration-300 hover:shadow-lg transform hover:scale-105",
-        colorClasses[color]
-      )}
-    >
-      <div className="flex items-center justify-between mb-3">
-        <Icon className="w-8 h-8" />
-        <TrendingUp className="w-5 h-5 opacity-60" />
-      </div>
-      <div className="space-y-1">
-        <h3 className="text-3xl font-bold text-gray-900 dark:text-white">
-          {value}
-        </h3>
-        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          {title}
-        </p>
-        {description && (
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {description}
-          </p>
-        )}
-      </div>
-    </div>
-  );
-};
 
 // 👑 Admin Card Component
 interface AdminCardProps {
@@ -295,25 +247,8 @@ const AdminsTab: React.FC = () => {
   if (isLoading) {
     return (
       <TabWrapper spacing="space-y-6" responsive={false}>
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {[...Array(4)].map((_, i) => (
-              <div
-                key={i}
-                className="h-32 bg-gray-200 dark:bg-gray-700 rounded-xl"
-              ></div>
-            ))}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div
-                key={i}
-                className="h-48 bg-gray-200 dark:bg-gray-700 rounded-xl"
-              ></div>
-            ))}
-          </div>
-        </div>
+        <TabLoadingSkeleton type="stats" count={4} showHeader />
+        <TabLoadingSkeleton type="grid" count={6} showHeader={false} />
       </TabWrapper>
     );
   }
@@ -340,28 +275,28 @@ const AdminsTab: React.FC = () => {
 
       {/* Admin Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <AdminStatsCard
+        <TabStatsCard
           title="Super Admins"
           value={adminStats.superAdmins}
           icon={Crown}
           color="red"
           description="Acceso completo al sistema"
         />
-        <AdminStatsCard
+        <TabStatsCard
           title="Administradores"
           value={adminStats.regularAdmins}
           icon={Shield}
           color="purple"
           description="Gestión de usuarios y sistema"
         />
-        <AdminStatsCard
+        <TabStatsCard
           title="Moderadores"
           value={adminStats.moderators}
           icon={UserCheck}
           color="blue"
           description="Moderación de contenido"
         />
-        <AdminStatsCard
+        <TabStatsCard
           title="Total"
           value={adminStats.totalAdmins}
           icon={Users}
@@ -371,18 +306,11 @@ const AdminsTab: React.FC = () => {
       </div>
 
       {/* Search */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <input
-            type="text"
-            placeholder="Buscar administradores..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          />
-        </div>
-      </div>
+      <TabSearchBar
+        value={searchTerm}
+        onChange={setSearchTerm}
+        placeholder="Buscar administradores..."
+      />
 
       {/* Security Notice */}
       <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4">
@@ -428,27 +356,21 @@ const AdminsTab: React.FC = () => {
       )}
 
       {/* Admin Management Actions */}
-      <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center space-x-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Mostrando {adminUsers.length} administradores
-            </p>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            <button className="flex items-center space-x-2 px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors">
-              <Settings className="w-4 h-4" />
-              <span>Configurar Roles</span>
-            </button>
-
-            <button className="flex items-center space-x-2 px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors">
-              <Eye className="w-4 h-4" />
-              <span>Log de Actividades</span>
-            </button>
-          </div>
-        </div>
-      </div>
+      <TabFooterStats
+        count={`Mostrando ${adminUsers.length} administradores`}
+        actions={[
+          {
+            label: "Configurar Roles",
+            icon: <Settings className="w-4 h-4" />,
+            onClick: () => console.log("Configurar roles"),
+          },
+          {
+            label: "Log de Actividades",
+            icon: <Eye className="w-4 h-4" />,
+            onClick: () => console.log("Ver log"),
+          },
+        ]}
+      />
 
       {/* Role Descriptions */}
       <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">

@@ -23,77 +23,15 @@ import {
   AlertTriangle,
   Download,
   RefreshCw,
-  ArrowUpRight,
-  ArrowDownRight,
 } from "lucide-react";
 import { cn } from "@/shared/utils";
 import { useUsersContext } from "../../../context";
-import { TabHeader, TabWrapper } from "./shared";
-
-// 📊 Metric Card Component
-interface MetricCardProps {
-  title: string;
-  value: string | number;
-  change: string;
-  changeType: "positive" | "negative" | "neutral";
-  icon: React.ComponentType<{ className?: string }>;
-  color: string;
-  description?: string;
-}
-
-const MetricCard: React.FC<MetricCardProps> = ({
-  title,
-  value,
-  change,
-  changeType,
-  icon: Icon,
-  color,
-  description,
-}) => {
-  const changeIcon =
-    changeType === "positive" ? (
-      <ArrowUpRight className="w-4 h-4" />
-    ) : changeType === "negative" ? (
-      <ArrowDownRight className="w-4 h-4" />
-    ) : (
-      <Activity className="w-4 h-4" />
-    );
-
-  const changeColor =
-    changeType === "positive"
-      ? "text-green-600 dark:text-green-400"
-      : changeType === "negative"
-      ? "text-red-600 dark:text-red-400"
-      : "text-gray-600 dark:text-gray-400";
-
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-shadow">
-      <div className="flex items-center justify-between mb-4">
-        <Icon className={cn("w-8 h-8", color)} />
-        <div
-          className={cn("flex items-center text-sm font-medium", changeColor)}
-        >
-          {changeIcon}
-          <span className="ml-1">{change}</span>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-          {value}
-        </h3>
-        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-          {title}
-        </p>
-        {description && (
-          <p className="text-xs text-gray-500 dark:text-gray-500">
-            {description}
-          </p>
-        )}
-      </div>
-    </div>
-  );
-};
+import {
+  TabHeader,
+  TabWrapper,
+  TabStatsCard,
+  TabLoadingSkeleton,
+} from "./shared";
 
 // 📈 Simple Chart Component (Mock visualization)
 interface SimpleBarChartProps {
@@ -374,24 +312,14 @@ const AnalyticsTab: React.FC = () => {
   if (isLoading) {
     return (
       <TabWrapper spacing="space-y-6" responsive={false}>
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {[...Array(4)].map((_, i) => (
-              <div
-                key={i}
-                className="h-32 bg-gray-200 dark:bg-gray-700 rounded-xl"
-              ></div>
-            ))}
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {[...Array(4)].map((_, i) => (
-              <div
-                key={i}
-                className="h-64 bg-gray-200 dark:bg-gray-700 rounded-xl"
-              ></div>
-            ))}
-          </div>
+        <TabLoadingSkeleton type="stats" count={4} showHeader />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <div
+              key={i}
+              className="h-64 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse"
+            />
+          ))}
         </div>
       </TabWrapper>
     );
@@ -437,43 +365,43 @@ const AnalyticsTab: React.FC = () => {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard
+        <TabStatsCard
           title="Total Registros"
           value={analytics.totalRegistrations}
           change={analytics.registrationGrowth}
           changeType="positive"
           icon={Users}
-          color="text-blue-600 dark:text-blue-400"
+          color="blue"
           description="Usuarios registrados en total"
         />
 
-        <MetricCard
+        <TabStatsCard
           title="Nuevos esta Semana"
           value={analytics.newRegistrationsThisWeek}
           change="+15%"
           changeType="positive"
           icon={UserPlus}
-          color="text-green-600 dark:text-green-400"
+          color="green"
           description="Registros en los últimos 7 días"
         />
 
-        <MetricCard
+        <TabStatsCard
           title="Promedio Diario"
           value={analytics.averageDailyRegistrations}
           change={analytics.activityGrowth}
           changeType="positive"
           icon={TrendingUp}
-          color="text-indigo-600 dark:text-indigo-400"
+          color="indigo"
           description="Registros por día (promedio)"
         />
 
-        <MetricCard
+        <TabStatsCard
           title="Tasa de Retención"
           value={`${analytics.retentionRate}%`}
           change="+2%"
           changeType="positive"
           icon={Activity}
-          color="text-purple-600 dark:text-purple-400"
+          color="purple"
           description="Usuarios activos mensualmente"
         />
       </div>

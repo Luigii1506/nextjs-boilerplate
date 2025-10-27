@@ -15,7 +15,6 @@ import React, { useState, useMemo } from "react";
 import {
   FileText,
   Eye,
-  Search,
   Filter,
   Download,
   Clock,
@@ -36,7 +35,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/shared/utils";
 import { useUsersContext } from "../../../context";
-import { TabHeader, TabWrapper } from "./shared";
+import {
+  TabHeader,
+  TabWrapper,
+  TabSearchBar,
+  TabLoadingSkeleton,
+} from "./shared";
 
 // 📋 Audit Entry Interface
 interface AuditFiltersState {
@@ -603,17 +607,7 @@ const AuditTab: React.FC = () => {
   if (isLoading) {
     return (
       <TabWrapper spacing="space-y-6" responsive={false}>
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-6"></div>
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <div
-                key={i}
-                className="h-24 bg-gray-200 dark:bg-gray-700 rounded-lg"
-              ></div>
-            ))}
-          </div>
-        </div>
+        <TabLoadingSkeleton type="list" count={5} showHeader />
       </TabWrapper>
     );
   }
@@ -647,16 +641,11 @@ const AuditTab: React.FC = () => {
 
       {/* Search */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <input
-            type="text"
-            placeholder="Buscar en auditoría..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-          />
-        </div>
+        <TabSearchBar
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder="Buscar en auditoría..."
+        />
 
         <div className="text-sm text-gray-600 dark:text-gray-400">
           Últimas 24 horas:{" "}
