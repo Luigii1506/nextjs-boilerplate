@@ -16,15 +16,11 @@ import {
   BarChart3,
   TrendingUp,
   Users,
-  UserPlus,
-  Activity,
-  Clock,
-  Shield,
-  AlertTriangle,
   Download,
   RefreshCw,
+  UserPlus,
+  Activity,
 } from "lucide-react";
-import { cn } from "@/shared/utils";
 import { useUsersContext } from "../../../context";
 import {
   TabHeader,
@@ -32,127 +28,12 @@ import {
   TabStatsCard,
   TabLoadingSkeleton,
 } from "@/shared/ui/components/tabs";
+import { SimpleBarChart, ActivityTimeline } from "../analytics";
 
-// 📈 Simple Chart Component (Mock visualization)
-interface SimpleBarChartProps {
-  title: string;
-  data: Array<{ label: string; value: number; color: string }>;
-}
-
-const SimpleBarChart: React.FC<SimpleBarChartProps> = ({ title, data }) => {
-  const maxValue = Math.max(...data.map((item) => item.value));
-
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-        {title}
-      </h3>
-
-      <div className="space-y-4">
-        {data.map((item, index) => (
-          <div key={index} className="flex items-center space-x-4">
-            <div className="w-20 text-sm text-gray-600 dark:text-gray-400">
-              {item.label}
-            </div>
-            <div className="flex-1">
-              <div className="bg-gray-200 dark:bg-gray-700 rounded-full h-6 relative overflow-hidden">
-                <div
-                  className={cn(
-                    "h-full rounded-full transition-all duration-500",
-                    item.color
-                  )}
-                  style={{ width: `${(item.value / maxValue) * 100}%` }}
-                />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {item.value}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// 📊 Activity Timeline Component
-interface ActivityTimelineProps {
-  activities: Array<{
-    time: string;
-    action: string;
-    user: string;
-    type: "registration" | "login" | "admin_action" | "ban";
-  }>;
-}
-
-const ActivityTimeline: React.FC<ActivityTimelineProps> = ({ activities }) => {
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case "registration":
-        return <UserPlus className="w-4 h-4 text-green-500" />;
-      case "login":
-        return <Activity className="w-4 h-4 text-blue-500" />;
-      case "admin_action":
-        return <Shield className="w-4 h-4 text-purple-500" />;
-      case "ban":
-        return <AlertTriangle className="w-4 h-4 text-red-500" />;
-      default:
-        return <Clock className="w-4 h-4 text-gray-500" />;
-    }
-  };
-
-  const getActivityColor = (type: string) => {
-    switch (type) {
-      case "registration":
-        return "border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20";
-      case "login":
-        return "border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20";
-      case "admin_action":
-        return "border-purple-200 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/20";
-      case "ban":
-        return "border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20";
-      default:
-        return "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800";
-    }
-  };
-
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-        Actividad Reciente
-      </h3>
-
-      <div className="space-y-4 max-h-80 overflow-y-auto">
-        {activities.map((activity, index) => (
-          <div
-            key={index}
-            className={cn(
-              "flex items-start space-x-3 p-3 rounded-lg border",
-              getActivityColor(activity.type)
-            )}
-          >
-            <div className="flex-shrink-0 mt-1">
-              {getActivityIcon(activity.type)}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm text-gray-900 dark:text-white">
-                <span className="font-medium">{activity.user}</span>{" "}
-                {activity.action}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {activity.time}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// 📊 Main Analytics Tab Component
+/**
+ * 📊 ANALYTICS TAB - MAIN COMPONENT
+ * ==================================
+ */
 const AnalyticsTab: React.FC = () => {
   const { users } = useUsersContext();
   const { users: usersList, stats, isLoading } = users;
