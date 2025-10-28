@@ -61,8 +61,8 @@ model Product {
   volumePricing Json? // Volume discount tiers [{min: 10, price: 9.99}, ...]
   channelConfig Json? // Channel-specific configs {ONLINE: {...}, POS: {...}}
 
-  // 🧩 FUTURE: Other e-commerce relations
-  // saleItems     SaleItem[]     // MODULE: pos
+  // 🏪 POS RELATIONS (active when using POS module)
+  posTransactionItems POSTransactionItem[] // MODULE: pos
 
   @@index([categoryId])
   @@index([supplierId])

@@ -23,5 +23,6 @@ datasource db {
 // 📊 ./models/audit.prisma         - AuditEvent, AuditChange
 // 📦 ./models/inventory.prisma     - Product, Category, StockMovement
 // 🛒 ./models/storefront.prisma    - Cart, Order, Review, Promotion, Coupon
+// 🏪 ./models/pos.prisma           - POSSession, POSTransaction, POSTransactionItem
 //
 // Prisma automáticamente combina todos los archivos .prisma en este directorio

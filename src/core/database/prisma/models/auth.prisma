@@ -35,6 +35,9 @@ model User {
   addresses      Address[]       @relation("UserAddresses") // MODULE: storefront
   paymentMethods PaymentMethod[] @relation("UserPaymentMethods") // MODULE: storefront + stripe
 
+  // 🏪 POS: Point of Sale relations
+  posSessions POSSession[] // MODULE: pos
+
   @@map("user")
 }
 

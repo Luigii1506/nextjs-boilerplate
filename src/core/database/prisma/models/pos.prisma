@@ -1,0 +1,153 @@
+// 🏪 POS (Point of Sale) Models
+// =============================
+//
+// Models for POS system:
+// - POSSession: Cash register sessions
+// - POSTransaction: Sales and refunds
+// - POSTransactionItem: Transaction line items
+//
+// Note: POS uses a simplified in-memory cart system, not stored in database
+
+// ========================================
+// POS SESSION (Cash Register Session)
+// ========================================
+
+model POSSession {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Session info
+  userId      String
+  startTime   DateTime  @default(now())
+  endTime     DateTime?
+  status      POSSessionStatus @default(OPEN)
+
+  // Cash amounts
+  initialCash Decimal  @db.Decimal(10, 2)
+  finalCash   Decimal? @db.Decimal(10, 2)
+
+  // Metadata
+  notes       String?  @db.Text
+  deviceId    String?
+  locationId  String?
+
+  // Relations
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions POSTransaction[]
+
+  @@index([userId, status])
+  @@index([startTime])
+  @@map("pos_sessions")
+}
+
+enum POSSessionStatus {
+  OPEN
+  CLOSED
+  SUSPENDED
+}
+
+// ========================================
+// POS TRANSACTION (Sale/Refund/Void)
+// ========================================
+
+model POSTransaction {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Transaction info
+  sessionId         String
+  transactionNumber String   @unique
+  type              POSTransactionType   @default(SALE)
+  status            POSTransactionStatus @default(COMPLETED)
+
+  // Customer info (optional)
+  customerId    String?
+  customerName  String?
+  customerEmail String?
+
+  // Amounts
+  subtotal      Decimal @db.Decimal(10, 2)
+  discount      Decimal @default(0) @db.Decimal(10, 2)
+  tax           Decimal @db.Decimal(10, 2)
+  total         Decimal @db.Decimal(10, 2)
+
+  // Payment
+  paymentMethod    POSPaymentMethod
+  amountPaid       Decimal @db.Decimal(10, 2)
+  changeDue        Decimal @default(0) @db.Decimal(10, 2)
+  paymentReference String?
+
+  // Related transaction (for refunds/voids)
+  originalTransactionId String?
+  refundReason          String? @db.Text
+  voidReason            String? @db.Text
+
+  // Metadata
+  notes    String? @db.Text
+  deviceId String?
+
+  // Relations
+  session               POSSession          @relation(fields: [sessionId], references: [id])
+  items                 POSTransactionItem[]
+  originalTransaction   POSTransaction?     @relation("TransactionRefunds", fields: [originalTransactionId], references: [id])
+  refunds               POSTransaction[]    @relation("TransactionRefunds")
+
+  @@index([sessionId])
+  @@index([type, status])
+  @@index([transactionNumber])
+  @@index([createdAt])
+  @@map("pos_transactions")
+}
+
+enum POSTransactionType {
+  SALE
+  REFUND
+  VOID
+}
+
+enum POSTransactionStatus {
+  COMPLETED
+  PENDING
+  CANCELLED
+  REFUNDED
+}
+
+enum POSPaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+  MIXED
+}
+
+// ========================================
+// POS TRANSACTION ITEM (Line Items)
+// ========================================
+
+model POSTransactionItem {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  // Item info
+  transactionId String
+  productId     String
+  productName   String
+  productSku    String?
+  quantity      Int     @default(1)
+
+  // Pricing
+  unitPrice Decimal @db.Decimal(10, 2)
+  discount  Decimal @default(0) @db.Decimal(10, 2)
+  subtotal  Decimal @db.Decimal(10, 2)
+  tax       Decimal @db.Decimal(10, 2)
+  total     Decimal @db.Decimal(10, 2)
+
+  // Relations
+  transaction POSTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  product     Product        @relation(fields: [productId], references: [id])
+
+  @@index([transactionId])
+  @@index([productId])
+  @@map("pos_transaction_items")
+}
