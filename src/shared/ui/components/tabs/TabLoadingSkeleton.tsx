@@ -28,6 +28,11 @@ export interface TabLoadingSkeletonProps {
    */
   count?: number;
   /**
+   * Número de filas (alias para count, para compatibilidad)
+   * @deprecated Use count instead
+   */
+  rows?: number;
+  /**
    * Mostrar header skeleton
    * @default true
    */
@@ -48,6 +53,7 @@ export interface TabLoadingSkeletonProps {
 export const TabLoadingSkeleton: React.FC<TabLoadingSkeletonProps> = ({
   type,
   count,
+  rows,
   showHeader = true,
   className,
 }) => {
@@ -58,7 +64,7 @@ export const TabLoadingSkeleton: React.FC<TabLoadingSkeletonProps> = ({
     table: 5,
   };
 
-  const itemCount = count ?? defaultCount[type];
+  const itemCount = count ?? rows ?? defaultCount[type];
 
   const renderStatsSkeleton = () => (
     <div className="space-y-6">

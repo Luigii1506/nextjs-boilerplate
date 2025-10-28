@@ -178,7 +178,7 @@ const MovementsTab: React.FC = React.memo(function MovementsTab() {
           {
             label: "Exportar",
             icon: <Download className="w-4 h-4" />,
-            onClick: () => console.log("Export"),
+            onClick: () => {},
             variant: "secondary",
           },
         ]}

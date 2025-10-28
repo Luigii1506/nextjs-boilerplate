@@ -290,12 +290,12 @@ const AllUsersTab: React.FC = () => {
             {
               label: "Exportar",
               icon: <Download className="w-4 h-4" />,
-              onClick: () => console.log("Exportar"),
+              onClick: () => {},
             },
             {
               label: "Importar",
               icon: <Upload className="w-4 h-4" />,
-              onClick: () => console.log("Importar"),
+              onClick: () => {},
             },
           ]}
         />

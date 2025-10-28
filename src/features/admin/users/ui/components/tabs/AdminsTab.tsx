@@ -88,8 +88,7 @@ const AdminsTab: React.FC = () => {
   };
 
   const handlePromoteUser = () => {
-    // Logic to promote a regular user to admin
-    console.log("Promote user to admin");
+    // TODO: Implement promote user to admin functionality
   };
 
   if (isLoading) {
@@ -210,12 +209,12 @@ const AdminsTab: React.FC = () => {
           {
             label: "Configurar Roles",
             icon: <Settings className="w-4 h-4" />,
-            onClick: () => console.log("Configurar roles"),
+            onClick: () => {},
           },
           {
             label: "Log de Actividades",
             icon: <Eye className="w-4 h-4" />,
-            onClick: () => console.log("Ver log"),
+            onClick: () => {},
           },
         ]}
       />

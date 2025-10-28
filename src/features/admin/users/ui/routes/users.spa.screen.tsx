@@ -41,7 +41,6 @@ import {
   StickyTabsContainer,
   ContentContainer,
 } from "@/shared/ui/components";
-import { useScrollHeader } from "@/shared/hooks";
 import {
   OverviewTab,
   AllUsersTab,
@@ -126,12 +125,6 @@ const UsersSPAContent: React.FC = () => {
   const { activeTab, setActiveTab, users } = useUsersContext();
   const { stats } = users;
 
-  // 🎯 Scroll header detection (reusable hook)
-  const { showHeader } = useScrollHeader({
-    mode: "direction",
-    threshold: 50,
-  });
-
   // Calculate notification counts for each tab
   const notificationCounts = useMemo(
     () => ({
@@ -179,7 +172,6 @@ const UsersSPAContent: React.FC = () => {
         stats={headerStats}
         action={<Settings className="w-5 h-5" />}
         onActionClick={() => console.log("Settings clicked")}
-        hidden={!showHeader}
       />
 
       {/*

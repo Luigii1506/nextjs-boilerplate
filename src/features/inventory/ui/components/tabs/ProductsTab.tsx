@@ -11,16 +11,10 @@
  * - Uses extracted ProductListItem component for list view
  * - Uses ProductCard component for grid view
  * - Handles bulk operations and import/export
+ * - BulkSelectionBar positioned outside TabWrapper for proper layout
  *
- * REFACTORED: 2025-01-27
- * - Reduced from 865 lines to 660 lines (24% reduction)
- * - Integrated TabHeader component for consistency
- * - Extracted ProductFilters component (134 lines)
- * - Extracted ProductListItem component (98 lines)
- * - Cleaner orchestration pattern
- *
- * Created: 2025-01-17 - Inventory Products Tab
- * Updated: 2025-01-27 - Architecture refactor for maintainability
+ * Created: 2025-01-17
+ * Last Updated: 2025-01-27
  */
 
 "use client";
@@ -521,18 +515,15 @@ const ProductsTab: React.FC = React.memo(function ProductsTab() {
           title="Gestión de Productos"
           description="Administra tu catálogo y ajusta stock directamente"
           customActions={
-            <>
-              {/* Filter Presets Dropdown */}
-              <FilterPresetsDropdown
-                presets={filterPresets}
-                onSelectPreset={handleSelectPreset}
-                onEditPreset={handleEditPreset}
-                onDeletePreset={handleDeletePreset}
-                onDuplicatePreset={handleDuplicatePreset}
-                onSetDefault={handleSetDefaultPreset}
-                currentPresetId={currentPresetId}
-              />
-            </>
+            <FilterPresetsDropdown
+              presets={filterPresets}
+              onSelectPreset={handleSelectPreset}
+              onEditPreset={handleEditPreset}
+              onDeletePreset={handleDeletePreset}
+              onDuplicatePreset={handleDuplicatePreset}
+              onSetDefault={handleSetDefaultPreset}
+              currentPresetId={currentPresetId}
+            />
           }
           actions={[
             {
@@ -628,16 +619,7 @@ const ProductsTab: React.FC = React.memo(function ProductsTab() {
           }}
           onSave={handleSavePreset}
           currentFilters={productFilters}
-          editingPreset={
-            editingPreset
-              ? {
-                  id: editingPreset.id,
-                  name: editingPreset.name,
-                  description: editingPreset.description,
-                  color: editingPreset.color,
-                }
-              : undefined
-          }
+          editingPreset={editingPreset || undefined}
         />
       </TabWrapper>
 
@@ -653,10 +635,7 @@ const ProductsTab: React.FC = React.memo(function ProductsTab() {
         onUpdatePrice={handleBulkUpdatePrice}
         onActivate={handleBulkActivate}
         onDeactivate={handleBulkDeactivate}
-        onMoreActions={() => {
-          // Placeholder for additional bulk actions
-          console.log("More actions clicked");
-        }}
+        onMoreActions={() => {}}
       />
     </>
   );

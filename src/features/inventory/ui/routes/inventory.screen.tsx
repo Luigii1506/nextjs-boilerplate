@@ -17,7 +17,7 @@
 // Import custom animations
 import "../styles/animations.css";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import {
   BarChart3,
   Package,
@@ -116,10 +116,6 @@ const InventorySPAContent: React.FC = () => {
   const { activeTab, setActiveTab, inventory } = useInventoryContext();
   const { alerts, stats } = inventory;
 
-  // Estado para visibilidad del header
-  const [showHeader, setShowHeader] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
-
   // Calculate notification counts for each tab
   const notificationCounts = useMemo(
     () => ({
@@ -133,36 +129,10 @@ const InventorySPAContent: React.FC = () => {
     [alerts.length, stats?.recentMovements]
   );
 
-  // 🎯 Smooth scroll detection
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-
-      // Mostrar header cuando: scroll up o está en top
-      // Ocultar header cuando: scroll down > 50px
-      if (currentScrollY < lastScrollY || currentScrollY < 50) {
-        setShowHeader(true);
-      } else if (currentScrollY > 50) {
-        setShowHeader(false);
-      }
-
-      setLastScrollY(currentScrollY);
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY]);
-
   return (
     <div className="min-h-full bg-gray-50 dark:bg-gray-900">
-      {/*
-        🎯 HEADER - Smooth fade out on scroll down
-        - NO sticky (se oculta completamente)
-        - Aparece cuando: scroll up o en top
-        - Desaparece cuando: scroll down > 50px
-      */}
-      {showHeader && (
-        <div className="transition-all duration-300 ease-in-out animate-fadeIn">
+      {/* 🎯 HEADER - Always Visible */}
+      <div className="transition-all duration-300 ease-in-out animate-fadeIn">
           <div className="border-b border-gray-200 dark:border-gray-700 shadow-sm">
             <div className="max-w-[1600px] mx-auto px-6 py-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -205,7 +175,6 @@ const InventorySPAContent: React.FC = () => {
             </div>
           </div>
         </div>
-      )}
 
       {/*
         🎯 TABS - Sticky & Rounded

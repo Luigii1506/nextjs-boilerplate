@@ -198,13 +198,13 @@ const AuditTab: React.FC = () => {
           {
             label: "Actualizar",
             icon: <RefreshCw className="w-4 h-4" />,
-            onClick: () => console.log("Actualizar"),
+            onClick: () => {},
             variant: "secondary",
           },
           {
             label: "Exportar Log",
             icon: <Download className="w-4 h-4" />,
-            onClick: () => console.log("Exportar"),
+            onClick: () => {},
             variant: "primary",
             color: "indigo",
           },

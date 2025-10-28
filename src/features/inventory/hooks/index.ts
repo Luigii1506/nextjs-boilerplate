@@ -13,9 +13,6 @@
 export { useInventoryQuery } from "./useInventoryQuery";
 export { useProductsQuery } from "./useProductsQuery";
 
-// 🎯 UI Interaction hooks
-export { useScrollHeader, useTabScrollHeader } from "./useScrollHeader";
-
 // 📝 Form and Mutation hooks - Products
 export {
   useCreateProduct,

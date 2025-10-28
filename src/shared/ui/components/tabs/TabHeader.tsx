@@ -39,6 +39,8 @@ export interface TabHeaderAction {
   variant?: "primary" | "secondary" | "ghost";
   /** Color del botón primary */
   color?: "blue" | "purple" | "indigo" | "green" | "red";
+  /** Deshabilitar el botón */
+  disabled?: boolean;
   /** Clases adicionales */
   className?: string;
 }
@@ -120,12 +122,14 @@ export const TabHeader: React.FC<TabHeaderProps> = ({
             <button
               key={index}
               onClick={action.onClick}
+              disabled={action.disabled}
               className={cn(
                 "flex items-center space-x-2 px-3 py-2",
                 "text-gray-600 dark:text-gray-400",
                 "hover:text-gray-900 dark:hover:text-gray-200",
                 "hover:bg-gray-100 dark:hover:bg-gray-700",
                 "rounded-lg transition-colors",
+                action.disabled && "opacity-50 cursor-not-allowed",
                 action.className
               )}
             >
@@ -139,12 +143,14 @@ export const TabHeader: React.FC<TabHeaderProps> = ({
             <button
               key={index}
               onClick={action.onClick}
+              disabled={action.disabled}
               className={cn(
                 "flex items-center space-x-2 px-4 py-2",
                 "bg-gray-100 dark:bg-gray-700",
                 "text-gray-700 dark:text-gray-300",
                 "hover:bg-gray-200 dark:hover:bg-gray-600",
                 "rounded-lg transition-colors",
+                action.disabled && "opacity-50 cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-700",
                 action.className
               )}
             >
@@ -158,11 +164,13 @@ export const TabHeader: React.FC<TabHeaderProps> = ({
             <button
               key={index}
               onClick={action.onClick}
+              disabled={action.disabled}
               className={cn(
                 "flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors",
                 action.color
                   ? PRIMARY_COLORS[action.color]
                   : PRIMARY_COLORS.blue,
+                action.disabled && "opacity-50 cursor-not-allowed",
                 action.className
               )}
             >
