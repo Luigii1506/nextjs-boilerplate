@@ -19,7 +19,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { addToWishlistAction, removeFromWishlistAction } from "../server";
 import { storefrontKeys } from "./queryKeys";
-import type { StorefrontData, WishlistItem } from "../types";
+import type { UseStorefrontQueryResult, WishlistItem } from "../types";
 
 /**
  * 💖 USE WISHLIST
@@ -79,18 +79,18 @@ export function useWishlist() {
       await queryClient.cancelQueries({ queryKey: storefrontKeys.all });
 
       // 2. Snapshot previous value (para rollback si falla)
-      const previousData = queryClient.getQueryData<StorefrontData>(
+      const previousData = queryClient.getQueryData<Partial<UseStorefrontQueryResult>>(
         storefrontKeys.all
       );
 
       // 3. Optimistically update cache (UI se actualiza INSTANTÁNEAMENTE)
-      queryClient.setQueryData<StorefrontData>(storefrontKeys.all, (old) => {
+      queryClient.setQueryData<Partial<UseStorefrontQueryResult>>(storefrontKeys.all, (old) => {
         if (!old) return old;
 
         return {
           ...old,
           // Update products list
-          products: old.products.map((p) =>
+          products: old.products?.map((p) =>
             p.id === productId ? { ...p, isWishlisted: true } : p
           ),
           // Update featured products
@@ -160,17 +160,17 @@ export function useWishlist() {
 
       await queryClient.cancelQueries({ queryKey: storefrontKeys.all });
 
-      const previousData = queryClient.getQueryData<StorefrontData>(
+      const previousData = queryClient.getQueryData<Partial<UseStorefrontQueryResult>>(
         storefrontKeys.all
       );
 
-      queryClient.setQueryData<StorefrontData>(storefrontKeys.all, (old) => {
+      queryClient.setQueryData<Partial<UseStorefrontQueryResult>>(storefrontKeys.all, (old) => {
         if (!old) return old;
 
         return {
           ...old,
           // Update products list
-          products: old.products.map((p) =>
+          products: old.products?.map((p) =>
             p.id === productId ? { ...p, isWishlisted: false } : p
           ),
           // Update featured products
@@ -187,10 +187,7 @@ export function useWishlist() {
 
     // ❌ ROLLBACK on error
     onError: (err, productId, context) => {
-      console.error(
-        "❌ [Wishlist Error] Failed to remove, rolling back:",
-        err
-      );
+      console.error("❌ [Wishlist Error] Failed to remove, rolling back:", err);
 
       if (context?.previousData) {
         queryClient.setQueryData(storefrontKeys.all, context.previousData);

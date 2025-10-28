@@ -21,7 +21,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { getStorefrontDataAction } from "../server";
 import { storefrontKeys } from "./queryKeys";
-import type { StorefrontData } from "../types";
+import type { UseStorefrontQueryResult } from "../types";
 
 /**
  * 🎯 USE STOREFRONT DATA
@@ -50,7 +50,7 @@ export function useStorefrontData() {
 
   return useQuery({
     queryKey: storefrontKeys.all,
-    queryFn: async (): Promise<StorefrontData> => {
+    queryFn: async (): Promise<Partial<UseStorefrontQueryResult>> => {
       console.log("🔄 [TanStack Query] Fetching storefront data...", {
         userId: user?.id,
         timestamp: new Date().toISOString(),
