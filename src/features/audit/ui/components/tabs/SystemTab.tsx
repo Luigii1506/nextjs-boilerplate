@@ -5,6 +5,11 @@
  * Vista de salud del sistema, métricas de rendimiento
  * y configuración del sistema de auditoría
  *
+ * REFACTORED: 2025-01-27 - Using shared components and extracted components
+ * - TabHeader, TabWrapper for consistent layout
+ * - Extracted SystemMetric component
+ * - Reduced from ~457 to ~250 lines
+ *
  * Created: 2025-01-18 - Audit System Tab
  */
 
@@ -16,7 +21,6 @@ import {
   Activity,
   AlertTriangle,
   CheckCircle,
-  TrendingUp,
   Database,
   Clock,
   Zap,
@@ -26,87 +30,14 @@ import {
 } from "lucide-react";
 import { cn } from "@/shared/utils";
 import type { AuditStats } from "../../../types";
+import { TabHeader, TabWrapper, TabLoadingSkeleton } from "@/shared/ui/components";
+import { SystemMetric } from "../system";
 
 interface SystemTabProps {
   stats: AuditStats | undefined;
   isLoading?: boolean;
 }
 
-/**
- * 📊 System Metric Card
- */
-interface SystemMetricProps {
-  label: string;
-  value: string | number;
-  status: "good" | "warning" | "critical" | "info";
-  icon: React.ReactNode;
-  description?: string;
-}
-
-const SystemMetric: React.FC<SystemMetricProps> = ({
-  label,
-  value,
-  status,
-  icon,
-  description,
-}) => {
-  const statusConfig = {
-    good: {
-      bg: "bg-green-50 dark:bg-green-900/20",
-      border: "border-green-200 dark:border-green-800",
-      text: "text-green-700 dark:text-green-400",
-      icon: CheckCircle,
-    },
-    warning: {
-      bg: "bg-yellow-50 dark:bg-yellow-900/20",
-      border: "border-yellow-200 dark:border-yellow-800",
-      text: "text-yellow-700 dark:text-yellow-400",
-      icon: AlertTriangle,
-    },
-    critical: {
-      bg: "bg-red-50 dark:bg-red-900/20",
-      border: "border-red-200 dark:border-red-800",
-      text: "text-red-700 dark:text-red-400",
-      icon: AlertTriangle,
-    },
-    info: {
-      bg: "bg-blue-50 dark:bg-blue-900/20",
-      border: "border-blue-200 dark:border-blue-800",
-      text: "text-blue-700 dark:text-blue-400",
-      icon: Activity,
-    },
-  };
-
-  const config = statusConfig[status];
-  const StatusIcon = config.icon;
-
-  return (
-    <div
-      className={cn(
-        "rounded-lg border-2 p-6 transition-all hover:shadow-md",
-        config.bg,
-        config.border
-      )}
-    >
-      <div className="flex items-start justify-between mb-4">
-        <div className={cn("p-2 rounded-lg", config.bg)}>{icon}</div>
-        <StatusIcon className={cn("w-5 h-5", config.text)} />
-      </div>
-
-      <div>
-        <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
-          {label}
-        </p>
-        <p className={cn("text-3xl font-bold", config.text)}>{value}</p>
-        {description && (
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-            {description}
-          </p>
-        )}
-      </div>
-    </div>
-  );
-};
 
 /**
  * 🎯 Main System Tab Component
@@ -171,33 +102,18 @@ export default function SystemTab({ stats, isLoading }: SystemTabProps) {
     };
   }, [stats]);
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6 p-6 animate-pulse">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[...Array(4)].map((_, i) => (
-            <div
-              key={i}
-              className="bg-gray-200 dark:bg-gray-700 rounded-lg h-32"
-            />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-          <Server className="w-7 h-7 text-green-600 dark:text-green-400" />
-          Salud del Sistema
-        </h2>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Monitoreo y métricas del sistema de auditoría
-        </p>
-      </div>
+    <TabWrapper>
+      <TabHeader
+        icon={<Server className="w-8 h-8 text-green-600 dark:text-green-400" />}
+        title="Salud del Sistema"
+        description="Monitoreo y métricas del sistema de auditoría"
+      />
+
+      {isLoading ? (
+        <TabLoadingSkeleton type="stats" rows={4} />
+      ) : (
+        <>
 
       {/* System Health Score */}
       <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-8">
@@ -452,6 +368,8 @@ export default function SystemTab({ stats, isLoading }: SystemTabProps) {
           </div>
         </div>
       </div>
-    </div>
+        </>
+      )}
+    </TabWrapper>
   );
 }

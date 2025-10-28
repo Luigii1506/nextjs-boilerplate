@@ -5,6 +5,10 @@
  * Reportes y exportación de datos de proveedores
  * Coming soon - Placeholder
  *
+ * REFACTORED: 2025-01-27
+ * - Using shared Tab components (TabHeader, TabWrapper)
+ * - Consistent placeholder pattern
+ *
  * Created: 2025-01-18 - Suppliers Reports
  */
 
@@ -12,20 +16,16 @@
 
 import React from "react";
 import { FileText, Download, FileSpreadsheet, Calendar } from "lucide-react";
+import { TabHeader, TabWrapper } from "@/shared/ui/components/tabs";
 
 export default function ReportsTab() {
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-          <FileText className="w-7 h-7 text-pink-600 dark:text-pink-400" />
-          Reportes de Proveedores
-        </h2>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Genera y exporta reportes detallados de tus proveedores
-        </p>
-      </div>
+    <TabWrapper>
+      <TabHeader
+        icon={<FileText className="w-8 h-8 text-blue-600 dark:text-blue-400" />}
+        title="Reportes de Proveedores"
+        description="Genera y exporta reportes detallados de tus proveedores"
+      />
 
       {/* Coming Soon Card */}
       <div className="bg-gradient-to-br from-pink-50 to-pink-100 dark:from-pink-900/20 dark:to-pink-800/20 rounded-xl border border-pink-200 dark:border-pink-800 p-12 text-center">
@@ -60,6 +60,6 @@ export default function ReportsTab() {
           </div>
         </div>
       </div>
-    </div>
+    </TabWrapper>
   );
 }

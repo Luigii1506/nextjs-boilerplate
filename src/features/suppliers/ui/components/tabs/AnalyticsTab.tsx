@@ -5,6 +5,10 @@
  * Analytics y métricas de desempeño de proveedores
  * Coming soon - Placeholder
  *
+ * REFACTORED: 2025-01-27
+ * - Using shared Tab components (TabHeader, TabWrapper)
+ * - Consistent placeholder pattern
+ *
  * Created: 2025-01-18 - Suppliers Analytics
  */
 
@@ -12,20 +16,16 @@
 
 import React from "react";
 import { TrendingUp, BarChart3, PieChart, Activity } from "lucide-react";
+import { TabHeader, TabWrapper } from "@/shared/ui/components/tabs";
 
 export default function AnalyticsTab() {
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-          <TrendingUp className="w-7 h-7 text-orange-600 dark:text-orange-400" />
-          Analytics de Proveedores
-        </h2>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Análisis detallado del desempeño de tus proveedores
-        </p>
-      </div>
+    <TabWrapper>
+      <TabHeader
+        icon={<TrendingUp className="w-8 h-8 text-blue-600 dark:text-blue-400" />}
+        title="Analytics de Proveedores"
+        description="Análisis detallado del desempeño de tus proveedores"
+      />
 
       {/* Coming Soon Card */}
       <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-xl border border-orange-200 dark:border-orange-800 p-12 text-center">
@@ -60,6 +60,6 @@ export default function AnalyticsTab() {
           </div>
         </div>
       </div>
-    </div>
+    </TabWrapper>
   );
 }

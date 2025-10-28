@@ -25,7 +25,6 @@ import {
   Truck,
   Archive,
   FileText,
-  RefreshCw,
   Settings,
 } from "lucide-react";
 import { cn } from "@/shared/utils";
@@ -46,7 +45,14 @@ import {
   SupplierViewModal,
   SupplierDeleteModal,
 } from "../components";
-import { ReusableTabs, type TabItem } from "@/shared/ui/components";
+import {
+  ReusableTabs,
+  type TabItem,
+  PageHeader,
+  type StatItem,
+  StickyTabsContainer,
+  ContentContainer,
+} from "@/shared/ui/components";
 import {
   OverviewTab,
   ProductsTab,
@@ -129,96 +135,80 @@ const InventorySPAContent: React.FC = () => {
     [alerts.length, stats?.recentMovements]
   );
 
+  // 🎨 Prepare stats for PageHeader
+  const headerStats: StatItem[] = useMemo(
+    () => [
+      {
+        icon: <Package className="w-4 h-4" />,
+        label: `${stats?.totalProducts || 0} Productos`,
+        color: "blue" as const,
+        value: stats?.totalProducts || 0,
+      },
+      {
+        icon: <Tags className="w-4 h-4" />,
+        label: `${stats?.totalCategories || 0} Categorías`,
+        color: "purple" as const,
+        value: stats?.totalCategories || 0,
+      },
+      {
+        icon: <Truck className="w-4 h-4" />,
+        label: `${stats?.totalSuppliers || 0} Proveedores`,
+        color: "green" as const,
+        value: stats?.totalSuppliers || 0,
+      },
+    ],
+    [stats?.totalProducts, stats?.totalCategories, stats?.totalSuppliers]
+  );
+
   return (
     <div className="min-h-full bg-gray-50 dark:bg-gray-900">
-      {/* 🎯 HEADER - Always Visible */}
-      <div className="transition-all duration-300 ease-in-out animate-fadeIn">
-          <div className="border-b border-gray-200 dark:border-gray-700 shadow-sm">
-            <div className="max-w-[1600px] mx-auto px-6 py-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-3">
-                    <Package className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-                    Inventory Management
-                  </h1>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Sistema completo de gestión de inventario y productos
-                  </p>
-                </div>
-
-                {/* Actions */}
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={() => inventory.refetch()}
-                    disabled={inventory.isRefetching}
-                    className={cn(
-                      "px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg",
-                      "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700",
-                      "flex items-center space-x-2 transition-all duration-200",
-                      inventory.isRefetching && "opacity-50 cursor-not-allowed"
-                    )}
-                  >
-                    <RefreshCw
-                      className={cn(
-                        "w-4 h-4",
-                        inventory.isRefetching && "animate-spin"
-                      )}
-                    />
-                    <span>Actualizar</span>
-                  </button>
-
-                  <button className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200">
-                    <Settings className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <PageHeader
+        icon={<Package className="w-6 h-6 sm:w-8 sm:h-8" />}
+        title="Inventory Management"
+        description="Sistema completo de gestión de inventario y productos"
+        stats={headerStats}
+        action={<Settings className="w-5 h-5" />}
+        onActionClick={() => console.log("Settings clicked")}
+      />
 
       {/*
-        🎯 TABS - Sticky & Rounded
-        - Sticky top-0 siempre
-        - Bordes redondeados elegantes
-        - Shadow para profundidad
+        🎯 TABS - Sticky & Rounded (RESPONSIVE)
+        Using StickyTabsContainer component for consistent layout
       */}
-      <div className="sticky top-0 z-20 bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-[1600px] mx-auto px-6 pt-6">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-2">
-            <ReusableTabs
-              tabs={INVENTORY_TABS.map((tab) => {
-                const IconComponent =
-                  ICON_MAP[tab.icon as keyof typeof ICON_MAP] || Package;
-                const notificationCount =
-                  notificationCounts[tab.id as keyof typeof notificationCounts];
+      <StickyTabsContainer responsive={true} zIndex={20}>
+        <ReusableTabs
+          tabs={INVENTORY_TABS.map((tab) => {
+            const IconComponent =
+              ICON_MAP[tab.icon as keyof typeof ICON_MAP] || Package;
+            const notificationCount =
+              notificationCounts[tab.id as keyof typeof notificationCounts];
 
-                return {
-                  id: tab.id,
-                  label: tab.label,
-                  icon: <IconComponent className="w-4 h-4" />,
-                  color: tab.color,
-                  hasNotification: notificationCount > 0,
-                  notificationCount: notificationCount || 0,
-                } as TabItem;
-              })}
-              activeTab={activeTab}
-              onTabChange={(tabId) => setActiveTab(tabId as TabId)}
-              variant="default"
-              size="md"
-              animated={true}
-              scrollable={true}
-              className="bg-transparent border-0 shadow-none p-0"
-            />
-          </div>
-        </div>
-      </div>
+            return {
+              id: tab.id,
+              label: tab.label,
+              icon: <IconComponent className="w-4 h-4" />,
+              color: tab.color,
+              hasNotification: notificationCount > 0,
+              notificationCount: notificationCount || 0,
+            } as TabItem;
+          })}
+          activeTab={activeTab}
+          onTabChange={(tabId) => setActiveTab(tabId as TabId)}
+          variant="default"
+          size="md"
+          animated={true}
+          scrollable={true}
+          className="bg-transparent border-0 shadow-none p-0"
+        />
+      </StickyTabsContainer>
 
       {/*
-        📦 CONTENT AREA - Professional Spacing
+        📦 CONTENT AREA - Professional Spacing (RESPONSIVE)
+        Using ContentContainer component for consistent layout
       */}
-      <div className="max-w-[1600px] mx-auto px-6 py-6">
+      <ContentContainer responsive={true}>
         <TabContent />
-      </div>
+      </ContentContainer>
 
       {/* 📝 Modal Components */}
       <ProductModal />

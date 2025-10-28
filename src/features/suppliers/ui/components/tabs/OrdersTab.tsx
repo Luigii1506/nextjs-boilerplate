@@ -5,6 +5,10 @@
  * Gestión de órdenes de compra a proveedores
  * Coming soon - Placeholder
  *
+ * REFACTORED: 2025-01-27
+ * - Using shared Tab components (TabHeader, TabWrapper)
+ * - Consistent placeholder pattern
+ *
  * Created: 2025-01-18 - Suppliers Orders Management
  */
 
@@ -12,20 +16,16 @@
 
 import React from "react";
 import { ShoppingCart, Package, Clock, CheckCircle } from "lucide-react";
+import { TabHeader, TabWrapper } from "@/shared/ui/components/tabs";
 
 export default function OrdersTab() {
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-          <ShoppingCart className="w-7 h-7 text-green-600 dark:text-green-400" />
-          Órdenes de Compra
-        </h2>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Gestiona y rastrea tus órdenes de compra a proveedores
-        </p>
-      </div>
+    <TabWrapper>
+      <TabHeader
+        icon={<ShoppingCart className="w-8 h-8 text-blue-600 dark:text-blue-400" />}
+        title="Órdenes de Compra"
+        description="Gestiona y rastrea tus órdenes de compra a proveedores"
+      />
 
       {/* Coming Soon Card */}
       <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl border border-green-200 dark:border-green-800 p-12 text-center">
@@ -60,6 +60,6 @@ export default function OrdersTab() {
           </div>
         </div>
       </div>
-    </div>
+    </TabWrapper>
   );
 }

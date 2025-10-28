@@ -30,6 +30,20 @@ export {
   StickyTabsContainer,
   type StickyTabsContainerProps,
 } from "./StickyTabsContainer";
+export {
+  TabHeader,
+  type TabHeaderProps,
+  type TabHeaderAction,
+} from "./tabs/TabHeader";
+export { TabWrapper, type TabWrapperProps } from "./tabs/TabWrapper";
+export {
+  TabSearchBar,
+  type TabSearchBarProps,
+} from "./tabs/TabSearchBar";
+export {
+  TabLoadingSkeleton,
+  type TabLoadingSkeletonProps,
+} from "./tabs/TabLoadingSkeleton";
 
 // 🌙 Theme Components
 export * from "./DarkModeToggle";

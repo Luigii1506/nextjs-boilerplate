@@ -1,13 +1,18 @@
 /**
- * ⚡ AUDIT DASHBOARD - ELEGANT UX
- * ===============================
+ * 🔍 AUDIT SCREEN
+ * ================
  *
- * Dashboard con UX elegante:
- * - Header que desaparece suavemente con scroll
- * - Tabs con bordes redondeados
- * - Transiciones smooth
+ * Sistema de auditoría y seguimiento de actividades empresariales
+ * con dashboard optimizado y tabs consistentes
  *
- * Enterprise: 2025-01-18 - Elegant UX
+ * REFACTORED: 2025-01-27 - Standardized with shared layout components
+ * - PageHeader for consistent header with stats
+ * - StickyTabsContainer for sticky tabs
+ * - ContentContainer for content area
+ * - Removed custom scroll detection
+ * - Consistent with inventory/users/suppliers pattern
+ *
+ * Created: 2025-01-18 - Audit Dashboard
  */
 
 "use client";
@@ -15,7 +20,7 @@
 // Import custom animations
 import "../../../inventory/ui/styles/animations.css";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { useAuditDashboard } from "../../hooks/useAuditDashboard";
 import {
   BarChart3,
@@ -25,7 +30,14 @@ import {
   AlertCircle,
   Shield,
 } from "lucide-react";
-import { ReusableTabs, type TabItem } from "@/shared/ui/components";
+import {
+  ReusableTabs,
+  type TabItem,
+  PageHeader,
+  type StatItem,
+  StickyTabsContainer,
+  ContentContainer,
+} from "@/shared/ui/components";
 
 // Import tabs
 import {
@@ -41,27 +53,24 @@ import { AuditEventDetailsModal } from "../components/modals";
 // Import types
 import type { AuditDashboardTab, AuditEvent } from "../../types";
 
-interface AuditDashboardProps {
+interface AuditScreenProps {
   initialTab?: AuditDashboardTab;
 }
 
 /**
- * ⚡ OPTIMIZED AUDIT DASHBOARD
+ * 🔍 AUDIT SCREEN
  *
- * Best practices:
- * - Header that fades out smoothly on scroll
- * - Rounded tabs container
- * - Professional spacing
+ * Standardized screen with:
+ * - PageHeader with stats
+ * - StickyTabsContainer for tabs
+ * - ContentContainer for content
+ * - Consistent spacing and layout
  */
-export default function AuditDashboard({
+export default function AuditScreen({
   initialTab = "overview",
-}: AuditDashboardProps) {
+}: AuditScreenProps) {
   // Tab state
   const [activeTab, setActiveTab] = useState<AuditDashboardTab>(initialTab);
-
-  // Scroll state for header visibility
-  const [showHeader, setShowHeader] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
 
   // Modal state
   const [selectedEvent, setSelectedEvent] = useState<AuditEvent | null>(null);
@@ -113,40 +122,34 @@ export default function AuditDashboard({
     setSelectedEvent(null);
   };
 
-  // Calculate counts for badges
+  // Calculate counts for stats
   const userCount = stats?.byUser.length || 0;
+  const criticalEvents = stats?.bySeverity.critical || 0;
 
-  // 🎯 Smooth scroll detection
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-
-      // Show header when scrolling up or at top
-      // Hide header when scrolling down (after 50px)
-      if (currentScrollY < lastScrollY || currentScrollY < 50) {
-        setShowHeader(true);
-      } else if (currentScrollY > 50) {
-        setShowHeader(false);
-      }
-
-      setLastScrollY(currentScrollY);
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY]);
-
-  // Handle tab change with smooth scroll to show header
-  const handleTabChange = (tabId: string) => {
-    setActiveTab(tabId as AuditDashboardTab);
-
-    // Scroll to position that triggers header visibility (just under 50px threshold)
-    // This shows the header without scrolling all the way to absolute top
-    window.scrollTo({
-      top: 40,
-      behavior: "smooth",
-    });
-  };
+  // 🎨 Prepare stats for PageHeader
+  const headerStats: StatItem[] = useMemo(
+    () => [
+      {
+        icon: <Activity className="w-4 h-4" />,
+        label: `${totalCount.toLocaleString()} Eventos`,
+        color: "blue" as const,
+        value: totalCount,
+      },
+      {
+        icon: <Users className="w-4 h-4" />,
+        label: `${userCount} Usuarios`,
+        color: "green" as const,
+        value: userCount,
+      },
+      {
+        icon: <AlertCircle className="w-4 h-4" />,
+        label: `${criticalEvents} Críticos`,
+        color: "red" as const,
+        value: criticalEvents,
+      },
+    ],
+    [totalCount, userCount, criticalEvents]
+  );
 
   // Tab configuration
   const auditTabs: TabItem[] = [
@@ -181,60 +184,30 @@ export default function AuditDashboard({
   ];
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900">
-      {/*
-        🎯 HEADER - Smooth fade out on scroll down
-        - NO sticky (se oculta completamente)
-        - Aparece cuando: scroll up o en top
-        - Desaparece cuando: scroll down > 50px
-      */}
-      {showHeader && (
-        <div className="transition-all duration-300 ease-in-out animate-fadeIn">
-          <div className="  border-b border-gray-200 dark:border-gray-700 shadow-sm">
-            <div className="max-w-[1600px] mx-auto px-6 py-6">
-              <div className="flex items-center gap-3">
-                <Shield className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                    Audit Trail
-                  </h1>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Sistema de auditoría y seguimiento de actividades
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+    <div className="min-h-full bg-gray-50 dark:bg-gray-900">
+      {/* 🎨 PageHeader - Standardized header with stats */}
+      <PageHeader
+        icon={<Shield className="w-6 h-6 sm:w-8 sm:h-8" />}
+        title="Audit Trail"
+        description="Sistema de auditoría y seguimiento de actividades"
+        stats={headerStats}
+      />
 
-      {/*
-        🎯 TABS - Sticky & Rounded
-        - Sticky top-0 siempre
-        - Bordes redondeados elegantes
-        - Shadow para profundidad
-      */}
-      <div className="sticky top-0 z-20 bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-[1600px] mx-auto px-6 pt-6">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-2">
-            <ReusableTabs
-              tabs={auditTabs}
-              activeTab={activeTab}
-              onTabChange={handleTabChange}
-              variant="default"
-              size="md"
-              animated={true}
-              scrollable={true}
-              className="bg-transparent border-0 shadow-none p-0"
-            />
-          </div>
-        </div>
-      </div>
+      {/* 🎨 Sticky Tabs Container */}
+      <StickyTabsContainer responsive={true} zIndex={20}>
+        <ReusableTabs
+          tabs={auditTabs}
+          activeTab={activeTab}
+          onTabChange={(tabId) => setActiveTab(tabId as AuditDashboardTab)}
+          variant="default"
+          size="md"
+          animated={true}
+          scrollable={true}
+        />
+      </StickyTabsContainer>
 
-      {/*
-        📦 CONTENT AREA - Professional Spacing
-      */}
-      <div className="max-w-[1600px] mx-auto px-6 py-6">
+      {/* 🎨 Content Container */}
+      <ContentContainer responsive={true}>
         {/* ⚡ Professional Error Display */}
         {hasErrors && (
           <div className="mb-6">
@@ -269,9 +242,7 @@ export default function AuditDashboard({
           </div>
         )}
 
-        {/*
-          🎯 TAB CONTENT - Only Active Tab
-        */}
+        {/* 🎯 TAB CONTENT - Only Active Tab */}
         <div className="transition-opacity duration-200">
           {activeTab === "overview" && (
             <div className="animate-fadeIn">
@@ -320,7 +291,7 @@ export default function AuditDashboard({
             </div>
           )}
         </div>
-      </div>
+      </ContentContainer>
 
       {/* ⚡ Event Details Modal */}
       <AuditEventDetailsModal
