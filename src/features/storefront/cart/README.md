@@ -129,22 +129,19 @@ useEffect(() => {
 ### Basic Setup
 
 ```typescript
-// 1. Wrap your app with CartProvider
-import { CartProvider } from "@/features/cart";
+// 1. Inicializa el store (ej. en el shell de storefront)
+import { useCartInitializer } from "@/features/storefront/cart";
 
-export default function App({ children }) {
-  return (
-    <CartProvider>
-      {children}
-    </CartProvider>
-  );
+export default function StorefrontShell({ children }) {
+  useCartInitializer(); // carga carrito + sincroniza invitado → usuario
+  return <>{children}</>;
 }
 
-// 2. Use cart in any component
-import { useCartContext } from "@/features/cart";
+// 2. Usa el hook en cualquier componente
+import { useCart } from "@/features/storefront/cart";
 
 export function MyComponent() {
-  const { items, addToCart, removeItem } = useCartContext();
+  const { items, addToCart, removeItem, formatPrice } = useCart();
 
   const handleAdd = async () => {
     await addToCart("product-id", 1);
@@ -152,8 +149,9 @@ export function MyComponent() {
 
   return (
     <div>
-      <p>Cart has {items.length} items</p>
+      <p>Cart tiene {items.length} items</p>
       <button onClick={handleAdd}>Add to Cart</button>
+      <div>Total: {formatPrice(12300)}</div>
     </div>
   );
 }

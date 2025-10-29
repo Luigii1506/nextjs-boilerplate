@@ -316,48 +316,7 @@ export interface UseCartCalculationsReturn {
 /**
  * Cart context provider props
  */
-export interface CartProviderProps {
-  children: React.ReactNode;
-  userId?: string;
-  sessionId?: string;
-  config?: {
-    enablePersistence?: boolean;
-    enableOptimisticUpdates?: boolean;
-    enableAnimations?: boolean;
-    taxRate?: number;
-    currency?: string;
-    locale?: string;
-  };
-}
-
-/**
- * Cart context value
- */
-export interface CartContextValue {
-  // State
-  cart: CartWithItems | null;
-  summary: CartSummary | null;
-  loading: CartLoadingStates;
-  errors: CartErrorStates;
-
-  // Actions (simplified interface)
-  addToCart: (productId: string, quantity?: number) => Promise<boolean>;
-  updateItem: (productId: string, quantity: number) => Promise<boolean>;
-  removeItem: (productId: string) => Promise<boolean>;
-  clearCart: () => Promise<boolean>;
-
-  // Utilities
-  getItemQuantity: (productId: string) => number;
-  hasItem: (productId: string) => boolean;
-  formatPrice: (amount: number) => string;
-
-  // Status
-  isEmpty: boolean;
-  itemCount: number;
-  totalAmount: number;
-  isProcessing: boolean;
-}
+// Context-based types deprecated in favor of Zustand store.
 
 export default {};
-
 

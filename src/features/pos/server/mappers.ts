@@ -174,19 +174,29 @@ export function mapPrismaTransactionsToPOSTransactions(
  * Mapear cart item a sale item con producto
  */
 export function mapCartItemToSaleItem(item: any) {
+  const unitPrice = Number(item.unitPrice ?? 0);
+  const roundedUnitPrice = Math.round(unitPrice * 100) / 100;
+  const quantity = item.quantity ?? 0;
+  const total =
+    item.total !== undefined && item.total !== null
+      ? Number(item.total)
+      : unitPrice * quantity;
+  const roundedTotal = Math.round(total * 100) / 100;
+  const product = item.product ? mapProductToCustomer(item.product) : null;
+
   return {
     id: item.id,
     productId: item.productId,
-    productSku: item.product.sku,
-    productName: item.product.name,
-    quantity: item.quantity,
-    unitPrice: Number(item.unitPrice),
-    discount: Number(item.discount || 0),
-    subtotal: Number(item.subtotal),
-    total: Number(item.total),
+    productSku: product?.sku ?? "UNKNOWN",
+    productName: product?.name ?? "Producto no disponible",
+    quantity,
+    unitPrice: roundedUnitPrice,
+    discount: 0,
+    subtotal: roundedTotal,
+    total: roundedTotal,
     addedAt: item.createdAt,
     updatedAt: item.updatedAt,
-    product: mapProductToCustomer(item.product),
+    product: product ?? undefined,
   };
 }
 
@@ -194,12 +204,52 @@ export function mapCartItemToSaleItem(item: any) {
  * Mapear cart completo a sale con items
  */
 export function mapCartToSale(cart: any) {
+  const items = cart.items ? cart.items.map(mapCartItemToSaleItem) : [];
+  const subtotalRaw = items.reduce((sum, item) => sum + (item.total ?? 0), 0);
+  const subtotal = Math.round(subtotalRaw * 100) / 100;
+  const taxAmountRaw =
+    cart.taxAmount !== undefined && cart.taxAmount !== null
+      ? Number(cart.taxAmount)
+      : 0;
+  const taxAmount = Math.round(taxAmountRaw * 100) / 100;
+  const discount = 0;
+  const total = Math.round((subtotal + taxAmount - discount) * 100) / 100;
+
+  console.log("🧠 [POS MAPPER] mapCartToSale", {
+    subtotal,
+    taxAmount,
+    discount,
+    total,
+    itemsCount: items.length,
+  });
+
   return {
     id: cart.id,
     sessionId: cart.sessionId,
-    items: cart.items ? cart.items.map(mapCartItemToSaleItem) : [],
+    userId: cart.userId ?? null,
+    items,
+    subtotal,
+    tax: taxAmount,
+    discount,
+    total,
     createdAt: cart.createdAt,
     updatedAt: cart.updatedAt,
+    expiresAt: cart.expiresAt,
+  };
+}
+
+export function mapSaleSummary(summary: any) {
+  const subtotal = Math.round(Number(summary?.subtotal ?? 0) * 100) / 100;
+  const discount = Math.round(Number(summary?.discount ?? 0) * 100) / 100;
+  const tax = Math.round(Number(summary?.tax ?? 0) * 100) / 100;
+  const total = Math.round(Number(summary?.total ?? 0) * 100) / 100;
+  return {
+    itemCount: Number(summary?.itemCount ?? 0),
+    subtotal,
+    discount,
+    tax,
+    taxRate: Number(summary?.taxRate ?? 0),
+    total,
   };
 }
 

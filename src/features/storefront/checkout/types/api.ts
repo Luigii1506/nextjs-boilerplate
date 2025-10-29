@@ -20,6 +20,7 @@ import {
 export interface CreateOrderInput {
   cartId: string;
   userId?: string;
+  sessionId?: string;
 
   // Customer Information
   customerInfo: CustomerInfo;
@@ -38,6 +39,7 @@ export interface CreateOrderInput {
 
 export interface CalculateOrderInput {
   cartId: string;
+  sessionId?: string;
   shippingAddress?: Address;
   shippingMethodId?: string;
   discountCodes?: string[];

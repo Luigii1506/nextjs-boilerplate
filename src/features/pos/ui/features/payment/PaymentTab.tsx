@@ -10,9 +10,19 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { useSaleStore, useSaleSummary, useHasItems, useCanCheckout, useSaleActions } from "../../../stores/saleStore";
-import { usePaymentStore, useCurrentTransaction, useChangeDue, usePaymentActions } from "../../../stores/paymentStore";
-import { useSessionStore } from "../../../stores/sessionStore";
+import {
+  useSaleSummary,
+  useSaleMetrics,
+  useSaleSessionId,
+  useSaleActions,
+  usePaymentState,
+  usePaymentStatus,
+  useCurrentTransaction,
+  useChangeDue,
+  usePaymentActions,
+  useCanProcessPayment,
+  useSessionStore,
+} from "@/features/pos";
 import { usePOSUI } from "../../../context";
 import { formatCurrency } from "../../../utils";
 import { PAYMENT_METHODS, type POSPaymentMethod } from "../../../payment/types";
@@ -20,18 +30,16 @@ import { PAYMENT_METHODS, type POSPaymentMethod } from "../../../payment/types";
 export const PaymentTab: React.FC = () => {
   // Sale store
   const summary = useSaleSummary();
-  const sessionId = useSaleStore((state) => state.sessionId);
-  const hasItems = useHasItems();
-  const canCheckout = useCanCheckout();
+  const { hasItems, canCheckout } = useSaleMetrics();
+  const sessionId = useSaleSessionId();
   const { clearSale } = useSaleActions();
 
   // Payment store
-  const paymentState = usePaymentStore((state) => state.paymentState);
+  const paymentState = usePaymentState();
+  const { isProcessing, isComplete } = usePaymentStatus();
   const currentTransaction = useCurrentTransaction();
-  const isProcessing = usePaymentStore((state) => state.isProcessing());
-  const isComplete = usePaymentStore((state) => state.isComplete());
   const changeDue = useChangeDue();
-  const canProcess = usePaymentStore((state) => state.canProcess());
+  const canProcess = useCanProcessPayment();
   const {
     setPaymentMethod,
     setAmountPaid,
@@ -49,10 +57,20 @@ export const PaymentTab: React.FC = () => {
 
   // Auto-set sale summary when entering payment tab
   useEffect(() => {
-    if (summary && !paymentState.saleSummary) {
+    if (!summary) {
+      return;
+    }
+
+    const currentSummary = paymentState.saleSummary;
+    const hasChanged =
+      !currentSummary ||
+      currentSummary.total !== summary.total ||
+      currentSummary.itemCount !== summary.itemCount;
+
+    if (hasChanged) {
       setSaleSummary(summary);
     }
-  }, [summary, paymentState.saleSummary, setSaleSummary]);
+  }, [paymentState.saleSummary, setSaleSummary, summary]);
 
   const handlePaymentMethodChange = (method: POSPaymentMethod) => {
     setPaymentMethod(method);

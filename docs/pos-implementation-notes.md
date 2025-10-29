@@ -12,11 +12,10 @@
 
 ### 1. ✅ Created Zustand Stores
 
-**Location:** `src/features/pos/stores/`
-
-- **sessionStore.ts** - Session management (open/close cash register)
-- **saleStore.ts** - Shopping cart management
-- **paymentStore.ts** - Payment processing
+**Locations:**
+- `src/features/pos/session/state/session.store.ts` - Session management (open/close cash register)
+- `src/features/pos/sale/state/sale.store.ts` - Shopping cart management
+- `src/features/pos/payment/state/payment.store.ts` - Payment processing
 
 **Features:**
 - Redux DevTools integration (store names: "POS-Session", "POS-Sale", "POS-Payment")
@@ -62,8 +61,8 @@ All components successfully migrated from Context Providers to Zustand stores:
 ```
 
 **Changes:**
-- Removed `SaleProvider` (replaced by `useSaleStore`)
-- Removed `PaymentProvider` (replaced by `usePaymentStore`)
+- Removed `SaleProvider` (replaced by `useSaleInitializer` + sale store)
+- Removed `PaymentProvider` (replaced by payment store selectors/actions)
 - Kept `POSUIProvider` (for UI-only state: modals, active tab)
 - Added `StoreInitializer` (syncs sessionId with saleStore)
 
@@ -502,7 +501,7 @@ If issues are discovered, rollback is simple:
 
 1. **Remove Zustand stores:**
    ```bash
-   rm -rf src/features/pos/stores/
+   rm -rf src/features/pos/session/state src/features/pos/sale/state src/features/pos/payment/state
    ```
 
 2. **Revert component changes:**

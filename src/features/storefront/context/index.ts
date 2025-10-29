@@ -7,13 +7,13 @@
  * @version 3.0.0 - TanStack Query Migration
  */
 
-// 🎨 UI Context (Nuevo - Solo UI State)
+// 🎨 UI Store (Zustand - Solo UI State)
 export {
-  StorefrontUIProvider,
   useStorefrontUI,
+  useStorefrontUIActions,
   STOREFRONT_TABS,
   type TabId,
-} from "./StorefrontUIContext";
+} from "../state/ui.store";
 
 // 📝 Nota: El antiguo StorefrontContext.tsx con data management
 // fue reemplazado por TanStack Query hooks.

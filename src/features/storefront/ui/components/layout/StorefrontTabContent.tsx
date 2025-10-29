@@ -7,10 +7,15 @@
 
 "use client";
 
-import React, { useCallback, useRef, useEffect } from "react";
+import React, { useCallback, useRef, useEffect, memo } from "react";
 import { cn } from "@/shared/utils";
-import { useStorefrontUI } from "../../../context";
-import { useCartContext } from "@/features/storefront/cart";
+import { useCartActions } from "@/features/storefront/cart";
+import {
+  type TabId,
+  useStorefrontUIActions,
+  useStorefrontUIStore,
+} from "@/features/storefront/state/ui.store";
+import { useShallow } from "zustand/react/shallow";
 import {
   OverviewTab,
   ProductsTab,
@@ -22,9 +27,50 @@ import {
   SupportTab,
 } from "../../features";
 
+const selectTabState = (state: ReturnType<typeof useStorefrontUIStore.getState>) => ({
+  activeTab: state.activeTab,
+  isTabChanging: state.isTabChanging,
+});
+
+const TabPanel = memo(
+  ({ tabId, activeTab, children }: { tabId: TabId; activeTab: TabId; children: React.ReactNode }) => {
+    const isActive = activeTab === tabId;
+
+    return (
+      <div
+        className={cn(
+          "transition-all duration-300 ease-out",
+          isActive
+            ? "opacity-100 visible relative z-0"
+            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
+        )}
+        style={{
+          transform: isActive ? "translateY(0)" : "translateY(20px)",
+        }}
+      >
+        {children}
+      </div>
+    );
+  }
+);
+TabPanel.displayName = "TabPanel";
+
+const TransitionOverlay = memo(({ isVisible }: { isVisible: boolean }) => (
+  <div
+    className={cn(
+      "absolute inset-0 bg-white/50 dark:bg-gray-900/50 z-10 pointer-events-none transition-opacity duration-150",
+      isVisible ? "opacity-100" : "opacity-0"
+    )}
+  />
+));
+TransitionOverlay.displayName = "TransitionOverlay";
+
 export const StorefrontTabContent: React.FC = () => {
-  const { activeTab, setActiveTab, isTabChanging } = useStorefrontUI();
-  const { addToCart } = useCartContext();
+  const { addToCart } = useCartActions();
+  const { setActiveTab } = useStorefrontUIActions();
+  const { activeTab, isTabChanging } = useStorefrontUIStore(
+    useShallow(selectTabState)
+  );
 
   // Ref to always access latest addToCart - Prevents stale closures
   const addToCartRef = useRef(addToCart);
@@ -53,116 +99,36 @@ export const StorefrontTabContent: React.FC = () => {
     []
   );
 
-  // SPA PATTERN: Render ALL tabs but only show the active one
-  // This prevents unmounting/remounting that caused "refresh" behavior
   return (
     <div className="relative min-h-screen">
-      {/* Tab transition overlay */}
-      <div
-        className={cn(
-          "absolute inset-0 bg-white/50 dark:bg-gray-900/50 z-10 pointer-events-none transition-opacity duration-150",
-          isTabChanging ? "opacity-100" : "opacity-0"
-        )}
-      />
+      <TransitionOverlay isVisible={isTabChanging} />
 
-      {/* Overview Tab - Always mounted */}
-      <div
-        className={cn(
-          "transition-all duration-300 ease-out",
-          activeTab === "overview"
-            ? "opacity-100 visible relative z-0"
-            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
-        )}
-        style={{
-          transform:
-            activeTab === "overview" ? "translateY(0)" : "translateY(20px)",
-        }}
-      >
+      <TabPanel tabId="overview" activeTab={activeTab}>
         <OverviewTab />
-      </div>
+      </TabPanel>
 
-      {/* Products Tab - Always mounted */}
-      <div
-        className={cn(
-          "transition-all duration-300 ease-out",
-          activeTab === "products"
-            ? "opacity-100 visible relative z-0"
-            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
-        )}
-        style={{
-          transform:
-            activeTab === "products" ? "translateY(0)" : "translateY(20px)",
-        }}
-      >
+      <TabPanel tabId="products" activeTab={activeTab}>
         <ProductsTab onAddToCart={handleAddToCart} />
-      </div>
+      </TabPanel>
 
-      {/* Categories Tab - Always mounted */}
-      <div
-        className={cn(
-          "transition-all duration-300 ease-out",
-          activeTab === "categories"
-            ? "opacity-100 visible relative z-0"
-            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
-        )}
-        style={{
-          transform:
-            activeTab === "categories" ? "translateY(0)" : "translateY(20px)",
-        }}
-      >
+      <TabPanel tabId="categories" activeTab={activeTab}>
         <CategoriesTab />
-      </div>
+      </TabPanel>
 
-      {/* Wishlist Tab - Always mounted */}
-      <div
-        className={cn(
-          "transition-all duration-300 ease-out",
-          activeTab === "wishlist"
-            ? "opacity-100 visible relative z-0"
-            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
-        )}
-        style={{
-          transform:
-            activeTab === "wishlist" ? "translateY(0)" : "translateY(20px)",
-        }}
-      >
+      <TabPanel tabId="wishlist" activeTab={activeTab}>
         <WishlistTab />
-      </div>
+      </TabPanel>
 
-      {/* Cart Tab - Always mounted */}
-      <div
-        className={cn(
-          "transition-all duration-300 ease-out",
-          activeTab === "cart"
-            ? "opacity-100 visible relative z-0"
-            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
-        )}
-        style={{
-          transform:
-            activeTab === "cart" ? "translateY(0)" : "translateY(20px)",
-        }}
-      >
+      <TabPanel tabId="cart" activeTab={activeTab}>
         <CartTab
           onCheckout={async () => {
             setActiveTab("checkout");
             return true;
           }}
         />
-      </div>
+      </TabPanel>
 
-      {/* Checkout Tab - Always mounted */}
-      <div
-        className={cn(
-          "transition-all duration-300 ease-out",
-          activeTab === "checkout"
-            ? "opacity-100 visible relative z-0"
-            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
-        )}
-        style={{
-          transform:
-            activeTab === "checkout" ? "translateY(0)" : "translateY(20px)",
-        }}
-      >
+      <TabPanel tabId="checkout" activeTab={activeTab}>
         <CheckoutTab
           onReturnToStore={() => setActiveTab("overview")}
           onViewOrder={(orderId: string) => {
@@ -170,39 +136,15 @@ export const StorefrontTabContent: React.FC = () => {
             setActiveTab("account");
           }}
         />
-      </div>
+      </TabPanel>
 
-      {/* Account Tab - Always mounted */}
-      <div
-        className={cn(
-          "transition-all duration-300 ease-out",
-          activeTab === "account"
-            ? "opacity-100 visible relative z-0"
-            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
-        )}
-        style={{
-          transform:
-            activeTab === "account" ? "translateY(0)" : "translateY(20px)",
-        }}
-      >
+      <TabPanel tabId="account" activeTab={activeTab}>
         <AccountTab />
-      </div>
+      </TabPanel>
 
-      {/* Support Tab - Always mounted */}
-      <div
-        className={cn(
-          "transition-all duration-300 ease-out",
-          activeTab === "support"
-            ? "opacity-100 visible relative z-0"
-            : "opacity-0 invisible absolute inset-0 z-0 pointer-events-none"
-        )}
-        style={{
-          transform:
-            activeTab === "support" ? "translateY(0)" : "translateY(20px)",
-        }}
-      >
+      <TabPanel tabId="support" activeTab={activeTab}>
         <SupportTab />
-      </div>
+      </TabPanel>
     </div>
   );
 };

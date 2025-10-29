@@ -63,6 +63,7 @@ export async function createOrderAction(
     requestId,
     cartId: input.cartId,
     userId: input.userId,
+    sessionId: input.sessionId,
     customerEmail: input.customerInfo.email,
     shippingMethodId: input.shippingMethodId,
     paymentMethodId: input.paymentMethodId,
@@ -92,7 +93,7 @@ export async function createOrderAction(
     // 2. Validate authentication/authorization
     const accessValidation = await validateCheckoutAccess(
       input.userId,
-      input.cartId
+      input.sessionId
     );
     if (!accessValidation.isValid) {
       console.log("❌ [CHECKOUT ACTION] Access denied:", {
@@ -109,7 +110,7 @@ export async function createOrderAction(
     // 3. Check rate limits
     const rateLimitCheck = validateCheckoutRateLimit(
       input.userId,
-      input.cartId
+      input.sessionId
     );
     if (!rateLimitCheck.isAllowed) {
       console.log("❌ [CHECKOUT ACTION] Rate limit exceeded:", {
@@ -143,7 +144,10 @@ export async function createOrderAction(
 
     // 6. Clear cart after successful order creation
     try {
-      await clearCartAction(input.cartId, input.userId);
+      await clearCartAction({
+        userId: input.userId,
+        sessionId: input.sessionId,
+      });
       console.log("✅ [CHECKOUT ACTION] Cart cleared after order creation");
     } catch (cartError) {
       console.warn("⚠️ [CHECKOUT ACTION] Failed to clear cart:", cartError);
@@ -197,6 +201,7 @@ export async function calculateOrderAction(
   console.log("🧮 [CHECKOUT ACTION] Calculating order:", {
     requestId,
     cartId: input.cartId,
+    sessionId: input.sessionId,
     hasShippingAddress: !!input.shippingAddress,
     shippingMethodId: input.shippingMethodId,
   });
@@ -225,7 +230,8 @@ export async function calculateOrderAction(
       undefined, // userId not required for calculation
       validationResult.data.shippingAddress,
       validationResult.data.shippingMethodId,
-      validationResult.data.discountCodes
+      validationResult.data.discountCodes,
+      validationResult.data.sessionId
     );
 
     console.log("✅ [CHECKOUT ACTION] Order calculated successfully:", {

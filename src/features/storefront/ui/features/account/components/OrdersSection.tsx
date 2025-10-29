@@ -16,7 +16,7 @@ import {
   useCancelOrder,
   type OrderSummary,
 } from "@/features/storefront/orders";
-import { useCartContext } from "@/features/storefront/cart";
+import { useCartActions } from "@/features/storefront/cart";
 import { OrderDetailsModal } from "../../orders";
 import {
   formatPrice,
@@ -34,7 +34,7 @@ export const OrdersSection: React.FC<OrdersSectionProps> = ({
   allowAnimations,
 }) => {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  const { addToCart } = useCartContext();
+  const { addToCart } = useCartActions();
   const { user } = useAuth();
   const cancelOrderMutation = useCancelOrder();
 

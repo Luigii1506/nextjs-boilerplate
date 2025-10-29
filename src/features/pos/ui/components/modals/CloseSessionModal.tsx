@@ -10,7 +10,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { useSessionStore, useSessionActions } from "../../../stores/sessionStore";
+import { useSessionStore, useSessionActions } from "@/features/pos";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { formatCurrency } from "../../../utils";

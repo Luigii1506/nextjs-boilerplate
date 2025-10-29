@@ -60,29 +60,38 @@ export {
 // Session Store
 export {
   useSessionStore,
+  useSessionState,
+  useSessionStatus,
+  useSessionFlags,
   useSessionActions,
   useIsSessionOpen,
   useHasActiveSession,
   useIsSessionClosed,
   useIsSessionSuspended,
+  useSessionStoreFacade,
   type SessionState,
-} from "./stores/sessionStore";
+} from "./session/state/session.store";
 
 // Sale Store
 export {
   useSaleStore,
+  usePOSSale,
   useSaleActions,
   useSaleItems,
   useSaleSummary,
-  useItemCount,
-  useHasItems,
-  useCanCheckout,
+  useSaleMetrics,
+  useSaleStatus,
+  useSaleSessionId,
+  useSaleInitializer,
   type SaleState,
-} from "./stores/saleStore";
+} from "./sale/state/sale.store";
 
 // Payment Store
 export {
   usePaymentStore,
+  usePaymentState,
+  usePaymentStatus,
+  usePaymentStoreFacade,
   usePaymentActions,
   useCurrentTransaction,
   usePaymentProcessing,
@@ -91,7 +100,7 @@ export {
   useChangeDue,
   useCanProcessPayment,
   type PaymentStoreState,
-} from "./stores/paymentStore";
+} from "./payment/state/payment.store";
 
 // ========================================
 // SUB-FEATURES (LEGACY - For backward compatibility)

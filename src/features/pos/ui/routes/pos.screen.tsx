@@ -10,11 +10,10 @@
 
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import { cn } from "@/shared/utils";
 import { POSUIProvider } from "../../context";
-import { useSessionStore } from "../../stores/sessionStore";
-import { useSaleStore } from "../../stores/saleStore";
+import { useSessionStore, useSaleInitializer } from "@/features/pos";
 import { useAuth } from "@/shared/hooks/useAuth";
 import {
   POSHeader,
@@ -34,16 +33,8 @@ import { ClientOnly } from "../components/ClientOnly";
 const StoreInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const currentSession = useSessionStore((state) => state.currentSession);
-  const setSessionId = useSaleStore((state) => state.setSessionId);
 
-  // Initialize sale store with session ID when session changes
-  useEffect(() => {
-    if (currentSession?.id) {
-      setSessionId(currentSession.id);
-    } else {
-      setSessionId(null);
-    }
-  }, [currentSession?.id, setSessionId]);
+  useSaleInitializer(currentSession?.id ?? null);
 
   return <>{children}</>;
 };

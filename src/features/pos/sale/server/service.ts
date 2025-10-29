@@ -9,7 +9,7 @@
  */
 
 import * as queries from "./queries";
-import type { POSSaleSummary, POSSaleItemWithProduct } from "../types";
+import { mapCartToSale, mapCartItemToSaleItem, mapSaleSummary } from "../../server/mappers";
 
 // ========================================
 // GET SALE WITH SUMMARY
@@ -19,20 +19,39 @@ import type { POSSaleSummary, POSSaleItemWithProduct } from "../types";
  * Obtener venta activa con resumen calculado
  */
 export async function getSaleWithSummary(sessionId: string) {
-  try {
-    const [sale, summary] = await Promise.all([
-      queries.getActiveSaleBySession(sessionId),
-      queries.calculateSaleSummary(sessionId),
-    ]);
+  const [rawSale, rawSummary] = await Promise.all([
+    queries.getActiveSaleBySession(sessionId),
+    queries.calculateSaleSummary(sessionId),
+  ]);
 
-    return {
-      sale,
-      summary,
-    };
-  } catch (error) {
-    console.error("[POS Sale Service] Error getting sale:", error);
-    throw new Error("Failed to get sale");
+  let mappedSale = null;
+  if (rawSale) {
+    try {
+      mappedSale = mapCartToSale(rawSale);
+    } catch (mappingError) {
+      console.warn(
+        "[POS Sale Service] Failed to map sale payload, returning null sale:",
+        mappingError
+      );
+      mappedSale = null;
+    }
   }
+
+  let mappedSummary;
+  try {
+    mappedSummary = mapSaleSummary(rawSummary);
+  } catch (mappingError) {
+    console.warn(
+      "[POS Sale Service] Failed to map sale summary, using empty summary:",
+      mappingError
+    );
+    mappedSummary = mapSaleSummary(null);
+  }
+
+  return {
+    sale: mappedSale,
+    summary: mappedSummary,
+  };
 }
 
 // ========================================
@@ -58,13 +77,24 @@ export async function addItemWithValidation(
     }
 
     // Agregar item
+    console.log("🧠 [POS Sale Service] addItemWithValidation | params", {
+      sessionId,
+      productId,
+      quantity,
+    });
     const item = await queries.addItemToSale(sessionId, productId, quantity);
+    console.log("🧠 [POS Sale Service] addItemWithValidation | raw item", item);
 
     // Recalcular summary
-    const summary = await queries.calculateSaleSummary(sessionId);
+    const rawSummary = await queries.calculateSaleSummary(sessionId);
+    console.log(
+      "🧠 [POS Sale Service] addItemWithValidation | raw summary",
+      rawSummary
+    );
+    const summary = mapSaleSummary(rawSummary);
 
     return {
-      item,
+      item: item ? mapCartItemToSaleItem(item) : null,
       summary,
     };
   } catch (error) {
@@ -99,10 +129,11 @@ export async function updateQuantityWithValidation(
     const item = await queries.updateSaleItemQuantity(itemId, quantity);
 
     // Recalcular summary
-    const summary = await queries.calculateSaleSummary(sessionId);
+    const rawSummary = await queries.calculateSaleSummary(sessionId);
+    const summary = mapSaleSummary(rawSummary);
 
     return {
-      item,
+      item: item ? mapCartItemToSaleItem(item) : null,
       summary,
     };
   } catch (error) {
@@ -127,7 +158,8 @@ export async function removeItemWithCleanup(
     await queries.removeSaleItem(itemId);
 
     // Recalcular summary
-    const summary = await queries.calculateSaleSummary(sessionId);
+    const rawSummary = await queries.calculateSaleSummary(sessionId);
+    const summary = mapSaleSummary(rawSummary);
 
     // Si no quedan items, limpiar todo
     if (summary.itemCount === 0) {
@@ -169,7 +201,8 @@ export async function applyDiscountToSale(
 
     // TODO: Implementar guardado de descuento en DB
     // Por ahora retornamos el summary actual
-    const summary = await queries.calculateSaleSummary(sessionId);
+    const rawSummary = await queries.calculateSaleSummary(sessionId);
+    const summary = mapSaleSummary(rawSummary);
 
     return {
       summary,

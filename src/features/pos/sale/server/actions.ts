@@ -72,6 +72,8 @@ export async function addToSaleAction(
       quantity,
     });
 
+    console.log("🧠 [POS Sale Action] addToSaleAction | validated", validated);
+
     // Agregar item
     const { item, summary } = await service.addItemWithValidation(
       validated.sessionId,
@@ -79,8 +81,13 @@ export async function addToSaleAction(
       validated.quantity
     );
 
+    console.log("🧠 [POS Sale Action] addToSaleAction | item", item);
+    console.log("🧠 [POS Sale Action] addToSaleAction | summary", summary);
+
     // Obtener sale completa actualizada
     const { sale } = await service.getSaleWithSummary(validated.sessionId);
+
+    console.log("🧠 [POS Sale Action] addToSaleAction | full sale", sale);
 
     // Revalidate (opcional, depende de tu setup)
     revalidatePath("/pos");

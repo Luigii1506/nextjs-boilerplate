@@ -11,7 +11,7 @@
 
 import React, { useState } from "react";
 import { useSearchProducts, useCategories } from "../../../hooks";
-import { useSaleStore, useSaleActions } from "../../../stores/saleStore";
+import { useSaleStatus, useSaleActions } from "@/features/pos";
 import { usePOSUI } from "../../../context";
 import { formatCurrency } from "../../../utils";
 import type { ProductForCustomer } from "@/features/storefront/types";
@@ -30,7 +30,7 @@ export const BrowseTab: React.FC = () => {
   });
 
   // Zustand store
-  const isAddingItem = useSaleStore((state) => state.isLoading);
+  const { isLoading: isSaleUpdating } = useSaleStatus();
   const { addItem } = useSaleActions();
 
   const { setActiveTab } = usePOSUI();
@@ -154,12 +154,12 @@ export const BrowseTab: React.FC = () => {
                   {/* Add Button */}
                   <button
                     onClick={() => handleAddToSale(product)}
-                    disabled={product.stock === 0 || isAddingItem}
+                    disabled={product.stock === 0 || isSaleUpdating}
                     className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors"
                   >
                     {product.stock === 0
                       ? "Sin stock"
-                      : isAddingItem
+                      : isSaleUpdating
                         ? "Agregando..."
                         : "Agregar"}
                   </button>

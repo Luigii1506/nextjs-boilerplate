@@ -18,25 +18,20 @@ import {
 import { cn } from "@/shared/utils";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { useStorefrontUI } from "../../../context";
-import { useCartContext } from "@/features/storefront/cart";
+import { useCart } from "@/features/storefront/cart";
 import { CartBadge } from "../../features/cart";
 
 export const StorefrontHeader: React.FC = () => {
   const { globalSearchTerm, setGlobalSearchTerm, setActiveTab } =
     useStorefrontUI();
   const { user: authUser, isAuthenticated } = useAuth();
-  const { summary, isLoading: isCartLoading } = useCartContext();
+  const {
+    itemCount,
+    totalAmount,
+    isLoading: isCartLoading,
+    formatPrice,
+  } = useCart();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
-
-  const itemCount = summary?.itemCount || 0;
-  const totalAmount = summary?.total || 0;
-
-  const formatPrice = (amount: number) => {
-    return new Intl.NumberFormat("es-MX", {
-      style: "currency",
-      currency: "MXN",
-    }).format(amount);
-  };
 
   const handleLogin = () => {
     setActiveTab("account");

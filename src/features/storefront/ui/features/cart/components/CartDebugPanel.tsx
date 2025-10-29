@@ -15,7 +15,7 @@ import { useCart } from "@/features/storefront/cart";
 import { useAuth } from "@/shared/hooks/useAuth";
 
 export const CartDebugPanel: React.FC = () => {
-  // Use TanStack Query cart hook instead of UltraFastCart context
+  // Use cart Zustand store
   const { cart, summary, items, isLoading, formatPrice } = useCart();
 
   const { isAuthenticated, user } = useAuth();
@@ -65,7 +65,7 @@ export const CartDebugPanel: React.FC = () => {
           {formatPrice(totalAmount || 0)}
         </div>
 
-        {/* Loading States - TanStack Query */}
+        {/* Loading States - Zustand Store */}
         <div>
           <span className="text-yellow-400">Loading:</span>{" "}
           {isLoading ? (

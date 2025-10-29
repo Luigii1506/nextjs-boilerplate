@@ -123,6 +123,7 @@ export type CheckoutSessionSchema = z.infer<typeof checkoutSessionSchema>;
 export const createOrderSchema = z.object({
   cartId: z.string().cuid("Invalid cart ID"),
   userId: z.string().cuid().optional(),
+  sessionId: z.string().min(1, "Session ID is required").optional(),
 
   customerInfo: customerInfoSchema.refine(
     (data) => {
@@ -150,6 +151,7 @@ export type CreateOrderSchema = z.infer<typeof createOrderSchema>;
 
 export const calculateOrderSchema = z.object({
   cartId: z.string().cuid("Invalid cart ID"),
+  sessionId: z.string().min(1).optional(),
   shippingAddress: addressSchema.optional(),
   shippingMethodId: z.string().optional(),
   discountCodes: z.array(z.string()).optional(),

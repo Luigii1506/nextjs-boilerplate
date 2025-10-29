@@ -93,8 +93,32 @@ export async function processPaymentAction(
     const transactionNumber = generateTransactionNumber(sequenceNumber);
 
     // 7. Validar con schema
-    const validated = CreatePOSTransactionSchema.parse({
+    const taxRate = summary.taxRate ?? 0;
+
+    const normalizedItems = cart.items.map((item) => {
+      const unitPrice = Number(item.unitPrice ?? 0);
+      const quantity = item.quantity ?? 0;
+      const discount = Number((item as any).discount ?? 0);
+      const subtotal = Math.round(unitPrice * quantity * 100) / 100;
+      const tax = Math.round(subtotal * taxRate * 100) / 100;
+      const total = Math.round((subtotal + tax - discount) * 100) / 100;
+
+      return {
+        productId: item.productId,
+        productSku: item.product?.sku ?? "UNKNOWN",
+        productName: item.product?.name ?? "Producto",
+        quantity,
+        unitPrice,
+        discount,
+        subtotal,
+        tax,
+        total,
+      };
+    });
+
+    const parsedInput = {
       sessionId,
+      cartId: cart.id,
       type: "SALE",
       paymentMethod,
       subtotal: summary.subtotal,
@@ -104,36 +128,48 @@ export async function processPaymentAction(
       amountPaid,
       changeDue,
       notes,
-      referenceNumber,
-      items: cart.items.map((item) => ({
-        productId: item.productId,
-        productSku: item.product.sku,
-        productName: item.product.name,
-        quantity: item.quantity,
-        unitPrice: Number(item.unitPrice),
-        discount: Number(item.discount || 0),
-        subtotal: Number(item.subtotal),
-        total: Number(item.total),
-      })),
+      paymentReference: referenceNumber,
+      items: normalizedItems,
+    };
+
+    console.log("🧠 [POS Payment Action] Parsed payload before validation", parsedInput);
+
+    CreatePOSTransactionSchema.parse(parsedInput);
+
+    console.log("🧠 [POS Payment Action] Payload validated successfully");
+    const roundedSubtotal = Number(((summary.subtotal ?? 0) + Number.EPSILON).toFixed(2));
+    const roundedTax = Number(((summary.tax ?? 0) + Number.EPSILON).toFixed(2));
+    const roundedDiscount = Number(((summary.discount ?? 0) + Number.EPSILON).toFixed(2));
+    const roundedTotal = Number(((summary.total ?? 0) + Number.EPSILON).toFixed(2));
+    const roundedAmountPaid = Math.round((parsedInput.amountPaid ?? amountPaid) * 100) / 100;
+    const roundedChangeDue = Math.round(changeDue * 100) / 100;
+
+    console.log("🧠 [POS Payment Action] Totals used for transaction", {
+      roundedSubtotal,
+      roundedTax,
+      roundedDiscount,
+      roundedTotal,
+      roundedAmountPaid,
+      roundedChangeDue,
     });
 
     // 8. Crear transacción en la DB
     const transaction = await prisma.pOSTransaction.create({
       data: {
-        sessionId: validated.sessionId,
+        sessionId: parsedInput.sessionId,
         transactionNumber,
-        type: validated.type,
-        paymentMethod: validated.paymentMethod,
-        subtotal: validated.subtotal,
-        tax: validated.tax,
-        discount: validated.discount,
-        total: validated.total,
-        amountPaid: validated.amountPaid,
-        changeDue: validated.changeDue,
-        notes: validated.notes,
-        referenceNumber: validated.referenceNumber,
+        type: parsedInput.type,
+        paymentMethod: parsedInput.paymentMethod,
+        subtotal: roundedSubtotal || 0,
+        tax: roundedTax || 0,
+        discount: roundedDiscount || 0,
+        total: roundedTotal || 0,
+        amountPaid: roundedAmountPaid || 0,
+        changeDue: roundedChangeDue || 0,
+        notes: parsedInput.notes,
+        paymentReference: parsedInput.paymentReference ?? null,
         items: {
-          create: validated.items.map((item) => ({
+          create: normalizedItems.map((item) => ({
             productId: item.productId,
             productSku: item.productSku,
             productName: item.productName,
@@ -141,6 +177,7 @@ export async function processPaymentAction(
             unitPrice: item.unitPrice,
             discount: item.discount,
             subtotal: item.subtotal,
+            tax: item.tax,
             total: item.total,
           })),
         },

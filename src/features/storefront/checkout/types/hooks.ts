@@ -120,6 +120,7 @@ export interface UseCheckoutActionsReturn {
   confirmOrder: (orderId: string) => Promise<Order | null>;
   calculateOrder: (
     cartId: string,
+    sessionId?: string | null,
     shippingAddress?: Address,
     shippingMethodId?: string,
     discountCodes?: string[]
@@ -180,7 +181,7 @@ export interface UseCheckoutValidationReturn {
 // 🎯 CHECKOUT CONTEXT TYPE
 // ========================
 
-export interface CheckoutContextType {
+export interface CheckoutStoreValue {
   // State
   session: CheckoutSession | null;
   cart: CartWithItems | null;
@@ -225,9 +226,11 @@ export interface CheckoutContextType {
   setCustomerNotes: (notes: string) => void;
 
   // Actions - Process
-  calculateOrder: () => Promise<void>;
+  calculateOrder: (discountCodes?: string[]) => Promise<OrderCalculation | null>;
   createOrder: () => Promise<Order | null>;
   processPayment: (
+    orderId: string,
+    paymentMethodId: string,
     paymentData: PaymentData
   ) => Promise<{ success: boolean; error?: string }>;
   resetCheckout: () => void;

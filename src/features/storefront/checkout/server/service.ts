@@ -56,18 +56,22 @@ export async function createOrderService(
   console.log("🏢 [CHECKOUT SERVICE] Creating order:", {
     cartId: input.cartId,
     userId: input.userId,
+    sessionId: input.sessionId,
     customerEmail: input.customerInfo.email,
     shippingMethodId: input.shippingMethodId,
     paymentMethodId: input.paymentMethodId,
   });
 
   try {
+    const session = await getServerSession();
+
     // 1. Get and validate cart
     const cart = await getCartService({
       userId: input.userId,
-      sessionId: input.cartId, // Use cartId as sessionId for guest users
+      sessionId: input.userId ? undefined : input.sessionId,
+      session,
     });
-    if (!cart || !cart.items || cart.items.length === 0) {
+    if (!cart || cart.id !== input.cartId || !cart.items || cart.items.length === 0) {
       throw new Error("Cart is empty or not found");
     }
 
@@ -198,11 +202,13 @@ export async function calculateOrderService(
   userId?: string,
   shippingAddress?: Address,
   shippingMethodId?: string,
-  discountCodes?: string[]
+  discountCodes?: string[],
+  sessionId?: string | null
 ): Promise<OrderCalculation> {
   console.log("🧮 [CHECKOUT SERVICE] Calculating order:", {
     cartId,
     userId,
+    sessionId,
     hasShippingAddress: !!shippingAddress,
     shippingMethodId,
     discountCodes,
@@ -210,9 +216,18 @@ export async function calculateOrderService(
 
   try {
     // 1. Get cart
-    const cart = await getCartService(cartId, userId);
+    const session = await getServerSession();
+    const cart = await getCartService({
+      userId,
+      sessionId: userId ? undefined : sessionId ?? undefined,
+      session,
+    });
     if (!cart) {
       throw new Error("Cart not found");
+    }
+
+    if (cart.id !== cartId) {
+      throw new Error("Cart mismatch detected");
     }
 
     // 2. Calculate shipping cost

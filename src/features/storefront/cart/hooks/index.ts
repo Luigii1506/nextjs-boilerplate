@@ -8,8 +8,4 @@
  * @version 2.0.0 - Cart Feature (Cleaned)
  */
 
-// Note: Cart uses Context API directly (useCartContext)
-// Custom hooks have been removed as they were not being used
-// and added unnecessary complexity.
-
-export {};
+// Hooks re-exported via Zustand store (see state/cart.store.ts)

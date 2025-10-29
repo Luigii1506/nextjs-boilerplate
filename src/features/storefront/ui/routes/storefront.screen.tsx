@@ -14,9 +14,8 @@ import "../styles/animations.css";
 
 import React from "react";
 import { cn } from "@/shared/utils";
-import { StorefrontUIProvider } from "../../context";
-import { CheckoutProvider } from "@/features/storefront/checkout";
-import { CartProvider } from "@/features/storefront/cart";
+import { useCheckoutInitializer } from "@/features/storefront/checkout";
+import { useCartInitializer } from "@/features/storefront/cart";
 import { CartDebugPanel } from "../features/cart";
 import {
   StorefrontHeader,
@@ -54,15 +53,12 @@ interface StorefrontScreenProps {
 }
 
 const StorefrontScreen: React.FC<StorefrontScreenProps> = ({ className }) => {
+  useCartInitializer();
+  useCheckoutInitializer();
+
   return (
     <div className={cn("w-full", className)}>
-      <CartProvider>
-        <CheckoutProvider>
-          <StorefrontUIProvider>
-            <StorefrontSPAContent />
-          </StorefrontUIProvider>
-        </CheckoutProvider>
-      </CartProvider>
+      <StorefrontSPAContent />
     </div>
   );
 };

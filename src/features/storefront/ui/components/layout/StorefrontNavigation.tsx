@@ -20,7 +20,7 @@ import {
 import { cn } from "@/shared/utils";
 import { useStorefrontUI, STOREFRONT_TABS, type TabId } from "../../../context";
 import { useStorefrontData } from "../../../hooks";
-import { useCartContext } from "@/features/storefront/cart";
+import { useCartSummary } from "@/features/storefront/cart";
 
 const ICON_MAP = {
   Home,
@@ -35,10 +35,10 @@ const ICON_MAP = {
 export const StorefrontNavigation: React.FC = () => {
   const { activeTab, setActiveTab } = useStorefrontUI();
   const { data } = useStorefrontData();
-  const { summary } = useCartContext();
+  const { itemCount } = useCartSummary();
 
   const wishlist = data?.wishlist || [];
-  const cartItemCount = summary?.itemCount || 0;
+  const cartItemCount = itemCount || 0;
 
   // Calculate notification counts for each tab
   const notificationCounts = useMemo(

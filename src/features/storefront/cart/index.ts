@@ -14,11 +14,17 @@ export * from "./types";
 // 🎬 Server Layer (Actions, Services, Queries)
 export * from "./server";
 
-// 🌍 Context Layer (Primary state management)
-export * from "./context";
-
-// 🔗 Compatibility alias: useCart → useCartContext
-export { useCartContext as useCart } from "./context";
+// 🧠 Zustand Store (primary state management)
+export {
+  useCartStore,
+  useCart,
+  useCartActions,
+  useCartItems,
+  useCartSummary,
+  useCartMetadata,
+  useCartStatus,
+  useCartInitializer,
+} from "./state/cart.store";
 
 // 🛠️ Utilities Layer
 export * from "./utils";
@@ -34,7 +40,6 @@ export type {
   RemoveFromCartInput,
   CartValidationResult,
   CartState,
-  CartContextValue,
 } from "./types";
 
 // 🚀 Main Actions (most commonly used)
@@ -45,9 +50,6 @@ export {
   removeFromCartAction,
   clearCartAction,
 } from "./server";
-
-// 🌍 Context (primary state management)
-export { CartProvider, useCartContext } from "./context";
 
 // 🎨 UI Components are now in @/features/storefront/ui/features/cart
 // Import from: import { CartTab, CartBadge, CartDebugPanel } from "@/features/storefront/ui/features/cart"

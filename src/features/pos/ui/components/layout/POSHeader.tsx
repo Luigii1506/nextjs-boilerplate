@@ -11,7 +11,7 @@
 
 import React from "react";
 import { useAuth } from "@/shared/hooks/useAuth";
-import { useSessionStore, useIsSessionOpen } from "../../../stores/sessionStore";
+import { useSessionStore, useIsSessionOpen } from "@/features/pos";
 import { usePOSUI } from "../../../context";
 import { DarkModeToggle } from "@/shared/ui/components/DarkModeToggle";
 import { formatCurrency } from "../../../utils";

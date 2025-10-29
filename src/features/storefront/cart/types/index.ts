@@ -71,8 +71,6 @@ export type {
   UseCartPersistenceReturn,
   UseCartCalculationsProps,
   UseCartCalculationsReturn,
-  CartProviderProps,
-  CartContextValue,
 } from "./hooks";
 
 // 🎯 Query Keys (re-export for convenience)
@@ -176,5 +174,4 @@ export interface CartQueryResult {
 }
 
 export default {};
-
 

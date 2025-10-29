@@ -15,18 +15,14 @@ export * from "./schemas";
 // 🏢 SERVER LAYER
 export * from "./server";
 
-// 🪝 HOOKS
-export * from "./hooks/checkout/useCheckoutState";
-export * from "./hooks/checkout/useCheckoutActions";
-
-// 🌍 CONTEXT
-export * from "./context/CheckoutContext";
-
-// 🎯 QUICK IMPORTS (Aliases for common usage)
+// 🪝 STORE (Zustand)
 export {
-  CheckoutProvider,
-  useCheckoutContext,
-} from "./context/CheckoutContext";
+  useCheckoutStore,
+  useCheckout,
+  useCheckoutActions,
+  useCheckoutState,
+  useCheckoutInitializer,
+} from "./state/checkout.store";
 
 // 🎨 UI Components are now in @/features/storefront/ui/features/checkout
 // Import from: import { CheckoutTab } from "@/features/storefront/ui/features/checkout"

@@ -10,7 +10,13 @@
  */
 
 import React from "react";
-import { useSaleStore, useSaleItems, useSaleSummary, useItemCount, useHasItems, useCanCheckout, useSaleActions } from "../../../stores/saleStore";
+import {
+  useSaleItems,
+  useSaleSummary,
+  useSaleMetrics,
+  useSaleStatus,
+  useSaleActions,
+} from "@/features/pos";
 import { usePOSUI } from "../../../context";
 import { formatCurrency } from "../../../utils";
 
@@ -18,11 +24,8 @@ export const SaleTab: React.FC = () => {
   // Zustand store
   const items = useSaleItems();
   const summary = useSaleSummary();
-  const isLoading = useSaleStore((state) => state.isLoading);
-  const itemCount = useItemCount();
-  const total = useSaleStore((state) => state.total());
-  const hasItems = useHasItems();
-  const canCheckout = useCanCheckout();
+  const { isLoading } = useSaleStatus();
+  const { itemCount, totalAmount, hasItems, canCheckout } = useSaleMetrics();
   const { updateQuantity, removeItem, clearSale } = useSaleActions();
 
   const { setActiveTab } = usePOSUI();
@@ -183,7 +186,7 @@ export const SaleTab: React.FC = () => {
           <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-2">
             <div className="flex justify-between text-xl font-bold text-gray-900 dark:text-gray-100">
               <span>Total:</span>
-              <span>{formatCurrency(total)}</span>
+              <span>{formatCurrency(totalAmount)}</span>
             </div>
           </div>
         </div>

@@ -11,7 +11,7 @@
  */
 
 import React, { useEffect, useState } from "react";
-import { useSessionStore, useIsSessionOpen, useSessionActions } from "../../stores/sessionStore";
+import { useSessionStore, useIsSessionOpen, useSessionActions } from "@/features/pos";
 import { usePOSUI } from "../../context";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { useRouter } from "next/navigation";
