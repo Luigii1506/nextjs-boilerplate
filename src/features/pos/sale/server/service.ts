@@ -124,7 +124,11 @@ export async function updateQuantityWithValidation(
     }
 
     // Actualizar item
-    const item = await queries.updateSaleItemQuantity(itemId, quantity);
+    const item = await queries.updateSaleItemQuantity(
+      sessionId,
+      itemId,
+      quantity
+    );
 
     // Recalcular summary
     const rawSummary = await queries.calculateSaleSummary(sessionId);
@@ -153,7 +157,7 @@ export async function removeItemWithCleanup(
 ) {
   try {
     // Eliminar item
-    await queries.removeSaleItem(itemId);
+    await queries.removeSaleItem(sessionId, itemId);
 
     // Recalcular summary
     const rawSummary = await queries.calculateSaleSummary(sessionId);

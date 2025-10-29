@@ -11,3 +11,8 @@ export {
   setupProfileListener,
   setupAuditEventListener,
 } from "./eventListeners";
+export {
+  roundCurrency,
+  computeLineTotals,
+  computeCartTotal,
+} from "./pricing";

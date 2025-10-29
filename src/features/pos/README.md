@@ -196,6 +196,7 @@ src/features/pos/
 - Update quantities
 - Apply discounts
 - Real-time total calculation
+- Dedicated Prisma models (`pos_carts`, `pos_cart_items`, `pos_cart_adjustments`) isolated from storefront carts
 
 ### 4. Payment Processing
 - Multiple payment methods (Cash, Card, Transfer)

@@ -34,6 +34,7 @@ model POSSession {
 
   // Relations
   user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  carts        POSCart[]
   transactions POSTransaction[]
 
   @@index([userId, status])
@@ -119,6 +120,103 @@ enum POSPaymentMethod {
   CARD
   TRANSFER
   MIXED
+}
+
+// ========================================
+// POS CART
+// ========================================
+
+model POSCart {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessionId String
+  status    POSCartStatus @default(ACTIVE)
+
+  // Customer (optional)
+  customerId    String?
+  customerName  String?
+  customerEmail String?
+
+  // Totals snapshot
+  itemCount Int     @default(0)
+  subtotal  Decimal @default(0) @db.Decimal(10, 2)
+  discount  Decimal @default(0) @db.Decimal(10, 2)
+  fees      Decimal @default(0) @db.Decimal(10, 2)
+  tax       Decimal @default(0) @db.Decimal(10, 2)
+  total     Decimal @default(0) @db.Decimal(10, 2)
+
+  // Metadata
+  deviceId   String?
+  locationId String?
+  expiresAt  DateTime
+
+  // Relations
+  session     POSSession         @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  items       POSCartItem[]
+  adjustments POSCartAdjustment[]
+
+  @@index([sessionId, status])
+  @@index([expiresAt])
+  @@map("pos_carts")
+}
+
+enum POSCartStatus {
+  ACTIVE
+  CHECKED_OUT
+  ABANDONED
+  TRANSFERRED
+}
+
+model POSCartItem {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cartId    String
+  productId String
+
+  productSku   String?
+  productName  String
+  quantity     Int     @default(1)
+  unitPrice    Decimal @db.Decimal(10, 2)
+  discount     Decimal @default(0) @db.Decimal(10, 2)
+  tax          Decimal @default(0) @db.Decimal(10, 2)
+  subtotal     Decimal @db.Decimal(10, 2)
+  total        Decimal @db.Decimal(10, 2)
+  metadata     Json?
+
+  cart    POSCart @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@unique([cartId, productId])
+  @@index([productId])
+  @@map("pos_cart_items")
+}
+
+model POSCartAdjustment {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  cartId String
+  type   POSCartAdjustmentType
+  label  String?
+  amount Decimal @db.Decimal(10, 2)
+  metadata Json?
+
+  cart POSCart @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+  @@index([cartId])
+  @@map("pos_cart_adjustments")
+}
+
+enum POSCartAdjustmentType {
+  DISCOUNT_PERCENTAGE
+  DISCOUNT_FIXED
+  SURCHARGE
+  SERVICE_FEE
+  TAX_OVERRIDE
 }
 
 // ========================================

@@ -41,6 +41,8 @@ export function mapRawCartToCart(rawCart: RawCartQueryResult): Cart {
 
       // Convert Prisma Decimals to numbers
       subtotal: Number(rawCart.subtotal),
+      discountAmount: Number(rawCart.discountAmount ?? 0),
+      feesAmount: Number(rawCart.feesAmount ?? 0),
       taxAmount: Number(rawCart.taxAmount),
       total: Number(rawCart.total),
 
@@ -84,6 +86,8 @@ export function mapRawCartToCartWithItems(
 
       // Convert Prisma Decimals to numbers
       subtotal: Number(rawCart.subtotal),
+      discountAmount: Number(rawCart.discountAmount ?? 0),
+      feesAmount: Number(rawCart.feesAmount ?? 0),
       taxAmount: Number(rawCart.taxAmount),
       total: Number(rawCart.total),
 
@@ -383,5 +387,4 @@ export function cartToApiResponse(cart: CartWithItems) {
 }
 
 export default {};
-
 

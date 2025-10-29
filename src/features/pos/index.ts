@@ -22,6 +22,9 @@ export type {
   POSPaymentMethod,
   POSCart,
   POSCartItem,
+  POSCartAdjustment,
+  POSCartAdjustmentType,
+  POSCartStatus,
 } from "./types/models";
 
 export type {
@@ -78,6 +81,7 @@ export {
   usePOSSale,
   useSaleActions,
   useSaleItems,
+  useSaleAdjustments,
   useSaleSummary,
   useSaleMetrics,
   useSaleStatus,

@@ -23,6 +23,7 @@ import {
   validateSaleForCheckoutAction,
 } from "../server/actions";
 import type {
+  POSSaleAdjustment,
   POSSaleItemWithProduct,
   POSSaleSummary,
 } from "../types";
@@ -47,6 +48,7 @@ interface SaleStoreState {
   saleId: string | null;
   items: POSSaleItemWithProduct[];
   summary: POSSaleSummary;
+  adjustments: POSSaleAdjustment[];
 
   itemCount: number;
   uniqueItems: number;
@@ -94,6 +96,7 @@ const emptySummary: POSSaleSummary = {
   itemCount: 0,
   subtotal: 0,
   discount: 0,
+  fees: 0,
   tax: 0,
   taxRate: 0,
   total: 0,
@@ -120,6 +123,7 @@ const normaliseItems = (
     const quantity = toNumber(rawItem.quantity);
     const unitPrice = toNumber(rawItem.unitPrice);
     const discount = toNumber(rawItem.discount);
+    const tax = toNumber(rawItem.tax);
     const subtotal =
       rawItem.subtotal != null
         ? toNumber(rawItem.subtotal)
@@ -132,10 +136,26 @@ const normaliseItems = (
       quantity,
       unitPrice,
       discount,
+      tax,
       subtotal,
       total,
     };
   });
+};
+
+const normaliseAdjustments = (
+  sale: SaleSnapshot
+): POSSaleAdjustment[] => {
+  const rawAdjustments = (sale as any)?.adjustments;
+
+  if (!rawAdjustments || !Array.isArray(rawAdjustments)) {
+    return [];
+  }
+
+  return rawAdjustments.map((adjustment: any) => ({
+    ...adjustment,
+    amount: toNumber(adjustment.amount),
+  }));
 };
 
 const normaliseSummary = (
@@ -150,6 +170,7 @@ const normaliseSummary = (
       itemCount,
       subtotal,
       discount: 0,
+      fees: 0,
       tax: Math.max(0, total - subtotal),
       taxRate: itemCount > 0 ? 0.16 : 0,
       total,
@@ -164,6 +185,7 @@ const normaliseSummary = (
     itemCount,
     subtotal: toNumber(summary.subtotal),
     discount: toNumber(summary.discount),
+    fees: toNumber(summary.fees ?? 0),
     tax: toNumber(summary.tax),
     taxRate: summary.taxRate ?? 0,
     total: toNumber(summary.total ?? summary.subtotal),
@@ -175,6 +197,7 @@ const createInitialState = (): SaleStoreState => ({
   saleId: null,
   items: [],
   summary: { ...emptySummary },
+  adjustments: [],
   itemCount: 0,
   uniqueItems: 0,
   totalAmount: 0,
@@ -224,6 +247,7 @@ export const useSaleStore = create<SaleStore>()(
               saleId: null,
               items: [],
               summary: { ...emptySummary },
+              adjustments: [],
               itemCount: 0,
               uniqueItems: 0,
               totalAmount: 0,
@@ -236,6 +260,7 @@ export const useSaleStore = create<SaleStore>()(
           }
 
           const items = normaliseItems(sale);
+          const adjustments = normaliseAdjustments(sale);
           const summary = normaliseSummary(summaryOverride, items);
           const itemCount = summary.itemCount;
           const uniqueItems = items.length;
@@ -248,6 +273,7 @@ export const useSaleStore = create<SaleStore>()(
             saleId: sale.id ?? null,
             items,
             summary,
+            adjustments,
             itemCount,
             uniqueItems,
             totalAmount,
@@ -558,6 +584,9 @@ export const useSaleItems = () =>
 export const useSaleSummary = () =>
   useSaleStore((state) => state.summary);
 
+export const useSaleAdjustments = () =>
+  useSaleStore((state) => state.adjustments);
+
 export const useSaleMetrics = () => {
   const itemCount = useSaleStore((state) => state.itemCount);
   const uniqueItems = useSaleStore((state) => state.uniqueItems);
@@ -662,6 +691,7 @@ export const usePOSSale = () => {
   const sessionId = useSaleSessionId();
   const items = useSaleItems();
   const summary = useSaleSummary();
+  const adjustments = useSaleAdjustments();
   const metrics = useSaleMetrics();
   const status = useSaleStatus();
   const actions = useSaleActions();
@@ -671,11 +701,12 @@ export const usePOSSale = () => {
       sessionId,
       items,
       summary,
+      adjustments,
       ...metrics,
       ...status,
       ...actions,
     }),
-    [actions, items, metrics, sessionId, status, summary]
+    [actions, adjustments, items, metrics, sessionId, status, summary]
   );
 };
 

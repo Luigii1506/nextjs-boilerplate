@@ -17,6 +17,7 @@ export type {
   POSSaleItem,
   POSSaleItemWithProduct,
   POSSaleSummary,
+  POSSaleAdjustment,
   POSSaleState,
   POSSaleContextValue,
   AddToSaleResponse,

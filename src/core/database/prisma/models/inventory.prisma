@@ -63,6 +63,7 @@ model Product {
 
   // 🏪 POS RELATIONS (active when using POS module)
   posTransactionItems POSTransactionItem[] // MODULE: pos
+  posCartItems        POSCartItem[]        // MODULE: pos
 
   @@index([categoryId])
   @@index([supplierId])

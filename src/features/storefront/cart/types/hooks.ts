@@ -292,6 +292,7 @@ export interface UseCartCalculationsReturn {
   taxAmount: number;
   shippingAmount: number;
   discountAmount: number;
+  feesAmount: number;
   total: number;
 
   // Formatted
@@ -299,6 +300,7 @@ export interface UseCartCalculationsReturn {
   formattedTaxAmount: string;
   formattedShippingAmount: string;
   formattedDiscountAmount: string;
+  formattedFeesAmount: string;
   formattedTotal: string;
 
   // Calculations
@@ -319,4 +321,3 @@ export interface UseCartCalculationsReturn {
 // Context-based types deprecated in favor of Zustand store.
 
 export default {};
-

@@ -178,6 +178,13 @@ export const SaleTab: React.FC = () => {
             </div>
           )}
 
+          {summary.fees > 0 && (
+            <div className="flex justify-between text-gray-600 dark:text-gray-400">
+              <span>Recargos / Servicios:</span>
+              <span>+{formatCurrency(summary.fees)}</span>
+            </div>
+          )}
+
           <div className="flex justify-between text-gray-600 dark:text-gray-400">
             <span>IVA ({(summary.taxRate * 100).toFixed(0)}%):</span>
             <span>{formatCurrency(summary.tax)}</span>

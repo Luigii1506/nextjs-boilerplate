@@ -12,11 +12,13 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/core/database/prisma";
-import type { Prisma } from "@prisma/client";
+import { POSCartStatus, type Prisma } from "@prisma/client";
 import { CreatePOSTransactionSchema } from "../../schemas";
 import { calculateChangeDue, generateTransactionNumber } from "../../schemas";
 import { validateSaleForCheckout } from "../../sale/server/service";
 import { calculateSaleSummary } from "../../sale/server/queries";
+import { finalizeCartCheckout } from "../../sale/server/cart.repository";
+import { roundCurrency } from "@/shared/utils/pricing";
 import type { ActionResult } from "@/shared/types";
 import type { ProcessPaymentInput, ProcessPaymentResult } from "../types";
 import { logger } from "@/shared/utils/logger";
@@ -67,15 +69,19 @@ export async function processPaymentAction(
       };
     }
 
-    // 2. Obtener el carrito/sale activo
-    const cart = await prisma.cart.findFirst({
-      where: { sessionId },
+    // 2. Obtener el carrito/sale activo (POS cart domain)
+    const cart = await prisma.pOSCart.findFirst({
+      where: {
+        sessionId,
+        status: POSCartStatus.ACTIVE,
+      },
       include: {
         items: {
           include: {
             product: true,
           },
         },
+        adjustments: true,
       },
     });
 
@@ -118,20 +124,27 @@ export async function processPaymentAction(
     const transactionNumber = generateTransactionNumber(sequenceNumber);
 
     // 7. Validar con schema
-    const taxRate = summary.taxRate ?? 0;
-
     const normalizedItems = cart.items.map((item) => {
       const unitPrice = Number(item.unitPrice ?? 0);
       const quantity = item.quantity ?? 0;
-      const discount = Number((item as any).discount ?? 0);
-      const subtotal = Math.round(unitPrice * quantity * 100) / 100;
-      const tax = Math.round(subtotal * taxRate * 100) / 100;
-      const total = Math.round((subtotal + tax - discount) * 100) / 100;
+      const discount = Number(item.discount ?? 0);
+      const subtotal =
+        item.subtotal !== undefined && item.subtotal !== null
+          ? Number(item.subtotal)
+          : Math.round(unitPrice * quantity * 100) / 100;
+      const tax =
+        item.tax !== undefined && item.tax !== null
+          ? Number(item.tax)
+          : Math.round(subtotal * (summary.taxRate ?? 0) * 100) / 100;
+      const total =
+        item.total !== undefined && item.total !== null
+          ? Number(item.total)
+          : Math.round((subtotal - discount + tax) * 100) / 100;
 
       return {
         productId: item.productId,
-        productSku: item.product?.sku ?? "UNKNOWN",
-        productName: item.product?.name ?? "Producto",
+        productSku: item.productSku ?? item.product?.sku ?? "UNKNOWN",
+        productName: item.productName ?? item.product?.name ?? "Producto",
         quantity,
         unitPrice,
         discount,
@@ -164,12 +177,12 @@ export async function processPaymentAction(
     CreatePOSTransactionSchema.parse(parsedInput);
 
     logger.debug("POS Payment Action: payload validated successfully");
-    const roundedSubtotal = Number(((summary.subtotal ?? 0) + Number.EPSILON).toFixed(2));
-    const roundedTax = Number(((summary.tax ?? 0) + Number.EPSILON).toFixed(2));
-    const roundedDiscount = Number(((summary.discount ?? 0) + Number.EPSILON).toFixed(2));
-    const roundedTotal = Number(((summary.total ?? 0) + Number.EPSILON).toFixed(2));
-    const roundedAmountPaid = Math.round((parsedInput.amountPaid ?? amountPaid) * 100) / 100;
-    const roundedChangeDue = Math.round(changeDue * 100) / 100;
+    const roundedSubtotal = roundCurrency(summary.subtotal ?? 0);
+    const roundedTax = roundCurrency(summary.tax ?? 0);
+    const roundedDiscount = roundCurrency(summary.discount ?? 0);
+    const roundedTotal = roundCurrency(summary.total ?? 0);
+    const roundedAmountPaid = roundCurrency(parsedInput.amountPaid ?? amountPaid);
+    const roundedChangeDue = roundCurrency(changeDue);
 
     logger.debug("POS Payment Action: totals derived for persistence", {
       roundedSubtotal,
@@ -226,14 +239,8 @@ export async function processPaymentAction(
       });
     }
 
-    // 10. Limpiar el carrito
-    await prisma.cartItem.deleteMany({
-      where: { cartId: cart.id },
-    });
-
-    await prisma.cart.delete({
-      where: { id: cart.id },
-    });
+    // 10. Finalizar carrito (marcar como checked-out y limpiar)
+    await finalizeCartCheckout(cart.id);
 
     // 11. Revalidar
     revalidatePath("/pos");

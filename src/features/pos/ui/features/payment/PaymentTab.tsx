@@ -229,8 +229,22 @@ export const PaymentTab: React.FC = () => {
             <span>Subtotal:</span>
             <span>{formatCurrency(summary.subtotal)}</span>
           </div>
+          {summary.discount > 0 && (
+            <div className="flex justify-between text-gray-600 dark:text-gray-400">
+              <span>Descuentos:</span>
+              <span>-{formatCurrency(summary.discount)}</span>
+            </div>
+          )}
+          {summary.fees > 0 && (
+            <div className="flex justify-between text-gray-600 dark:text-gray-400">
+              <span>Recargos / Servicios:</span>
+              <span>+{formatCurrency(summary.fees)}</span>
+            </div>
+          )}
           <div className="flex justify-between text-gray-600 dark:text-gray-400">
-            <span>IVA:</span>
+            <span>
+              IVA ({(summary.taxRate * 100).toFixed(0)}%):
+            </span>
             <span>{formatCurrency(summary.tax)}</span>
           </div>
           <div className="border-t border-gray-200 dark:border-gray-700 pt-2">

@@ -18,6 +18,7 @@ import type {
   UpdateCartItemInput,
   RemoveFromCartInput,
 } from "../types";
+import { computeCartTotal } from "@/shared/utils/pricing";
 
 // 🏷️ Raw query result interfaces (aligned with Prisma)
 export interface RawCartQueryResult {
@@ -25,6 +26,8 @@ export interface RawCartQueryResult {
   sessionId: string | null;
   userId: string | null;
   subtotal: any; // Prisma Decimal
+  discountAmount: any; // Prisma Decimal
+  feesAmount: any; // Prisma Decimal
   taxAmount: any; // Prisma Decimal
   total: any; // Prisma Decimal
   createdAt: Date;
@@ -231,6 +234,8 @@ export async function addToCartQuery(input: AddToCartInput): Promise<{
         // Only include userId OR sessionId, not both (due to @unique constraints)
         const cartData: any = {
           subtotal: totalPrice,
+          discountAmount: 0,
+          feesAmount: 0,
           taxAmount: 0, // Will be calculated in service layer
           total: totalPrice,
           expiresAt,
@@ -333,13 +338,22 @@ export async function addToCartQuery(input: AddToCartInput): Promise<{
         0
       );
       const newTaxAmount = 0; // TODO: Calculate tax
-      const newTotal = newSubtotal + newTaxAmount;
+      const currentDiscountAmount = Number((cart as any).discountAmount ?? 0);
+      const currentFeesAmount = Number((cart as any).feesAmount ?? 0);
+      const newTotal = computeCartTotal({
+        subtotal: newSubtotal,
+        discountAmount: currentDiscountAmount,
+        feesAmount: currentFeesAmount,
+        taxAmount: newTaxAmount,
+      });
 
       // 5. Update cart totals
       const updatedCart = await tx.cart.update({
         where: { id: cart.id },
         data: {
           subtotal: newSubtotal,
+          discountAmount: currentDiscountAmount,
+          feesAmount: currentFeesAmount,
           taxAmount: newTaxAmount,
           total: newTotal,
         },
@@ -483,13 +497,22 @@ export async function updateCartItemQuery(input: UpdateCartItemInput): Promise<{
         0
       );
       const newTaxAmount = 0; // TODO: Calculate tax
-      const newCartTotal = newSubtotal + newTaxAmount;
+      const currentDiscountAmount = Number((cart as any).discountAmount ?? 0);
+      const currentFeesAmount = Number((cart as any).feesAmount ?? 0);
+      const newCartTotal = computeCartTotal({
+        subtotal: newSubtotal,
+        discountAmount: currentDiscountAmount,
+        feesAmount: currentFeesAmount,
+        taxAmount: newTaxAmount,
+      });
 
       // 4. Update cart totals
       const updatedCart = await tx.cart.update({
         where: { id: cart.id },
         data: {
           subtotal: newSubtotal,
+          discountAmount: currentDiscountAmount,
+          feesAmount: currentFeesAmount,
           taxAmount: newTaxAmount,
           total: newCartTotal,
         },
@@ -585,13 +608,22 @@ export async function removeFromCartQuery(input: RemoveFromCartInput): Promise<{
         0
       );
       const newTaxAmount = 0; // TODO: Calculate tax
-      const newTotal = newSubtotal + newTaxAmount;
+      const currentDiscountAmount = Number((cart as any).discountAmount ?? 0);
+      const currentFeesAmount = Number((cart as any).feesAmount ?? 0);
+      const newTotal = computeCartTotal({
+        subtotal: newSubtotal,
+        discountAmount: currentDiscountAmount,
+        feesAmount: currentFeesAmount,
+        taxAmount: newTaxAmount,
+      });
 
       // 4. Update cart totals
       const updatedCart = await tx.cart.update({
         where: { id: cart.id },
         data: {
           subtotal: newSubtotal,
+          discountAmount: currentDiscountAmount,
+          feesAmount: currentFeesAmount,
           taxAmount: newTaxAmount,
           total: newTotal,
         },
@@ -689,6 +721,8 @@ export async function clearCartQuery(options: {
         where: { id: cart.id },
         data: {
           subtotal: 0,
+          discountAmount: 0,
+          feesAmount: 0,
           taxAmount: 0,
           total: 0,
         },

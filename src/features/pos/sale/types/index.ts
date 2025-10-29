@@ -10,6 +10,7 @@
  */
 
 import type { ProductForCustomer } from "../../../storefront/types";
+import type { POSCartAdjustmentType } from "../../types/models";
 
 // ========================================
 // SALE ITEM
@@ -26,6 +27,7 @@ export interface POSSaleItem {
   quantity: number;
   unitPrice: number;
   discount: number;
+  tax: number;
   subtotal: number;
   total: number;
 
@@ -33,6 +35,7 @@ export interface POSSaleItem {
   product?: ProductForCustomer;
 
   // Metadata
+  metadata?: Record<string, unknown>;
   addedAt: Date;
   updatedAt: Date;
 }
@@ -55,9 +58,23 @@ export interface POSSaleSummary {
   itemCount: number;
   subtotal: number;
   discount: number;
+  fees: number;
   tax: number;
   taxRate: number;
   total: number;
+}
+
+// ========================================
+// SALE ADJUSTMENT
+// ========================================
+
+export interface POSSaleAdjustment {
+  id: string;
+  type: POSCartAdjustmentType;
+  label: string | null;
+  amount: number;
+  metadata?: Record<string, unknown>;
+  createdAt: Date;
 }
 
 // ========================================
@@ -71,10 +88,12 @@ export interface POSSaleState {
   sessionId: string | null;
   items: POSSaleItemWithProduct[];
   summary: POSSaleSummary;
+  adjustments: POSSaleAdjustment[];
 
   // Customer (optional)
   customerId: string | null;
   customerName: string | null;
+  customerEmail: string | null;
 
   // Metadata
   notes: string | null;
@@ -94,6 +113,7 @@ export interface POSSaleContextValue {
   // State
   items: POSSaleItemWithProduct[];
   summary: POSSaleSummary;
+  adjustments: POSSaleAdjustment[];
   itemCount: number;
   total: number;
   isLoading: boolean;

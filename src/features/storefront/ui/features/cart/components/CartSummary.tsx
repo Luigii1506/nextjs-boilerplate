@@ -307,6 +307,27 @@ export function CartSummary({
                 </span>
               </div>
             )}
+
+            {/* Fees */}
+            {(priceBreakdown?.fees?.amount || summary.feesAmount || 0) > 0 && (
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-1">
+                  <span className="text-gray-600 dark:text-gray-400">
+                    Fees
+                  </span>
+                  {priceBreakdown?.fees?.description && (
+                    <span className="text-xs text-gray-500 dark:text-gray-500">
+                      ({priceBreakdown.fees.description})
+                    </span>
+                  )}
+                </div>
+                <span className="text-gray-900 dark:text-gray-100">
+                  +
+                  {priceBreakdown?.fees?.formatted ||
+                    `$${(summary.feesAmount || 0).toFixed(2)}`}
+                </span>
+              </div>
+            )}
           </div>
         )}
 

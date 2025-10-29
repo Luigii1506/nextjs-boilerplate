@@ -86,7 +86,8 @@ const buildSummaryFromCart = (cartData: CartWithItems): CartSummary => ({
   subtotal: Number(cartData.subtotal ?? 0),
   taxAmount: Number(cartData.taxAmount ?? 0),
   shippingAmount: 0,
-  discountAmount: 0,
+  discountAmount: Number(cartData.discountAmount ?? 0),
+  feesAmount: Number(cartData.feesAmount ?? 0),
   total: Number(cartData.total ?? cartData.subtotal ?? 0),
 });
 

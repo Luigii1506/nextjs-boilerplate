@@ -151,25 +151,39 @@ export interface POSTransactionWithDetails extends POSTransaction {
 
 /**
  * POS Cart - Active cart for current transaction
- * Similar to storefront cart but optimized for POS
+ * Persisted in dedicated POS tables (isolated from the storefront cart).
  */
 export interface POSCart {
   id: string;
   sessionId: string | null;
+  status: POSCartStatus;
   items: POSCartItem[];
   subtotal: number;
   discount: number;
+  fees: number;
   tax: number;
   total: number;
 
   // Customer (optional)
   customerId: string | null;
   customerName: string | null;
+  customerEmail: string | null;
 
   // Metadata
+  adjustments: POSCartAdjustment[];
+  expiresAt: Date;
+  deviceId: string | null;
+  locationId: string | null;
   notes: string | null;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export enum POSCartStatus {
+  ACTIVE = "ACTIVE",
+  CHECKED_OUT = "CHECKED_OUT",
+  ABANDONED = "ABANDONED",
+  TRANSFERRED = "TRANSFERRED",
 }
 
 /**
@@ -179,14 +193,18 @@ export interface POSCartItem {
   id: string;
   cartId: string;
   productId: string;
+  productSku: string;
+  productName: string;
   quantity: number;
   unitPrice: number;
   discount: number;
+  tax: number;
   subtotal: number;
   total: number;
+  metadata?: Record<string, unknown>;
 
   // Product info (for display)
-  product: ProductForCustomer;
+  product?: ProductForCustomer;
 }
 
 /**
@@ -196,6 +214,24 @@ export interface POSCartWithComputed extends POSCart {
   itemCount: number;
   hasItems: boolean;
   canCheckout: boolean;
+}
+
+export interface POSCartAdjustment {
+  id: string;
+  cartId: string;
+  type: POSCartAdjustmentType;
+  label: string | null;
+  amount: number;
+  metadata?: Record<string, unknown>;
+  createdAt: Date;
+}
+
+export enum POSCartAdjustmentType {
+  DISCOUNT_PERCENTAGE = "DISCOUNT_PERCENTAGE",
+  DISCOUNT_FIXED = "DISCOUNT_FIXED",
+  SURCHARGE = "SURCHARGE",
+  SERVICE_FEE = "SERVICE_FEE",
+  TAX_OVERRIDE = "TAX_OVERRIDE",
 }
 
 // ========================================

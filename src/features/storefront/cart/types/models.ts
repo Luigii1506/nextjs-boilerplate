@@ -23,6 +23,8 @@ export interface Cart {
 
   // 📊 Calculated totals
   subtotal: number; // Items subtotal
+  discountAmount: number; // Discounts applied (cart-level)
+  feesAmount: number; // Additional service fees
   taxAmount: number; // Tax amount
   total: number; // Final total
 
@@ -83,6 +85,7 @@ export interface CartSummary {
   taxAmount: number; // Calculated tax
   shippingAmount: number; // Shipping cost (future)
   discountAmount: number; // Discounts applied (future)
+  feesAmount: number; // Additional service fees (future)
   total: number; // Final total
 
   // 🎯 Quick stats
@@ -111,6 +114,11 @@ export interface CartPriceBreakdown {
   discounts: {
     amount: number;
     codes: string[]; // Future: applied coupon codes
+    formatted: string;
+  };
+  fees: {
+    amount: number;
+    description?: string;
     formatted: string;
   };
   total: {
@@ -280,5 +288,4 @@ export interface CartPreferences {
 }
 
 export default {};
-
 

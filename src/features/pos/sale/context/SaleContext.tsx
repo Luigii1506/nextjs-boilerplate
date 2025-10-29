@@ -21,7 +21,12 @@ import React, {
 import { logger } from "@/shared/utils/logger";
 import { useAuth } from "@/shared/hooks/useAuth";
 import * as actions from "../server/actions";
-import type { POSSaleContextValue, POSSaleItemWithProduct, POSSaleSummary } from "../types";
+import type {
+  POSSaleAdjustment,
+  POSSaleContextValue,
+  POSSaleItemWithProduct,
+  POSSaleSummary,
+} from "../types";
 
 // ========================================
 // CONTEXT
@@ -56,10 +61,12 @@ export function SaleProvider({
     itemCount: 0,
     subtotal: 0,
     discount: 0,
+    fees: 0,
     tax: 0,
     taxRate: 0.16,
     total: 0,
   });
+  const [adjustments, setAdjustments] = useState<POSSaleAdjustment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -104,16 +111,20 @@ export function SaleProvider({
           setItems([]);
         }
 
+        setAdjustments(sale?.adjustments ?? []);
+
         if (fetchedSummary) {
           setSummary(fetchedSummary);
         }
       } else {
         // No hay venta activa, inicializar vacío
         setItems([]);
+        setAdjustments([]);
         setSummary({
           itemCount: 0,
           subtotal: 0,
           discount: 0,
+          fees: 0,
           tax: 0,
           taxRate: 0.16,
           total: 0,
@@ -160,13 +171,15 @@ export function SaleProvider({
         if (result.success && result.data) {
           const { sale, summary: updatedSummary } = result.data;
 
-          if (sale?.items) {
-            setItems(sale.items);
-          }
+        if (sale?.items) {
+          setItems(sale.items);
+        }
 
-          if (updatedSummary) {
-            setSummary(updatedSummary);
-          }
+        setAdjustments(sale?.adjustments ?? []);
+
+        if (updatedSummary) {
+          setSummary(updatedSummary);
+        }
 
           // Success feedback could be handled here
           logger.debug("SaleContext: item added", {
@@ -208,13 +221,15 @@ export function SaleProvider({
         if (result.success && result.data) {
           const { sale, summary: updatedSummary } = result.data;
 
-          if (sale?.items) {
-            setItems(sale.items);
-          }
+        if (sale?.items) {
+          setItems(sale.items);
+        }
 
-          if (updatedSummary) {
-            setSummary(updatedSummary);
-          }
+        setAdjustments(sale?.adjustments ?? []);
+
+        if (updatedSummary) {
+          setSummary(updatedSummary);
+        }
 
           logger.debug("SaleContext: quantity updated", {
             message: result.message,
@@ -254,8 +269,12 @@ export function SaleProvider({
           if (sale === null) {
             // Sale quedó vacía
             setItems([]);
+            setAdjustments([]);
           } else if (sale?.items) {
             setItems(sale.items);
+            setAdjustments(sale.adjustments ?? []);
+          } else {
+            setAdjustments([]);
           }
 
           if (updatedSummary) {
@@ -294,19 +313,21 @@ export function SaleProvider({
       const result = await actions.clearSaleAction(sessionId);
 
       if (result.success) {
+        setAdjustments([]);
         setItems([]);
         setSummary({
           itemCount: 0,
           subtotal: 0,
           discount: 0,
+          fees: 0,
           tax: 0,
           taxRate: 0.16,
           total: 0,
         });
 
-          logger.debug("SaleContext: sale cleared", {
-            message: result.message,
-          });
+        logger.debug("SaleContext: sale cleared", {
+          message: result.message,
+        });
       } else {
         logger.error("SaleContext: clear sale failed", { error: result.error });
         throw new Error(result.error || "Failed to clear sale");
@@ -340,6 +361,8 @@ export function SaleProvider({
           if (sale?.items) {
             setItems(sale.items);
           }
+
+          setAdjustments(sale?.adjustments ?? []);
 
           if (updatedSummary) {
             setSummary(updatedSummary);
@@ -410,6 +433,8 @@ export function SaleProvider({
           setItems([]);
         }
 
+        setAdjustments(sale?.adjustments ?? []);
+
         if (fetchedSummary) {
           setSummary(fetchedSummary);
         }
@@ -429,6 +454,7 @@ export function SaleProvider({
     // State
     items,
     summary,
+    adjustments,
     itemCount,
     total,
     isLoading,

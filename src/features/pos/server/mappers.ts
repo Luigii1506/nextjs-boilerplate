@@ -178,11 +178,24 @@ export function mapCartItemToSaleItem(item: any) {
   const unitPrice = Number(item.unitPrice ?? 0);
   const roundedUnitPrice = Math.round(unitPrice * 100) / 100;
   const quantity = item.quantity ?? 0;
-  const total =
+  const totalRaw =
     item.total !== undefined && item.total !== null
       ? Number(item.total)
       : unitPrice * quantity;
-  const roundedTotal = Math.round(total * 100) / 100;
+  const total = Math.round(totalRaw * 100) / 100;
+  const subtotalRaw =
+    item.subtotal !== undefined && item.subtotal !== null
+      ? Number(item.subtotal)
+      : total;
+  const subtotal = Math.round(subtotalRaw * 100) / 100;
+  const taxRaw =
+    item.tax !== undefined && item.tax !== null ? Number(item.tax) : 0;
+  const tax = Math.round(taxRaw * 100) / 100;
+  const discountRaw =
+    item.discount !== undefined && item.discount !== null
+      ? Number(item.discount)
+      : 0;
+  const discount = Math.round(discountRaw * 100) / 100;
   const product = item.product ? mapProductToCustomer(item.product) : null;
 
   return {
@@ -192,12 +205,14 @@ export function mapCartItemToSaleItem(item: any) {
     productName: product?.name ?? "Producto no disponible",
     quantity,
     unitPrice: roundedUnitPrice,
-    discount: 0,
-    subtotal: roundedTotal,
-    total: roundedTotal,
+    discount,
+    tax,
+    subtotal,
+    total,
     addedAt: item.createdAt,
     updatedAt: item.updatedAt,
     product: product ?? undefined,
+    metadata: item.metadata ?? undefined,
   };
 }
 
@@ -206,22 +221,48 @@ export function mapCartItemToSaleItem(item: any) {
  */
 export function mapCartToSale(cart: any) {
   const items = cart.items ? cart.items.map(mapCartItemToSaleItem) : [];
-  const subtotalRaw = items.reduce((sum, item) => sum + (item.total ?? 0), 0);
-  const subtotal = Math.round(subtotalRaw * 100) / 100;
-  const taxAmountRaw =
-    cart.taxAmount !== undefined && cart.taxAmount !== null
-      ? Number(cart.taxAmount)
+  const subtotal =
+    cart.subtotal !== undefined && cart.subtotal !== null
+      ? Math.round(Number(cart.subtotal) * 100) / 100
+      : Math.round(
+          items.reduce((sum, item) => sum + (item.total ?? 0), 0) * 100
+        ) / 100;
+  const taxAmount =
+    cart.tax !== undefined && cart.tax !== null
+      ? Math.round(Number(cart.tax) * 100) / 100
+      : Math.round(Number(cart.taxAmount ?? 0) * 100) / 100;
+  const discount =
+    cart.discount !== undefined && cart.discount !== null
+      ? Math.round(Number(cart.discount) * 100) / 100
       : 0;
-  const taxAmount = Math.round(taxAmountRaw * 100) / 100;
-  const discount = 0;
-  const total = Math.round((subtotal + taxAmount - discount) * 100) / 100;
+  const fees =
+    cart.fees !== undefined && cart.fees !== null
+      ? Math.round(Number(cart.fees) * 100) / 100
+      : 0;
+  const computedTotal = subtotal - discount + fees + taxAmount;
+  const total =
+    cart.total !== undefined && cart.total !== null
+      ? Math.round(Number(cart.total) * 100) / 100
+      : Math.round(computedTotal * 100) / 100;
+  const adjustments = Array.isArray(cart.adjustments)
+    ? cart.adjustments.map((adjustment: any) => ({
+        id: adjustment.id,
+        type: adjustment.type,
+        label: adjustment.label ?? null,
+        amount: Math.round(Number(adjustment.amount ?? 0) * 100) / 100,
+        metadata: adjustment.metadata ?? undefined,
+        createdAt: adjustment.createdAt,
+      }))
+    : [];
 
   logger.debug("POS Mapper: map cart to sale", {
     subtotal,
     taxAmount,
     discount,
+    fees,
     total,
     itemsCount: items.length,
+    adjustments: adjustments.length,
   });
 
   return {
@@ -232,22 +273,30 @@ export function mapCartToSale(cart: any) {
     subtotal,
     tax: taxAmount,
     discount,
+    fees,
+    adjustments,
     total,
     createdAt: cart.createdAt,
     updatedAt: cart.updatedAt,
     expiresAt: cart.expiresAt,
+    status: cart.status ?? null,
+    customerId: cart.customerId ?? null,
+    customerName: cart.customerName ?? null,
+    customerEmail: cart.customerEmail ?? null,
   };
 }
 
 export function mapSaleSummary(summary: any) {
   const subtotal = Math.round(Number(summary?.subtotal ?? 0) * 100) / 100;
   const discount = Math.round(Number(summary?.discount ?? 0) * 100) / 100;
+  const fees = Math.round(Number(summary?.fees ?? 0) * 100) / 100;
   const tax = Math.round(Number(summary?.tax ?? 0) * 100) / 100;
   const total = Math.round(Number(summary?.total ?? 0) * 100) / 100;
   return {
     itemCount: Number(summary?.itemCount ?? 0),
     subtotal,
     discount,
+    fees,
     tax,
     taxRate: Number(summary?.taxRate ?? 0),
     total,
