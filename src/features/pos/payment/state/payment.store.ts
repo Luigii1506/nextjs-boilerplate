@@ -26,6 +26,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { posKeys } from "../../hooks/queryKeys";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { useSaleSessionId } from "../../sale/state/sale.store";
+import { logger } from "@/shared/utils/logger";
 
 interface PaymentStoreState {
   saleSummary: POSSaleSummary | null;
@@ -239,7 +240,9 @@ export const usePaymentStore = create<PaymentStore>()(
             error: errorMessage,
           };
         } catch (error) {
-          console.error("❌ [POS PAYMENT] Process payment failed:", error);
+          logger.error("POS Payment Store: process payment failed", {
+            error,
+          });
           const message =
             error instanceof Error
               ? error.message

@@ -14,6 +14,43 @@ import { revalidatePath } from "next/cache";
 import * as queries from "./queries";
 import * as service from "./service";
 import type { ActionResult } from "@/shared/types";
+import { logger } from "@/shared/utils/logger";
+
+type SearchProductsResult = Awaited<ReturnType<typeof service.searchProducts>>;
+type ScanProductResult = Awaited<ReturnType<typeof service.scanProduct>>;
+type CategoriesResult = Awaited<
+  ReturnType<typeof queries.getActiveCategoriesForPOS>
+>;
+type DashboardDataResult = Awaited<
+  ReturnType<typeof service.getDashboardMetrics>
+>;
+type DailyStatsResult = Awaited<
+  ReturnType<typeof queries.getDailySalesStats>
+>;
+type RecentTransactionsResult = Awaited<
+  ReturnType<typeof queries.getRecentTransactions>
+>;
+type TransactionDetailsResult = Awaited<
+  ReturnType<typeof service.getTransactionDetails>
+>;
+type TransactionByNumberResult = Awaited<
+  ReturnType<typeof service.findTransactionByNumber>
+>;
+type SalesReportResult = Awaited<
+  ReturnType<typeof service.generateSalesReport>
+>;
+type TopProductsResult = Awaited<
+  ReturnType<typeof queries.getTopSellingProducts>
+>;
+type SessionOpenValidation = Awaited<
+  ReturnType<typeof service.validateCanOpenSession>
+>;
+type SessionCloseValidation = Awaited<
+  ReturnType<typeof service.validateCanCloseSession>
+>;
+type SessionCloseSummary = Awaited<
+  ReturnType<typeof service.getSessionCloseSummary>
+>;
 
 // ========================================
 // PRODUCTS
@@ -27,7 +64,7 @@ export async function searchProductsAction(options: {
   categoryId?: string;
   page?: number;
   pageSize?: number;
-}): Promise<ActionResult<any>> {
+}): Promise<ActionResult<SearchProductsResult>> {
   try {
     const result = await service.searchProducts(options);
 
@@ -36,7 +73,7 @@ export async function searchProductsAction(options: {
       data: result,
     };
   } catch (error) {
-    console.error("[POS Actions] Search products error:", error);
+    logger.error("POS Actions: search products failed", { error });
     return {
       success: false,
       error:
@@ -50,7 +87,7 @@ export async function searchProductsAction(options: {
  */
 export async function scanProductAction(
   barcode: string
-): Promise<ActionResult<any>> {
+): Promise<ActionResult<ScanProductResult>> {
   try {
     const product = await service.scanProduct(barcode);
 
@@ -60,7 +97,7 @@ export async function scanProductAction(
       message: `Product found: ${product.name}`,
     };
   } catch (error) {
-    console.error("[POS Actions] Scan product error:", error);
+    logger.error("POS Actions: scan product failed", { error });
     return {
       success: false,
       error: error instanceof Error ? error.message : "Product not found",
@@ -71,7 +108,7 @@ export async function scanProductAction(
 /**
  * Obtener categorías activas
  */
-export async function getCategoriesAction(): Promise<ActionResult<any>> {
+export async function getCategoriesAction(): Promise<ActionResult<CategoriesResult>> {
   try {
     const categories = await queries.getActiveCategoriesForPOS();
 
@@ -80,7 +117,7 @@ export async function getCategoriesAction(): Promise<ActionResult<any>> {
       data: categories,
     };
   } catch (error) {
-    console.error("[POS Actions] Get categories error:", error);
+    logger.error("POS Actions: get categories failed", { error });
     return {
       success: false,
       error:
@@ -98,7 +135,7 @@ export async function getCategoriesAction(): Promise<ActionResult<any>> {
  */
 export async function getDashboardDataAction(
   userId: string
-): Promise<ActionResult<any>> {
+): Promise<ActionResult<DashboardDataResult>> {
   try {
     const data = await service.getDashboardMetrics(userId);
 
@@ -107,7 +144,7 @@ export async function getDashboardDataAction(
       data,
     };
   } catch (error) {
-    console.error("[POS Actions] Get dashboard data error:", error);
+    logger.error("POS Actions: get dashboard data failed", { error });
     return {
       success: false,
       error:
@@ -121,7 +158,7 @@ export async function getDashboardDataAction(
  */
 export async function getDailyStatsAction(
   date?: Date
-): Promise<ActionResult<any>> {
+): Promise<ActionResult<DailyStatsResult>> {
   try {
     const stats = await queries.getDailySalesStats(date);
 
@@ -130,7 +167,7 @@ export async function getDailyStatsAction(
       data: stats,
     };
   } catch (error) {
-    console.error("[POS Actions] Get daily stats error:", error);
+    logger.error("POS Actions: get daily stats failed", { error });
     return {
       success: false,
       error:
@@ -150,7 +187,7 @@ export async function getRecentTransactionsAction(options?: {
   sessionId?: string;
   userId?: string;
   limit?: number;
-}): Promise<ActionResult<any>> {
+}): Promise<ActionResult<RecentTransactionsResult>> {
   try {
     const transactions = await queries.getRecentTransactions(options);
 
@@ -159,7 +196,7 @@ export async function getRecentTransactionsAction(options?: {
       data: transactions,
     };
   } catch (error) {
-    console.error("[POS Actions] Get recent transactions error:", error);
+    logger.error("POS Actions: get recent transactions failed", { error });
     return {
       success: false,
       error:
@@ -175,7 +212,7 @@ export async function getRecentTransactionsAction(options?: {
  */
 export async function getTransactionDetailsAction(
   transactionId: string
-): Promise<ActionResult<any>> {
+): Promise<ActionResult<TransactionDetailsResult>> {
   try {
     const details = await service.getTransactionDetails(transactionId);
 
@@ -184,7 +221,7 @@ export async function getTransactionDetailsAction(
       data: details,
     };
   } catch (error) {
-    console.error("[POS Actions] Get transaction details error:", error);
+    logger.error("POS Actions: get transaction details failed", { error });
     return {
       success: false,
       error:
@@ -200,7 +237,7 @@ export async function getTransactionDetailsAction(
  */
 export async function findTransactionByNumberAction(
   transactionNumber: string
-): Promise<ActionResult<any>> {
+): Promise<ActionResult<TransactionByNumberResult>> {
   try {
     const transaction = await queries.getTransactionByNumber(transactionNumber);
 
@@ -216,7 +253,7 @@ export async function findTransactionByNumberAction(
       data: transaction,
     };
   } catch (error) {
-    console.error("[POS Actions] Find transaction by number error:", error);
+    logger.error("POS Actions: find transaction by number failed", { error });
     return {
       success: false,
       error:
@@ -238,7 +275,7 @@ export async function generateSalesReportAction(options: {
   startDate: Date;
   endDate: Date;
   groupBy?: "day" | "week" | "month";
-}): Promise<ActionResult<any>> {
+}): Promise<ActionResult<SalesReportResult>> {
   try {
     const report = await service.generateSalesReport(options);
 
@@ -248,7 +285,7 @@ export async function generateSalesReportAction(options: {
       message: "Sales report generated successfully",
     };
   } catch (error) {
-    console.error("[POS Actions] Generate sales report error:", error);
+    logger.error("POS Actions: generate sales report failed", { error });
     return {
       success: false,
       error:
@@ -266,7 +303,7 @@ export async function getTopSellingProductsAction(options?: {
   startDate?: Date;
   endDate?: Date;
   limit?: number;
-}): Promise<ActionResult<any>> {
+}): Promise<ActionResult<TopProductsResult>> {
   try {
     const topProducts = await queries.getTopSellingProducts(options);
 
@@ -275,7 +312,7 @@ export async function getTopSellingProductsAction(options?: {
       data: topProducts,
     };
   } catch (error) {
-    console.error("[POS Actions] Get top selling products error:", error);
+    logger.error("POS Actions: get top selling products failed", { error });
     return {
       success: false,
       error:
@@ -295,7 +332,7 @@ export async function getTopSellingProductsAction(options?: {
  */
 export async function validateCanOpenSessionAction(
   userId: string
-): Promise<ActionResult<any>> {
+): Promise<ActionResult<SessionOpenValidation>> {
   try {
     const validation = await service.validateCanOpenSession(userId);
 
@@ -304,7 +341,7 @@ export async function validateCanOpenSessionAction(
       data: validation,
     };
   } catch (error) {
-    console.error("[POS Actions] Validate can open session error:", error);
+    logger.error("POS Actions: validate can open session failed", { error });
     return {
       success: false,
       error:
@@ -320,7 +357,7 @@ export async function validateCanOpenSessionAction(
  */
 export async function validateCanCloseSessionAction(
   sessionId: string
-): Promise<ActionResult<any>> {
+): Promise<ActionResult<SessionCloseValidation>> {
   try {
     const validation = await service.validateCanCloseSession(sessionId);
 
@@ -329,7 +366,7 @@ export async function validateCanCloseSessionAction(
       data: validation,
     };
   } catch (error) {
-    console.error("[POS Actions] Validate can close session error:", error);
+    logger.error("POS Actions: validate can close session failed", { error });
     return {
       success: false,
       error:
@@ -345,7 +382,7 @@ export async function validateCanCloseSessionAction(
  */
 export async function getSessionCloseSummaryAction(
   sessionId: string
-): Promise<ActionResult<any>> {
+): Promise<ActionResult<SessionCloseSummary>> {
   try {
     const summary = await service.getSessionCloseSummary(sessionId);
 
@@ -354,7 +391,7 @@ export async function getSessionCloseSummaryAction(
       data: summary,
     };
   } catch (error) {
-    console.error("[POS Actions] Get session close summary error:", error);
+    logger.error("POS Actions: get session close summary failed", { error });
     return {
       success: false,
       error:

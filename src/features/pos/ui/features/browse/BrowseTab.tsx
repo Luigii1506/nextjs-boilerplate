@@ -15,6 +15,7 @@ import { useSaleStatus, useSaleActions } from "@/features/pos";
 import { usePOSUI } from "../../../context";
 import { formatCurrency } from "../../../utils";
 import type { ProductForCustomer } from "@/features/storefront/types";
+import { logger } from "@/shared/utils/logger";
 
 export const BrowseTab: React.FC = () => {
   const [search, setSearch] = useState("");
@@ -41,7 +42,7 @@ export const BrowseTab: React.FC = () => {
       // Opcional: Cambiar a tab de venta
       setActiveTab("sale");
     } catch (error) {
-      console.error("Error adding to sale:", error);
+      logger.error("BrowseTab: error adding to sale", { error });
       // TODO: Mostrar toast de error
     }
   };

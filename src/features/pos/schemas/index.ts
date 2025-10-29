@@ -145,6 +145,22 @@ export const SetCartCustomerSchema = z.object({
 export const CreatePOSTransactionSchema = z.object({
   sessionId: idValidator("Session ID"),
   cartId: idValidator("Cart ID"),
+  subtotal: z
+    .number()
+    .min(0, "Subtotal must be non-negative")
+    .max(1_000_000, "Subtotal is too large"),
+  tax: z
+    .number()
+    .min(0, "Tax must be non-negative")
+    .max(1_000_000, "Tax amount too large"),
+  discount: z
+    .number()
+    .min(0, "Discount must be non-negative")
+    .max(1_000_000, "Discount amount too large"),
+  total: z
+    .number()
+    .min(0, "Total must be non-negative")
+    .max(1_000_000, "Total amount too large"),
 
   // Customer (optional)
   customerId: idValidator("Customer ID").optional(),
@@ -163,15 +179,68 @@ export const CreatePOSTransactionSchema = z.object({
   paymentMethod: POSPaymentMethodSchema,
   amountPaid: z
     .number()
-    .positive("Amount paid must be positive")
+    .min(0, "Amount paid must be non-negative")
     .max(1000000, "Amount too large"),
   paymentReference: z
     .string()
     .max(100, "Payment reference too long")
     .optional(),
+  changeDue: z
+    .number()
+    .min(0, "Change due must be non-negative")
+    .max(1000000, "Change due too large"),
+
+  items: z
+    .array(
+      z.object({
+        productId: idValidator("Product ID"),
+        productSku: z.string().min(1, "Product SKU required"),
+        productName: z.string().min(1, "Product name required"),
+        quantity: z
+          .number()
+          .int("Quantity must be an integer")
+          .min(1, "Quantity must be at least 1"),
+        unitPrice: z
+          .number()
+          .min(0, "Unit price must be non-negative")
+          .max(1000000, "Unit price too large"),
+        discount: z
+          .number()
+          .min(0, "Item discount must be non-negative")
+          .max(1000000, "Item discount too large"),
+        subtotal: z
+          .number()
+          .min(0, "Item subtotal must be non-negative")
+          .max(1000000, "Item subtotal too large"),
+        tax: z
+          .number()
+          .min(0, "Item tax must be non-negative")
+          .max(1000000, "Item tax too large"),
+        total: z
+          .number()
+          .min(0, "Item total must be non-negative")
+          .max(1000000, "Item total too large"),
+      })
+    )
+    .min(1, "At least one item is required"),
 
   // Additional
   notes: z.string().max(500, "Notes too long").optional(),
+}).refine((data) => {
+  const itemsSubtotal = data.items.reduce((sum, item) => sum + item.total, 0);
+  const expectedTotal = Number((data.subtotal + data.tax - data.discount).toFixed(2));
+  const roundedTotal = Number(data.total.toFixed(2));
+  return Math.abs(expectedTotal - roundedTotal) < 0.01 && Math.abs(itemsSubtotal - roundedTotal) < 0.01;
+}, {
+  message: "Item totals must equal subtotal + tax - discount",
+  path: ["total"],
+}).refine((data) => {
+  const netPaid = Number((data.amountPaid - data.changeDue).toFixed(2));
+  const totalRounded = Number(data.total.toFixed(2));
+  return netPaid + 0.01 >= totalRounded;
+}, {
+  message: "Amount paid must cover total (considering change due)",
+  path: ["amountPaid"],
 });
 
 export const ProcessRefundSchema = z.object({

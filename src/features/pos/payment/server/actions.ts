@@ -12,12 +12,37 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/core/database/prisma";
+import type { Prisma } from "@prisma/client";
 import { CreatePOSTransactionSchema } from "../../schemas";
 import { calculateChangeDue, generateTransactionNumber } from "../../schemas";
 import { validateSaleForCheckout } from "../../sale/server/service";
 import { calculateSaleSummary } from "../../sale/server/queries";
 import type { ActionResult } from "@/shared/types";
 import type { ProcessPaymentInput, ProcessPaymentResult } from "../types";
+import { logger } from "@/shared/utils/logger";
+
+type TransactionWithSession = Prisma.POSTransactionGetPayload<{
+  include: {
+    items: true;
+    session: {
+      include: {
+        user: {
+          select: {
+            id: true;
+            name: true;
+            email: true;
+          };
+        };
+      };
+    };
+  };
+}>;
+
+type TransactionWithItems = Prisma.POSTransactionGetPayload<{
+  include: {
+    items: true;
+  };
+}>;
 
 // ========================================
 // PROCESS PAYMENT
@@ -132,11 +157,13 @@ export async function processPaymentAction(
       items: normalizedItems,
     };
 
-    console.log("🧠 [POS Payment Action] Parsed payload before validation", parsedInput);
+    logger.debug("POS Payment Action: parsed payload before validation", {
+      payload: parsedInput,
+    });
 
     CreatePOSTransactionSchema.parse(parsedInput);
 
-    console.log("🧠 [POS Payment Action] Payload validated successfully");
+    logger.debug("POS Payment Action: payload validated successfully");
     const roundedSubtotal = Number(((summary.subtotal ?? 0) + Number.EPSILON).toFixed(2));
     const roundedTax = Number(((summary.tax ?? 0) + Number.EPSILON).toFixed(2));
     const roundedDiscount = Number(((summary.discount ?? 0) + Number.EPSILON).toFixed(2));
@@ -144,7 +171,7 @@ export async function processPaymentAction(
     const roundedAmountPaid = Math.round((parsedInput.amountPaid ?? amountPaid) * 100) / 100;
     const roundedChangeDue = Math.round(changeDue * 100) / 100;
 
-    console.log("🧠 [POS Payment Action] Totals used for transaction", {
+    logger.debug("POS Payment Action: totals derived for persistence", {
       roundedSubtotal,
       roundedTax,
       roundedDiscount,
@@ -235,7 +262,7 @@ export async function processPaymentAction(
       message: `Payment processed successfully. Transaction: ${transactionNumber}`,
     };
   } catch (error) {
-    console.error("[POS Payment Action] Process payment error:", error);
+    logger.error("POS Payment Action: process payment failed", { error });
     return {
       success: false,
       error:
@@ -253,7 +280,7 @@ export async function processPaymentAction(
  */
 export async function getTransactionAction(
   transactionId: string
-): Promise<ActionResult<any>> {
+): Promise<ActionResult<TransactionWithSession>> {
   try {
     const transaction = await prisma.pOSTransaction.findUnique({
       where: { id: transactionId },
@@ -285,7 +312,7 @@ export async function getTransactionAction(
       data: transaction,
     };
   } catch (error) {
-    console.error("[POS Payment Action] Get transaction error:", error);
+    logger.error("POS Payment Action: get transaction failed", { error });
     return {
       success: false,
       error:
@@ -304,7 +331,7 @@ export async function getTransactionAction(
 export async function getRecentTransactionsAction(
   sessionId: string,
   limit: number = 10
-): Promise<ActionResult<any>> {
+): Promise<ActionResult<TransactionWithItems[]>> {
   try {
     const transactions = await prisma.pOSTransaction.findMany({
       where: { sessionId },
@@ -320,10 +347,9 @@ export async function getRecentTransactionsAction(
       data: transactions,
     };
   } catch (error) {
-    console.error(
-      "[POS Payment Action] Get recent transactions error:",
-      error
-    );
+    logger.error("POS Payment Action: get recent transactions failed", {
+      error,
+    });
     return {
       success: false,
       error:
@@ -344,7 +370,7 @@ export async function getRecentTransactionsAction(
 export async function voidTransactionAction(
   transactionId: string,
   reason: string
-): Promise<ActionResult<any>> {
+): Promise<ActionResult<TransactionWithItems>> {
   try {
     // 1. Obtener la transacción original
     const originalTransaction = await prisma.pOSTransaction.findUnique({
@@ -398,7 +424,7 @@ export async function voidTransactionAction(
         amountPaid: -Number(originalTransaction.amountPaid),
         changeDue: 0,
         notes: `VOID of ${originalTransaction.transactionNumber}. Reason: ${reason}`,
-        referenceNumber: originalTransaction.transactionNumber,
+        paymentReference: originalTransaction.paymentReference ?? originalTransaction.transactionNumber,
         items: {
           create: originalTransaction.items.map((item) => ({
             productId: item.productId,
@@ -408,6 +434,7 @@ export async function voidTransactionAction(
             unitPrice: Number(item.unitPrice),
             discount: Number(item.discount),
             subtotal: -Number(item.subtotal),
+            tax: -Number(item.tax),
             total: -Number(item.total),
           })),
         },
@@ -437,7 +464,7 @@ export async function voidTransactionAction(
       message: `Transaction ${originalTransaction.transactionNumber} voided successfully`,
     };
   } catch (error) {
-    console.error("[POS Payment Action] Void transaction error:", error);
+    logger.error("POS Payment Action: void transaction failed", { error });
     return {
       success: false,
       error:

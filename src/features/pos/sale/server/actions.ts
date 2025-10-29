@@ -21,6 +21,34 @@ import {
   ClearPOSCartSchema,
 } from "../../schemas";
 import type { ActionResult } from "@/shared/types";
+import { logger } from "@/shared/utils/logger";
+import type {
+  SaleWithSummaryResult,
+  SaleItemMutationResult,
+  SaleQuantityMutationResult,
+  SaleValidationResult,
+} from "./service";
+
+type SaleSnapshot = SaleWithSummaryResult["sale"];
+type SaleSummary = SaleWithSummaryResult["summary"];
+
+type AddToSaleData = {
+  sale: SaleSnapshot;
+  summary: SaleSummary;
+  addedItem: SaleItemMutationResult["item"] | null;
+};
+
+type UpdateSaleQuantityData = {
+  sale: SaleSnapshot;
+  summary: SaleSummary;
+  updatedItem: SaleQuantityMutationResult["item"] | null;
+};
+
+type RemoveFromSaleData = {
+  sale: SaleSnapshot;
+  summary: SaleSummary;
+  removedItemId: string;
+};
 
 // ========================================
 // GET ACTIVE SALE
@@ -31,7 +59,7 @@ import type { ActionResult } from "@/shared/types";
  */
 export async function getActiveSaleAction(
   sessionId: string
-): Promise<ActionResult<any>> {
+): Promise<ActionResult<SaleWithSummaryResult>> {
   try {
     const { sale, summary } = await service.getSaleWithSummary(sessionId);
 
@@ -43,7 +71,7 @@ export async function getActiveSaleAction(
       },
     };
   } catch (error) {
-    console.error("[POS Sale Action] Get sale error:", error);
+    logger.error("POS Sale Action: get sale failed", { error });
     return {
       success: false,
       error:
@@ -63,7 +91,7 @@ export async function addToSaleAction(
   sessionId: string,
   productId: string,
   quantity: number = 1
-): Promise<ActionResult<any>> {
+): Promise<ActionResult<AddToSaleData>> {
   try {
     // Validar input
     const validated = AddToPOSCartSchema.parse({
@@ -72,7 +100,9 @@ export async function addToSaleAction(
       quantity,
     });
 
-    console.log("🧠 [POS Sale Action] addToSaleAction | validated", validated);
+    logger.debug("POS Sale Action: add to sale validated input", {
+      validated,
+    });
 
     // Agregar item
     const { item, summary } = await service.addItemWithValidation(
@@ -81,28 +111,31 @@ export async function addToSaleAction(
       validated.quantity
     );
 
-    console.log("🧠 [POS Sale Action] addToSaleAction | item", item);
-    console.log("🧠 [POS Sale Action] addToSaleAction | summary", summary);
+    logger.debug("POS Sale Action: item added to sale", { item, summary });
 
     // Obtener sale completa actualizada
     const { sale } = await service.getSaleWithSummary(validated.sessionId);
 
-    console.log("🧠 [POS Sale Action] addToSaleAction | full sale", sale);
+    logger.debug("POS Sale Action: refreshed sale snapshot", { sale });
 
     // Revalidate (opcional, depende de tu setup)
     revalidatePath("/pos");
+
+    const message = item?.product?.name
+      ? `${item.product.name} added to sale`
+      : undefined;
 
     return {
       success: true,
       data: {
         sale,
         summary,
-        addedItem: item,
+        addedItem: item ?? null,
       },
-      message: `${item.product.name} added to sale`,
+      message,
     };
   } catch (error) {
-    console.error("[POS Sale Action] Add to sale error:", error);
+    logger.error("POS Sale Action: add to sale failed", { error });
     return {
       success: false,
       error:
@@ -122,7 +155,7 @@ export async function updateSaleQuantityAction(
   sessionId: string,
   itemId: string,
   quantity: number
-): Promise<ActionResult<any>> {
+): Promise<ActionResult<UpdateSaleQuantityData>> {
   try {
     // Validar input
     const validated = UpdatePOSCartItemSchema.parse({
@@ -142,17 +175,21 @@ export async function updateSaleQuantityAction(
 
     revalidatePath("/pos");
 
+    const message = item?.product?.name
+      ? "Quantity updated"
+      : undefined;
+
     return {
       success: true,
       data: {
         sale,
         summary,
-        updatedItem: item,
+        updatedItem: item ?? null,
       },
-      message: "Quantity updated",
+      message,
     };
   } catch (error) {
-    console.error("[POS Sale Action] Update quantity error:", error);
+    logger.error("POS Sale Action: update quantity failed", { error });
     return {
       success: false,
       error:
@@ -173,7 +210,7 @@ export async function updateSaleQuantityAction(
 export async function removeFromSaleAction(
   sessionId: string,
   itemId: string
-): Promise<ActionResult<any>> {
+): Promise<ActionResult<RemoveFromSaleData>> {
   try {
     // Validar input
     const validated = RemoveFromPOSCartSchema.parse({
@@ -194,6 +231,7 @@ export async function removeFromSaleAction(
         data: {
           sale: null,
           summary,
+          removedItemId: itemId,
         },
         message: "Item removed. Sale is now empty",
       };
@@ -214,7 +252,7 @@ export async function removeFromSaleAction(
       message: "Item removed from sale",
     };
   } catch (error) {
-    console.error("[POS Sale Action] Remove item error:", error);
+    logger.error("POS Sale Action: remove item failed", { error });
     return {
       success: false,
       error:
@@ -251,7 +289,7 @@ export async function clearSaleAction(
       message: "Sale cleared successfully",
     };
   } catch (error) {
-    console.error("[POS Sale Action] Clear sale error:", error);
+    logger.error("POS Sale Action: clear sale failed", { error });
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to clear sale",
@@ -270,7 +308,7 @@ export async function applyDiscountAction(
   sessionId: string,
   type: "percentage" | "fixed",
   value: number
-): Promise<ActionResult<any>> {
+): Promise<ActionResult<SaleWithSummaryResult>> {
   try {
     const { summary, message } = await service.applyDiscountToSale(
       sessionId,
@@ -292,7 +330,7 @@ export async function applyDiscountAction(
       message,
     };
   } catch (error) {
-    console.error("[POS Sale Action] Apply discount error:", error);
+    logger.error("POS Sale Action: apply discount failed", { error });
     return {
       success: false,
       error:
@@ -310,7 +348,7 @@ export async function applyDiscountAction(
  */
 export async function validateSaleForCheckoutAction(
   sessionId: string
-): Promise<ActionResult<any>> {
+): Promise<ActionResult<SaleValidationResult>> {
   try {
     const validation = await service.validateSaleForCheckout(sessionId);
 
@@ -320,7 +358,7 @@ export async function validateSaleForCheckoutAction(
       error: validation.isValid ? undefined : validation.errors.join(", "),
     };
   } catch (error) {
-    console.error("[POS Sale Action] Validate sale error:", error);
+    logger.error("POS Sale Action: validate sale failed", { error });
     return {
       success: false,
       error: error instanceof Error ? error.message : "Validation failed",

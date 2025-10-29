@@ -21,6 +21,7 @@ import {
 } from "../server/actions";
 import type { POSSession, POSSessionSummary } from "../../types/models";
 import { POSSessionStatus } from "../../types/models";
+import { logger } from "@/shared/utils/logger";
 
 interface SessionFlags {
   hasActiveSession: boolean;
@@ -131,7 +132,9 @@ export const useSessionStore = create<SessionStore>()(
             }));
           }
         } catch (error) {
-          console.error("❌ [POS SESSION] Load active session failed:", error);
+          logger.error("POS Session Store: load active session failed", {
+            error,
+          });
           const message =
             error instanceof Error ? error.message : "Failed to load session";
           set((state) => ({
@@ -181,7 +184,7 @@ export const useSessionStore = create<SessionStore>()(
             ...computeFlags(session),
           }));
         } catch (error) {
-          console.error("❌ [POS SESSION] Open session failed:", error);
+          logger.error("POS Session Store: open session failed", { error });
           const message =
             error instanceof Error ? error.message : "Failed to open session";
           set((state) => ({
@@ -238,7 +241,7 @@ export const useSessionStore = create<SessionStore>()(
             ...computeFlags(closedSession),
           }));
         } catch (error) {
-          console.error("❌ [POS SESSION] Close session failed:", error);
+          logger.error("POS Session Store: close session failed", { error });
           const message =
             error instanceof Error ? error.message : "Failed to close session";
           set((state) => ({
@@ -293,7 +296,7 @@ export const useSessionStore = create<SessionStore>()(
             ...computeFlags(suspended),
           }));
         } catch (error) {
-          console.error("❌ [POS SESSION] Suspend session failed:", error);
+          logger.error("POS Session Store: suspend session failed", { error });
           const message =
             error instanceof Error
               ? error.message
@@ -350,7 +353,7 @@ export const useSessionStore = create<SessionStore>()(
             ...computeFlags(resumed),
           }));
         } catch (error) {
-          console.error("❌ [POS SESSION] Resume session failed:", error);
+          logger.error("POS Session Store: resume session failed", { error });
           const message =
             error instanceof Error
               ? error.message
@@ -401,7 +404,7 @@ export const useSessionStore = create<SessionStore>()(
             ...computeFlags(result.data.session ?? state.currentSession),
           }));
         } catch (error) {
-          console.error("❌ [POS SESSION] Fetch summary failed:", error);
+          logger.error("POS Session Store: fetch summary failed", { error });
           const message =
             error instanceof Error
               ? error.message

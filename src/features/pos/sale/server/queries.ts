@@ -9,6 +9,7 @@
  */
 
 import { prisma } from "@/core/database/prisma";
+import { logger } from "@/shared/utils/logger";
 
 // ========================================
 // GET ACTIVE SALE
@@ -41,7 +42,7 @@ export async function getActiveSaleBySession(sessionId: string) {
 
     return sale;
   } catch (error) {
-    console.error("[POS Sale] Error getting active sale:", error);
+    logger.error("POS Sale Query: get active sale failed", { error });
     throw new Error("Failed to get active sale");
   }
 }
@@ -141,7 +142,7 @@ export async function addItemToSale(
 
     return cartItem;
   } catch (error) {
-    console.error("[POS Sale] Error adding item:", error);
+    logger.error("POS Sale Query: add item failed", { error });
     throw error;
   }
 }
@@ -192,7 +193,7 @@ export async function updateSaleItemQuantity(
 
     return updatedItem;
   } catch (error) {
-    console.error("[POS Sale] Error updating item:", error);
+    logger.error("POS Sale Query: update item failed", { error });
     throw error;
   }
 }
@@ -212,7 +213,7 @@ export async function removeSaleItem(itemId: string) {
 
     return deletedItem;
   } catch (error) {
-    console.error("[POS Sale] Error removing item:", error);
+    logger.error("POS Sale Query: remove item failed", { error });
     throw error;
   }
 }
@@ -246,7 +247,7 @@ export async function clearSale(sessionId: string) {
 
     return cart;
   } catch (error) {
-    console.error("[POS Sale] Error clearing sale:", error);
+    logger.error("POS Sale Query: clear sale failed", { error });
     throw error;
   }
 }
@@ -309,7 +310,7 @@ export async function calculateSaleSummary(sessionId: string) {
       total,
     };
   } catch (error) {
-    console.error("[POS Sale] Error calculating summary:", error);
+    logger.error("POS Sale Query: calculate summary failed", { error });
     throw error;
   }
 }

@@ -131,37 +131,47 @@ src/features/pos/
 │   └── routes/
 │       └── pos.screen.tsx    # Main SPA screen
 │
-├── context/                   # React Context (UI only)
-│   └── POSUIContext.tsx      # Modal states, active tab
+├── context/                   # React Context (UI-only state)
+│   └── POSUIContext.tsx      # Tabs, modals, UI toggles
 │
-├── session/                   # Session domain
-│   ├── server/
-│   │   ├── queries.ts        # Database queries
-│   │   └── actions.ts        # Server actions
-│   └── schemas/              # Validation schemas
-│
-├── sale/                      # Sale domain
-│   ├── server/
+├── session/
+│   ├── state/                # Zustand session store
+│   │   └── session.store.ts
+│   ├── server/               # Session server actions & queries
+│   │   ├── actions.ts
 │   │   ├── queries.ts
-│   │   └── actions.ts
+│   │   └── service.ts
 │   └── schemas/
 │
-├── payment/                   # Payment domain
+├── sale/
+│   ├── state/                # Zustand sale/cart store
+│   │   └── sale.store.ts
 │   ├── server/
+│   │   ├── actions.ts
 │   │   ├── queries.ts
-│   │   └── actions.ts
+│   │   └── service.ts
+│   └── schemas/
+│
+├── payment/
+│   ├── state/                # Zustand payment store
+│   │   └── payment.store.ts
+│   ├── server/
+│   │   ├── actions.ts
+│   │   ├── queries.ts
+│   │   └── types.ts
 │   └── types/
 │
-├── hooks/                     # Custom hooks
+├── hooks/                     # Data-fetch hooks (TanStack Query)
+│   ├── usePOSData.ts
 │   ├── useSearchProducts.ts
 │   └── useCategories.ts
 │
-├── types/                     # TypeScript types
+├── types/                     # Domain models & inputs
 │   ├── models.ts
 │   ├── inputs.ts
 │   └── queries.ts
 │
-└── utils/                     # Utilities
+└── utils/                     # Shared utilities (formatters, helpers)
     └── formatters.ts
 ```
 

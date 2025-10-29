@@ -10,6 +10,7 @@
 
 import * as queries from "./queries";
 import { mapCartToSale, mapCartItemToSaleItem, mapSaleSummary } from "../../server/mappers";
+import { logger } from "@/shared/utils/logger";
 
 // ========================================
 // GET SALE WITH SUMMARY
@@ -29,10 +30,9 @@ export async function getSaleWithSummary(sessionId: string) {
     try {
       mappedSale = mapCartToSale(rawSale);
     } catch (mappingError) {
-      console.warn(
-        "[POS Sale Service] Failed to map sale payload, returning null sale:",
-        mappingError
-      );
+      logger.warn("POS Sale Service: failed to map sale payload", {
+        error: mappingError,
+      });
       mappedSale = null;
     }
   }
@@ -41,10 +41,9 @@ export async function getSaleWithSummary(sessionId: string) {
   try {
     mappedSummary = mapSaleSummary(rawSummary);
   } catch (mappingError) {
-    console.warn(
-      "[POS Sale Service] Failed to map sale summary, using empty summary:",
-      mappingError
-    );
+    logger.warn("POS Sale Service: failed to map sale summary", {
+      error: mappingError,
+    });
     mappedSummary = mapSaleSummary(null);
   }
 
@@ -77,20 +76,19 @@ export async function addItemWithValidation(
     }
 
     // Agregar item
-    console.log("🧠 [POS Sale Service] addItemWithValidation | params", {
+    logger.debug("POS Sale Service: add item with validation", {
       sessionId,
       productId,
       quantity,
     });
     const item = await queries.addItemToSale(sessionId, productId, quantity);
-    console.log("🧠 [POS Sale Service] addItemWithValidation | raw item", item);
+    logger.debug("POS Sale Service: add item result", { item });
 
     // Recalcular summary
     const rawSummary = await queries.calculateSaleSummary(sessionId);
-    console.log(
-      "🧠 [POS Sale Service] addItemWithValidation | raw summary",
-      rawSummary
-    );
+    logger.debug("POS Sale Service: sale summary recalculated", {
+      summary: rawSummary,
+    });
     const summary = mapSaleSummary(rawSummary);
 
     return {
@@ -98,7 +96,7 @@ export async function addItemWithValidation(
       summary,
     };
   } catch (error) {
-    console.error("[POS Sale Service] Error adding item:", error);
+    logger.error("POS Sale Service: error adding item", { error });
     throw error;
   }
 }
@@ -137,7 +135,7 @@ export async function updateQuantityWithValidation(
       summary,
     };
   } catch (error) {
-    console.error("[POS Sale Service] Error updating quantity:", error);
+    logger.error("POS Sale Service: error updating quantity", { error });
     throw error;
   }
 }
@@ -171,7 +169,7 @@ export async function removeItemWithCleanup(
       isEmpty: summary.itemCount === 0,
     };
   } catch (error) {
-    console.error("[POS Sale Service] Error removing item:", error);
+    logger.error("POS Sale Service: error removing item", { error });
     throw error;
   }
 }
@@ -209,7 +207,7 @@ export async function applyDiscountToSale(
       message: "Discount applied successfully",
     };
   } catch (error) {
-    console.error("[POS Sale Service] Error applying discount:", error);
+    logger.error("POS Sale Service: error applying discount", { error });
     throw error;
   }
 }
@@ -249,10 +247,16 @@ export async function validateSaleForCheckout(sessionId: string) {
       summary,
     };
   } catch (error) {
-    console.error("[POS Sale Service] Error validating sale:", error);
+    logger.error("POS Sale Service: error validating sale", { error });
     throw error;
   }
 }
+
+export type SaleWithSummaryResult = Awaited<ReturnType<typeof getSaleWithSummary>>;
+export type SaleItemMutationResult = Awaited<ReturnType<typeof addItemWithValidation>>;
+export type SaleQuantityMutationResult = Awaited<ReturnType<typeof updateQuantityWithValidation>>;
+export type SaleRemovalResult = Awaited<ReturnType<typeof removeItemWithCleanup>>;
+export type SaleValidationResult = Awaited<ReturnType<typeof validateSaleForCheckout>>;
 
 // ========================================
 // HELPERS

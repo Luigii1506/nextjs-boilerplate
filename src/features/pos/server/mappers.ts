@@ -19,6 +19,7 @@ import type {
   POSTransactionType,
   POSSessionStatus,
 } from "../types/models";
+import { logger } from "@/shared/utils/logger";
 
 // ========================================
 // PRODUCT MAPPERS
@@ -215,7 +216,7 @@ export function mapCartToSale(cart: any) {
   const discount = 0;
   const total = Math.round((subtotal + taxAmount - discount) * 100) / 100;
 
-  console.log("🧠 [POS MAPPER] mapCartToSale", {
+  logger.debug("POS Mapper: map cart to sale", {
     subtotal,
     taxAmount,
     discount,

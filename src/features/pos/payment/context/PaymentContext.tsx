@@ -17,6 +17,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
+import { logger } from "@/shared/utils/logger";
 import * as actions from "../server/actions";
 import type {
   POSPaymentContextValue,
@@ -214,7 +215,7 @@ export function PaymentProvider({ children }: PaymentProviderProps) {
           error: result.error || "Payment failed",
         };
       } catch (error) {
-        console.error("[PaymentContext] Process payment error:", error);
+        logger.error("PaymentContext: process payment error", { error });
 
         const errorMessage =
           error instanceof Error ? error.message : "Payment failed";

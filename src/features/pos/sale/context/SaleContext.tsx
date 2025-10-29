@@ -18,6 +18,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
+import { logger } from "@/shared/utils/logger";
 import { useAuth } from "@/shared/hooks/useAuth";
 import * as actions from "../server/actions";
 import type { POSSaleContextValue, POSSaleItemWithProduct, POSSaleSummary } from "../types";
@@ -119,7 +120,7 @@ export function SaleProvider({
         });
       }
     } catch (error) {
-      console.error("[SaleContext] Initialize error:", error);
+    logger.error("SaleContext: initialize error", { error });
     } finally {
       setIsLoading(false);
       setIsInitialized(true);
@@ -143,7 +144,7 @@ export function SaleProvider({
   const addItem = useCallback(
     async (productId: string, quantity: number = 1) => {
       if (!sessionId) {
-        console.error("[SaleContext] No session ID");
+        logger.warn("SaleContext: missing session id");
         return;
       }
 
@@ -168,13 +169,15 @@ export function SaleProvider({
           }
 
           // Success feedback could be handled here
-          console.log("[SaleContext] Item added:", result.message);
+          logger.debug("SaleContext: item added", {
+            message: result.message,
+          });
         } else {
-          console.error("[SaleContext] Add item failed:", result.error);
+          logger.error("SaleContext: add item failed", { error: result.error });
           throw new Error(result.error || "Failed to add item");
         }
       } catch (error) {
-        console.error("[SaleContext] Add item error:", error);
+        logger.error("SaleContext: add item error", { error });
         throw error;
       } finally {
         setIsLoading(false);
@@ -189,7 +192,7 @@ export function SaleProvider({
   const updateQuantity = useCallback(
     async (itemId: string, quantity: number) => {
       if (!sessionId) {
-        console.error("[SaleContext] No session ID");
+        logger.warn("SaleContext: missing session id");
         return;
       }
 
@@ -213,13 +216,15 @@ export function SaleProvider({
             setSummary(updatedSummary);
           }
 
-          console.log("[SaleContext] Quantity updated:", result.message);
+          logger.debug("SaleContext: quantity updated", {
+            message: result.message,
+          });
         } else {
-          console.error("[SaleContext] Update quantity failed:", result.error);
+          logger.error("SaleContext: update quantity failed", { error: result.error });
           throw new Error(result.error || "Failed to update quantity");
         }
       } catch (error) {
-        console.error("[SaleContext] Update quantity error:", error);
+        logger.error("SaleContext: update quantity error", { error });
         throw error;
       } finally {
         setIsLoading(false);
@@ -234,7 +239,7 @@ export function SaleProvider({
   const removeItem = useCallback(
     async (itemId: string) => {
       if (!sessionId) {
-        console.error("[SaleContext] No session ID");
+        logger.warn("SaleContext: missing session id");
         return;
       }
 
@@ -257,13 +262,15 @@ export function SaleProvider({
             setSummary(updatedSummary);
           }
 
-          console.log("[SaleContext] Item removed:", result.message);
+          logger.debug("SaleContext: item removed", {
+            message: result.message,
+          });
         } else {
-          console.error("[SaleContext] Remove item failed:", result.error);
+          logger.error("SaleContext: remove item failed", { error: result.error });
           throw new Error(result.error || "Failed to remove item");
         }
       } catch (error) {
-        console.error("[SaleContext] Remove item error:", error);
+        logger.error("SaleContext: remove item error", { error });
         throw error;
       } finally {
         setIsLoading(false);
@@ -277,7 +284,7 @@ export function SaleProvider({
    */
   const clearSale = useCallback(async () => {
     if (!sessionId) {
-      console.error("[SaleContext] No session ID");
+      logger.warn("SaleContext: missing session id");
       return;
     }
 
@@ -297,13 +304,15 @@ export function SaleProvider({
           total: 0,
         });
 
-        console.log("[SaleContext] Sale cleared:", result.message);
+          logger.debug("SaleContext: sale cleared", {
+            message: result.message,
+          });
       } else {
-        console.error("[SaleContext] Clear sale failed:", result.error);
+        logger.error("SaleContext: clear sale failed", { error: result.error });
         throw new Error(result.error || "Failed to clear sale");
       }
     } catch (error) {
-      console.error("[SaleContext] Clear sale error:", error);
+      logger.error("SaleContext: clear sale error", { error });
       throw error;
     } finally {
       setIsLoading(false);
@@ -316,7 +325,7 @@ export function SaleProvider({
   const applyDiscount = useCallback(
     async (type: "percentage" | "fixed", value: number) => {
       if (!sessionId) {
-        console.error("[SaleContext] No session ID");
+        logger.warn("SaleContext: missing session id");
         return;
       }
 
@@ -336,13 +345,15 @@ export function SaleProvider({
             setSummary(updatedSummary);
           }
 
-          console.log("[SaleContext] Discount applied:", result.message);
+          logger.debug("SaleContext: discount applied", {
+            message: result.message,
+          });
         } else {
-          console.error("[SaleContext] Apply discount failed:", result.error);
+          logger.error("SaleContext: apply discount failed", { error: result.error });
           throw new Error(result.error || "Failed to apply discount");
         }
       } catch (error) {
-        console.error("[SaleContext] Apply discount error:", error);
+        logger.error("SaleContext: apply discount error", { error });
         throw error;
       } finally {
         setIsLoading(false);
@@ -356,7 +367,7 @@ export function SaleProvider({
    */
   const validateForCheckout = useCallback(async () => {
     if (!sessionId) {
-      console.error("[SaleContext] No session ID");
+      logger.warn("SaleContext: missing session id");
       return { isValid: false, errors: ["No session ID"] };
     }
 
@@ -372,7 +383,7 @@ export function SaleProvider({
         };
       }
     } catch (error) {
-      console.error("[SaleContext] Validate checkout error:", error);
+      logger.error("SaleContext: validate checkout error", { error });
       return {
         isValid: false,
         errors: [error instanceof Error ? error.message : "Validation failed"],
@@ -404,7 +415,7 @@ export function SaleProvider({
         }
       }
     } catch (error) {
-      console.error("[SaleContext] Refresh error:", error);
+      logger.error("SaleContext: refresh error", { error });
     } finally {
       setIsLoading(false);
     }

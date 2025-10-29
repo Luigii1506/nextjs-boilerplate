@@ -26,6 +26,7 @@ import type {
   POSSaleItemWithProduct,
   POSSaleSummary,
 } from "../types";
+import { logger } from "@/shared/utils/logger";
 
 type SaleSnapshot =
   | {
@@ -300,7 +301,7 @@ export const useSaleStore = create<SaleStore>()(
             }
           }
         } catch (error) {
-          console.error("❌ [POS SALE] Failed to refresh sale:", error);
+          logger.error("POS Sale Store: failed to refresh sale", { error });
           get().setSaleSnapshot(null);
           const message =
             error instanceof Error ? error.message : "Failed to refresh sale";
@@ -330,7 +331,7 @@ export const useSaleStore = create<SaleStore>()(
           const { sale, summary } = result.data;
           get().setSaleSnapshot(sale ?? null, summary ?? null);
         } catch (error) {
-          console.error("❌ [POS SALE] Add item failed:", error);
+          logger.error("POS Sale Store: add item failed", { error });
           const message =
             error instanceof Error ? error.message : "Failed to add item";
           get().setError(message);
@@ -373,7 +374,7 @@ export const useSaleStore = create<SaleStore>()(
           const { sale, summary } = result.data;
           get().setSaleSnapshot(sale ?? null, summary ?? null);
         } catch (error) {
-          console.error("❌ [POS SALE] Update quantity failed:", error);
+          logger.error("POS Sale Store: update quantity failed", { error });
           const message =
             error instanceof Error ? error.message : "Failed to update item";
           get().setError(message);
@@ -407,7 +408,7 @@ export const useSaleStore = create<SaleStore>()(
           const { sale, summary } = result.data;
           get().setSaleSnapshot(sale ?? null, summary ?? null);
         } catch (error) {
-          console.error("❌ [POS SALE] Remove item failed:", error);
+          logger.error("POS Sale Store: remove item failed", { error });
           const message =
             error instanceof Error ? error.message : "Failed to remove item";
           get().setError(message);
@@ -436,7 +437,7 @@ export const useSaleStore = create<SaleStore>()(
 
           get().setSaleSnapshot(null);
         } catch (error) {
-          console.error("❌ [POS SALE] Clear sale failed:", error);
+          logger.error("POS Sale Store: clear sale failed", { error });
           const message =
             error instanceof Error ? error.message : "Failed to clear sale";
           get().setError(message);
@@ -468,7 +469,7 @@ export const useSaleStore = create<SaleStore>()(
           const { sale, summary } = result.data;
           get().setSaleSnapshot(sale ?? null, summary ?? null);
         } catch (error) {
-          console.error("❌ [POS SALE] Apply discount failed:", error);
+          logger.error("POS Sale Store: apply discount failed", { error });
           const message =
             error instanceof Error ? error.message : "Failed to apply discount";
           get().setError(message);
@@ -524,7 +525,7 @@ export const useSaleStore = create<SaleStore>()(
 
           return validation;
         } catch (error) {
-          console.error("❌ [POS SALE] Validation failed:", error);
+          logger.error("POS Sale Store: validation failed", { error });
           const message =
             error instanceof Error ? error.message : "Sale validation failed";
           const validation: SaleValidation = {
@@ -712,7 +713,7 @@ export const useSaleInitializer = (sessionId: string | null | undefined) => {
     previousSessionId.current = normalizedSessionId;
 
     refreshSale().catch((error) => {
-      console.error("❌ [POS SALE] Initial refresh failed:", error);
+      logger.error("POS Sale Store: initial refresh failed", { error });
     });
   }, [
     currentSessionId,

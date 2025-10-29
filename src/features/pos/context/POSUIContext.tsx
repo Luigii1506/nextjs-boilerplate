@@ -11,6 +11,7 @@
  */
 
 import React, { createContext, useContext, useState, useCallback } from "react";
+import { logger } from "@/shared/utils/logger";
 
 // ========================================
 // TYPES
@@ -158,11 +159,8 @@ export function POSUIProvider({ children, initialTab }: POSUIProviderProps) {
   }, []);
 
   const openCloseSessionModal = useCallback(() => {
-    console.log('[POSUIContext] openCloseSessionModal called');
-    setState((prev) => {
-      console.log('[POSUIContext] Setting isCloseSessionModalOpen to true');
-      return { ...prev, isCloseSessionModalOpen: true };
-    });
+    logger.debug("POS UI Context: open close-session modal");
+    setState((prev) => ({ ...prev, isCloseSessionModalOpen: true }));
   }, []);
 
   const closeCloseSessionModal = useCallback(() => {

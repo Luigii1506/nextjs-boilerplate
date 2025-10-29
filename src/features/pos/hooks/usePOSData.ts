@@ -30,9 +30,9 @@ export function usePOSData(options: UsePOSDataOptions = {}) {
   const { user, isAuthenticated } = useAuth();
 
   return useQuery<UsePOSDataResult>({
-    queryKey: posKeys.dashboardData(user?.id || ""),
+    queryKey: posKeys.dashboardData(user?.id ?? ""),
     queryFn: async (): Promise<UsePOSDataResult> => {
-      if (!user?.id) {
+      if (!isAuthenticated || !user?.id) {
         return {
           activeSession: null,
           products: [],
@@ -43,9 +43,7 @@ export function usePOSData(options: UsePOSDataOptions = {}) {
       }
 
       // Cargar datos del dashboard
-      const dashboardResult = await actions.getDashboardDataAction(
-        session.user.id
-      );
+      const dashboardResult = await actions.getDashboardDataAction(user.id);
 
       if (!dashboardResult.success || !dashboardResult.data) {
         throw new Error(
@@ -149,13 +147,13 @@ export function useActiveSession(options: { enabled?: boolean } = {}) {
   const { user, isAuthenticated } = useAuth();
 
   return useQuery({
-    queryKey: posKeys.activeSession(user?.id || ""),
+    queryKey: posKeys.activeSession(user?.id ?? ""),
     queryFn: async () => {
-      if (!user?.id) {
+      if (!isAuthenticated || !user?.id) {
         return null;
       }
 
-      const result = await getActiveSessionAction(session.user.id);
+      const result = await getActiveSessionAction(user.id);
 
       if (!result.success) {
         return null;

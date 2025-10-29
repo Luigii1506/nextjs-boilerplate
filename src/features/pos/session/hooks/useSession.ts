@@ -14,6 +14,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useAuth } from "@/shared/hooks/useAuth";
 import * as actions from "../server/actions";
 import type { POSSessionStatus } from "../../types/models";
+import { logger } from "@/shared/utils/logger";
 
 export interface UsePOSSessionOptions {
   autoLoad?: boolean;
@@ -95,7 +96,9 @@ export function usePOSSession(
         setCurrentSession(null);
       }
     } catch (err) {
-      console.error("[usePOSSession] Load active session error:", err);
+      logger.error("usePOSSession: load active session error", {
+        error: err,
+      });
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setIsLoading(false);
@@ -119,7 +122,9 @@ export function usePOSSession(
         setError(result.error || "Failed to load session summary");
       }
     } catch (err) {
-      console.error("[usePOSSession] Load session with summary error:", err);
+      logger.error("usePOSSession: load session with summary error", {
+        error: err,
+      });
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setIsLoading(false);
@@ -153,7 +158,7 @@ export function usePOSSession(
           throw new Error(result.error || "Failed to open session");
         }
       } catch (err) {
-        console.error("[usePOSSession] Open session error:", err);
+        logger.error("usePOSSession: open session error", { error: err });
         const errorMsg = err instanceof Error ? err.message : "Unknown error";
         setError(errorMsg);
         throw err;
@@ -192,7 +197,7 @@ export function usePOSSession(
           throw new Error(result.error || "Failed to close session");
         }
       } catch (err) {
-        console.error("[usePOSSession] Close session error:", err);
+        logger.error("usePOSSession: close session error", { error: err });
         const errorMsg = err instanceof Error ? err.message : "Unknown error";
         setError(errorMsg);
         throw err;
@@ -229,7 +234,7 @@ export function usePOSSession(
           throw new Error(result.error || "Failed to suspend session");
         }
       } catch (err) {
-        console.error("[usePOSSession] Suspend session error:", err);
+        logger.error("usePOSSession: suspend session error", { error: err });
         const errorMsg = err instanceof Error ? err.message : "Unknown error";
         setError(errorMsg);
         throw err;
@@ -262,7 +267,7 @@ export function usePOSSession(
         throw new Error(result.error || "Failed to resume session");
       }
     } catch (err) {
-      console.error("[usePOSSession] Resume session error:", err);
+      logger.error("usePOSSession: resume session error", { error: err });
       const errorMsg = err instanceof Error ? err.message : "Unknown error";
       setError(errorMsg);
       throw err;
@@ -298,7 +303,9 @@ export function usePOSSession(
         // Return result for external use
         return result;
       } catch (err) {
-        console.error("[usePOSSession] Load session history error:", err);
+        logger.error("usePOSSession: load session history error", {
+          error: err,
+        });
         setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
         setIsLoading(false);

@@ -17,6 +17,32 @@ import {
 } from "../../schemas";
 import type { ActionResult } from "@/shared/types";
 import type { POSSessionStatus } from "../../types/models";
+import { logger } from "@/shared/utils/logger";
+
+type ActiveSessionResult = Awaited<
+  ReturnType<typeof queries.getActiveSessionByUser>
+>;
+type SessionEntity = Awaited<ReturnType<typeof queries.getSessionById>>;
+type SessionSummaryResult = Awaited<
+  ReturnType<typeof queries.calculateSessionSummary>
+>;
+type SessionCreateResult = Awaited<ReturnType<typeof queries.createSession>>;
+type SessionUpdateResult = Awaited<ReturnType<typeof queries.closeSession>>;
+type SessionSuspendResult = Awaited<ReturnType<typeof queries.suspendSession>>;
+type SessionResumeResult = Awaited<ReturnType<typeof queries.resumeSession>>;
+type SessionHistoryResult = Awaited<
+  ReturnType<typeof queries.getSessionsByUser>
+>;
+type SessionTransactionsResult = Awaited<
+  ReturnType<typeof queries.getSessionTransactions>
+>;
+
+type SessionWithSummaryResult = {
+  session: NonNullable<SessionEntity>;
+  summary: SessionSummaryResult;
+};
+
+type SessionDetail = NonNullable<SessionEntity>;
 
 // ========================================
 // GET ACTIVE SESSION
@@ -27,7 +53,7 @@ import type { POSSessionStatus } from "../../types/models";
  */
 export async function getActiveSessionAction(
   userId: string
-): Promise<ActionResult<any>> {
+): Promise<ActionResult<ActiveSessionResult>> {
   try {
     const session = await queries.getActiveSessionByUser(userId);
 
@@ -36,7 +62,7 @@ export async function getActiveSessionAction(
       data: session,
     };
   } catch (error) {
-    console.error("[POS Session Action] Get active session error:", error);
+    logger.error("POS Session Action: get active session failed", { error });
     return {
       success: false,
       error:
@@ -56,7 +82,7 @@ export async function getActiveSessionAction(
  */
 export async function getSessionAction(
   sessionId: string
-): Promise<ActionResult<any>> {
+): Promise<ActionResult<SessionDetail>> {
   try {
     const session = await queries.getSessionById(sessionId);
 
@@ -72,7 +98,7 @@ export async function getSessionAction(
       data: session,
     };
   } catch (error) {
-    console.error("[POS Session Action] Get session error:", error);
+    logger.error("POS Session Action: get session failed", { error });
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to get session",
@@ -89,7 +115,7 @@ export async function getSessionAction(
  */
 export async function getSessionWithSummaryAction(
   sessionId: string
-): Promise<ActionResult<any>> {
+): Promise<ActionResult<SessionWithSummaryResult>> {
   try {
     const session = await queries.getSessionById(sessionId);
 
@@ -110,10 +136,9 @@ export async function getSessionWithSummaryAction(
       },
     };
   } catch (error) {
-    console.error(
-      "[POS Session Action] Get session with summary error:",
-      error
-    );
+    logger.error("POS Session Action: get session with summary failed", {
+      error,
+    });
     return {
       success: false,
       error:
@@ -135,7 +160,7 @@ export async function openSessionAction(
   userId: string,
   initialCash: number,
   notes?: string
-): Promise<ActionResult<any>> {
+): Promise<ActionResult<SessionCreateResult>> {
   try {
     // Validar input
     const validated = CreatePOSSessionSchema.parse({
@@ -159,7 +184,7 @@ export async function openSessionAction(
       message: "Session opened successfully",
     };
   } catch (error) {
-    console.error("[POS Session Action] Open session error:", error);
+    logger.error("POS Session Action: open session failed", { error });
 
     // If it's a Zod validation error, return formatted error message
     if (error && typeof error === 'object' && 'issues' in error) {
@@ -189,7 +214,9 @@ export async function closeSessionAction(
   sessionId: string,
   finalCash: number,
   notes?: string
-): Promise<ActionResult<any>> {
+): Promise<
+  ActionResult<{ session: SessionUpdateResult; summary: SessionSummaryResult }>
+> {
   try {
     // Validar input
     const validated = ClosePOSSessionSchema.parse({
@@ -219,7 +246,7 @@ export async function closeSessionAction(
       message: "Session closed successfully",
     };
   } catch (error) {
-    console.error("[POS Session Action] Close session error:", error);
+    logger.error("POS Session Action: close session failed", { error });
     return {
       success: false,
       error:
@@ -238,7 +265,7 @@ export async function closeSessionAction(
 export async function suspendSessionAction(
   sessionId: string,
   notes?: string
-): Promise<ActionResult<any>> {
+): Promise<ActionResult<SessionSuspendResult>> {
   try {
     const session = await queries.suspendSession(sessionId, notes);
 
@@ -250,7 +277,7 @@ export async function suspendSessionAction(
       message: "Session suspended successfully",
     };
   } catch (error) {
-    console.error("[POS Session Action] Suspend session error:", error);
+    logger.error("POS Session Action: suspend session failed", { error });
     return {
       success: false,
       error:
@@ -268,7 +295,7 @@ export async function suspendSessionAction(
  */
 export async function resumeSessionAction(
   sessionId: string
-): Promise<ActionResult<any>> {
+): Promise<ActionResult<SessionResumeResult>> {
   try {
     const session = await queries.resumeSession(sessionId);
 
@@ -280,7 +307,7 @@ export async function resumeSessionAction(
       message: "Session resumed successfully",
     };
   } catch (error) {
-    console.error("[POS Session Action] Resume session error:", error);
+    logger.error("POS Session Action: resume session failed", { error });
     return {
       success: false,
       error:
@@ -300,7 +327,7 @@ export async function getSessionHistoryAction(
   userId: string,
   limit: number = 10,
   status?: POSSessionStatus
-): Promise<ActionResult<any>> {
+): Promise<ActionResult<SessionHistoryResult>> {
   try {
     const sessions = await queries.getSessionsByUser(userId, limit, status);
 
@@ -309,7 +336,7 @@ export async function getSessionHistoryAction(
       data: sessions,
     };
   } catch (error) {
-    console.error("[POS Session Action] Get session history error:", error);
+    logger.error("POS Session Action: get session history failed", { error });
     return {
       success: false,
       error:
@@ -330,7 +357,7 @@ export async function getSessionHistoryAction(
 export async function getSessionTransactionsAction(
   sessionId: string,
   limit?: number
-): Promise<ActionResult<any>> {
+): Promise<ActionResult<SessionTransactionsResult>> {
   try {
     const transactions = await queries.getSessionTransactions(
       sessionId,
@@ -342,10 +369,9 @@ export async function getSessionTransactionsAction(
       data: transactions,
     };
   } catch (error) {
-    console.error(
-      "[POS Session Action] Get session transactions error:",
-      error
-    );
+    logger.error("POS Session Action: get session transactions failed", {
+      error,
+    });
     return {
       success: false,
       error:

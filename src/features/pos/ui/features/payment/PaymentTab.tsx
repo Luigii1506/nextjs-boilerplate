@@ -26,6 +26,7 @@ import {
 import { usePOSUI } from "../../../context";
 import { formatCurrency } from "../../../utils";
 import { PAYMENT_METHODS, type POSPaymentMethod } from "../../../payment/types";
+import { logger } from "@/shared/utils/logger";
 
 export const PaymentTab: React.FC = () => {
   // Sale store
@@ -108,7 +109,7 @@ export const PaymentTab: React.FC = () => {
         await clearSale();
       }
     } catch (error) {
-      console.error("Payment processing error:", error);
+      logger.error("PaymentTab: payment processing error", { error });
     }
   };
 
