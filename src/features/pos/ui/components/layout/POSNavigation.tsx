@@ -11,7 +11,7 @@
 
 import React from "react";
 import { usePOSUI, type POSTab } from "../../../context";
-import { useSale } from "../../../sale";
+import { useItemCount, useHasItems } from "../../../stores/saleStore";
 
 interface TabConfig {
   id: POSTab;
@@ -22,7 +22,10 @@ interface TabConfig {
 
 export const POSNavigation: React.FC = () => {
   const { activeTab, setActiveTab } = usePOSUI();
-  const { itemCount, hasItems } = useSale();
+
+  // Zustand store
+  const itemCount = useItemCount();
+  const hasItems = useHasItems();
 
   const tabs: TabConfig[] = [
     {

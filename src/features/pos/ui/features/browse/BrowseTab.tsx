@@ -11,7 +11,7 @@
 
 import React, { useState } from "react";
 import { useSearchProducts, useCategories } from "../../../hooks";
-import { useSale } from "../../../sale";
+import { useSaleStore, useSaleActions } from "../../../stores/saleStore";
 import { usePOSUI } from "../../../context";
 import { formatCurrency } from "../../../utils";
 import type { ProductForCustomer } from "@/features/storefront/types";
@@ -29,7 +29,10 @@ export const BrowseTab: React.FC = () => {
     pageSize: 20,
   });
 
-  const { addItem, isLoading: isAddingItem } = useSale();
+  // Zustand store
+  const isAddingItem = useSaleStore((state) => state.isLoading);
+  const { addItem } = useSaleActions();
+
   const { setActiveTab } = usePOSUI();
 
   const handleAddToSale = async (product: ProductForCustomer) => {

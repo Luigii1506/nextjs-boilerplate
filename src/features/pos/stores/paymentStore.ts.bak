@@ -1,0 +1,288 @@
+/**
+ * 💳 POS Payment Store (Zustand)
+ * ===============================
+ *
+ * Global state management for POS payments using Zustand.
+ * Replaces the old PaymentProvider with a centralized store.
+ *
+ * @module pos/stores/paymentStore
+ * @version 2.0.0
+ */
+
+'use client';
+
+import { create } from 'zustand';
+import { devtools } from 'zustand/middleware';
+import * as actions from '../payment/server/actions';
+import type {
+  POSPaymentState,
+  ProcessPaymentInput,
+  ProcessPaymentResult,
+  POSTransactionResult,
+} from '../payment/types';
+import { calculateChange } from '../payment/types';
+import type { POSPaymentMethod } from '../types/models';
+import type { POSSaleSummary } from '../sale/types';
+
+// ========================================
+// TYPES
+// ========================================
+
+interface PaymentStoreState {
+  // State
+  paymentState: POSPaymentState;
+  currentTransaction: POSTransactionResult | null;
+
+  // Actions
+  setPaymentMethod: (method: POSPaymentMethod) => void;
+  setAmountPaid: (amount: number) => void;
+  setMixedPayment: (cash: number, card: number, transfer: number) => void;
+  setSaleSummary: (summary: POSSaleSummary) => void;
+  processPayment: (input: ProcessPaymentInput) => Promise<ProcessPaymentResult>;
+  resetPayment: () => void;
+}
+
+// ========================================
+// INITIAL STATE
+// ========================================
+
+const INITIAL_PAYMENT_STATE: POSPaymentState = {
+  saleSummary: null,
+  paymentMethod: null,
+  amountPaid: 0,
+  changeDue: 0,
+  cashAmount: 0,
+  cardAmount: 0,
+  transferAmount: 0,
+  transactionId: null,
+  transactionNumber: null,
+  isProcessing: false,
+  isComplete: false,
+  error: null,
+};
+
+// ========================================
+// STORE
+// ========================================
+
+export const usePaymentStore = create<PaymentStoreState>()(
+  devtools(
+    (set, get) => ({
+      // ========================================
+      // INITIAL STATE
+      // ========================================
+
+      paymentState: INITIAL_PAYMENT_STATE,
+      currentTransaction: null,
+
+      // ========================================
+      // ACTIONS
+      // ========================================
+
+      /**
+       * Set payment method
+       */
+      setPaymentMethod: (method: POSPaymentMethod) => {
+        set({
+          paymentState: {
+            ...get().paymentState,
+            paymentMethod: method,
+            error: null,
+          },
+        });
+      },
+
+      /**
+       * Set amount paid
+       */
+      setAmountPaid: (amount: number) => {
+        const state = get().paymentState;
+
+        set({
+          paymentState: {
+            ...state,
+            amountPaid: amount,
+            changeDue: state.saleSummary
+              ? calculateChange(amount, state.saleSummary.total)
+              : 0,
+          },
+        });
+      },
+
+      /**
+       * Set mixed payment (cash + card + transfer)
+       */
+      setMixedPayment: (cash: number, card: number, transfer: number) => {
+        const total = cash + card + transfer;
+        const state = get().paymentState;
+
+        set({
+          paymentState: {
+            ...state,
+            paymentMethod: 'MIXED',
+            cashAmount: cash,
+            cardAmount: card,
+            transferAmount: transfer,
+            amountPaid: total,
+            changeDue: state.saleSummary
+              ? calculateChange(total, state.saleSummary.total)
+              : 0,
+          },
+        });
+      },
+
+      /**
+       * Set sale summary (from cart)
+       */
+      setSaleSummary: (summary: POSSaleSummary) => {
+        set({
+          paymentState: {
+            ...get().paymentState,
+            saleSummary: summary,
+          },
+        });
+      },
+
+      /**
+       * Process payment
+       */
+      processPayment: async (input: ProcessPaymentInput) => {
+        const state = get().paymentState;
+
+        // Update state to processing
+        set({
+          paymentState: {
+            ...state,
+            isProcessing: true,
+            error: null,
+          },
+        });
+
+        try {
+          const result = await actions.processPaymentAction(input);
+
+          if (result.success && result.data) {
+            // Payment successful
+            set({
+              paymentState: {
+                ...state,
+                isProcessing: false,
+                isComplete: true,
+                transactionId: result.data.transaction.id,
+                transactionNumber: result.data.transaction.transactionNumber,
+                error: null,
+              },
+              currentTransaction: result.data,
+            });
+
+            console.log('[PaymentStore] Payment processed successfully');
+
+            return {
+              success: true,
+              data: result.data,
+              message: result.message,
+            };
+          } else {
+            // Payment failed
+            set({
+              paymentState: {
+                ...state,
+                isProcessing: false,
+                isComplete: false,
+                error: result.error || 'Payment failed',
+              },
+            });
+
+            console.error('[PaymentStore] Payment failed:', result.error);
+
+            return {
+              success: false,
+              error: result.error || 'Payment failed',
+            };
+          }
+        } catch (error) {
+          console.error('[PaymentStore] Process payment error:', error);
+
+          const errorMsg = error instanceof Error ? error.message : 'Payment processing error';
+
+          set({
+            paymentState: {
+              ...state,
+              isProcessing: false,
+              isComplete: false,
+              error: errorMsg,
+            },
+          });
+
+          return {
+            success: false,
+            error: errorMsg,
+          };
+        }
+      },
+
+      /**
+       * Reset payment state (for new transaction)
+       */
+      resetPayment: () => {
+        set({
+          paymentState: INITIAL_PAYMENT_STATE,
+          currentTransaction: null,
+        });
+      },
+    }),
+    { name: 'POS-Payment' } // DevTools name
+  )
+);
+
+// ========================================
+// SELECTORS (Optimized)
+// ========================================
+
+// ========================================
+// STABLE SELECTORS (Cache-friendly)
+// ========================================
+
+/**
+ * Stable selector functions that can be cached by Zustand
+ * These are defined once and reused, preventing the getSnapshot warning
+ */
+
+// Create stable selector functions
+const selectPaymentState = (state: PaymentStoreState) => state.paymentState;
+const selectCurrentTransaction = (state: PaymentStoreState) => state.currentTransaction;
+const selectPaymentMethod = (state: PaymentStoreState) => state.paymentState.paymentMethod;
+const selectAmountPaid = (state: PaymentStoreState) => state.paymentState.amountPaid;
+const selectChangeDue = (state: PaymentStoreState) => state.paymentState.changeDue;
+const selectIsProcessing = (state: PaymentStoreState) => state.paymentState.isProcessing;
+const selectIsComplete = (state: PaymentStoreState) => state.paymentState.isComplete;
+const selectError = (state: PaymentStoreState) => state.paymentState.error;
+
+const selectCanProcess = (state: PaymentStoreState) => {
+  const { paymentMethod, saleSummary, amountPaid, isProcessing } = state.paymentState;
+  return !!(paymentMethod && saleSummary && amountPaid >= saleSummary.total && !isProcessing);
+};
+
+/**
+ * Selector hooks for optimal re-render performance
+ * These use stable selector functions to avoid getSnapshot warnings
+ */
+export const usePaymentState = () => usePaymentStore(selectPaymentState);
+export const useCurrentTransaction = () => usePaymentStore(selectCurrentTransaction);
+export const usePaymentMethod = () => usePaymentStore(selectPaymentMethod);
+export const useAmountPaid = () => usePaymentStore(selectAmountPaid);
+export const useChangeDue = () => usePaymentStore(selectChangeDue);
+export const useIsProcessingPayment = () => usePaymentStore(selectIsProcessing);
+export const useIsPaymentComplete = () => usePaymentStore(selectIsComplete);
+export const usePaymentError = () => usePaymentStore(selectError);
+export const useCanProcessPayment = () => usePaymentStore(selectCanProcess);
+
+// Export actions separately
+export const usePaymentActions = () => usePaymentStore((state) => ({
+  setPaymentMethod: state.setPaymentMethod,
+  setAmountPaid: state.setAmountPaid,
+  setMixedPayment: state.setMixedPayment,
+  setSaleSummary: state.setSaleSummary,
+  processPayment: state.processPayment,
+  resetPayment: state.resetPayment,
+}));

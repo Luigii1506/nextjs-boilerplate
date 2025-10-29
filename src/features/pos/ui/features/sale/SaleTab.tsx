@@ -10,23 +10,20 @@
  */
 
 import React from "react";
-import { useSale } from "../../../sale";
+import { useSaleStore, useSaleItems, useSaleSummary, useItemCount, useHasItems, useCanCheckout, useSaleActions } from "../../../stores/saleStore";
 import { usePOSUI } from "../../../context";
 import { formatCurrency } from "../../../utils";
 
 export const SaleTab: React.FC = () => {
-  const {
-    items,
-    summary,
-    itemCount,
-    total,
-    hasItems,
-    canCheckout,
-    isLoading,
-    updateQuantity,
-    removeItem,
-    clearSale,
-  } = useSale();
+  // Zustand store
+  const items = useSaleItems();
+  const summary = useSaleSummary();
+  const isLoading = useSaleStore((state) => state.isLoading);
+  const itemCount = useItemCount();
+  const total = useSaleStore((state) => state.total());
+  const hasItems = useHasItems();
+  const canCheckout = useCanCheckout();
+  const { updateQuantity, removeItem, clearSale } = useSaleActions();
 
   const { setActiveTab } = usePOSUI();
 

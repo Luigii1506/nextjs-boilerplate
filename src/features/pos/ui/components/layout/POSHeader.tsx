@@ -11,19 +11,19 @@
 
 import React from "react";
 import { useAuth } from "@/shared/hooks/useAuth";
-import { usePOSSession } from "../../../session";
+import { useSessionStore, useIsSessionOpen } from "../../../stores/sessionStore";
 import { usePOSUI } from "../../../context";
 import { DarkModeToggle } from "@/shared/ui/components/DarkModeToggle";
 import { formatCurrency } from "../../../utils";
 
 export const POSHeader: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
-  const { currentSession, isSessionOpen } = usePOSSession();
-  const { openSessionModal, openCloseSessionModal } = usePOSUI();
 
-  // Debug: Log when button should appear
-  console.log('[POSHeader] isSessionOpen:', isSessionOpen);
-  console.log('[POSHeader] openCloseSessionModal:', typeof openCloseSessionModal);
+  // Zustand store
+  const currentSession = useSessionStore((state) => state.currentSession);
+  const isSessionOpen = useIsSessionOpen();
+
+  const { openSessionModal, openCloseSessionModal } = usePOSUI();
 
   return (
     <header className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
@@ -87,10 +87,7 @@ export const POSHeader: React.FC = () => {
             {/* Session Actions */}
             {isSessionOpen && (
               <button
-                onClick={() => {
-                  console.log('[POSHeader] Button clicked!');
-                  openCloseSessionModal();
-                }}
+                onClick={openCloseSessionModal}
                 className="px-3 py-2 text-sm font-medium text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors flex items-center space-x-1"
               >
                 <span>🔒</span>

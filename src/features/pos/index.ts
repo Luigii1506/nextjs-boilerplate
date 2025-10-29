@@ -54,7 +54,47 @@ export {
 } from "./schemas";
 
 // ========================================
-// SUB-FEATURES
+// STATE MANAGEMENT (ZUSTAND STORES)
+// ========================================
+
+// Session Store
+export {
+  useSessionStore,
+  useSessionActions,
+  useIsSessionOpen,
+  useHasActiveSession,
+  useIsSessionClosed,
+  useIsSessionSuspended,
+  type SessionState,
+} from "./stores/sessionStore";
+
+// Sale Store
+export {
+  useSaleStore,
+  useSaleActions,
+  useSaleItems,
+  useSaleSummary,
+  useItemCount,
+  useHasItems,
+  useCanCheckout,
+  type SaleState,
+} from "./stores/saleStore";
+
+// Payment Store
+export {
+  usePaymentStore,
+  usePaymentActions,
+  useCurrentTransaction,
+  usePaymentProcessing,
+  usePaymentComplete,
+  usePaymentError,
+  useChangeDue,
+  useCanProcessPayment,
+  type PaymentStoreState,
+} from "./stores/paymentStore";
+
+// ========================================
+// SUB-FEATURES (LEGACY - For backward compatibility)
 // ========================================
 
 // Sale (cart for POS)
@@ -65,7 +105,7 @@ export {
   type POSSaleSummary,
   type POSSaleState,
   type POSSaleContextValue,
-  // Context & Hooks
+  // Context & Hooks (DEPRECATED - Use useSaleStore instead)
   SaleProvider,
   useSale,
   // Actions
@@ -91,7 +131,7 @@ export {
   PAYMENT_METHODS,
   validatePaymentInput,
   calculateChange,
-  // Context & Hooks
+  // Context & Hooks (DEPRECATED - Use usePaymentStore instead)
   PaymentProvider,
   usePayment,
   // Actions
@@ -102,7 +142,7 @@ export {
 
 // Session
 export {
-  // Hooks
+  // Hooks (DEPRECATED - Use useSessionStore instead)
   usePOSSession,
   type UsePOSSessionOptions,
   type UsePOSSessionReturn,

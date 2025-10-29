@@ -11,7 +11,7 @@
  */
 
 import React, { useEffect, useState } from "react";
-import { usePOSSession } from "../../session";
+import { useSessionStore, useIsSessionOpen, useSessionActions } from "../../stores/sessionStore";
 import { usePOSUI } from "../../context";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { useRouter } from "next/navigation";
@@ -23,7 +23,13 @@ interface SessionGuardProps {
 export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { currentSession, isSessionOpen, isLoading: sessionLoading, loadActiveSession, openSession } = usePOSSession();
+
+  // Zustand store
+  const currentSession = useSessionStore((state) => state.currentSession);
+  const isSessionOpen = useIsSessionOpen();
+  const sessionLoading = useSessionStore((state) => state.isLoading);
+  const { loadActiveSession, openSession } = useSessionActions();
+
   const { openSessionModal, state } = usePOSUI();
 
   // Combined loading state with minimum display time to prevent flashing
@@ -69,32 +75,20 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
     }
 
     try {
-      await openSession(amount, notes || undefined);
+      await openSession(user.id, amount, notes || undefined);
       setInitialCash("");
       setNotes("");
-
-      // Reload session state
-      await loadActiveSession();
-      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al abrir la caja");
     }
   };
 
-  // Reload session when open modal closes (in case session was opened via modal)
+  // Load active session on mount
   useEffect(() => {
-    if (!state.isSessionModalOpen && isAuthenticated && !currentSession) {
-      loadActiveSession();
+    if (isAuthenticated && user?.id) {
+      loadActiveSession(user.id);
     }
-  }, [state.isSessionModalOpen, isAuthenticated, currentSession, loadActiveSession]);
-
-  // Reload session when close modal closes (to detect session was closed)
-  useEffect(() => {
-    if (!state.isCloseSessionModalOpen && isAuthenticated) {
-      console.log('[SessionGuard] Close modal closed, reloading session');
-      loadActiveSession();
-    }
-  }, [state.isCloseSessionModalOpen, isAuthenticated, loadActiveSession]);
+  }, [isAuthenticated, user?.id, loadActiveSession]);
 
   // ========================================
   // LOADING STATE (Initial + Session Check)

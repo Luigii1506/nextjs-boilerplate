@@ -10,7 +10,7 @@
  */
 
 import React, { useState } from "react";
-import { usePOSSession } from "../../../session";
+import { useSessionStore, useSessionActions } from "../../../stores/sessionStore";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { useRouter } from "next/navigation";
 
@@ -25,7 +25,10 @@ export const OpenSessionModal: React.FC<OpenSessionModalProps> = ({
 }) => {
   const router = useRouter();
   const { user } = useAuth();
-  const { openSession, isLoading } = usePOSSession();
+
+  // Zustand store
+  const isLoading = useSessionStore((state) => state.isLoading);
+  const { openSession } = useSessionActions();
 
   const [initialCash, setInitialCash] = useState("");
   const [notes, setNotes] = useState("");
@@ -53,13 +56,10 @@ export const OpenSessionModal: React.FC<OpenSessionModalProps> = ({
     }
 
     try {
-      await openSession(amount, notes || undefined);
+      await openSession(user.id, amount, notes || undefined);
       setInitialCash("");
       setNotes("");
       onClose();
-
-      // Force refresh to reload session state
-      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al abrir la caja");
     }

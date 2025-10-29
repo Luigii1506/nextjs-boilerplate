@@ -84,7 +84,8 @@
     "stripe": "^19.1.0",
     "uuid": "^11.1.0",
     "xlsx": "^0.18.5",
-    "zod": "^4.0.17"
+    "zod": "^4.0.17",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

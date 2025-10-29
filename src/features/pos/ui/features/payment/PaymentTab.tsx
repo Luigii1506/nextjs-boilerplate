@@ -10,28 +10,39 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { useSale } from "../../../sale";
-import { usePayment } from "../../../payment";
-import { usePOSSession } from "../../../session";
+import { useSaleStore, useSaleSummary, useHasItems, useCanCheckout, useSaleActions } from "../../../stores/saleStore";
+import { usePaymentStore, useCurrentTransaction, useChangeDue, usePaymentActions } from "../../../stores/paymentStore";
+import { useSessionStore } from "../../../stores/sessionStore";
 import { usePOSUI } from "../../../context";
 import { formatCurrency } from "../../../utils";
 import { PAYMENT_METHODS, type POSPaymentMethod } from "../../../payment/types";
 
 export const PaymentTab: React.FC = () => {
-  const { summary, hasItems, validateForCheckout, clearSale, sessionId } = useSale();
+  // Sale store
+  const summary = useSaleSummary();
+  const sessionId = useSaleStore((state) => state.sessionId);
+  const hasItems = useHasItems();
+  const canCheckout = useCanCheckout();
+  const { clearSale } = useSaleActions();
+
+  // Payment store
+  const paymentState = usePaymentStore((state) => state.paymentState);
+  const currentTransaction = useCurrentTransaction();
+  const isProcessing = usePaymentStore((state) => state.isProcessing());
+  const isComplete = usePaymentStore((state) => state.isComplete());
+  const changeDue = useChangeDue();
+  const canProcess = usePaymentStore((state) => state.canProcess());
   const {
-    paymentState,
     setPaymentMethod,
     setAmountPaid,
     processPayment,
     resetPayment,
-    changeDue,
-    canProcess,
-    isProcessing,
-    isComplete,
-    currentTransaction,
-  } = usePayment();
-  const { currentSession } = usePOSSession();
+    setSaleSummary,
+  } = usePaymentActions();
+
+  // Session store
+  const currentSession = useSessionStore((state) => state.currentSession);
+
   const { setActiveTab } = usePOSUI();
 
   const [amountInput, setAmountInput] = useState("");
@@ -39,11 +50,9 @@ export const PaymentTab: React.FC = () => {
   // Auto-set sale summary when entering payment tab
   useEffect(() => {
     if (summary && !paymentState.saleSummary) {
-      resetPayment();
-      // Note: Necesitaríamos actualizar el PaymentContext para aceptar saleSummary
-      // Por ahora continuaremos sin esto
+      setSaleSummary(summary);
     }
-  }, [summary, paymentState.saleSummary, resetPayment]);
+  }, [summary, paymentState.saleSummary, setSaleSummary]);
 
   const handlePaymentMethodChange = (method: POSPaymentMethod) => {
     setPaymentMethod(method);
@@ -70,8 +79,6 @@ export const PaymentTab: React.FC = () => {
     if (!canProcess || !sessionId || !paymentState.paymentMethod) return;
 
     try {
-      await validateForCheckout();
-
       const result = await processPayment({
         sessionId,
         paymentMethod: paymentState.paymentMethod,
@@ -81,7 +88,6 @@ export const PaymentTab: React.FC = () => {
       if (result.success) {
         // Limpiar venta
         await clearSale();
-        // El estado de pago ya está actualizado por el context
       }
     } catch (error) {
       console.error("Payment processing error:", error);

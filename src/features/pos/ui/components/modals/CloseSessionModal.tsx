@@ -10,7 +10,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { usePOSSession } from "../../../session";
+import { useSessionStore, useSessionActions } from "../../../stores/sessionStore";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { formatCurrency } from "../../../utils";
@@ -26,7 +26,11 @@ export const CloseSessionModal: React.FC<CloseSessionModalProps> = ({
 }) => {
   const router = useRouter();
   const { user } = useAuth();
-  const { currentSession, closeSession, loadActiveSession, isLoading } = usePOSSession();
+
+  // Zustand store
+  const currentSession = useSessionStore((state) => state.currentSession);
+  const isLoading = useSessionStore((state) => state.isLoading);
+  const { closeSession, loadActiveSession } = useSessionActions();
 
   const [finalCash, setFinalCash] = useState("");
   const [notes, setNotes] = useState("");
@@ -34,15 +38,10 @@ export const CloseSessionModal: React.FC<CloseSessionModalProps> = ({
 
   // Load session if modal opens but session is null
   useEffect(() => {
-    if (isOpen && !currentSession) {
-      console.log('[CloseSessionModal] Loading session because currentSession is null');
-      loadActiveSession();
+    if (isOpen && !currentSession && user?.id) {
+      loadActiveSession(user.id);
     }
-  }, [isOpen, currentSession, loadActiveSession]);
-
-  // Debug logs
-  console.log('[CloseSessionModal] isOpen:', isOpen);
-  console.log('[CloseSessionModal] currentSession:', currentSession);
+  }, [isOpen, currentSession, user?.id, loadActiveSession]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,16 +68,10 @@ export const CloseSessionModal: React.FC<CloseSessionModalProps> = ({
       // Close the session
       await closeSession(amount, notes || undefined);
 
-      // Reload session to get updated state (will return null since no OPEN session)
-      await loadActiveSession();
-
       // Clear form and close modal
       setFinalCash("");
       setNotes("");
       onClose();
-
-      // Force refresh to reload ALL components and hooks
-      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al cerrar la caja");
     }
@@ -87,7 +80,6 @@ export const CloseSessionModal: React.FC<CloseSessionModalProps> = ({
   const quickAmounts = [0, 1000, 2000, 5000, 10000];
 
   if (!isOpen || !currentSession) {
-    console.log('[CloseSessionModal] Returning null because:', { isOpen, currentSession: !!currentSession });
     return null;
   }
 
