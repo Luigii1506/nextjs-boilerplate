@@ -20,7 +20,6 @@ export type {
   MixedPaymentInput,
   ProcessPaymentResult,
   POSTransactionResult,
-  POSPaymentContextValue,
   PaymentValidationResult,
 } from "./types";
 
@@ -30,8 +29,22 @@ export { PAYMENT_METHODS, validatePaymentInput, calculateChange } from "./types"
 // CONTEXT & HOOKS
 // ========================================
 
-export { PaymentProvider, usePaymentContext } from "./context/PaymentContext";
-export { usePayment } from "./hooks/usePayment";
+export {
+  usePaymentStore,
+  usePaymentState,
+  usePaymentStatus,
+  usePaymentProcessing,
+  usePaymentComplete,
+  usePaymentError,
+  usePaymentStoreActions,
+  useCurrentTransaction,
+  useChangeDue,
+  useCanProcessPayment,
+  type PaymentStoreState,
+} from "./state/payment.store";
+
+export { usePaymentActions, usePaymentFacade } from "./hooks/usePaymentActions";
+
 
 // ========================================
 // SERVER ACTIONS

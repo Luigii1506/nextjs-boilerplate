@@ -12,16 +12,14 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/core/database/prisma";
-import { POSCartStatus, type Prisma } from "@prisma/client";
-import { CreatePOSTransactionSchema } from "../../schemas";
-import { calculateChangeDue, generateTransactionNumber } from "../../schemas";
-import { validateSaleForCheckout } from "../../sale/server/service";
-import { calculateSaleSummary } from "../../sale/server/queries";
-import { finalizeCartCheckout } from "../../sale/server/cart.repository";
-import { roundCurrency } from "@/shared/utils/pricing";
+import type { Prisma } from "@prisma/client";
 import type { ActionResult } from "@/shared/types";
 import type { ProcessPaymentInput, ProcessPaymentResult } from "../types";
 import { logger } from "@/shared/utils/logger";
+import { processPaymentUseCase } from "./use-cases/processPayment.use-case";
+import { mapErrorToActionResult } from "@/shared/errors";
+import { createPOSError } from "../../errors";
+import { generateTransactionNumber } from "../../schemas";
 
 type TransactionWithSession = Prisma.POSTransactionGetPayload<{
   include: {
@@ -57,224 +55,28 @@ export async function processPaymentAction(
   input: ProcessPaymentInput
 ): Promise<ActionResult<ProcessPaymentResult>> {
   try {
-    const { sessionId, paymentMethod, amountPaid, notes, referenceNumber } =
-      input;
+    const { transaction } = await processPaymentUseCase(input);
 
-    // 1. Validar que la venta esté lista
-    const validation = await validateSaleForCheckout(sessionId);
-    if (!validation.isValid) {
-      return {
-        success: false,
-        error: `Sale validation failed: ${validation.errors.join(", ")}`,
-      };
-    }
-
-    // 2. Obtener el carrito/sale activo (POS cart domain)
-    const cart = await prisma.pOSCart.findFirst({
-      where: {
-        sessionId,
-        status: POSCartStatus.ACTIVE,
-      },
-      include: {
-        items: {
-          include: {
-            product: true,
-          },
-        },
-        adjustments: true,
-      },
-    });
-
-    if (!cart || cart.items.length === 0) {
-      return {
-        success: false,
-        error: "No active sale found",
-      };
-    }
-
-    // 3. Calcular summary final
-    const summary = await calculateSaleSummary(sessionId);
-
-    // 4. Validar monto pagado
-    if (amountPaid < summary.total) {
-      return {
-        success: false,
-        error: `Insufficient payment. Required: $${summary.total.toFixed(2)}, Paid: $${amountPaid.toFixed(2)}`,
-      };
-    }
-
-    // 5. Calcular cambio
-    const changeDue = calculateChangeDue(amountPaid, summary.total);
-
-    // 6. Generar número de transacción
-    // Obtener el último número de secuencia
-    const lastTransaction = await prisma.pOSTransaction.findFirst({
-      orderBy: { createdAt: "desc" },
-      select: { transactionNumber: true },
-    });
-
-    let sequenceNumber = 1;
-    if (lastTransaction?.transactionNumber) {
-      const lastSeq = parseInt(
-        lastTransaction.transactionNumber.split("-").pop() || "0"
-      );
-      sequenceNumber = lastSeq + 1;
-    }
-
-    const transactionNumber = generateTransactionNumber(sequenceNumber);
-
-    // 7. Validar con schema
-    const normalizedItems = cart.items.map((item) => {
-      const unitPrice = Number(item.unitPrice ?? 0);
-      const quantity = item.quantity ?? 0;
-      const discount = Number(item.discount ?? 0);
-      const subtotal =
-        item.subtotal !== undefined && item.subtotal !== null
-          ? Number(item.subtotal)
-          : Math.round(unitPrice * quantity * 100) / 100;
-      const tax =
-        item.tax !== undefined && item.tax !== null
-          ? Number(item.tax)
-          : Math.round(subtotal * (summary.taxRate ?? 0) * 100) / 100;
-      const total =
-        item.total !== undefined && item.total !== null
-          ? Number(item.total)
-          : Math.round((subtotal - discount + tax) * 100) / 100;
-
-      return {
-        productId: item.productId,
-        productSku: item.productSku ?? item.product?.sku ?? "UNKNOWN",
-        productName: item.productName ?? item.product?.name ?? "Producto",
-        quantity,
-        unitPrice,
-        discount,
-        subtotal,
-        tax,
-        total,
-      };
-    });
-
-    const parsedInput = {
-      sessionId,
-      cartId: cart.id,
-      type: "SALE",
-      paymentMethod,
-      subtotal: summary.subtotal,
-      tax: summary.tax,
-      discount: summary.discount,
-      total: summary.total,
-      amountPaid,
-      changeDue,
-      notes,
-      paymentReference: referenceNumber,
-      items: normalizedItems,
-    };
-
-    logger.debug("POS Payment Action: parsed payload before validation", {
-      payload: parsedInput,
-    });
-
-    CreatePOSTransactionSchema.parse(parsedInput);
-
-    logger.debug("POS Payment Action: payload validated successfully");
-    const roundedSubtotal = roundCurrency(summary.subtotal ?? 0);
-    const roundedTax = roundCurrency(summary.tax ?? 0);
-    const roundedDiscount = roundCurrency(summary.discount ?? 0);
-    const roundedTotal = roundCurrency(summary.total ?? 0);
-    const roundedAmountPaid = roundCurrency(parsedInput.amountPaid ?? amountPaid);
-    const roundedChangeDue = roundCurrency(changeDue);
-
-    logger.debug("POS Payment Action: totals derived for persistence", {
-      roundedSubtotal,
-      roundedTax,
-      roundedDiscount,
-      roundedTotal,
-      roundedAmountPaid,
-      roundedChangeDue,
-    });
-
-    // 8. Crear transacción en la DB
-    const transaction = await prisma.pOSTransaction.create({
-      data: {
-        sessionId: parsedInput.sessionId,
-        transactionNumber,
-        type: parsedInput.type,
-        paymentMethod: parsedInput.paymentMethod,
-        subtotal: roundedSubtotal || 0,
-        tax: roundedTax || 0,
-        discount: roundedDiscount || 0,
-        total: roundedTotal || 0,
-        amountPaid: roundedAmountPaid || 0,
-        changeDue: roundedChangeDue || 0,
-        notes: parsedInput.notes,
-        paymentReference: parsedInput.paymentReference ?? null,
-        items: {
-          create: normalizedItems.map((item) => ({
-            productId: item.productId,
-            productSku: item.productSku,
-            productName: item.productName,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            discount: item.discount,
-            subtotal: item.subtotal,
-            tax: item.tax,
-            total: item.total,
-          })),
-        },
-      },
-      include: {
-        items: true,
-      },
-    });
-
-    // 9. Reducir stock de los productos
-    for (const item of cart.items) {
-      await prisma.product.update({
-        where: { id: item.productId },
-        data: {
-          stock: {
-            decrement: item.quantity,
-          },
-        },
-      });
-    }
-
-    // 10. Finalizar carrito (marcar como checked-out y limpiar)
-    await finalizeCartCheckout(cart.id);
-
-    // 11. Revalidar
     revalidatePath("/pos");
 
-    // 12. Retornar resultado
     return {
       success: true,
       data: {
         success: true,
-        transaction: {
-          id: transaction.id,
-          transactionNumber: transaction.transactionNumber,
-          type: transaction.type,
-          paymentMethod: transaction.paymentMethod,
-          subtotal: Number(transaction.subtotal),
-          tax: Number(transaction.tax),
-          discount: Number(transaction.discount),
-          total: Number(transaction.total),
-          amountPaid: Number(transaction.amountPaid),
-          changeDue: Number(transaction.changeDue),
-          itemCount: transaction.items.length,
-          createdAt: transaction.createdAt,
-        },
+        transaction,
         error: null,
       },
-      message: `Payment processed successfully. Transaction: ${transactionNumber}`,
+      message: `Payment processed successfully. Transaction: ${transaction.transactionNumber}`,
     };
   } catch (error) {
     logger.error("POS Payment Action: process payment failed", { error });
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Failed to process payment",
-    };
+    const fallback = createPOSError("PAYMENT_PERSISTENCE_FAILED", {
+      context: { sessionId: input.sessionId },
+    });
+    return mapErrorToActionResult<ProcessPaymentResult>(
+      error,
+      fallback.toJSON()
+    );
   }
 }
 
@@ -308,9 +110,13 @@ export async function getTransactionAction(
     });
 
     if (!transaction) {
+      const notFound = createPOSError("PAYMENT_FETCH_FAILED", {
+        context: { transactionId },
+        hint: "La transacción solicitada no existe.",
+      });
       return {
         success: false,
-        error: "Transaction not found",
+        error: notFound.toJSON(),
       };
     }
 
@@ -320,11 +126,13 @@ export async function getTransactionAction(
     };
   } catch (error) {
     logger.error("POS Payment Action: get transaction failed", { error });
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Failed to get transaction",
-    };
+    const fallback = createPOSError("PAYMENT_FETCH_FAILED", {
+      context: { transactionId },
+    });
+    return mapErrorToActionResult<TransactionWithSession>(
+      error,
+      fallback.toJSON()
+    );
   }
 }
 
@@ -357,13 +165,13 @@ export async function getRecentTransactionsAction(
     logger.error("POS Payment Action: get recent transactions failed", {
       error,
     });
-    return {
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to get recent transactions",
-    };
+    const fallback = createPOSError("PAYMENT_FETCH_FAILED", {
+      context: { sessionId, limit },
+    });
+    return mapErrorToActionResult<TransactionWithItems[]>(
+      error,
+      fallback.toJSON()
+    );
   }
 }
 
@@ -388,16 +196,25 @@ export async function voidTransactionAction(
     });
 
     if (!originalTransaction) {
+      const notFound = createPOSError("PAYMENT_FETCH_FAILED", {
+        context: { transactionId },
+        hint: "La transacción que intentas anular no existe.",
+      });
       return {
         success: false,
-        error: "Transaction not found",
+        error: notFound.toJSON(),
       };
     }
 
     if (originalTransaction.type === "VOID") {
+      const alreadyVoided = createPOSError("PAYMENT_VOID_FAILED", {
+        context: { transactionId },
+        hint: "La transacción ya había sido anulada previamente.",
+        severity: "low",
+      });
       return {
         success: false,
-        error: "Transaction is already voided",
+        error: alreadyVoided.toJSON(),
       };
     }
 
@@ -472,10 +289,12 @@ export async function voidTransactionAction(
     };
   } catch (error) {
     logger.error("POS Payment Action: void transaction failed", { error });
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Failed to void transaction",
-    };
+    const fallback = createPOSError("PAYMENT_VOID_FAILED", {
+      context: { transactionId, reason },
+    });
+    return mapErrorToActionResult<TransactionWithItems>(
+      error,
+      fallback.toJSON()
+    );
   }
 }

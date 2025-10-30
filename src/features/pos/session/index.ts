@@ -10,16 +10,6 @@
  */
 
 // ========================================
-// HOOKS
-// ========================================
-
-export {
-  usePOSSession,
-  type UsePOSSessionOptions,
-  type UsePOSSessionReturn,
-} from "./hooks/useSession";
-
-// ========================================
 // SERVER ACTIONS
 // ========================================
 

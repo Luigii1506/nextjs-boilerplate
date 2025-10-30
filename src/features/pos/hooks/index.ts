@@ -36,6 +36,8 @@ export {
   type UsePOSDataOptions,
 } from "./usePOSData";
 
+export { usePOSInvalidations } from "./usePOSInvalidations";
+
 // ========================================
 // TRANSACTION HOOKS
 // ========================================

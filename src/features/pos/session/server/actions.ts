@@ -11,13 +11,12 @@
 
 import { revalidatePath } from "next/cache";
 import * as queries from "./queries";
-import {
-  CreatePOSSessionSchema,
-  ClosePOSSessionSchema,
-} from "../../schemas";
 import type { ActionResult } from "@/shared/types";
 import type { POSSessionStatus } from "../../types/models";
 import { logger } from "@/shared/utils/logger";
+import { openSessionUseCase, closeSessionUseCase, suspendSessionUseCase, resumeSessionUseCase } from "./use-cases";
+import { mapErrorToActionResult } from "@/shared/errors";
+import { createPOSError } from "../../errors";
 
 type ActiveSessionResult = Awaited<
   ReturnType<typeof queries.getActiveSessionByUser>
@@ -63,13 +62,13 @@ export async function getActiveSessionAction(
     };
   } catch (error) {
     logger.error("POS Session Action: get active session failed", { error });
-    return {
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to get active session",
-    };
+    const fallback = createPOSError("SESSION_FETCH_FAILED", {
+      context: { userId },
+    });
+    return mapErrorToActionResult<ActiveSessionResult>(
+      error,
+      fallback.toJSON()
+    );
   }
 }
 
@@ -87,9 +86,12 @@ export async function getSessionAction(
     const session = await queries.getSessionById(sessionId);
 
     if (!session) {
+      const notFound = createPOSError("SESSION_NOT_FOUND", {
+        context: { sessionId },
+      });
       return {
         success: false,
-        error: "Session not found",
+        error: notFound.toJSON(),
       };
     }
 
@@ -99,10 +101,10 @@ export async function getSessionAction(
     };
   } catch (error) {
     logger.error("POS Session Action: get session failed", { error });
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to get session",
-    };
+    const fallback = createPOSError("SESSION_FETCH_FAILED", {
+      context: { sessionId },
+    });
+    return mapErrorToActionResult<SessionDetail>(error, fallback.toJSON());
   }
 }
 
@@ -120,9 +122,12 @@ export async function getSessionWithSummaryAction(
     const session = await queries.getSessionById(sessionId);
 
     if (!session) {
+      const notFound = createPOSError("SESSION_NOT_FOUND", {
+        context: { sessionId },
+      });
       return {
         success: false,
-        error: "Session not found",
+        error: notFound.toJSON(),
       };
     }
 
@@ -139,13 +144,13 @@ export async function getSessionWithSummaryAction(
     logger.error("POS Session Action: get session with summary failed", {
       error,
     });
-    return {
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to get session summary",
-    };
+    const fallback = createPOSError("SESSION_FETCH_FAILED", {
+      context: { sessionId },
+    });
+    return mapErrorToActionResult<SessionWithSummaryResult>(
+      error,
+      fallback.toJSON()
+    );
   }
 }
 
@@ -162,19 +167,11 @@ export async function openSessionAction(
   notes?: string
 ): Promise<ActionResult<SessionCreateResult>> {
   try {
-    // Validar input
-    const validated = CreatePOSSessionSchema.parse({
+    const session = await openSessionUseCase({
       userId,
       initialCash,
       notes,
     });
-
-    // Crear sesión
-    const session = await queries.createSession(
-      validated.userId,
-      validated.initialCash,
-      validated.notes
-    );
 
     revalidatePath("/pos");
 
@@ -185,21 +182,13 @@ export async function openSessionAction(
     };
   } catch (error) {
     logger.error("POS Session Action: open session failed", { error });
-
-    // If it's a Zod validation error, return formatted error message
-    if (error && typeof error === 'object' && 'issues' in error) {
-      const issues = (error as any).issues;
-      const firstIssue = issues[0];
-      return {
-        success: false,
-        error: firstIssue?.message || "Validation error",
-      };
-    }
-
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to open session",
-    };
+    const fallback = createPOSError("SESSION_OPEN_FAILED", {
+      context: { userId, notes },
+    });
+    return mapErrorToActionResult<SessionCreateResult>(
+      error,
+      fallback.toJSON()
+    );
   }
 }
 
@@ -218,22 +207,11 @@ export async function closeSessionAction(
   ActionResult<{ session: SessionUpdateResult; summary: SessionSummaryResult }>
 > {
   try {
-    // Validar input
-    const validated = ClosePOSSessionSchema.parse({
+    const { session, summary } = await closeSessionUseCase({
       sessionId,
       finalCash,
       notes,
     });
-
-    // Obtener resumen antes de cerrar
-    const summary = await queries.calculateSessionSummary(validated.sessionId);
-
-    // Cerrar sesión
-    const session = await queries.closeSession(
-      validated.sessionId,
-      validated.finalCash,
-      validated.notes
-    );
 
     revalidatePath("/pos");
 
@@ -247,11 +225,13 @@ export async function closeSessionAction(
     };
   } catch (error) {
     logger.error("POS Session Action: close session failed", { error });
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Failed to close session",
-    };
+    const fallback = createPOSError("SESSION_CLOSE_FAILED", {
+      context: { sessionId, notes, finalCash },
+    });
+    return mapErrorToActionResult<{
+      session: SessionUpdateResult;
+      summary: SessionSummaryResult;
+    }>(error, fallback.toJSON());
   }
 }
 
@@ -267,7 +247,7 @@ export async function suspendSessionAction(
   notes?: string
 ): Promise<ActionResult<SessionSuspendResult>> {
   try {
-    const session = await queries.suspendSession(sessionId, notes);
+    const session = await suspendSessionUseCase(sessionId, notes);
 
     revalidatePath("/pos");
 
@@ -278,11 +258,13 @@ export async function suspendSessionAction(
     };
   } catch (error) {
     logger.error("POS Session Action: suspend session failed", { error });
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Failed to suspend session",
-    };
+    const fallback = createPOSError("SESSION_SUSPEND_FAILED", {
+      context: { sessionId, notes },
+    });
+    return mapErrorToActionResult<SessionSuspendResult>(
+      error,
+      fallback.toJSON()
+    );
   }
 }
 
@@ -294,10 +276,11 @@ export async function suspendSessionAction(
  * Reanudar sesión suspendida
  */
 export async function resumeSessionAction(
-  sessionId: string
+  sessionId: string,
+  notes?: string
 ): Promise<ActionResult<SessionResumeResult>> {
   try {
-    const session = await queries.resumeSession(sessionId);
+    const session = await resumeSessionUseCase(sessionId, notes);
 
     revalidatePath("/pos");
 
@@ -308,11 +291,13 @@ export async function resumeSessionAction(
     };
   } catch (error) {
     logger.error("POS Session Action: resume session failed", { error });
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Failed to resume session",
-    };
+    const fallback = createPOSError("SESSION_RESUME_FAILED", {
+      context: { sessionId, notes },
+    });
+    return mapErrorToActionResult<SessionResumeResult>(
+      error,
+      fallback.toJSON()
+    );
   }
 }
 
@@ -337,13 +322,13 @@ export async function getSessionHistoryAction(
     };
   } catch (error) {
     logger.error("POS Session Action: get session history failed", { error });
-    return {
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to get session history",
-    };
+    const fallback = createPOSError("SESSION_HISTORY_FAILED", {
+      context: { userId, status, limit },
+    });
+    return mapErrorToActionResult<SessionHistoryResult>(
+      error,
+      fallback.toJSON()
+    );
   }
 }
 
@@ -372,12 +357,12 @@ export async function getSessionTransactionsAction(
     logger.error("POS Session Action: get session transactions failed", {
       error,
     });
-    return {
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to get session transactions",
-    };
+    const fallback = createPOSError("SESSION_TRANSACTIONS_FAILED", {
+      context: { sessionId, limit },
+    });
+    return mapErrorToActionResult<SessionTransactionsResult>(
+      error,
+      fallback.toJSON()
+    );
   }
 }

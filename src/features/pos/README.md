@@ -77,6 +77,7 @@ import {
   // Payment
   usePaymentStore,
   usePaymentActions,
+  usePaymentFacade,
   useCurrentTransaction,
   usePaymentProcessing,
 } from '@/features/pos';
@@ -100,12 +101,16 @@ const POSComponent = () => {
   // Payment processing
   const isProcessing = usePaymentProcessing();
   const { processPayment } = usePaymentActions();
+  // or aggregate everything via the facade
+  // const payment = usePaymentFacade();
 
   // Your component logic...
 };
 ```
 
 > **Important:** Action hooks use `useMemo` internally for React 19 compatibility. See [docs/zustand-react19-pattern.md](../../docs/zustand-react19-pattern.md) for detailed explanation and best practices when working with Zustand stores.
+>
+> **Note:** Payment state se gestiona exclusivamente con Zustand (`usePaymentActions` / `usePaymentFacade`).
 
 ---
 
@@ -113,11 +118,6 @@ const POSComponent = () => {
 
 ```
 src/features/pos/
-├── stores/                    # Zustand stores
-│   ├── sessionStore.ts       # Session state management
-│   ├── saleStore.ts          # Cart/Sale state management
-│   └── paymentStore.ts       # Payment state management
-│
 ├── ui/                        # UI Components
 │   ├── components/
 │   │   ├── layout/           # Header, Navigation, Footer
@@ -144,13 +144,14 @@ src/features/pos/
 │   └── schemas/
 │
 ├── sale/
-│   ├── state/                # Zustand sale/cart store
+│   ├── state/                # Zustand sale/cart store (React 19 safe)
 │   │   └── sale.store.ts
 │   ├── server/
 │   │   ├── actions.ts
 │   │   ├── queries.ts
 │   │   └── service.ts
-│   └── schemas/
+│   ├── schemas/
+│   └── hooks/                # Sale hooks (selectors, invalidations)
 │
 ├── payment/
 │   ├── state/                # Zustand payment store
@@ -174,6 +175,8 @@ src/features/pos/
 └── utils/                     # Shared utilities (formatters, helpers)
     └── formatters.ts
 ```
+
+> ℹ️ **Cache hygiene:** Usa `usePOSInvalidations()` para centralizar la limpieza de TanStack Query (historial, dashboard, venta activa) en lugar de llamar `queryClient.invalidateQueries` manualmente.
 
 ---
 

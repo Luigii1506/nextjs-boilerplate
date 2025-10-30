@@ -169,33 +169,6 @@ export interface POSTransactionResult {
 // PAYMENT CONTEXT VALUE
 // ========================================
 
-/**
- * Valor del contexto de Payment
- * Similar a CheckoutContext en storefront
- */
-export interface POSPaymentContextValue {
-  // State
-  paymentState: POSPaymentState;
-  isProcessing: boolean;
-  isComplete: boolean;
-  error: string | null;
-
-  // Current transaction
-  currentTransaction: POSTransactionResult | null;
-
-  // Actions
-  setPaymentMethod: (method: POSPaymentMethod) => void;
-  setAmountPaid: (amount: number) => void;
-  setMixedPayment: (cash: number, card: number, transfer: number) => void;
-  processPayment: (input: ProcessPaymentInput) => Promise<ProcessPaymentResult>;
-  resetPayment: () => void;
-
-  // Computed
-  canProcess: boolean;
-  changeDue: number;
-  requiresChange: boolean;
-}
-
 // ========================================
 // PAYMENT VALIDATION
 // ========================================

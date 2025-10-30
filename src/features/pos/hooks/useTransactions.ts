@@ -10,11 +10,12 @@
  * @version 1.0.0
  */
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { posKeys, invalidateTransactionQueries } from "./queryKeys";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { posKeys } from "./queryKeys";
 import * as actions from "../server/actions";
 import { voidTransactionAction } from "../payment/server/actions";
 import { getSessionTransactionsAction } from "../session/server/actions";
+import { usePOSInvalidations } from "./usePOSInvalidations";
 
 // ========================================
 // QUERY HOOKS
@@ -105,7 +106,7 @@ export function useSessionTransactions(
  * Hook para anular una transacción
  */
 export function useVoidTransaction() {
-  const queryClient = useQueryClient();
+  const { invalidateTransactions } = usePOSInvalidations();
 
   return useMutation({
     mutationFn: async ({
@@ -127,8 +128,7 @@ export function useVoidTransaction() {
       return result.data;
     },
     onSuccess: () => {
-      // Invalidar queries relacionadas
-      invalidateTransactionQueries(queryClient);
+      invalidateTransactions();
     },
   });
 }
@@ -171,7 +171,7 @@ export function useGenerateSalesReport() {
  * Combina queries y mutations en una sola interfaz
  */
 export function useTransactionManager(transactionId?: string) {
-  const queryClient = useQueryClient();
+  const { invalidateTransactions } = usePOSInvalidations();
 
   const transactionDetails = useTransactionDetails(transactionId || "", {
     enabled: !!transactionId,
@@ -208,6 +208,9 @@ export function useTransactionManager(transactionId?: string) {
     // Helpers
     canVoid: transactionDetails.data?.canVoid || false,
     canRefund: transactionDetails.data?.canRefund || false,
+
+    // Utilities
+    invalidate: async () => invalidateTransactions(),
   };
 }
 

@@ -90,38 +90,16 @@ export {
   type SaleState,
 } from "./sale/state/sale.store";
 
-// Payment Store
-export {
-  usePaymentStore,
-  usePaymentState,
-  usePaymentStatus,
-  usePaymentStoreFacade,
-  usePaymentActions,
-  useCurrentTransaction,
-  usePaymentProcessing,
-  usePaymentComplete,
-  usePaymentError,
-  useChangeDue,
-  useCanProcessPayment,
-  type PaymentStoreState,
-} from "./payment/state/payment.store";
-
 // ========================================
-// SUB-FEATURES (LEGACY - For backward compatibility)
+// SALE DOMAIN (Actions & Types)
 // ========================================
 
-// Sale (cart for POS)
 export {
-  // Types
   type POSSaleItem,
   type POSSaleItemWithProduct,
   type POSSaleSummary,
+  type POSSaleAdjustment,
   type POSSaleState,
-  type POSSaleContextValue,
-  // Context & Hooks (DEPRECATED - Use useSaleStore instead)
-  SaleProvider,
-  useSale,
-  // Actions
   getActiveSaleAction,
   addToSaleAction,
   updateSaleQuantityAction,
@@ -131,35 +109,42 @@ export {
   validateSaleForCheckoutAction,
 } from "./sale";
 
-// Payment
+// ========================================
+// PAYMENT DOMAIN (Store + Actions)
+// ========================================
+
 export {
-  // Types
   type POSPaymentState,
   type PaymentMethodInfo,
   type ProcessPaymentInput,
   type MixedPaymentInput,
   type ProcessPaymentResult,
   type POSTransactionResult,
-  type POSPaymentContextValue,
   PAYMENT_METHODS,
   validatePaymentInput,
   calculateChange,
-  // Context & Hooks (DEPRECATED - Use usePaymentStore instead)
-  PaymentProvider,
-  usePayment,
-  // Actions
+  usePaymentStore,
+  usePaymentState,
+  usePaymentStatus,
+  usePaymentProcessing,
+  usePaymentComplete,
+  usePaymentError,
+  usePaymentStoreActions,
+  usePaymentActions,
+  usePaymentFacade,
+  useCurrentTransaction,
+  useChangeDue,
+  useCanProcessPayment,
   processPaymentAction,
   getTransactionAction,
   voidTransactionAction,
 } from "./payment";
 
-// Session
+// ========================================
+// SESSION DOMAIN (Server Actions)
+// ========================================
+
 export {
-  // Hooks (DEPRECATED - Use useSessionStore instead)
-  usePOSSession,
-  type UsePOSSessionOptions,
-  type UsePOSSessionReturn,
-  // Actions
   getActiveSessionAction,
   getSessionAction,
   getSessionWithSummaryAction,

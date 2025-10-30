@@ -35,7 +35,7 @@ export const PaymentTab: React.FC = () => {
   const sessionId = useSaleSessionId();
   const { clearSale } = useSaleActions();
 
-  // Payment store
+  // Payment state
   const paymentState = usePaymentState();
   const { isProcessing, isComplete } = usePaymentStatus();
   const currentTransaction = useCurrentTransaction();
@@ -162,7 +162,7 @@ export const PaymentTab: React.FC = () => {
             </button>
             <button
               onClick={() => {
-                // TODO: Implementar impresión
+                // NOTE: Implementar impresión
                 alert("Función de impresión pendiente");
               }}
               className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors"

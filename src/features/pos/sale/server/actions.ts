@@ -13,21 +13,23 @@
 
 import { revalidatePath } from "next/cache";
 import * as service from "./service";
-import * as queries from "./queries";
-import {
-  AddToPOSCartSchema,
-  UpdatePOSCartItemSchema,
-  RemoveFromPOSCartSchema,
-  ClearPOSCartSchema,
-} from "../../schemas";
 import type { ActionResult } from "@/shared/types";
 import { logger } from "@/shared/utils/logger";
+import {
+  addItemUseCase,
+  updateItemQuantityUseCase,
+  removeItemUseCase,
+  clearSaleUseCase,
+  applyDiscountUseCase,
+} from "./use-cases";
 import type {
   SaleWithSummaryResult,
   SaleItemMutationResult,
   SaleQuantityMutationResult,
   SaleValidationResult,
 } from "./service";
+import { mapErrorToActionResult } from "@/shared/errors";
+import { createPOSError } from "../../errors";
 
 type SaleSnapshot = SaleWithSummaryResult["sale"];
 type SaleSummary = SaleWithSummaryResult["summary"];
@@ -72,11 +74,13 @@ export async function getActiveSaleAction(
     };
   } catch (error) {
     logger.error("POS Sale Action: get sale failed", { error });
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Failed to get active sale",
-    };
+    const fallback = createPOSError("SALE_FETCH_FAILED", {
+      context: { sessionId },
+    });
+    return mapErrorToActionResult<SaleWithSummaryResult>(
+      error,
+      fallback.toJSON()
+    );
   }
 }
 
@@ -93,32 +97,12 @@ export async function addToSaleAction(
   quantity: number = 1
 ): Promise<ActionResult<AddToSaleData>> {
   try {
-    // Validar input
-    const validated = AddToPOSCartSchema.parse({
+    const { sale, summary, item } = await addItemUseCase(
       sessionId,
       productId,
-      quantity,
-    });
-
-    logger.debug("POS Sale Action: add to sale validated input", {
-      validated,
-    });
-
-    // Agregar item
-    const { item, summary } = await service.addItemWithValidation(
-      validated.sessionId,
-      validated.productId,
-      validated.quantity
+      quantity
     );
 
-    logger.debug("POS Sale Action: item added to sale", { item, summary });
-
-    // Obtener sale completa actualizada
-    const { sale } = await service.getSaleWithSummary(validated.sessionId);
-
-    logger.debug("POS Sale Action: refreshed sale snapshot", { sale });
-
-    // Revalidate (opcional, depende de tu setup)
     revalidatePath("/pos");
 
     const message = item?.product?.name
@@ -136,11 +120,10 @@ export async function addToSaleAction(
     };
   } catch (error) {
     logger.error("POS Sale Action: add to sale failed", { error });
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Failed to add item to sale",
-    };
+    const fallback = createPOSError("SALE_MUTATION_FAILED", {
+      context: { sessionId, productId, quantity },
+    });
+    return mapErrorToActionResult<AddToSaleData>(error, fallback.toJSON());
   }
 }
 
@@ -157,27 +140,15 @@ export async function updateSaleQuantityAction(
   quantity: number
 ): Promise<ActionResult<UpdateSaleQuantityData>> {
   try {
-    // Validar input
-    const validated = UpdatePOSCartItemSchema.parse({
-      cartItemId: itemId,
-      quantity,
-    });
-
-    // Actualizar item
-    const { item, summary } = await service.updateQuantityWithValidation(
+    const { sale, summary, item } = await updateItemQuantityUseCase(
       sessionId,
-      validated.cartItemId,
-      validated.quantity!
+      itemId,
+      quantity
     );
-
-    // Obtener sale completa actualizada
-    const { sale } = await service.getSaleWithSummary(sessionId);
 
     revalidatePath("/pos");
 
-    const message = item?.product?.name
-      ? "Quantity updated"
-      : undefined;
+    const message = item?.product?.name ? "Quantity updated" : undefined;
 
     return {
       success: true,
@@ -190,13 +161,13 @@ export async function updateSaleQuantityAction(
     };
   } catch (error) {
     logger.error("POS Sale Action: update quantity failed", { error });
-    return {
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to update item quantity",
-    };
+    const fallback = createPOSError("SALE_MUTATION_FAILED", {
+      context: { sessionId, itemId, quantity },
+    });
+    return mapErrorToActionResult<UpdateSaleQuantityData>(
+      error,
+      fallback.toJSON()
+    );
   }
 }
 
@@ -212,33 +183,10 @@ export async function removeFromSaleAction(
   itemId: string
 ): Promise<ActionResult<RemoveFromSaleData>> {
   try {
-    // Validar input
-    const validated = RemoveFromPOSCartSchema.parse({
-      cartItemId: itemId,
-    });
-
-    // Eliminar item
-    const { summary, isEmpty } = await service.removeItemWithCleanup(
+    const { sale, summary, isEmpty } = await removeItemUseCase(
       sessionId,
-      validated.cartItemId
+      itemId
     );
-
-    // Si quedó vacío, retornar null
-    if (isEmpty) {
-      revalidatePath("/pos");
-      return {
-        success: true,
-        data: {
-          sale: null,
-          summary,
-          removedItemId: itemId,
-        },
-        message: "Item removed. Sale is now empty",
-      };
-    }
-
-    // Obtener sale actualizada
-    const { sale } = await service.getSaleWithSummary(sessionId);
 
     revalidatePath("/pos");
 
@@ -249,17 +197,19 @@ export async function removeFromSaleAction(
         summary,
         removedItemId: itemId,
       },
-      message: "Item removed from sale",
+      message: isEmpty
+        ? "Item removed. Sale is now empty"
+        : "Item removed from sale",
     };
   } catch (error) {
     logger.error("POS Sale Action: remove item failed", { error });
-    return {
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to remove item from sale",
-    };
+    const fallback = createPOSError("SALE_MUTATION_FAILED", {
+      context: { sessionId, itemId },
+    });
+    return mapErrorToActionResult<RemoveFromSaleData>(
+      error,
+      fallback.toJSON()
+    );
   }
 }
 
@@ -274,13 +224,7 @@ export async function clearSaleAction(
   sessionId: string
 ): Promise<ActionResult<void>> {
   try {
-    // Validar input
-    const validated = ClearPOSCartSchema.parse({
-      sessionId,
-    });
-
-    // Limpiar venta
-    await queries.clearSale(validated.sessionId);
+    await clearSaleUseCase(sessionId);
 
     revalidatePath("/pos");
 
@@ -290,10 +234,10 @@ export async function clearSaleAction(
     };
   } catch (error) {
     logger.error("POS Sale Action: clear sale failed", { error });
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to clear sale",
-    };
+    const fallback = createPOSError("SALE_MUTATION_FAILED", {
+      context: { sessionId },
+    });
+    return mapErrorToActionResult<void>(error, fallback.toJSON());
   }
 }
 
@@ -310,14 +254,11 @@ export async function applyDiscountAction(
   value: number
 ): Promise<ActionResult<SaleWithSummaryResult>> {
   try {
-    const { summary, message } = await service.applyDiscountToSale(
+    const { sale, summary, message } = await applyDiscountUseCase(
       sessionId,
       type,
       value
     );
-
-    // Obtener sale actualizada
-    const { sale } = await service.getSaleWithSummary(sessionId);
 
     revalidatePath("/pos");
 
@@ -331,11 +272,13 @@ export async function applyDiscountAction(
     };
   } catch (error) {
     logger.error("POS Sale Action: apply discount failed", { error });
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Failed to apply discount",
-    };
+    const fallback = createPOSError("SALE_MUTATION_FAILED", {
+      context: { sessionId, type, value },
+    });
+    return mapErrorToActionResult<SaleWithSummaryResult>(
+      error,
+      fallback.toJSON()
+    );
   }
 }
 
@@ -352,16 +295,31 @@ export async function validateSaleForCheckoutAction(
   try {
     const validation = await service.validateSaleForCheckout(sessionId);
 
+    if (!validation.isValid) {
+      const validationError = createPOSError("SALE_VALIDATION_FAILED", {
+        hint: validation.errors.join(", "),
+        context: { sessionId, validationErrors: validation.errors },
+      });
+
+      return {
+        success: false,
+        data: validation,
+        error: validationError.toJSON(),
+      };
+    }
+
     return {
-      success: validation.isValid,
+      success: true,
       data: validation,
-      error: validation.isValid ? undefined : validation.errors.join(", "),
     };
   } catch (error) {
     logger.error("POS Sale Action: validate sale failed", { error });
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Validation failed",
-    };
+    const fallback = createPOSError("SALE_FETCH_FAILED", {
+      context: { sessionId },
+    });
+    return mapErrorToActionResult<SaleValidationResult>(
+      error,
+      fallback.toJSON()
+    );
   }
 }

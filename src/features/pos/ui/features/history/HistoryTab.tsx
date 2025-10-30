@@ -12,7 +12,7 @@
 import React, { useState } from "react";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { useRecentTransactions } from "../../../hooks";
-import { usePOSSession } from "../../../session";
+import { useSessionState } from "@/features/pos";
 import { formatCurrency, formatTransactionDate } from "../../../utils";
 import {
   getPaymentMethodIcon,
@@ -21,8 +21,8 @@ import {
 import type { POSTransaction } from "../../../types/models";
 
 export const HistoryTab: React.FC = () => {
-  const { user, isAuthenticated } = useAuth();
-  const { currentSession } = usePOSSession();
+  const { user } = useAuth();
+  const { currentSession } = useSessionState();
   const [selectedTransaction, setSelectedTransaction] =
     useState<POSTransaction | null>(null);
 
@@ -242,7 +242,7 @@ export const HistoryTab: React.FC = () => {
               <div className="mt-6 space-y-2">
                 <button
                   onClick={() => {
-                    // TODO: Implementar impresión
+                    // NOTE: Implementar impresión
                     alert("Función de impresión pendiente");
                   }}
                   className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
@@ -252,7 +252,7 @@ export const HistoryTab: React.FC = () => {
                 {selectedTransaction.type === "SALE" && (
                   <button
                     onClick={() => {
-                      // TODO: Implementar anulación
+                      // NOTE: Implementar anulación
                       alert("Función de anulación pendiente");
                     }}
                     className="w-full py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors"

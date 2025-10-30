@@ -62,7 +62,7 @@ const POSSPAContent: React.FC = () => {
           {/* Debug Panels - Only in development */}
           {process.env.NODE_ENV === "development" && (
             <div className="fixed bottom-4 right-4 z-50">
-              {/* TODO: Add debug panel if needed */}
+              {/* NOTE: Add debug panel if needed */}
             </div>
           )}
         </div>

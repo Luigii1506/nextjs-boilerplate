@@ -43,7 +43,7 @@ export const BrowseTab: React.FC = () => {
       setActiveTab("sale");
     } catch (error) {
       logger.error("BrowseTab: error adding to sale", { error });
-      // TODO: Mostrar toast de error
+      // NOTE: Mostrar toast de error
     }
   };
 

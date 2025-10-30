@@ -27,11 +27,32 @@ export type ApiFailure = ApiResponse<never> & { success: false; error: string };
 export type ApiResult<T> = ApiSuccess<T> | ApiFailure;
 
 // 🎯 Server Action Result (usado por Next.js Server Actions)
+export type ActionErrorStage =
+  | "validation"
+  | "domain"
+  | "infrastructure"
+  | "external_service"
+  | "authorization"
+  | "unknown";
+
+export type ActionErrorSeverity = "low" | "medium" | "high";
+
+export interface ActionError {
+  code: string;
+  message: string;
+  stage?: ActionErrorStage;
+  hint?: string;
+  context?: Record<string, unknown>;
+  severity?: ActionErrorSeverity;
+  status?: number;
+}
+
 export interface ActionResult<T = unknown> {
   success: boolean;
   data?: T;
-  error?: string;
+  error?: ActionError | string;
   message?: string;
+  status?: number;
 }
 
 // 📄 Paginated API Response

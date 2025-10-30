@@ -22,6 +22,7 @@ import {
 import type { POSSession, POSSessionSummary } from "../../types/models";
 import { POSSessionStatus } from "../../types/models";
 import { logger } from "@/shared/utils/logger";
+import { extractActionErrorMessage } from "@/shared/errors";
 
 interface SessionFlags {
   hasActiveSession: boolean;
@@ -162,7 +163,10 @@ export const useSessionStore = create<SessionStore>()(
           const result = await openSessionAction(userId, initialCash, notes);
 
           if (!result.success || !result.data) {
-            const message = result.error ?? "Failed to open session";
+            const message = extractActionErrorMessage(
+              result.error,
+              "Failed to open session"
+            );
             set((state) => ({
               ...state,
               isLoading: false,
@@ -220,7 +224,10 @@ export const useSessionStore = create<SessionStore>()(
           const result = await closeSessionAction(session.id, finalCash, notes);
 
           if (!result.success || !result.data) {
-            const message = result.error ?? "Failed to close session";
+            const message = extractActionErrorMessage(
+              result.error,
+              "Failed to close session"
+            );
             set((state) => ({
               ...state,
               isLoading: false,
@@ -276,7 +283,10 @@ export const useSessionStore = create<SessionStore>()(
         try {
           const result = await suspendSessionAction(session.id, notes);
           if (!result.success || !result.data) {
-            const message = result.error ?? "Failed to suspend session";
+            const message = extractActionErrorMessage(
+              result.error,
+              "Failed to suspend session"
+            );
             set((state) => ({
               ...state,
               isLoading: false,
@@ -333,7 +343,10 @@ export const useSessionStore = create<SessionStore>()(
         try {
           const result = await resumeSessionAction(session.id);
           if (!result.success || !result.data) {
-            const message = result.error ?? "Failed to resume session";
+            const message = extractActionErrorMessage(
+              result.error,
+              "Failed to resume session"
+            );
             set((state) => ({
               ...state,
               isLoading: false,
@@ -384,7 +397,10 @@ export const useSessionStore = create<SessionStore>()(
         try {
           const result = await getSessionWithSummaryAction(session.id);
           if (!result.success || !result.data) {
-            const message = result.error ?? "Failed to load session summary";
+            const message = extractActionErrorMessage(
+              result.error,
+              "Failed to load session summary"
+            );
             set((state) => ({
               ...state,
               isLoading: false,

@@ -184,7 +184,7 @@ export async function removeItemWithCleanup(
 
 /**
  * Aplicar descuento a la venta
- * TODO: Implementar lógica de descuentos en DB
+ * NOTE: Implementar lógica de descuentos en DB
  */
 export async function applyDiscountToSale(
   sessionId: string,
@@ -201,7 +201,7 @@ export async function applyDiscountToSale(
       throw new Error("Fixed discount cannot be negative");
     }
 
-    // TODO: Implementar guardado de descuento en DB
+    // NOTE: Implementar guardado de descuento en DB
     // Por ahora retornamos el summary actual
     const rawSummary = await queries.calculateSaleSummary(sessionId);
     const summary = mapSaleSummary(rawSummary);

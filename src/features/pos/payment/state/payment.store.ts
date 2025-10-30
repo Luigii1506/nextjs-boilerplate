@@ -9,24 +9,20 @@
 
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { processPaymentAction } from "../server/actions";
 import {
   calculateChange,
-  type POSPaymentState,
   type POSPaymentMethod,
   type ProcessPaymentInput,
   type ProcessPaymentResult,
   type POSTransactionResult,
 } from "../types";
 import type { POSSaleSummary } from "../../sale/types";
-import { useQueryClient } from "@tanstack/react-query";
-import { posKeys } from "../../hooks/queryKeys";
-import { useAuth } from "@/shared/hooks/useAuth";
-import { useSaleSessionId } from "../../sale/state/sale.store";
 import { logger } from "@/shared/utils/logger";
+import { extractActionErrorMessage } from "@/shared/errors";
 
 interface PaymentStoreState {
   saleSummary: POSSaleSummary | null;
@@ -111,7 +107,7 @@ const derivePaymentState = (
 
 export const usePaymentStore = create<PaymentStore>()(
   devtools(
-    (set, get) => ({
+    (set) => ({
       ...initialPaymentState(),
 
       setSaleSummary: (summary) =>
@@ -189,7 +185,6 @@ export const usePaymentStore = create<PaymentStore>()(
         }),
 
       processPayment: async (input) => {
-        const { paymentMethod } = input;
         set((state) => ({
           ...state,
           isProcessing: true,
@@ -223,8 +218,10 @@ export const usePaymentStore = create<PaymentStore>()(
             };
           }
 
-          const errorMessage =
-            result.error ?? "Payment processing failed";
+          const errorMessage = extractActionErrorMessage(
+            result.error,
+            "Payment processing failed"
+          );
 
           set((state) => ({
             ...state,
@@ -368,61 +365,13 @@ export const usePaymentError = () =>
 // ACTION HOOKS
 // ---------------------------------------------------------------------------
 
-export const usePaymentActions = () => {
+export const usePaymentStoreActions = () => {
   const setSaleSummary = usePaymentStore((state) => state.setSaleSummary);
-  const setPaymentMethod = usePaymentStore(
-    (state) => state.setPaymentMethod
-  );
+  const setPaymentMethod = usePaymentStore((state) => state.setPaymentMethod);
   const setAmountPaid = usePaymentStore((state) => state.setAmountPaid);
-  const setMixedPayment = usePaymentStore(
-    (state) => state.setMixedPayment
-  );
-  const storeProcessPayment = usePaymentStore(
-    (state) => state.processPayment
-  );
+  const setMixedPayment = usePaymentStore((state) => state.setMixedPayment);
+  const processPayment = usePaymentStore((state) => state.processPayment);
   const resetPayment = usePaymentStore((state) => state.resetPayment);
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const defaultSessionId = useSaleSessionId();
-
-  const processPayment = useCallback(
-    async (input: ProcessPaymentInput) => {
-      const result = await storeProcessPayment(input);
-
-      if (result.success) {
-        const sessionId = input.sessionId ?? defaultSessionId ?? undefined;
-
-        // Invalidate recent transactions for history tab
-        queryClient.invalidateQueries({
-          queryKey: posKeys.transactionList({
-            sessionId,
-            userId: user?.id,
-            limit: 50,
-          }),
-        });
-
-        queryClient.invalidateQueries({ queryKey: posKeys.transactions() });
-
-        if (sessionId) {
-          queryClient.invalidateQueries({
-            queryKey: posKeys.saleWithSummary(sessionId),
-          });
-          queryClient.invalidateQueries({
-            queryKey: posKeys.activeSale(sessionId),
-          });
-        }
-
-        if (user?.id) {
-          queryClient.invalidateQueries({
-            queryKey: posKeys.dashboardData(user.id),
-          });
-        }
-      }
-
-      return result;
-    },
-    [storeProcessPayment, queryClient, user?.id, defaultSessionId]
-  );
 
   return useMemo(
     () => ({
@@ -441,24 +390,6 @@ export const usePaymentActions = () => {
       setPaymentMethod,
       setSaleSummary,
     ]
-  );
-};
-
-/**
- * Convenience hook mirroring the legacy context API.
- */
-export const usePaymentStoreFacade = () => {
-  const state = usePaymentState();
-  const status = usePaymentStatus();
-  const actions = usePaymentActions();
-
-  return useMemo(
-    () => ({
-      ...state,
-      ...status,
-      ...actions,
-    }),
-    [actions, state, status]
   );
 };
 

@@ -10,7 +10,7 @@
 
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import {
@@ -28,12 +28,14 @@ import type {
   POSSaleSummary,
 } from "../types";
 import { logger } from "@/shared/utils/logger";
+import { extractActionErrorMessage } from "@/shared/errors";
 
 type SaleSnapshot =
   | {
       id?: string;
       sessionId?: string | null;
       items?: POSSaleItemWithProduct[] | null;
+      adjustments?: POSSaleAdjustment[] | null;
     }
   | null
   | undefined;
@@ -146,13 +148,11 @@ const normaliseItems = (
 const normaliseAdjustments = (
   sale: SaleSnapshot
 ): POSSaleAdjustment[] => {
-  const rawAdjustments = (sale as any)?.adjustments;
-
-  if (!rawAdjustments || !Array.isArray(rawAdjustments)) {
+  if (!sale?.adjustments || !Array.isArray(sale.adjustments)) {
     return [];
   }
 
-  return rawAdjustments.map((adjustment: any) => ({
+  return sale.adjustments.map((adjustment) => ({
     ...adjustment,
     amount: toNumber(adjustment.amount),
   }));
@@ -323,7 +323,11 @@ export const useSaleStore = create<SaleStore>()(
           } else {
             get().setSaleSnapshot(null);
             if (result.error) {
-              get().setError(result.error);
+              const message = extractActionErrorMessage(
+                result.error,
+                "Failed to refresh sale"
+              );
+              get().setError(message);
             }
           }
         } catch (error) {
@@ -349,7 +353,10 @@ export const useSaleStore = create<SaleStore>()(
         try {
           const result = await addToSaleAction(sessionId, productId, quantity);
           if (!result.success || !result.data) {
-            const message = result.error ?? "Failed to add item to sale";
+            const message = extractActionErrorMessage(
+              result.error,
+              "Failed to add item to sale"
+            );
             get().setError(message);
             throw new Error(message);
           }
@@ -391,8 +398,10 @@ export const useSaleStore = create<SaleStore>()(
           );
 
           if (!result.success || !result.data) {
-            const message =
-              result.error ?? "Failed to update sale item quantity";
+            const message = extractActionErrorMessage(
+              result.error,
+              "Failed to update sale item quantity"
+            );
             get().setError(message);
             throw new Error(message);
           }
@@ -425,8 +434,10 @@ export const useSaleStore = create<SaleStore>()(
           const result = await removeFromSaleAction(sessionId, itemId);
 
           if (!result.success || !result.data) {
-            const message =
-              result.error ?? "Failed to remove item from sale";
+            const message = extractActionErrorMessage(
+              result.error,
+              "Failed to remove item from sale"
+            );
             get().setError(message);
             throw new Error(message);
           }
@@ -456,7 +467,10 @@ export const useSaleStore = create<SaleStore>()(
         try {
           const result = await clearSaleAction(sessionId);
           if (!result.success) {
-            const message = result.error ?? "Failed to clear sale";
+            const message = extractActionErrorMessage(
+              result.error,
+              "Failed to clear sale"
+            );
             get().setError(message);
             throw new Error(message);
           }
@@ -487,7 +501,10 @@ export const useSaleStore = create<SaleStore>()(
         try {
           const result = await applyDiscountAction(sessionId, type, value);
           if (!result.success || !result.data) {
-            const message = result.error ?? "Failed to apply discount";
+            const message = extractActionErrorMessage(
+              result.error,
+              "Failed to apply discount"
+            );
             get().setError(message);
             throw new Error(message);
           }
@@ -525,6 +542,11 @@ export const useSaleStore = create<SaleStore>()(
 
         try {
           const result = await validateSaleForCheckoutAction(sessionId);
+          const fallbackError = extractActionErrorMessage(
+            result.error,
+            "Sale is not ready for checkout"
+          );
+
           const validation: SaleValidation =
             result.data && typeof result.data === "object"
               ? {
@@ -537,7 +559,7 @@ export const useSaleStore = create<SaleStore>()(
                 }
               : {
                   isValid: !!result.success,
-                  errors: result.success || !result.error ? [] : [result.error],
+                  errors: result.success || !result.error ? [] : [fallbackError],
                 };
 
           set((state) => ({
@@ -546,7 +568,7 @@ export const useSaleStore = create<SaleStore>()(
             isError: !validation.isValid,
             lastError: validation.isValid
               ? null
-              : validation.errors.join(", ") || result.error || null,
+              : validation.errors.join(", ") || fallbackError,
           }));
 
           return validation;
