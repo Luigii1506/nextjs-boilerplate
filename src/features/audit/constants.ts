@@ -9,11 +9,19 @@ import type { AuditAction, AuditResource, AuditSeverity } from "./types";
 
 // 🎯 Audit Actions
 export const AUDIT_ACTIONS: Record<string, AuditAction> = {
+  // Core CRUD
   CREATE: "create",
   UPDATE: "update",
   DELETE: "delete",
+
+  // Access / auth
   LOGIN: "login",
   LOGOUT: "logout",
+  ROLE_CHANGE: "role_change",
+  BAN: "ban",
+  UNBAN: "unban",
+
+  // Bulk / utilities
   VIEW: "view",
   EXPORT: "export",
   IMPORT: "import",
@@ -22,9 +30,14 @@ export const AUDIT_ACTIONS: Record<string, AuditAction> = {
   TOGGLE: "toggle",
   ACTIVATE: "activate",
   DEACTIVATE: "deactivate",
-  ROLE_CHANGE: "role_change",
-  BAN: "ban",
-  UNBAN: "unban",
+
+  // POS domain
+  OPEN_REGISTER: "open_register",
+  CLOSE_REGISTER: "close_register",
+  SUSPEND_REGISTER: "suspend_register",
+  RESUME_REGISTER: "resume_register",
+  PROCESS_POS_PAYMENT: "process_pos_payment",
+  VOID_POS_TRANSACTION: "void_pos_transaction",
 } as const;
 
 // 🏷️ Action Labels
@@ -45,6 +58,12 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   role_change: "Cambio de Rol",
   ban: "Banear",
   unban: "Desbanear",
+  open_register: "Abrir caja",
+  close_register: "Cerrar caja",
+  suspend_register: "Suspender caja",
+  resume_register: "Reanudar caja",
+  process_pos_payment: "Procesar pago POS",
+  void_pos_transaction: "Anular transacción POS",
 };
 
 // 🎨 Action Colors
@@ -65,10 +84,17 @@ export const AUDIT_ACTION_COLORS: Record<AuditAction, string> = {
   role_change: "red",
   ban: "red",
   unban: "green",
+  open_register: "amber",
+  close_register: "amber",
+  suspend_register: "yellow",
+  resume_register: "lime",
+  process_pos_payment: "emerald",
+  void_pos_transaction: "rose",
 };
 
 // 📦 Audit Resources
 export const AUDIT_RESOURCES: Record<string, AuditResource> = {
+  // Core
   USER: "user",
   FEATURE_FLAG: "feature_flag",
   ORDER: "order",
@@ -80,6 +106,10 @@ export const AUDIT_RESOURCES: Record<string, AuditResource> = {
   FILE: "file",
   DASHBOARD: "dashboard",
   SYSTEM: "system",
+
+  // POS domain
+  POS_SESSION: "pos_session",
+  POS_TRANSACTION: "pos_transaction",
 } as const;
 
 // 🏷️ Resource Labels
@@ -95,6 +125,8 @@ export const AUDIT_RESOURCE_LABELS: Record<AuditResource, string> = {
   file: "Archivo",
   dashboard: "Dashboard",
   system: "Sistema",
+  pos_session: "Caja POS",
+  pos_transaction: "Transacción POS",
 };
 
 // 🎨 Resource Colors
@@ -110,6 +142,8 @@ export const AUDIT_RESOURCE_COLORS: Record<AuditResource, string> = {
   file: "pink",
   dashboard: "teal",
   system: "red",
+  pos_session: "amber",
+  pos_transaction: "emerald",
 };
 
 // 🚨 Audit Severities

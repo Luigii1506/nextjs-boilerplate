@@ -10,6 +10,7 @@
  */
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import * as queries from "./queries";
 import type { ActionResult } from "@/shared/types";
 import type { POSSessionStatus } from "../../types/models";
@@ -42,6 +43,16 @@ type SessionWithSummaryResult = {
 };
 
 type SessionDetail = NonNullable<SessionEntity>;
+
+const resolveRequestContext = async () => {
+  const headerList = await headers();
+  const forwarded = headerList.get("x-forwarded-for");
+  const ipAddress =
+    forwarded?.split(",")[0]?.trim() ?? headerList.get("x-real-ip") ?? undefined;
+  const userAgent = headerList.get("user-agent") ?? undefined;
+
+  return { ipAddress, userAgent };
+};
 
 // ========================================
 // GET ACTIVE SESSION
@@ -167,11 +178,19 @@ export async function openSessionAction(
   notes?: string
 ): Promise<ActionResult<SessionCreateResult>> {
   try {
-    const session = await openSessionUseCase({
-      userId,
-      initialCash,
-      notes,
-    });
+    const requestContext = await resolveRequestContext();
+    const session = await openSessionUseCase(
+      {
+        userId,
+        initialCash,
+        notes,
+      },
+      {
+        userId,
+        ipAddress: requestContext.ipAddress,
+        userAgent: requestContext.userAgent,
+      }
+    );
 
     revalidatePath("/pos");
 
@@ -207,11 +226,15 @@ export async function closeSessionAction(
   ActionResult<{ session: SessionUpdateResult; summary: SessionSummaryResult }>
 > {
   try {
-    const { session, summary } = await closeSessionUseCase({
-      sessionId,
-      finalCash,
-      notes,
-    });
+    const requestContext = await resolveRequestContext();
+    const { session, summary } = await closeSessionUseCase(
+      {
+        sessionId,
+        finalCash,
+        notes,
+      },
+      requestContext
+    );
 
     revalidatePath("/pos");
 
@@ -247,7 +270,12 @@ export async function suspendSessionAction(
   notes?: string
 ): Promise<ActionResult<SessionSuspendResult>> {
   try {
-    const session = await suspendSessionUseCase(sessionId, notes);
+    const requestContext = await resolveRequestContext();
+    const session = await suspendSessionUseCase(
+      sessionId,
+      notes,
+      requestContext
+    );
 
     revalidatePath("/pos");
 
@@ -280,7 +308,12 @@ export async function resumeSessionAction(
   notes?: string
 ): Promise<ActionResult<SessionResumeResult>> {
   try {
-    const session = await resumeSessionUseCase(sessionId, notes);
+    const requestContext = await resolveRequestContext();
+    const session = await resumeSessionUseCase(
+      sessionId,
+      notes,
+      requestContext
+    );
 
     revalidatePath("/pos");
 

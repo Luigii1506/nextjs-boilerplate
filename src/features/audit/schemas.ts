@@ -30,7 +30,7 @@ export const auditChangeSchema = z.object({
   fieldLabel: z.string().optional(),
   oldValue: z.unknown(),
   newValue: z.unknown(),
-  type: z.enum(["added", "modified", "removed"]),
+  type: z.enum(["added", "modified", "removed"]).optional(),
 });
 
 // 📝 Create Audit Event Schema

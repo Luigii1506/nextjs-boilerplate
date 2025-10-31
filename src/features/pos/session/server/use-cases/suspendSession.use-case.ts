@@ -7,11 +7,39 @@ import * as queries from "../queries";
 import { logger } from "@/shared/utils/logger";
 import { createPOSError } from "../../../errors";
 import { isAppError } from "@/shared/errors";
+import {
+  auditSessionSuspended,
+  type POSAuditContextInput,
+} from "../../../audit/posAudit.service";
 
-export async function suspendSessionUseCase(sessionId: string, notes?: string) {
+export async function suspendSessionUseCase(
+  sessionId: string,
+  notes?: string,
+  auditContext?: POSAuditContextInput
+) {
   try {
     logger.info("POS Session Use-Case: suspending session", { sessionId });
-    return await queries.suspendSession(sessionId, notes);
+    const session = await queries.suspendSession(sessionId, notes);
+
+    console.log("[POS AUDIT] suspendSessionUseCase suspended session", {
+      sessionId: session.id,
+    });
+
+    await auditSessionSuspended({
+      session,
+      context: {
+        userId: session.userId,
+        userRole: auditContext?.userRole,
+        ipAddress: auditContext?.ipAddress,
+        userAgent: auditContext?.userAgent,
+      },
+    });
+
+    console.log("[POS AUDIT] suspendSessionUseCase audit dispatched", {
+      sessionId: session.id,
+    });
+
+    return session;
   } catch (error) {
     if (isAppError(error)) {
       throw error;

@@ -26,6 +26,10 @@ import type { Prisma } from "@prisma/client";
 import { createPOSError } from "../../../errors";
 import { isAppError } from "@/shared/errors";
 import { ZodError, type z } from "zod";
+import {
+  auditPaymentProcessed,
+  type POSAuditContextInput,
+} from "../../../audit/posAudit.service";
 
 type TransactionWithItems = Prisma.POSTransactionGetPayload<{
   include: {
@@ -40,7 +44,8 @@ export interface ProcessPaymentUseCaseResult {
 type ParsedTransactionInput = z.infer<typeof CreatePOSTransactionSchema>;
 
 export async function processPaymentUseCase(
-  input: ProcessPaymentInput
+  input: ProcessPaymentInput,
+  auditContext?: POSAuditContextInput
 ): Promise<ProcessPaymentUseCaseResult> {
   try {
     const { sessionId, paymentMethod, amountPaid, notes, referenceNumber } =
@@ -72,6 +77,12 @@ export async function processPaymentUseCase(
           },
         },
         adjustments: true,
+        session: {
+          select: {
+            id: true,
+            userId: true,
+          },
+        },
       },
     });
 
@@ -159,6 +170,40 @@ export async function processPaymentUseCase(
       transactionId: transaction.id,
       transactionNumber,
     });
+
+    const cashierId = cart.session?.userId;
+    if (cashierId) {
+      console.log("[POS AUDIT] processPaymentUseCase preparing audit", {
+        transactionId: transaction.id,
+        sessionId,
+      });
+      await auditPaymentProcessed({
+        sessionId,
+        cashierId,
+        transaction: transactionResult,
+        cartId: cart.id,
+        context: {
+          userId: cashierId,
+          userRole: auditContext?.userRole,
+          ipAddress: auditContext?.ipAddress,
+          userAgent: auditContext?.userAgent,
+        },
+        metadata: {
+          referenceNumber,
+          adjustments: cart.adjustments?.length ?? 0,
+          notes,
+        },
+      });
+      console.log("[POS AUDIT] processPaymentUseCase audit dispatched", {
+        transactionId: transaction.id,
+        sessionId,
+      });
+    } else {
+      logger.warn("POS Payment Use-Case: missing cashierId for audit log", {
+        sessionId,
+        cartId: cart.id,
+      });
+    }
 
     return {
       transaction: transactionResult,

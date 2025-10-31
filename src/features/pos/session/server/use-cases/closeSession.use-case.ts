@@ -12,6 +12,10 @@ import { logger } from "@/shared/utils/logger";
 import { createPOSError } from "../../../errors";
 import { isAppError } from "@/shared/errors";
 import { ZodError } from "zod";
+import {
+  auditSessionClosed,
+  type POSAuditContextInput,
+} from "../../../audit/posAudit.service";
 
 export interface CloseSessionInput {
   sessionId: string;
@@ -25,7 +29,8 @@ export interface CloseSessionResult {
 }
 
 export async function closeSessionUseCase(
-  input: CloseSessionInput
+  input: CloseSessionInput,
+  auditContext?: POSAuditContextInput
 ): Promise<CloseSessionResult> {
   try {
     const validated = ClosePOSSessionSchema.parse(input);
@@ -40,6 +45,30 @@ export async function closeSessionUseCase(
       validated.finalCash,
       validated.notes
     );
+
+    console.log("[POS AUDIT] closeSessionUseCase closed session", {
+      sessionId: session.id,
+    });
+
+    await auditSessionClosed({
+      session,
+      totals: {
+        totalSales: summary.totalSales,
+        totalVoids: summary.totalVoids,
+        totalRefunds: summary.totalRefunds,
+        netSales: summary.netSales,
+      },
+      context: {
+        userId: session.userId,
+        userRole: auditContext?.userRole,
+        ipAddress: auditContext?.ipAddress,
+        userAgent: auditContext?.userAgent,
+      },
+    });
+
+    console.log("[POS AUDIT] closeSessionUseCase audit dispatched", {
+      sessionId: session.id,
+    });
 
     return { session, summary };
   } catch (error) {

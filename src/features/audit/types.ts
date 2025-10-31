@@ -22,7 +22,13 @@ export type AuditAction =
   | "deactivate"
   | "role_change"
   | "ban"
-  | "unban";
+  | "unban"
+  | "open_register"
+  | "close_register"
+  | "suspend_register"
+  | "resume_register"
+  | "process_pos_payment"
+  | "void_pos_transaction";
 
 export type AuditResource =
   | "user"
@@ -35,7 +41,9 @@ export type AuditResource =
   | "session"
   | "file"
   | "dashboard"
-  | "system";
+  | "system"
+  | "pos_session"
+  | "pos_transaction";
 
 export type AuditSeverity = "low" | "medium" | "high" | "critical";
 

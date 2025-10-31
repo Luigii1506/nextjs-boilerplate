@@ -12,6 +12,10 @@ import { logger } from "@/shared/utils/logger";
 import { createPOSError } from "../../../errors";
 import { isAppError } from "@/shared/errors";
 import { ZodError } from "zod";
+import {
+  auditSessionOpened,
+  type POSAuditContextInput,
+} from "../../../audit/posAudit.service";
 
 export interface OpenSessionInput {
   userId: string;
@@ -19,7 +23,10 @@ export interface OpenSessionInput {
   notes?: string;
 }
 
-export async function openSessionUseCase(input: OpenSessionInput) {
+export async function openSessionUseCase(
+  input: OpenSessionInput,
+  auditContext?: POSAuditContextInput
+) {
   try {
     const validated = CreatePOSSessionSchema.parse(input);
 
@@ -33,6 +40,24 @@ export async function openSessionUseCase(input: OpenSessionInput) {
       validated.initialCash,
       validated.notes
     );
+
+    console.log("[POS AUDIT] openSessionUseCase created session", {
+      sessionId: session.id,
+    });
+
+    await auditSessionOpened({
+      session,
+      context: {
+        userId: session.userId,
+        userRole: auditContext?.userRole,
+        ipAddress: auditContext?.ipAddress,
+        userAgent: auditContext?.userAgent,
+      },
+    });
+
+    console.log("[POS AUDIT] openSessionUseCase audit dispatched", {
+      sessionId: session.id,
+    });
 
     return session;
   } catch (error) {

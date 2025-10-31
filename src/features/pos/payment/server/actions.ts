@@ -11,6 +11,7 @@
  */
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { prisma } from "@/core/database/prisma";
 import type { Prisma } from "@prisma/client";
 import type { ActionResult } from "@/shared/types";
@@ -20,6 +21,10 @@ import { processPaymentUseCase } from "./use-cases/processPayment.use-case";
 import { mapErrorToActionResult } from "@/shared/errors";
 import { createPOSError } from "../../errors";
 import { generateTransactionNumber } from "../../schemas";
+import {
+  auditTransactionVoided,
+  type POSAuditContextInput,
+} from "../../audit/posAudit.service";
 
 type TransactionWithSession = Prisma.POSTransactionGetPayload<{
   include: {
@@ -44,6 +49,16 @@ type TransactionWithItems = Prisma.POSTransactionGetPayload<{
   };
 }>;
 
+const resolveRequestContext = async (): Promise<POSAuditContextInput> => {
+  const headerList = await headers();
+  const forwarded = headerList.get("x-forwarded-for");
+  const ipAddress =
+    forwarded?.split(",")[0]?.trim() ?? headerList.get("x-real-ip") ?? undefined;
+  const userAgent = headerList.get("user-agent") ?? undefined;
+
+  return { ipAddress, userAgent };
+};
+
 // ========================================
 // PROCESS PAYMENT
 // ========================================
@@ -55,7 +70,8 @@ export async function processPaymentAction(
   input: ProcessPaymentInput
 ): Promise<ActionResult<ProcessPaymentResult>> {
   try {
-    const { transaction } = await processPaymentUseCase(input);
+    const requestContext = await resolveRequestContext();
+    const { transaction } = await processPaymentUseCase(input, requestContext);
 
     revalidatePath("/pos");
 
@@ -186,12 +202,20 @@ export async function voidTransactionAction(
   transactionId: string,
   reason: string
 ): Promise<ActionResult<TransactionWithItems>> {
+  const requestContext = await resolveRequestContext();
+
   try {
     // 1. Obtener la transacción original
     const originalTransaction = await prisma.pOSTransaction.findUnique({
       where: { id: transactionId },
       include: {
         items: true,
+        session: {
+          select: {
+            id: true,
+            userId: true,
+          },
+        },
       },
     });
 
@@ -281,6 +305,39 @@ export async function voidTransactionAction(
     }
 
     revalidatePath("/pos");
+
+    const cashierId = originalTransaction.session?.userId;
+    if (cashierId) {
+      console.log("[POS AUDIT] voidTransactionAction preparing audit", {
+        transactionId,
+        cashierId,
+      });
+      await auditTransactionVoided({
+        transactionId: voidTransaction.id,
+        originalTransactionNumber: originalTransaction.transactionNumber,
+        sessionId: originalTransaction.session?.id ?? originalTransaction.sessionId,
+        cashierId,
+        reason,
+        totals: {
+          total: Number(originalTransaction.total),
+          subtotal: Number(originalTransaction.subtotal),
+          tax: Number(originalTransaction.tax),
+          discount: Number(originalTransaction.discount),
+        },
+        context: {
+          userId: cashierId,
+          ipAddress: requestContext.ipAddress,
+          userAgent: requestContext.userAgent,
+        },
+      });
+      console.log("[POS AUDIT] voidTransactionAction audit dispatched", {
+        voidTransactionId: voidTransaction.id,
+      });
+    } else {
+      logger.warn("POS Payment Action: missing cashierId for void audit", {
+        transactionId,
+      });
+    }
 
     return {
       success: true,

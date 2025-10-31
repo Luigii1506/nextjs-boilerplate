@@ -32,6 +32,13 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:vitest": "vitest run",
+    "test:vitest:watch": "vitest",
+    "test:vitest:ui": "vitest --ui",
+    "test:pos": "vitest run src/features/pos",
+    "test:pos:watch": "vitest watch src/features/pos",
+    "test:pos:ui": "vitest --ui src/features/pos",
+    "test:pos:coverage": "vitest run src/features/pos --coverage",
     "test:unit": "jest --testPathPattern=src",
     "test:integration": "jest --testPathPattern=__tests__",
     "test:e2e": "playwright test",
@@ -101,6 +108,9 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/uuid": "^10.0.0",
+    "@vitest/coverage-v8": "^1.6.1",
+    "@vitest/ui": "^1.6.1",
+    "babel-plugin-react-compiler": "^1.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.4.5",
     "jest": "^30.0.5",
@@ -109,6 +119,7 @@
     "plop": "^4.0.1",
     "prisma": "^5.15.0",
     "tsx": "^4.20.3",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^1.6.1"
   }
 }
